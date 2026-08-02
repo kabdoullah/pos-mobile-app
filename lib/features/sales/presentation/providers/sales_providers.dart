@@ -32,11 +32,15 @@ Future<sale_entity.Sale> submitSale(
   return sale;
 }
 
-/// Watches sales for a specific date — re-emits on every drift change.
+/// Watches sales within a date range (inclusive) — re-emits on every drift
+/// change.
 @riverpod
 Stream<List<sale_entity.Sale>> salesHistory(
   Ref ref, {
-  required DateTime date,
+  required DateTime startDate,
+  required DateTime endDate,
 }) {
-  return ref.watch(salesRepositoryProvider).watchSalesByDate(date);
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSalesByDateRange(startDate, endDate);
 }

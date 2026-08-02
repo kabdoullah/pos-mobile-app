@@ -145,16 +145,23 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
-  Future<List<sale_entity.Sale>> getSalesByDate(DateTime date) async {
-    final dayStart = DateTime(date.year, date.month, date.day);
-    final dayEnd = dayStart.add(const Duration(days: 1));
+  Future<List<sale_entity.Sale>> getSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
 
     final sales =
         await (db.select(db.sales)
               ..where(
                 (t) =>
-                    t.createdAt.isBiggerOrEqualValue(dayStart) &
-                    t.createdAt.isSmallerThanValue(dayEnd),
+                    t.createdAt.isBiggerOrEqualValue(rangeStart) &
+                    t.createdAt.isSmallerThanValue(rangeEnd),
               )
               ..orderBy([
                 (t) => drift.OrderingTerm(
@@ -168,15 +175,22 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
-  Stream<List<sale_entity.Sale>> watchSalesByDate(DateTime date) {
-    final dayStart = DateTime(date.year, date.month, date.day);
-    final dayEnd = dayStart.add(const Duration(days: 1));
+  Stream<List<sale_entity.Sale>> watchSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
 
     return (db.select(db.sales)
           ..where(
             (t) =>
-                t.createdAt.isBiggerOrEqualValue(dayStart) &
-                t.createdAt.isSmallerThanValue(dayEnd),
+                t.createdAt.isBiggerOrEqualValue(rangeStart) &
+                t.createdAt.isSmallerThanValue(rangeEnd),
           )
           ..orderBy([
             (t) => drift.OrderingTerm(

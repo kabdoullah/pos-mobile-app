@@ -10,6 +10,7 @@ import '../../../../core/theme/illustrations.dart';
 import '../../../../shared/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/sales_providers.dart';
+import 'date_range_filter_sheet.dart';
 
 /// Sales history page — displays past sales with date filtering.
 class SalesHistoryPage extends ConsumerStatefulWidget {
@@ -21,38 +22,48 @@ class SalesHistoryPage extends ConsumerStatefulWidget {
 }
 
 class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
-  late DateTime _selectedDate;
+  late DateTimeRange _selectedRange;
 
   @override
   void initState() {
     super.initState();
-    _selectedDate = DateTime.now();
+    final today = DateTime.now();
+    _selectedRange = DateTimeRange(start: today, end: today);
   }
 
-  Future<void> _selectDate() async {
-    final picked = await showDatePicker(
+  Future<void> _selectDateRange() async {
+    final picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 90)),
-      lastDate: DateTime.now(),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DateRangeFilterSheet(initialRange: _selectedRange),
     );
     if (picked != null && mounted) {
-      setState(() => _selectedDate = picked);
+      setState(() => _selectedRange = picked);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final salesAsync = ref.watch(salesHistoryProvider(date: _selectedDate));
-    final dateLabel = DateFormat('dd MMMM yyyy', 'fr_FR').format(_selectedDate);
+    final salesAsync = ref.watch(
+      salesHistoryProvider(
+        startDate: _selectedRange.start,
+        endDate: _selectedRange.end,
+      ),
+    );
+    final dateFormat = DateFormat('dd MMMM yyyy', 'fr_FR');
+    final isSingleDay = _isSameDay(_selectedRange.start, _selectedRange.end);
+    final dateLabel = isSingleDay
+        ? dateFormat.format(_selectedRange.start)
+        : '${dateFormat.format(_selectedRange.start)} – ${dateFormat.format(_selectedRange.end)}';
 
     return AppScaffold(
       title: 'Historique des ventes',
       actions: [
         IconButton(
           icon: const Icon(Icons.calendar_today),
-          onPressed: _selectDate,
-          tooltip: 'Changer la date',
+          onPressed: _selectDateRange,
+          tooltip: 'Changer la période',
         ),
       ],
       body: Column(
@@ -82,15 +93,20 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
               ),
               data: (sales) {
                 if (sales.isEmpty) {
-                  return const EmptyStateIllustrated(
+                  return EmptyStateIllustrated(
                     illustration: Illustrations.emptySales,
                     title: 'Aucune vente',
-                    message: 'Pas de vente enregistrée ce jour.',
+                    message: isSingleDay
+                        ? 'Pas de vente enregistrée ce jour.'
+                        : 'Pas de vente enregistrée sur cette période.',
                   );
                 }
                 return RefreshIndicator(
                   onRefresh: () async => ref.invalidate(
-                    salesHistoryProvider(date: _selectedDate),
+                    salesHistoryProvider(
+                      startDate: _selectedRange.start,
+                      endDate: _selectedRange.end,
+                    ),
                   ),
                   child: ListView.separated(
                     padding: EdgeInsets.all(
@@ -115,6 +131,10 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
         ],
       ),
     );
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 }
 

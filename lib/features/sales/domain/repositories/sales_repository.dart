@@ -35,9 +35,14 @@ abstract class SalesRepository {
   /// Watches aggregated totals for today — re-emits on every INSERT into sales.
   Stream<DailyStats> watchTodayStats();
 
-  /// Returns all sales created on the given date (local device timezone).
-  Future<List<Sale>> getSalesByDate(DateTime date);
+  /// Returns all sales created within [startDate, endDate] inclusive
+  /// (local device timezone).
+  Future<List<Sale>> getSalesByDateRange(DateTime startDate, DateTime endDate);
 
-  /// Watches all sales created on the given date — re-emits on every change.
-  Stream<List<Sale>> watchSalesByDate(DateTime date);
+  /// Watches all sales created within [startDate, endDate] inclusive —
+  /// re-emits on every change.
+  Stream<List<Sale>> watchSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  );
 }
