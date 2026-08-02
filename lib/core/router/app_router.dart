@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:logger/logger.dart';
 
-import '../navigation/nav_provider.dart';
 import 'page_transitions.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
@@ -13,8 +12,10 @@ import '../../features/auth/presentation/pages/phone_login_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/catalog/presentation/pages/catalog_page.dart';
 import '../../features/catalog/presentation/pages/product_form_page.dart';
 import '../../features/catalog/presentation/pages/barcode_scanner_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
 import '../../features/sales/presentation/pages/payment_page.dart';
 import '../../features/sales/presentation/pages/sale_success_page.dart';
@@ -22,10 +23,15 @@ import '../../features/sales/presentation/pages/sales_history_page.dart';
 import '../../features/sales/presentation/pages/sale_detail_page.dart';
 import '../../features/sales/domain/entities/sale.dart';
 import '../../features/sales/domain/entities/cart_item.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/printing/presentation/pages/bluetooth_setup_page.dart';
 import 'main_shell.dart';
 
 part 'app_router.g.dart';
+
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
+  debugLabel: 'root',
+);
 
 /// Navigation routes for the app.
 abstract class Routes {
@@ -50,11 +56,21 @@ abstract class Routes {
   /// Onboarding tutorial.
   static const String tutorial = '/tutorial';
 
+  // Les 4 onglets principaux (Racines des branches)
+
   /// Home/dashboard screen.
   static const String home = '/home';
 
   /// Catalog (product list).
   static const String catalog = '/catalog';
+
+  /// Sales history (past sales with date filtering).
+  static const String salesHistory = '/sales/history';
+
+  /// Settings page.
+  static const String settings = '/settings';
+
+  // Sous-routes (Détails)
 
   /// Create new product.
   static const String productNew = '/catalog/new';
@@ -74,14 +90,8 @@ abstract class Routes {
   /// Sale success confirmation.
   static const String saleSuccess = '/sales/success';
 
-  /// Sales history (past sales with date filtering).
-  static const String salesHistory = '/sales/history';
-
-  /// Sale detail view (path parameter :id, or receives Sale via extra).
+  /// Sale detail view (receives [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
-
-  /// Settings page.
-  static const String settings = '/settings';
 
   /// Bluetooth printer setup.
   static const String bluetoothSetup = '/settings/printer';
@@ -94,18 +104,19 @@ GoRouter appRouter(Ref ref) {
   logger.i('[Router] Creating router instance');
 
   late GoRouter router;
+
+  // CORRECTIF ESSENTIEL : Force GoRouter à réévaluer le 'redirect' dès que l'état d'authentification change
+  ref.listen(authProvider, (previous, next) {
+    logger.i('[Router] Auth state changed, refreshing router');
+    router.refresh();
+  });
+
   router = GoRouter(
+    navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.splash,
     redirect: (BuildContext context, GoRouterState state) {
       final authValue = ref.read(authProvider);
-      logger.i(
-        '[Router.redirect] Current path: ${state.fullPath}, authValue: ${authValue.runtimeType}',
-      );
-
-      // Public routes (accessible while unauthenticated).
       final publicRoutes = {Routes.register, Routes.emailLogin};
-
-      // Auth/onboarding routes (not accessible when fully authenticated).
       final authRoutes = {
         Routes.splash,
         Routes.register,
@@ -115,56 +126,30 @@ GoRouter appRouter(Ref ref) {
         Routes.storeSetup,
       };
 
-      // Redirect based on AsyncValue<AuthStatus> state.
-      // AsyncLoading: stay on current route (init in progress).
-      // AsyncError: send to login (auth failed, need to re-authenticate).
-      // AsyncData: switch on the AuthStatus value.
       final targetRoute = authValue.when(
-        loading: () {
-          logger.i(
-            '[Router.redirect] Auth loading, staying on ${state.fullPath}',
-          );
-          return null;
-        },
+        loading: () => null,
         error: (_, _) {
-          // PIN pages display inline error messages — don't redirect on error.
           final pinRoutes = {Routes.pinLogin, Routes.pinSetup};
           if (publicRoutes.contains(state.fullPath)) return null;
           if (pinRoutes.contains(state.fullPath)) return null;
-          logger.i(
-            '[Router.redirect] Auth error, redirecting to ${Routes.emailLogin}',
-          );
           return Routes.emailLogin;
         },
         data: (status) {
           return switch (status) {
-            // Unauthenticated: allow public routes, redirect others to email login.
             AuthUnauthenticated() =>
               publicRoutes.contains(state.fullPath) ? null : Routes.emailLogin,
-
-            // Store setup required (first registration, store not yet configured).
             AuthStoreSetupRequired() => Routes.storeSetup,
-
-            // PIN setup required (first login, PIN not yet created).
             AuthPinSetupRequired() => Routes.pinSetup,
-
-            // PIN verification required (PIN exists, needs verification).
             AuthPinRequired() => Routes.pinLogin,
-
-            // Fully authenticated: redirect from auth routes to home, allow access to main app.
             AuthAuthenticated() =>
               authRoutes.contains(state.fullPath) ? Routes.home : null,
           };
         },
       );
 
-      // Only redirect if target differs from current path.
       final shouldRedirect =
           targetRoute != null && targetRoute != state.fullPath;
-      final redirect = shouldRedirect ? targetRoute : null;
-
-      logger.i('[Router.redirect] Target: $targetRoute, redirect: $redirect');
-      return redirect;
+      return shouldRedirect ? targetRoute : null;
     },
     routes: [
       GoRoute(
@@ -201,32 +186,84 @@ GoRouter appRouter(Ref ref) {
         pageBuilder: (context, state) =>
             PageTransitions.fade(context, state, const TutorialPage()),
       ),
-      GoRoute(
-        path: Routes.home,
-        pageBuilder: (context, state) =>
-            PageTransitions.slideRight(context, state, const MainShell()),
-      ),
-      GoRoute(
-        path: Routes.catalog,
-        redirect: (context, state) {
-          ref.read(bottomNavIndexProvider.notifier).setIndex(1);
-          return Routes.home;
+
+      // ==========================================
+      // IMPLEMENTATION DU STATEFUL SHELL ROUTE
+      // ==========================================
+      StatefulShellRoute.indexedStack(
+        pageBuilder: (context, state, navigationShell) {
+          // On enveloppe le shell dans votre MainShell (qui contient Scaffold + votre AppBottomNavBar)
+          return PageTransitions.fade(
+            context,
+            state,
+            MainShell(navigationShell: navigationShell),
+          );
         },
+        branches: [
+          // BRANCHE 1 : ACCUEIL
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.home,
+                builder: (context, state) => const HomePage(),
+              ),
+            ],
+          ),
+          // BRANCHE 2 : CATALOGUE
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.catalog,
+                builder: (context, state) => const CatalogPage(),
+                routes: [
+                  // ATTENTION : 'parentNavigatorKey: _rootNavigatorKey' force la page à s'ouvrir
+                  // en PLEIN ÉCRAN par-dessus votre barre de navigation.
+                  GoRoute(
+                    path: 'new', // Résout en /catalog/new
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const ProductFormPage(),
+                  ),
+                  GoRoute(
+                    path: ':id/edit', // Résout en /catalog/:id/edit
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return ProductFormPage(productId: id);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // BRANCHE 3 : HISTORIQUE DES VENTES
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.salesHistory,
+                builder: (context, state) => const SalesHistoryPage(),
+              ),
+            ],
+          ),
+          // BRANCHE 4 : PARAMÈTRES
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.settings,
+                builder: (context, state) => const SettingsPage(),
+                routes: [
+                  GoRoute(
+                    path: 'printer', // Résout en /settings/printer
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const BluetoothSetupPage(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
-      GoRoute(
-        path: Routes.salesHistory,
-        redirect: (context, state) {
-          ref.read(bottomNavIndexProvider.notifier).setIndex(2);
-          return Routes.home;
-        },
-      ),
-      GoRoute(
-        path: Routes.settings,
-        redirect: (context, state) {
-          ref.read(bottomNavIndexProvider.notifier).setIndex(3);
-          return Routes.home;
-        },
-      ),
+
+      // Écrans hors des onglets : plein écran, empilés par-dessus la shell.
       GoRoute(
         path: Routes.newSale,
         pageBuilder: (context, state) =>
@@ -253,33 +290,6 @@ GoRouter appRouter(Ref ref) {
         },
       ),
       GoRoute(
-        path: Routes.productNew,
-        pageBuilder: (context, state) {
-          final initialBarcode = state.extra as String?;
-          return PageTransitions.scale(
-            context,
-            state,
-            ProductFormPage(initialBarcode: initialBarcode),
-          );
-        },
-      ),
-      GoRoute(
-        path: Routes.productEdit,
-        pageBuilder: (context, state) {
-          final productId = state.pathParameters['id'];
-          return PageTransitions.scale(
-            context,
-            state,
-            ProductFormPage(productId: productId),
-          );
-        },
-      ),
-      GoRoute(
-        path: Routes.barcodeScanner,
-        pageBuilder: (context, state) =>
-            PageTransitions.scale(context, state, const BarcodeScannerPage()),
-      ),
-      GoRoute(
         path: Routes.saleDetail,
         pageBuilder: (context, state) {
           Sale? sale;
@@ -295,18 +305,12 @@ GoRouter appRouter(Ref ref) {
         },
       ),
       GoRoute(
-        path: Routes.bluetoothSetup,
+        path: Routes.barcodeScanner,
         pageBuilder: (context, state) =>
-            PageTransitions.scale(context, state, const BluetoothSetupPage()),
+            PageTransitions.scale(context, state, const BarcodeScannerPage()),
       ),
     ],
   );
-
-  // Listen to auth state changes and refresh router without recreating it.
-  ref.listen(authProvider, (_, _) {
-    logger.i('[Router] Auth state changed, calling router.refresh()');
-    router.refresh();
-  });
 
   return router;
 }

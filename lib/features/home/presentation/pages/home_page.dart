@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/navigation/nav_provider.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -36,8 +35,7 @@ class HomePage extends ConsumerWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.settings_outlined),
-          onPressed: () =>
-              ref.read(bottomNavIndexProvider.notifier).setIndex(3),
+          onPressed: () => StatefulNavigationShell.of(context).goBranch(3),
           tooltip: 'Paramètres',
         ),
       ],
@@ -115,11 +113,11 @@ class HomePage extends ConsumerWidget {
 }
 
 /// Quick access section for frequent POS operations.
-class _QuickActionsSection extends ConsumerWidget {
+class _QuickActionsSection extends StatelessWidget {
   const _QuickActionsSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final hPad = responsiveValue(
       context,
       small: AppSpacing.md,
@@ -149,7 +147,7 @@ class _QuickActionsSection extends ConsumerWidget {
                     icon: Icons.shopping_bag_outlined,
                     label: 'Catalogue',
                     onTap: () =>
-                        ref.read(bottomNavIndexProvider.notifier).setIndex(1),
+                        StatefulNavigationShell.of(context).goBranch(1),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -158,7 +156,7 @@ class _QuickActionsSection extends ConsumerWidget {
                     icon: Icons.history_outlined,
                     label: 'Historique',
                     onTap: () =>
-                        ref.read(bottomNavIndexProvider.notifier).setIndex(2),
+                        StatefulNavigationShell.of(context).goBranch(2),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),

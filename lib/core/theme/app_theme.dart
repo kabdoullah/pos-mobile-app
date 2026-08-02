@@ -53,7 +53,7 @@ class AppTheme {
       chipTheme: _buildChipTheme(colorScheme),
       dividerTheme: _buildDividerTheme(colorScheme),
       snackBarTheme: _buildSnackBarTheme(colorScheme),
-      bottomNavigationBarTheme: _buildBottomNavTheme(colorScheme),
+      navigationBarTheme: _buildNavigationBarTheme(colorScheme),
       floatingActionButtonTheme: _buildFabTheme(colorScheme),
       progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
       switchTheme: _buildSwitchTheme(colorScheme),
@@ -107,7 +107,7 @@ class AppTheme {
       chipTheme: _buildChipTheme(colorScheme),
       dividerTheme: _buildDividerTheme(colorScheme),
       snackBarTheme: _buildSnackBarTheme(colorScheme),
-      bottomNavigationBarTheme: _buildBottomNavTheme(colorScheme),
+      navigationBarTheme: _buildNavigationBarTheme(colorScheme),
       floatingActionButtonTheme: _buildFabTheme(colorScheme),
       progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
       switchTheme: _buildSwitchTheme(colorScheme),
@@ -289,15 +289,24 @@ class AppTheme {
     );
   }
 
-  static BottomNavigationBarThemeData _buildBottomNavTheme(ColorScheme cs) {
-    return BottomNavigationBarThemeData(
+  static NavigationBarThemeData _buildNavigationBarTheme(ColorScheme cs) {
+    return NavigationBarThemeData(
       backgroundColor: cs.surface,
-      selectedItemColor: cs.primary,
-      unselectedItemColor: cs.onSurfaceVariant,
-      selectedLabelStyle: AppTypography.labelMedium,
-      unselectedLabelStyle: AppTypography.labelMedium,
-      type: BottomNavigationBarType.fixed,
+      indicatorColor: cs.primaryContainer,
       elevation: 0,
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return AppTypography.labelSmall.copyWith(
+          color: selected ? cs.onSurface : cs.onSurfaceVariant,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+        );
+      }),
+      iconTheme: WidgetStateProperty.resolveWith((states) {
+        final selected = states.contains(WidgetState.selected);
+        return IconThemeData(
+          color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+        );
+      }),
     );
   }
 

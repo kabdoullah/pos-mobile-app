@@ -1,6 +1,5 @@
 export 'amount_display.dart';
 export 'animated_loading.dart';
-export 'app_bottom_nav_bar.dart';
 export 'app_card.dart';
 export 'app_scaffold.dart';
 export 'app_text_field.dart';
