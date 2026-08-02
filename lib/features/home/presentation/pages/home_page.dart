@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../shared/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
+import '../../../sales/domain/entities/sale.dart';
 import '../providers/home_providers.dart';
 
 /// Premium financial dashboard with asymmetric layout and refined aesthetics.
@@ -104,6 +105,9 @@ class HomePage extends ConsumerWidget {
             const SizedBox(height: AppSpacing.xl),
 
             const _QuickActionsSection(),
+            const SizedBox(height: AppSpacing.xl),
+
+            const _RecentActivitySection(),
             const SizedBox(height: AppSpacing.xl),
           ],
         ),
@@ -245,6 +249,7 @@ class _SummaryCard extends StatelessWidget {
       context,
     ).textTheme; // ✨ un seul lookup pour l'error block
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -263,97 +268,119 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Total du jour',
-              style: AppTypography.labelMedium.copyWith(
-                color: cs.onPrimary.withValues(alpha: 0.8),
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
+      child: Stack(
+        children: [
+          // ✨ filigrane décoratif — profondeur visuelle sans nuire au contraste
+          Positioned(
+            top: -24,
+            right: -24,
+            child: Icon(
+              Icons.payments_outlined,
+              size: 160,
+              color: cs.onPrimary.withValues(alpha: 0.08),
             ),
-            const SizedBox(height: AppSpacing.md),
-            AmountDisplay(
-              amount: summary.totalAmount,
-              size: AmountSize.hero,
-              color: cs.onPrimary,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Row(
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _SummaryMetric(
-                  label: 'Nombre',
-                  child: Text(
-                    '${summary.saleCount}',
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: cs.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                Text(
+                  'Total du jour',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: cs.onPrimary.withValues(alpha: 0.8),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                _SummaryMetric(
-                  label: 'Espèces',
+                const SizedBox(height: AppSpacing.md),
+                // ✨ FittedBox — les gros montants (7+ chiffres) rétrécissent
+                // au lieu de wrapper ou déborder de la carte
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
                   child: AmountDisplay(
-                    amount: summary.cashTotal,
-                    size: AmountSize.medium,
+                    amount: summary.totalAmount,
+                    size: AmountSize.hero,
                     color: cs.onPrimary,
                   ),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                _SummaryMetric(
-                  label: 'Mobile',
-                  child: AmountDisplay(
-                    amount: summary.mobileMoneyTotal,
-                    size: AmountSize.medium,
-                    color: cs.onPrimary,
-                  ),
-                ),
-              ],
-            ),
-            if (hasError) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  Icon(
-                    Icons.warning_outlined,
-                    color: cs.onPrimary.withValues(alpha: 0.7),
-                    size: 14,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    'Données non disponibles',
-                    style: tt.labelSmall?.copyWith(
-                      color: cs.onPrimary.withValues(alpha: 0.7),
-                    ),
-                  ),
-                  if (onRetry != null) ...[
-                    const SizedBox(width: AppSpacing.sm),
-                    // ✨ TextButton : ripple + zone tactile 48px + Semantics natifs
-                    TextButton(
-                      onPressed: onRetry,
-                      style: TextButton.styleFrom(
-                        foregroundColor: cs.onPrimary,
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(48, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        textStyle: tt.labelSmall?.copyWith(
-                          decoration: TextDecoration.underline,
-                          decorationColor: cs.onPrimary,
+                const SizedBox(height: AppSpacing.xl),
+                Row(
+                  children: [
+                    _SummaryMetric(
+                      label: 'Nombre',
+                      child: Text(
+                        '${summary.saleCount}',
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: cs.onPrimary,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      child: const Text('Réessayer'),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    _SummaryMetric(
+                      label: 'Espèces',
+                      dotColor: cs.secondary,
+                      child: AmountDisplay(
+                        amount: summary.cashTotal,
+                        size: AmountSize.medium,
+                        color: cs.onPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    _SummaryMetric(
+                      label: 'Mobile',
+                      dotColor: cs.tertiary,
+                      child: AmountDisplay(
+                        amount: summary.mobileMoneyTotal,
+                        size: AmountSize.medium,
+                        color: cs.onPrimary,
+                      ),
                     ),
                   ],
+                ),
+                if (hasError) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.warning_outlined,
+                        color: cs.onPrimary.withValues(alpha: 0.7),
+                        size: 14,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        'Données non disponibles',
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onPrimary.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      if (onRetry != null) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        // ✨ TextButton : ripple + zone tactile 48px + Semantics natifs
+                        TextButton(
+                          onPressed: onRetry,
+                          style: TextButton.styleFrom(
+                            foregroundColor: cs.onPrimary,
+                            padding: EdgeInsets.zero,
+                            minimumSize: const Size(48, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            textStyle: tt.labelSmall?.copyWith(
+                              decoration: TextDecoration.underline,
+                              decorationColor: cs.onPrimary,
+                            ),
+                          ),
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
+                    ],
+                  ),
                 ],
-              ),
-            ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -361,10 +388,17 @@ class _SummaryCard extends StatelessWidget {
 
 /// Labeled metric in the summary card.
 class _SummaryMetric extends StatelessWidget {
-  const _SummaryMetric({required this.label, required this.child});
+  const _SummaryMetric({
+    required this.label,
+    required this.child,
+    this.dotColor,
+  });
 
   final String label;
   final Widget child;
+
+  /// Optional color dot preceding the label — distinguishes payment breakdowns.
+  final Color? dotColor;
 
   @override
   Widget build(BuildContext context) {
@@ -373,17 +407,174 @@ class _SummaryMetric extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(
-            label,
-            style: AppTypography.captionText.copyWith(
-              color: cs.onPrimary.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (dotColor != null) ...[
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Text(
+                label,
+                style: AppTypography.captionText.copyWith(
+                  color: cs.onPrimary.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.xs),
-          child,
+          // ✨ FittedBox — rétrécit au lieu de wrapper/déborder sur les
+          // grands montants (colonne étroite à 3 partout)
+          FittedBox(fit: BoxFit.scaleDown, child: child),
         ],
       ),
     );
   }
+}
+
+/// "Activité récente" — mini-list of today's latest sales, linking to the
+/// full history. Hidden entirely when there is nothing to show yet.
+class _RecentActivitySection extends ConsumerWidget {
+  const _RecentActivitySection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recentSalesAsync = ref.watch(recentSalesProvider);
+    final hPad = responsiveValue(
+      context,
+      small: AppSpacing.md,
+      medium: AppSpacing.lg,
+    );
+
+    return recentSalesAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (sales) {
+        if (sales.isEmpty) return const SizedBox.shrink();
+
+        final cs = Theme.of(context).colorScheme;
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: Container(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              border: Border.all(
+                color: cs.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Activité récente',
+                      style: AppTypography.labelMedium.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          StatefulNavigationShell.of(context).goBranch(2),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(48, 32),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text('Voir tout'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                for (final sale in sales) _RecentActivityRow(sale: sale),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// A single recent-sale row, tappable to open the sale's detail.
+class _RecentActivityRow extends StatelessWidget {
+  const _RecentActivityRow({required this.sale});
+
+  final Sale sale;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final receiptLabel = sale.receiptNumber > 0
+        ? 'Vente #${sale.receiptNumber}'
+        : 'Vente provisoire';
+
+    return InkWell(
+      onTap: () => context.push(Routes.saleDetail, extra: sale),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shopping_cart_outlined,
+                color: cs.onPrimaryContainer,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    receiptLabel,
+                    style: AppTypography.labelSmall.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    _relativeTimeLabel(sale.createdAt),
+                    style: AppTypography.captionText.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AmountDisplay(amount: sale.totalAmount, size: AmountSize.small),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Formats a timestamp as a short French relative-time label.
+String _relativeTimeLabel(DateTime dateTime) {
+  final diff = DateTime.now().difference(dateTime);
+  if (diff.inMinutes < 1) return 'À l\'instant';
+  if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
+  if (diff.inHours < 24) return 'Il y a ${diff.inHours} h';
+  return 'Il y a ${diff.inDays} j';
 }

@@ -1,9 +1,13 @@
 import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
 part 'home_providers.g.dart';
+
+/// Number of sales shown in the home page "recent activity" mini-list.
+const _recentSalesLimit = 3;
 
 /// Summarizes today's sales totals by payment method.
 class DailySummary {
@@ -39,12 +43,26 @@ class DailySummary {
 /// Streams today's sales summary — re-emits automatically on every new sale.
 @riverpod
 Stream<DailySummary> dailySummary(Ref ref) {
-  return ref.watch(salesRepositoryProvider).watchTodayStats().map(
-    (stats) => DailySummary(
-      totalAmount: stats.totalAmount,
-      saleCount: stats.saleCount,
-      cashTotal: stats.cashTotal,
-      mobileMoneyTotal: stats.mobileMoneyTotal,
-    ),
-  );
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchTodayStats()
+      .map(
+        (stats) => DailySummary(
+          totalAmount: stats.totalAmount,
+          saleCount: stats.saleCount,
+          cashTotal: stats.cashTotal,
+          mobileMoneyTotal: stats.mobileMoneyTotal,
+        ),
+      );
+}
+
+/// Streams the most recent sales of the day, newest first — for the home
+/// page "recent activity" mini-list.
+@riverpod
+Stream<List<Sale>> recentSales(Ref ref) {
+  final today = DateTime.now();
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSalesByDateRange(today, today)
+      .map((sales) => sales.take(_recentSalesLimit).toList());
 }

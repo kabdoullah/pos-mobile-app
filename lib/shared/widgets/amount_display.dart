@@ -63,6 +63,9 @@ class AmountDisplay extends StatelessWidget {
     final formattedAmount = _formatAmount();
 
     return RichText(
+      // ✨ centre les lignes entre elles quand le montant passe à la ligne
+      // (ex: carte résumé 3 colonnes) — RichText aligne à gauche par défaut
+      textAlign: TextAlign.center,
       text: TextSpan(
         children: [
           TextSpan(text: formattedAmount, style: textStyle),
