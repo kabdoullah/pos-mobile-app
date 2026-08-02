@@ -118,3 +118,17 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 - `core/utils/phone_formatter.dart` — Ivorian phone number formatting/validation
 - `features/auth/presentation/providers/auth_providers.dart` — `AuthStatus` sealed class + `Auth` notifier
 - `features/sales/data/models/sale_mappers.dart` — domain `Sale` ↔ API/database (includes Decimal handling)
+
+## Global rules
+
+- No hardcoded secrets — everything via secure storage or build config, never committed.
+- Never `git push --force` on main.
+- Always plan mode before non-trivial tasks (Shift+Tab × 2).
+- Before any architectural change, read ADRs in `docs/adr/` (0001–0006 in order). If your decision differs, propose a new ADR that supersedes the old one.
+
+## See also
+
+- Architecture details: `docs/architecture.md`
+- Data model: `docs/data-model.md`
+- ADRs: `docs/adr/`
+- Conventions (path-scoped): `.claude/rules/mobile-conventions.md`
