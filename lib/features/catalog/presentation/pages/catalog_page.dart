@@ -65,6 +65,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
 
     return AppScaffold(
       title: 'Catalogue',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.upload_file),
+          tooltip: 'Importer des produits',
+          onPressed: () => context.push(Routes.productImport),
+        ),
+      ],
       floatingActionButton: FloatingActionButton(
         onPressed: _openProductForm,
         tooltip: 'Ajouter un produit',
@@ -136,7 +143,8 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                           child: EmptyStateIllustrated(
                             illustration: Illustrations.emptyCatalog,
                             title: 'Aucun produit',
-                            message: 'Tirez vers le bas pour synchroniser'
+                            message:
+                                'Tirez vers le bas pour synchroniser'
                                 ' ou ajoutez votre premier produit',
                             actionLabel: 'Ajouter un produit',
                             onAction: _openProductForm,

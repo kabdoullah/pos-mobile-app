@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/network/api_models/pagination.dart';
+import '../../../../core/network/api_models/product_bulk_dto.dart';
 import '../../../../core/network/api_models/product_dto.dart';
 
 part 'catalog_remote_datasource.g.dart';
@@ -49,4 +52,12 @@ abstract class CatalogRemoteDataSource {
   /// Endpoint: DELETE /api/v1/products/{id}
   @DELETE('/api/v1/products/{id}')
   Future<void> deleteProduct(@Path('id') String id);
+
+  /// Imports products in bulk from a CSV or Excel file.
+  /// Endpoint: POST /api/v1/products/bulk/file
+  @POST('/api/v1/products/bulk/file')
+  @MultiPart()
+  Future<ProductBulkCreateResponseDto> importProductsFromFile(
+    @Part(name: 'file') File file,
+  );
 }

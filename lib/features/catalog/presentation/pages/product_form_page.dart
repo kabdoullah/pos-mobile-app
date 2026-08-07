@@ -224,6 +224,20 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(isEditMode ? 'Modifier le produit' : 'Nouveau produit'),
+        actions: isEditMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.history),
+                  tooltip: 'Historique du stock',
+                  onPressed: () => context.push(
+                    Routes.productStockHistory.replaceFirst(
+                      ':id',
+                      widget.productId!,
+                    ),
+                  ),
+                ),
+              ]
+            : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

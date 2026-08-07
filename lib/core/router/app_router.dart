@@ -14,8 +14,10 @@ import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/catalog/presentation/pages/catalog_page.dart';
 import '../../features/catalog/presentation/pages/product_form_page.dart';
+import '../../features/catalog/presentation/pages/product_import_page.dart';
 import '../../features/catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/inventory/presentation/pages/stock_history_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
 import '../../features/sales/presentation/pages/payment_page.dart';
 import '../../features/sales/presentation/pages/sale_success_page.dart';
@@ -77,6 +79,12 @@ abstract class Routes {
 
   /// Edit product (path parameter :id).
   static const String productEdit = '/catalog/:id/edit';
+
+  /// Product stock movement history (path parameter :id).
+  static const String productStockHistory = '/catalog/:id/movements';
+
+  /// Bulk product import from a CSV/Excel file.
+  static const String productImport = '/catalog/import';
 
   /// Barcode scanner modal.
   static const String barcodeScanner = '/scan';
@@ -230,6 +238,19 @@ GoRouter appRouter(Ref ref) {
                       final id = state.pathParameters['id']!;
                       return ProductFormPage(productId: id);
                     },
+                  ),
+                  GoRoute(
+                    path: ':id/movements', // Résout en /catalog/:id/movements
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return StockHistoryPage(productId: id);
+                    },
+                  ),
+                  GoRoute(
+                    path: 'import', // Résout en /catalog/import
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const ProductImportPage(),
                   ),
                 ],
               ),

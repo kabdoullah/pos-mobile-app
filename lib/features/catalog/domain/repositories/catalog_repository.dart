@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import '../entities/product.dart';
+import '../entities/product_import_result.dart';
 import '../entities/product_page.dart';
 
 /// Abstract repository for catalog operations.
@@ -36,4 +40,10 @@ abstract class CatalogRepository {
 
   /// Find a product by barcode. Returns null if not found.
   Future<Product?> getByBarcode(String barcode);
+
+  /// Import products in bulk from a CSV or Excel file (best-effort, row by row).
+  Future<ProductImportResult> importProductsFromFile(File file);
+
+  /// Download a blank import template (`csv` or `xlsx`).
+  Future<Uint8List> downloadImportTemplate({required String format});
 }

@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
@@ -7,21 +11,34 @@ import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../core/utils/barcode_utils.dart';
 import '../../../../database/app_database.dart' hide Product;
 import '../../domain/entities/product.dart' as product_domain;
+import '../../domain/entities/product_import_result.dart';
 import '../../domain/entities/product_page.dart';
 import '../../domain/repositories/catalog_repository.dart';
+import '../datasources/catalog_remote_datasource.dart';
+import '../models/product_import_mappers.dart';
 import '../models/product_mappers.dart';
 
 /// Concrete implementation of [CatalogRepository].
 /// Local-first: reads/writes drift database. Changes enqueued for sync.
+/// Bulk import and template download are the exception — they call the
+/// remote API directly (no drift mirror), since they are one-shot actions
+/// whose result is reconciled locally via a normal sync pull afterward.
 class CatalogRepositoryImpl implements CatalogRepository {
   /// Creates a CatalogRepositoryImpl.
-  CatalogRepositoryImpl({required this.db, required this.syncQueue});
+  CatalogRepositoryImpl({
+    required this.db,
+    required this.syncQueue,
+    required this.dio,
+  });
 
   /// Local drift database instance.
   final AppDatabase db;
 
   /// Sync queue repository for marking changes.
   final SyncQueueRepository syncQueue;
+
+  /// Dio instance used for bulk import / template download.
+  final Dio dio;
 
   @override
   Future<ProductPage> getProducts({
@@ -231,4 +248,20 @@ class CatalogRepositoryImpl implements CatalogRepository {
     return record?.toDomain();
   }
 
+  @override
+  Future<ProductImportResult> importProductsFromFile(File file) async {
+    final remote = CatalogRemoteDataSource(dio);
+    final response = await remote.importProductsFromFile(file);
+    return response.toDomain();
+  }
+
+  @override
+  Future<Uint8List> downloadImportTemplate({required String format}) async {
+    final response = await dio.get<List<int>>(
+      '/api/v1/products/bulk/template',
+      queryParameters: {'format': format},
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(response.data!);
+  }
 }
