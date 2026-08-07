@@ -175,16 +175,15 @@ class SyncQueueRepository {
 
   /// Reset a queue entry to pending with an updated payload.
   Future<bool> resetWithPayload(int id, String newPayload) async {
-    final rowsAffected = await (_db.update(
-      _db.syncQueue,
-    )..where((t) => t.id.equals(id))).write(
-      SyncQueueCompanion(
-        status: const drift.Value('pending'),
-        payload: drift.Value(newPayload),
-        retryCount: const drift.Value(0),
-        lastError: const drift.Value(null),
-      ),
-    );
+    final rowsAffected =
+        await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
+          SyncQueueCompanion(
+            status: const drift.Value('pending'),
+            payload: drift.Value(newPayload),
+            retryCount: const drift.Value(0),
+            lastError: const drift.Value(null),
+          ),
+        );
     return rowsAffected > 0;
   }
 

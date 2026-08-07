@@ -13,7 +13,10 @@ import 'core/network/network_providers.dart';
 void main() async {
   final binding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: binding);
-  AppConfig.setup(flavor: AppFlavor.dev, apiUrl: 'https://pos-mobile-vkuh.onrender.com');
+  AppConfig.setup(
+    flavor: AppFlavor.dev,
+    apiUrl: 'https://pos-mobile-vkuh.onrender.com',
+  );
   await initializeDateFormatting('fr_FR');
   runApp(
     ProviderScope(

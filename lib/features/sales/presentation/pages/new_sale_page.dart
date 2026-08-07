@@ -40,6 +40,10 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
+      // Catalogue barcodes are EAN-13/EAN-8. Restricting formats prevents
+      // ML Kit from misreading a partially-focused EAN-13 as a spurious
+      // (checksum-valid but wrong) UPC-A/Code128 symbol.
+      formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8],
     );
     unawaited(_checkPermission());
   }
@@ -152,7 +156,9 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     }
 
     if (result == ScanResult.stockExceeded && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Stock insuffisant pour ce produit'),
           duration: Duration(seconds: 2),
@@ -164,6 +170,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     if (mounted) {
       final cs = Theme.of(context).colorScheme;
       final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
       messenger.showSnackBar(
         SnackBar(
           duration: const Duration(seconds: 8),
@@ -181,7 +188,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                       visualDensity: VisualDensity.compact,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    onPressed: messenger.hideCurrentSnackBar,
+                    onPressed: messenger.clearSnackBars,
                     child: const Text('Annuler'),
                   ),
                   TextButton(
@@ -191,7 +198,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
                     onPressed: () {
-                      messenger.hideCurrentSnackBar();
+                      messenger.clearSnackBars();
                       unawaited(context.push(Routes.productNew, extra: code));
                     },
                     child: const Text('Ajouter au catalogue'),
@@ -628,7 +635,8 @@ class _CartPanel extends StatelessWidget {
                               item.productId,
                               item.quantity - 1,
                             ),
-                            onIncrease: item.availableStock != null &&
+                            onIncrease:
+                                item.availableStock != null &&
                                     item.quantity >= item.availableStock!
                                 ? null
                                 : () => onUpdateQuantity(
@@ -800,8 +808,8 @@ class _QuantityButtonState extends State<_QuantityButton> {
           color: widget.onTap == null
               ? cs.surfaceContainerHighest
               : _isPressed
-                  ? cs.primary
-                  : cs.primaryContainer,
+              ? cs.primary
+              : cs.primaryContainer,
           borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
           boxShadow: _isPressed
               ? [
@@ -818,8 +826,8 @@ class _QuantityButtonState extends State<_QuantityButton> {
           color: widget.onTap == null
               ? cs.onSurface.withValues(alpha: 0.38)
               : _isPressed
-                  ? cs.onPrimary
-                  : cs.primary,
+              ? cs.onPrimary
+              : cs.primary,
         ),
       ),
     );

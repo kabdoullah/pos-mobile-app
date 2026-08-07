@@ -129,93 +129,91 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(
-            children: [
-              const Spacer(),
-              // Lock icon in branded container
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              children: [
+                const Spacer(),
+                // Lock icon in branded container
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                  ),
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 36,
+                    color: cs.onPrimaryContainer,
+                  ),
                 ),
-                child: Icon(
-                  Icons.lock_rounded,
-                  size: 36,
-                  color: cs.onPrimaryContainer,
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  '${_timeGreeting()} $storeName',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                '${_timeGreeting()} $storeName',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Entrez votre PIN',
+                  style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Entrez votre PIN',
-                style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              // Dot indicators — shake on wrong PIN
-              SlideTransition(
-                position: _shakeAnimation,
-                child: PinDots(filledCount: _pin.length),
-              ),
-              // Error slot — fixed height to avoid layout jump
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: systemError != null
-                    ? Padding(
-                        key: ValueKey(systemError),
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            systemError,
-                            style: AppTypography.errorText.copyWith(
-                              color: cs.error,
+                const SizedBox(height: AppSpacing.xl),
+                // Dot indicators — shake on wrong PIN
+                SlideTransition(
+                  position: _shakeAnimation,
+                  child: PinDots(filledCount: _pin.length),
+                ),
+                // Error slot — fixed height to avoid layout jump
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: systemError != null
+                      ? Padding(
+                          key: ValueKey(systemError),
+                          padding: const EdgeInsets.only(top: AppSpacing.sm),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              systemError,
+                              style: AppTypography.errorText.copyWith(
+                                color: cs.error,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
-                        ),
-                      )
-                    : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
-              ),
-              const Spacer(),
-              // Custom numpad — no system keyboard
-              if (isLoading)
-                const SizedBox(
-                  height: 290,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                PinNumpad(
-                  onDigit: _onDigit,
-                  onBackspace: _onBackspace,
-                  enabled: !isLoading,
+                        )
+                      : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
                 ),
-              const SizedBox(height: AppSpacing.sm),
-              TextButton(
-                onPressed: _onForgotPin,
-                child: const Text("J'ai oublié mon PIN"),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
+                const Spacer(),
+                // Custom numpad — no system keyboard
+                if (isLoading)
+                  const SizedBox(
+                    height: 290,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  PinNumpad(
+                    onDigit: _onDigit,
+                    onBackspace: _onBackspace,
+                    enabled: !isLoading,
+                  ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: _onForgotPin,
+                  child: const Text("J'ai oublié mon PIN"),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
-
-

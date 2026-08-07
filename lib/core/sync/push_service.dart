@@ -251,7 +251,9 @@ class PushService {
               }
             } else {
               // Server genuinely has a newer version — accept it.
-              await _updateProductFromServerState(conflictResponse.serverState!);
+              await _updateProductFromServerState(
+                conflictResponse.serverState!,
+              );
               _logger?.i(
                 'Product ${entry.entityId} conflict resolved (server won)',
               );
@@ -267,11 +269,7 @@ class PushService {
                 ..['barcode'] = null;
               await (_db.update(_db.products)
                     ..where((p) => p.id.equals(entry.entityId)))
-                  .write(
-                    const ProductsCompanion(
-                      barcode: drift.Value(null),
-                    ),
-                  );
+                  .write(const ProductsCompanion(barcode: drift.Value(null)));
               await _queueRepository.resetWithPayload(
                 entry.id,
                 jsonEncode(stripped),

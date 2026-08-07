@@ -1,0 +1,138 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'catalog_providers.dart';
+
+// **************************************************************************
+// RiverpodGenerator
+// **************************************************************************
+
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// CatalogListNotifier manages product list with pagination and search.
+
+@ProviderFor(CatalogList)
+final catalogListProvider = CatalogListProvider._();
+
+/// CatalogListNotifier manages product list with pagination and search.
+final class CatalogListProvider
+    extends $AsyncNotifierProvider<CatalogList, List<Product>> {
+  /// CatalogListNotifier manages product list with pagination and search.
+  CatalogListProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'catalogListProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$catalogListHash();
+
+  @$internal
+  @override
+  CatalogList create() => CatalogList();
+}
+
+String _$catalogListHash() => r'ea8de821bd77beba9c581fe796da51b97382f6e3';
+
+/// CatalogListNotifier manages product list with pagination and search.
+
+abstract class _$CatalogList extends $AsyncNotifier<List<Product>> {
+  FutureOr<List<Product>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<List<Product>>, List<Product>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<Product>>, List<Product>>,
+              AsyncValue<List<Product>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}
+
+/// Get a single product by ID for edit form.
+
+@ProviderFor(product)
+final productProvider = ProductFamily._();
+
+/// Get a single product by ID for edit form.
+
+final class ProductProvider
+    extends
+        $FunctionalProvider<AsyncValue<Product?>, Product?, FutureOr<Product?>>
+    with $FutureModifier<Product?>, $FutureProvider<Product?> {
+  /// Get a single product by ID for edit form.
+  ProductProvider._({
+    required ProductFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'productProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$productHash();
+
+  @override
+  String toString() {
+    return r'productProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Product?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Product?> create(Ref ref) {
+    final argument = this.argument as String;
+    return product(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is ProductProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$productHash() => r'c4b0094f15a99fed91da3547c2a6f45979df978d';
+
+/// Get a single product by ID for edit form.
+
+final class ProductFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Product?>, String> {
+  ProductFamily._()
+    : super(
+        retry: null,
+        name: r'productProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Get a single product by ID for edit form.
+
+  ProductProvider call(String id) =>
+      ProductProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'productProvider';
+}

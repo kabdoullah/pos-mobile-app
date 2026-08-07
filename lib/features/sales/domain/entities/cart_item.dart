@@ -11,6 +11,7 @@ sealed class CartItem with _$CartItem {
     required String productName,
     required Decimal unitPrice,
     required int quantity,
+
     /// Stock disponible au moment de l'ajout au panier (null = illimité).
     int? availableStock,
   }) = _CartItem;
