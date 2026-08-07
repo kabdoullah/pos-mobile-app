@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
@@ -11,17 +12,74 @@ import '../../../../shared/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../providers/home_providers.dart';
+import '../providers/home_showcase_provider.dart';
 
 /// Premium financial dashboard with asymmetric layout and refined aesthetics.
-class HomePage extends ConsumerWidget {
+///
+/// Runs a one-time contextual spotlight tour (via `showcaseview`) on first
+/// visit, once the daily summary has finished loading — see [_tryStartShowcase].
+class HomePage extends ConsumerStatefulWidget {
   /// Creates a [HomePage].
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final _summaryCardKey = GlobalKey();
+  final _newSaleButtonKey = GlobalKey();
+  final _quickActionsKey = GlobalKey();
+  bool _showcaseStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ShowcaseView.register(
+      enableAutoScroll: true,
+      onFinish: _markShowcaseSeen,
+      onDismiss: (_) => _markShowcaseSeen(),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => _tryStartShowcase());
+  }
+
+  @override
+  void dispose() {
+    ShowcaseView.get().unregister();
+    super.dispose();
+  }
+
+  void _markShowcaseSeen() =>
+      ref.read(homeShowcaseSeenProvider.notifier).markSeen();
+
+  /// Starts the tour once both the "already seen" flag and the daily
+  /// summary have settled — starting earlier risks spotlighting a button
+  /// whose position is about to shift once [dailySummaryProvider] resolves
+  /// (the loading indicator is much shorter than the summary card).
+  void _tryStartShowcase() {
+    if (_showcaseStarted || !mounted) return;
+    if (ref.read(homeShowcaseSeenProvider) != false) return;
+    if (ref.read(dailySummaryProvider).isLoading) return;
+    _showcaseStarted = true;
+    ShowcaseView.get().startShowCase([
+      _summaryCardKey,
+      _newSaleButtonKey,
+      _quickActionsKey,
+    ]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dailySummaryAsync = ref.watch(dailySummaryProvider);
     final storeAsync = ref.watch(storeConfigProvider);
+    ref.listen<AsyncValue<DailySummary>>(dailySummaryProvider, (_, next) {
+      if (!next.isLoading) _tryStartShowcase();
+    });
+    ref.listen<bool?>(homeShowcaseSeenProvider, (_, next) {
+      if (next != null) _tryStartShowcase();
+    });
 
+    final cs = Theme.of(context).colorScheme;
     final storeName =
         storeAsync.whenOrNull(data: (s) => s?.name) ?? 'Ma boutique';
     final dateLabel = DateFormat('EEEE d MMMM', 'fr_FR').format(DateTime.now());
@@ -69,34 +127,51 @@ class HomePage extends ConsumerWidget {
             // Daily summary card
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPad),
-              child: dailySummaryAsync.when(
-                loading: () => const AppLoadingIndicator(),
-                error: (_, _) => _SummaryCard(
-                  summary: DailySummary.empty,
-                  hasError: true,
-                  onRetry: () => ref.invalidate(dailySummaryProvider),
+              child: _homeShowcase(
+                key: _summaryCardKey,
+                cs: cs,
+                title: 'Résumé du jour',
+                description:
+                    'Suivez votre chiffre d\'affaires : total, espèces et '
+                    'mobile money.',
+                targetBorderRadius: BorderRadius.circular(AppSpacing.radiusXl),
+                child: dailySummaryAsync.when(
+                  loading: () => const AppLoadingIndicator(),
+                  error: (_, _) => _SummaryCard(
+                    summary: DailySummary.empty,
+                    hasError: true,
+                    onRetry: () => ref.invalidate(dailySummaryProvider),
+                  ),
+                  data: (summary) => _SummaryCard(summary: summary),
                 ),
-                data: (summary) => _SummaryCard(summary: summary),
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
 
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPad),
-              child: SizedBox(
-                width: double.infinity,
-                height: AppSpacing.buttonHeight,
-                child: FilledButton.icon(
-                  onPressed: () => context.push(Routes.newSale),
-                  icon: const Icon(Icons.point_of_sale, size: 22),
-                  label: const Text('NOUVELLE VENTE'),
-                  style: FilledButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    ),
-                    textStyle: AppTypography.labelLarge.copyWith(
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8,
+              child: _homeShowcase(
+                key: _newSaleButtonKey,
+                cs: cs,
+                title: 'Nouvelle vente',
+                description: 'Démarrez une nouvelle vente en un tap.',
+                child: SizedBox(
+                  width: double.infinity,
+                  height: AppSpacing.buttonHeight,
+                  child: FilledButton.icon(
+                    onPressed: () => context.push(Routes.newSale),
+                    icon: const Icon(Icons.point_of_sale, size: 22),
+                    label: const Text('NOUVELLE VENTE'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMd,
+                        ),
+                      ),
+                      textStyle: AppTypography.labelLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.8,
+                      ),
                     ),
                   ),
                 ),
@@ -104,7 +179,15 @@ class HomePage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
 
-            const _QuickActionsSection(),
+            _homeShowcase(
+              key: _quickActionsKey,
+              cs: cs,
+              title: 'Accès rapide',
+              description:
+                  'Catalogue, historique des ventes ou ajout d\'un produit — '
+                  'tout est ici.',
+              child: const _QuickActionsSection(),
+            ),
             const SizedBox(height: AppSpacing.xl),
 
             const _RecentActivitySection(),
@@ -114,6 +197,33 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Wraps [child] in a [Showcase] styled with the Cacao & Or palette instead
+/// of the package's default black/white tooltip.
+Showcase _homeShowcase({
+  required GlobalKey key,
+  required String title,
+  required String description,
+  required Widget child,
+  required ColorScheme cs,
+  BorderRadius? targetBorderRadius,
+}) {
+  return Showcase(
+    key: key,
+    title: title,
+    description: description,
+    titleTextStyle: AppTypography.titleMedium.copyWith(color: cs.onPrimary),
+    descTextStyle: AppTypography.bodyMedium.copyWith(
+      color: cs.onPrimary.withValues(alpha: 0.9),
+    ),
+    tooltipBackgroundColor: cs.primary,
+    tooltipBorderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+    targetBorderRadius:
+        targetBorderRadius ?? BorderRadius.circular(AppSpacing.radiusMd),
+    overlayColor: cs.scrim,
+    child: child,
+  );
 }
 
 /// Quick access section for frequent POS operations.

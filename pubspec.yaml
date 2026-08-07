@@ -38,6 +38,7 @@ dependencies:
   rxdart: ^0.28.0
   share_plus: ^12.0.2
   shared_preferences: ^2.5.5
+  showcaseview: ^5.1.0
   sqlite3_flutter_libs: ^0.5.20
   url_launcher: ^6.3.0
   uuid: ^4.4.0
