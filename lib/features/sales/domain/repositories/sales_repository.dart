@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 
 import '../entities/cart_item.dart';
@@ -45,4 +47,8 @@ abstract class SalesRepository {
     DateTime startDate,
     DateTime endDate,
   );
+
+  /// Downloads the PDF receipt for a sale from the server (one-shot, not
+  /// cached locally).
+  Future<Uint8List> downloadReceiptPdf(String saleId);
 }

@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
@@ -11,6 +15,7 @@ import '../../../../shared/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
+import '../providers/sales_providers.dart';
 
 /// Sale detail page — read-only view of a completed sale.
 ///
@@ -133,6 +138,14 @@ class SaleDetailPage extends ConsumerWidget {
               icon: Icons.print,
               onPressed: () => _handlePrint(context, ref),
             ),
+            if (sale.receiptNumber > 0) ...[
+              const SizedBox(height: AppSpacing.md),
+              SecondaryButton(
+                label: 'Télécharger le reçu (PDF)',
+                icon: Icons.picture_as_pdf,
+                onPressed: () => _handleDownloadPdf(context, ref),
+              ),
+            ],
           ],
         ),
       ),
@@ -186,6 +199,34 @@ class SaleDetailPage extends ConsumerWidget {
             backgroundColor: Theme.of(
               context,
             ).colorScheme.error, // ✨ cs.error — dark-mode aware
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handles downloading and sharing the PDF receipt.
+  Future<void> _handleDownloadPdf(BuildContext context, WidgetRef ref) async {
+    try {
+      final bytes = await ref.read(
+        downloadSaleReceiptPdfProvider(sale.id).future,
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/recu_${sale.receiptNumber}.pdf');
+      await file.writeAsBytes(bytes);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: 'Reçu de vente',
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorToFrench(e)),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

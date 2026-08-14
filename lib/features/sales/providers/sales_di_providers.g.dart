@@ -53,7 +53,7 @@ final class SalesRepositoryProvider
   }
 }
 
-String _$salesRepositoryHash() => r'bf7a91f07eb2fc840f19c6ca719ea9c3b29515bf';
+String _$salesRepositoryHash() => r'dd95c0d3baeee77cdc2bc036cc08dd2d53dea5a2';
 
 /// Provides the create sale use case (business logic).
 

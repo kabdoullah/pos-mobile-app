@@ -241,3 +241,88 @@ final class SalesHistoryFamily extends $Family
   @override
   String toString() => r'salesHistoryProvider';
 }
+
+/// Downloads the PDF receipt for a sale.
+
+@ProviderFor(downloadSaleReceiptPdf)
+final downloadSaleReceiptPdfProvider = DownloadSaleReceiptPdfFamily._();
+
+/// Downloads the PDF receipt for a sale.
+
+final class DownloadSaleReceiptPdfProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Uint8List>,
+          Uint8List,
+          FutureOr<Uint8List>
+        >
+    with $FutureModifier<Uint8List>, $FutureProvider<Uint8List> {
+  /// Downloads the PDF receipt for a sale.
+  DownloadSaleReceiptPdfProvider._({
+    required DownloadSaleReceiptPdfFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'downloadSaleReceiptPdfProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$downloadSaleReceiptPdfHash();
+
+  @override
+  String toString() {
+    return r'downloadSaleReceiptPdfProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Uint8List> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Uint8List> create(Ref ref) {
+    final argument = this.argument as String;
+    return downloadSaleReceiptPdf(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is DownloadSaleReceiptPdfProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$downloadSaleReceiptPdfHash() =>
+    r'9fb8bed472356294a08c6e4a18fa9ab88e34baef';
+
+/// Downloads the PDF receipt for a sale.
+
+final class DownloadSaleReceiptPdfFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Uint8List>, String> {
+  DownloadSaleReceiptPdfFamily._()
+    : super(
+        retry: null,
+        name: r'downloadSaleReceiptPdfProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Downloads the PDF receipt for a sale.
+
+  DownloadSaleReceiptPdfProvider call(String saleId) =>
+      DownloadSaleReceiptPdfProvider._(argument: saleId, from: this);
+
+  @override
+  String toString() => r'downloadSaleReceiptPdfProvider';
+}

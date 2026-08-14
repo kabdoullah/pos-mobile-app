@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
@@ -11,15 +14,25 @@ import '../models/sale_mappers.dart';
 
 /// Concrete implementation of [SalesRepository].
 /// Local-first: reads/writes drift database. Changes enqueued for sync.
+/// Receipt PDF download is the exception — it calls the remote API
+/// directly (no drift mirror), since it is a one-shot action whose result
+/// is not persisted locally.
 class SalesRepositoryImpl implements SalesRepository {
   /// Creates a SalesRepositoryImpl.
-  SalesRepositoryImpl({required this.db, required this.syncQueue});
+  SalesRepositoryImpl({
+    required this.db,
+    required this.syncQueue,
+    required this.dio,
+  });
 
   /// Local drift database instance.
   final AppDatabase db;
 
   /// Sync queue repository for marking changes.
   final SyncQueueRepository syncQueue;
+
+  /// Dio instance used for receipt PDF download.
+  final Dio dio;
 
   @override
   Future<sale_entity.Sale> createSale({
@@ -260,6 +273,15 @@ class SalesRepositoryImpl implements SalesRepository {
             mobileMoneyTotal: fromInt(row.read<int>('mobile_total')),
           );
         });
+  }
+
+  @override
+  Future<Uint8List> downloadReceiptPdf(String saleId) async {
+    final response = await dio.get<List<int>>(
+      '/api/v1/sales/$saleId/receipt',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return Uint8List.fromList(response.data!);
   }
 
   /// Converts domain PaymentMethod to drift string format.

@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/network/network_providers.dart';
 import '../../../features/sync/presentation/providers/sync_providers.dart';
 import '../data/repositories/sales_repository_impl.dart';
 import '../domain/repositories/sales_repository.dart';
@@ -13,6 +14,7 @@ SalesRepository salesRepository(Ref ref) {
   return SalesRepositoryImpl(
     db: ref.read(databaseProvider),
     syncQueue: ref.read(syncQueueRepositoryProvider),
+    dio: ref.read(dioProvider),
   );
 }
 

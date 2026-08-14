@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -43,4 +45,10 @@ Stream<List<sale_entity.Sale>> salesHistory(
   return ref
       .watch(salesRepositoryProvider)
       .watchSalesByDateRange(startDate, endDate);
+}
+
+/// Downloads the PDF receipt for a sale.
+@riverpod
+Future<Uint8List> downloadSaleReceiptPdf(Ref ref, String saleId) {
+  return ref.read(salesRepositoryProvider).downloadReceiptPdf(saleId);
 }

@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
+import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -14,6 +18,7 @@ import '../../domain/entities/sale.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
+import '../providers/sales_providers.dart';
 
 /// SaleSuccessPage — confirmation screen after successful sale.
 class SaleSuccessPage extends ConsumerStatefulWidget {
@@ -188,6 +193,12 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
               ),
               const SizedBox(height: AppSpacing.md),
               SecondaryButton(
+                label: 'Télécharger le reçu (PDF)',
+                icon: Icons.picture_as_pdf,
+                onPressed: () => _downloadReceiptPdf(context, ref),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SecondaryButton(
                 label: 'Nouvelle vente',
                 onPressed: () {
                   context.go(Routes.newSale);
@@ -239,6 +250,33 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
             ),
           );
         }
+      }
+    }
+  }
+
+  Future<void> _downloadReceiptPdf(BuildContext context, WidgetRef ref) async {
+    try {
+      final bytes = await ref.read(
+        downloadSaleReceiptPdfProvider(widget.sale.id).future,
+      );
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/recu_${widget.sale.receiptNumber}.pdf');
+      await file.writeAsBytes(bytes);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path, mimeType: 'application/pdf')],
+          subject: 'Reçu de vente',
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorToFrench(e)),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
       }
     }
   }
