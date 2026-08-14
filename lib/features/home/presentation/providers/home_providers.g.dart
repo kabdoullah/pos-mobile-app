@@ -97,3 +97,44 @@ final class RecentSalesProvider
 }
 
 String _$recentSalesHash() => r'add86df4d1870cad4c910f8c894286095ef7b849';
+
+/// Streams the count of products in rupture or at/below their reorder
+/// threshold — drives the home page low-stock banner.
+
+@ProviderFor(lowStockCount)
+final lowStockCountProvider = LowStockCountProvider._();
+
+/// Streams the count of products in rupture or at/below their reorder
+/// threshold — drives the home page low-stock banner.
+
+final class LowStockCountProvider
+    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
+    with $FutureModifier<int>, $StreamProvider<int> {
+  /// Streams the count of products in rupture or at/below their reorder
+  /// threshold — drives the home page low-stock banner.
+  LowStockCountProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'lowStockCountProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$lowStockCountHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<int> create(Ref ref) {
+    return lowStockCount(ref);
+  }
+}
+
+String _$lowStockCountHash() => r'144ef669259133e3a60560ba23e94949483bef97';

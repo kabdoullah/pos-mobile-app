@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
@@ -65,4 +66,11 @@ Stream<List<Sale>> recentSales(Ref ref) {
       .watch(salesRepositoryProvider)
       .watchSalesByDateRange(today, today)
       .map((sales) => sales.take(_recentSalesLimit).toList());
+}
+
+/// Streams the count of products in rupture or at/below their reorder
+/// threshold — drives the home page low-stock banner.
+@riverpod
+Stream<int> lowStockCount(Ref ref) {
+  return ref.watch(catalogRepositoryProvider).watchLowStockCount();
 }

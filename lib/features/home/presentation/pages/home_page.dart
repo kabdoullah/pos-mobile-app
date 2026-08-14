@@ -107,6 +107,9 @@ class HomePage extends ConsumerWidget {
             const _QuickActionsSection(),
             const SizedBox(height: AppSpacing.xl),
 
+            const _LowStockBanner(),
+            const SizedBox(height: AppSpacing.xl),
+
             const _RecentActivitySection(),
             const SizedBox(height: AppSpacing.xl),
           ],
@@ -222,6 +225,77 @@ class _QuickActionCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Tappable alert banner for products in rupture or below their reorder
+/// threshold. Hidden entirely when there is nothing to flag.
+class _LowStockBanner extends ConsumerWidget {
+  const _LowStockBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final countAsync = ref.watch(lowStockCountProvider);
+    final hPad = responsiveValue(
+      context,
+      small: AppSpacing.md,
+      medium: AppSpacing.lg,
+    );
+
+    return countAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (count) {
+        if (count == 0) return const SizedBox.shrink();
+
+        final cs = Theme.of(context).colorScheme;
+        final label = count == 1
+            ? '1 produit en stock faible'
+            : '$count produits en stock faible';
+
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: hPad),
+          child: InkWell(
+            onTap: () => StatefulNavigationShell.of(context).goBranch(1),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            child: Container(
+              decoration: BoxDecoration(
+                color: cs.tertiaryContainer,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    color: cs.tertiary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: cs.onTertiaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: cs.onTertiaryContainer,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
