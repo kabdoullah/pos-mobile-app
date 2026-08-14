@@ -118,91 +118,97 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
             top: AppSpacing.lg,
             bottom: AppSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: cs.outlineVariant,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
                 ),
-              ),
-              const Text('Ajuster le stock', style: AppTypography.titleMedium),
-              const SizedBox(height: AppSpacing.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DirectionOption(
-                      label: 'Entrée',
-                      icon: Icons.add_circle_outline,
-                      color: semantic.success,
-                      selected: _isEntry,
-                      onTap: () => setState(() => _isEntry = true),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: _DirectionOption(
-                      label: 'Sortie',
-                      icon: Icons.remove_circle_outline,
-                      color: cs.error,
-                      selected: !_isEntry,
-                      onTap: () => setState(() => _isEntry = false),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              AppTextField(
-                label: 'Quantité',
-                hint: 'ex: 10',
-                controller: _quantityController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                errorText: _quantityError,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Motif rapide',
-                style: AppTypography.labelMedium.copyWith(
-                  color: cs.onSurfaceVariant,
+                const Text(
+                  'Ajuster le stock',
+                  style: AppTypography.titleMedium,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (final reason in _isEntry ? _entryReasons : _exitReasons)
-                    ChoiceChip(
-                      label: Text(reason),
-                      selected: _noteController.text == reason,
-                      onSelected: (selected) => setState(() {
-                        _noteController.text = selected ? reason : '';
-                      }),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _DirectionOption(
+                        label: 'Entrée',
+                        icon: Icons.add_circle_outline,
+                        color: semantic.success,
+                        selected: _isEntry,
+                        onTap: () => setState(() => _isEntry = true),
+                      ),
                     ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Motif (optionnel)',
-                hint: 'Ou précisez...',
-                controller: _noteController,
-                maxLines: 2,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              PrimaryButton(
-                label: 'Valider l\'ajustement',
-                onPressed: _isLoading ? null : _submit,
-                isLoading: _isLoading,
-              ),
-            ],
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: _DirectionOption(
+                        label: 'Sortie',
+                        icon: Icons.remove_circle_outline,
+                        color: cs.error,
+                        selected: !_isEntry,
+                        onTap: () => setState(() => _isEntry = false),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextField(
+                  label: 'Quantité',
+                  hint: 'ex: 10',
+                  controller: _quantityController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  errorText: _quantityError,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  'Motif rapide',
+                  style: AppTypography.labelMedium.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final reason
+                        in _isEntry ? _entryReasons : _exitReasons)
+                      ChoiceChip(
+                        label: Text(reason),
+                        selected: _noteController.text == reason,
+                        onSelected: (selected) => setState(() {
+                          _noteController.text = selected ? reason : '';
+                        }),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextField(
+                  label: 'Motif (optionnel)',
+                  hint: 'Ou précisez...',
+                  controller: _noteController,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                PrimaryButton(
+                  label: 'Valider l\'ajustement',
+                  onPressed: _isLoading ? null : _submit,
+                  isLoading: _isLoading,
+                ),
+              ],
+            ),
           ),
         ),
       ),
