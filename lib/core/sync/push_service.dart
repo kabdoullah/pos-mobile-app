@@ -165,6 +165,7 @@ class PushService {
           barcode: normalizeBarcode(product.barcode),
           unitPrice: product.unitPrice,
           currentStock: product.currentStock,
+          minStock: product.minStock,
           clientUpdatedAt: product.updatedAt.toUtc().toIso8601String(),
           deleted: product.deletedAt != null,
         );
@@ -328,6 +329,12 @@ class PushService {
         ? DateTime.parse(serverState.deletedAt!)
         : null;
 
+    // min_stock is not yet known to the backend, so serverState.minStock is
+    // always null — fall back to the local value instead of erasing it.
+    final current = await (_db.select(
+      _db.products,
+    )..where((p) => p.id.equals(serverState.id))).getSingleOrNull();
+
     await _db
         .update(_db.products)
         .replace(
@@ -337,6 +344,7 @@ class PushService {
             barcode: drift.Value(normalizeBarcode(serverState.barcode)),
             unitPrice: drift.Value(serverState.unitPrice),
             currentStock: drift.Value(serverState.currentStock),
+            minStock: drift.Value(serverState.minStock ?? current?.minStock),
             dirty: const drift.Value(false), // Mark clean after sync
             updatedAt: drift.Value(DateTime.parse(serverState.updatedAt)),
             deletedAt: drift.Value(deletedAt),

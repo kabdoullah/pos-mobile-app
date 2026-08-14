@@ -24,6 +24,21 @@ class StockAdjustmentSheet extends ConsumerStatefulWidget {
 }
 
 class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
+  /// Motifs courants pour une entrée de stock.
+  static const List<String> _entryReasons = [
+    'Réception fournisseur',
+    'Retour client',
+    'Correction inventaire',
+  ];
+
+  /// Motifs courants pour une sortie de stock.
+  static const List<String> _exitReasons = [
+    'Casse',
+    'Périmé',
+    'Vol',
+    'Correction inventaire',
+  ];
+
   late TextEditingController _quantityController;
   late TextEditingController _noteController;
   bool _isEntry = true;
@@ -85,6 +100,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
 
     return Container(
       decoration: BoxDecoration(
@@ -125,7 +141,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                     child: _DirectionOption(
                       label: 'Entrée',
                       icon: Icons.add_circle_outline,
-                      color: AppColors.success,
+                      color: semantic.success,
                       selected: _isEntry,
                       onTap: () => setState(() => _isEntry = true),
                     ),
@@ -135,7 +151,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                     child: _DirectionOption(
                       label: 'Sortie',
                       icon: Icons.remove_circle_outline,
-                      color: AppColors.error,
+                      color: cs.error,
                       selected: !_isEntry,
                       onTap: () => setState(() => _isEntry = false),
                     ),
@@ -152,11 +168,33 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                 errorText: _quantityError,
               ),
               const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Motif rapide',
+                style: AppTypography.labelMedium.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final reason in _isEntry ? _entryReasons : _exitReasons)
+                    ChoiceChip(
+                      label: Text(reason),
+                      selected: _noteController.text == reason,
+                      onSelected: (selected) => setState(() {
+                        _noteController.text = selected ? reason : '';
+                      }),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Motif (optionnel)',
-                hint: 'ex: Réception fournisseur, casse...',
+                hint: 'Ou précisez...',
                 controller: _noteController,
-                maxLines: 3,
+                maxLines: 2,
               ),
               const SizedBox(height: AppSpacing.xl),
               PrimaryButton(

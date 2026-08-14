@@ -13,6 +13,7 @@ _ProductDto _$ProductDtoFromJson(Map<String, dynamic> json) => _ProductDto(
   barcode: json['barcode'] as String?,
   unitPrice: json['unit_price'] as String,
   currentStock: (json['current_stock'] as num?)?.toInt(),
+  minStock: (json['min_stock'] as num?)?.toInt(),
   createdAt: json['created_at'] as String,
   updatedAt: json['updated_at'] as String,
   deletedAt: json['deleted_at'] as String?,
@@ -26,6 +27,7 @@ Map<String, dynamic> _$ProductDtoToJson(_ProductDto instance) =>
       'barcode': instance.barcode,
       'unit_price': instance.unitPrice,
       'current_stock': instance.currentStock,
+      'min_stock': instance.minStock,
       'created_at': instance.createdAt,
       'updated_at': instance.updatedAt,
       'deleted_at': instance.deletedAt,
@@ -37,6 +39,7 @@ _ProductCreateDto _$ProductCreateDtoFromJson(Map<String, dynamic> json) =>
       barcode: json['barcode'] as String?,
       unitPrice: json['unit_price'] as String,
       currentStock: (json['current_stock'] as num?)?.toInt(),
+      minStock: (json['min_stock'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ProductCreateDtoToJson(_ProductCreateDto instance) =>
@@ -45,6 +48,7 @@ Map<String, dynamic> _$ProductCreateDtoToJson(_ProductCreateDto instance) =>
       'barcode': instance.barcode,
       'unit_price': instance.unitPrice,
       'current_stock': instance.currentStock,
+      'min_stock': instance.minStock,
     };
 
 _ProductUpdateDto _$ProductUpdateDtoFromJson(Map<String, dynamic> json) =>
@@ -53,6 +57,7 @@ _ProductUpdateDto _$ProductUpdateDtoFromJson(Map<String, dynamic> json) =>
       barcode: json['barcode'] as String?,
       unitPrice: json['unit_price'] as String?,
       currentStock: (json['current_stock'] as num?)?.toInt(),
+      minStock: (json['min_stock'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$ProductUpdateDtoToJson(_ProductUpdateDto instance) =>
@@ -61,4 +66,5 @@ Map<String, dynamic> _$ProductUpdateDtoToJson(_ProductUpdateDto instance) =>
       'barcode': instance.barcode,
       'unit_price': instance.unitPrice,
       'current_stock': instance.currentStock,
+      'min_stock': instance.minStock,
     };

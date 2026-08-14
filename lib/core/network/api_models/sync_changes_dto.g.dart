@@ -46,6 +46,7 @@ _ProductSyncItemDto _$ProductSyncItemDtoFromJson(Map<String, dynamic> json) =>
       barcode: json['barcode'] as String?,
       unitPrice: json['unit_price'] as String,
       currentStock: (json['current_stock'] as num?)?.toInt(),
+      minStock: (json['min_stock'] as num?)?.toInt(),
       clientUpdatedAt: json['client_updated_at'] as String,
       deleted: json['deleted'] as bool? ?? false,
     );
@@ -57,6 +58,7 @@ Map<String, dynamic> _$ProductSyncItemDtoToJson(_ProductSyncItemDto instance) =>
       'barcode': instance.barcode,
       'unit_price': instance.unitPrice,
       'current_stock': instance.currentStock,
+      'min_stock': instance.minStock,
       'client_updated_at': instance.clientUpdatedAt,
       'deleted': instance.deleted,
     };

@@ -118,3 +118,61 @@ class AppColors {
   /// Dark background for camera-off overlay.
   static const Color cameraBackground = Color(0xFF0C0906);
 }
+
+/// Dark-mode-aware semantic colors not covered by [ColorScheme].
+///
+/// [ColorScheme.error]/[ColorScheme.errorContainer] already cover rupture de
+/// stock, and [ColorScheme.tertiary]/[ColorScheme.tertiaryContainer] already
+/// cover warning/stock bas. This extension only adds what Material 3's
+/// [ColorScheme] has no slot for: a true
+/// "success" green for stock ok / mouvement d'entrée — distinct from
+/// [ColorScheme.secondary] (or/doré), which the app already uses for
+/// "à jour"-style confirmations elsewhere.
+///
+/// Retrieve via `Theme.of(context).extension<AppSemanticColors>()!`.
+@immutable
+class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
+  /// Creates a set of semantic colors.
+  const AppSemanticColors({
+    required this.success,
+    required this.successContainer,
+  });
+
+  /// Success / stock ok / mouvement d'entrée. WCAG AA on its own brightness's
+  /// surface color.
+  final Color success;
+
+  /// Background tint for success state containers (chips, icon circles).
+  final Color successContainer;
+
+  /// Light-mode instance.
+  static const light = AppSemanticColors(
+    success: Color(0xFF166534), // forest green, WCAG AA on white
+    successContainer: Color(0xFFDCFCE7),
+  );
+
+  /// Dark-mode instance.
+  static const dark = AppSemanticColors(
+    success: Color(0xFF4ADE80), // green-400 — readable on near-black surface
+    successContainer: Color(0xFF14532D),
+  );
+
+  @override
+  AppSemanticColors copyWith({Color? success, Color? successContainer}) {
+    return AppSemanticColors(
+      success: success ?? this.success,
+      successContainer: successContainer ?? this.successContainer,
+    );
+  }
+
+  @override
+  AppSemanticColors lerp(ThemeExtension<AppSemanticColors>? other, double t) {
+    if (other is! AppSemanticColors) return this;
+    return AppSemanticColors(
+      success: Color.lerp(success, other.success, t) ?? success,
+      successContainer:
+          Color.lerp(successContainer, other.successContainer, t) ??
+          successContainer,
+    );
+  }
+}

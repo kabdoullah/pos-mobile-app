@@ -82,6 +82,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     required String unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   }) async {
     final normalizedBarcode = normalizeBarcode(barcode);
     final id = const Uuid().v4();
@@ -92,6 +93,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       unitPrice: Decimal.parse(unitPrice),
       barcode: normalizedBarcode,
       currentStock: currentStock,
+      minStock: minStock,
       updatedAt: now,
       deletedAt: null,
     );
@@ -110,6 +112,9 @@ class CatalogRepositoryImpl implements CatalogRepository {
             currentStock: currentStock != null
                 ? drift.Value(currentStock)
                 : const drift.Value.absent(),
+            minStock: minStock != null
+                ? drift.Value(minStock)
+                : const drift.Value.absent(),
             dirty: const drift.Value(true), // Mark for sync
             updatedAt: drift.Value(now),
           ),
@@ -124,6 +129,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
         barcode: normalizedBarcode,
         unitPrice: unitPrice,
         currentStock: currentStock,
+        minStock: minStock,
         clientUpdatedAt: now.toUtc().toIso8601String(),
       ).toJson(),
     );
@@ -138,6 +144,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     String? unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   }) async {
     // Fetch current product
     final current = await (db.select(
@@ -154,6 +161,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
         ? normalizeBarcode(barcode)
         : current.barcode;
     final updatedStock = currentStock ?? current.currentStock;
+    final updatedMinStock = minStock ?? current.minStock;
 
     // Update drift
     await (db.update(db.products)..where((p) => p.id.equals(id))).write(
@@ -163,6 +171,9 @@ class CatalogRepositoryImpl implements CatalogRepository {
         unitPrice: drift.Value(updatedPrice),
         currentStock: updatedStock != null
             ? drift.Value(updatedStock)
+            : const drift.Value.absent(),
+        minStock: updatedMinStock != null
+            ? drift.Value(updatedMinStock)
             : const drift.Value.absent(),
         dirty: const drift.Value(true), // Mark for sync
         updatedAt: drift.Value(now),
@@ -178,6 +189,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
         barcode: updatedBarcode,
         unitPrice: updatedPrice,
         currentStock: updatedStock,
+        minStock: updatedMinStock,
         clientUpdatedAt: now.toUtc().toIso8601String(),
       ).toJson(),
     );
@@ -188,6 +200,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       unitPrice: Decimal.parse(updatedPrice),
       barcode: updatedBarcode,
       currentStock: updatedStock,
+      minStock: updatedMinStock,
       updatedAt: now,
       deletedAt: null,
     );
@@ -219,6 +232,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
         barcode: current.barcode,
         unitPrice: current.unitPrice,
         currentStock: current.currentStock,
+        minStock: current.minStock,
         clientUpdatedAt: now.toUtc().toIso8601String(),
         deleted: true,
       ).toJson(),
@@ -253,6 +267,20 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final remote = CatalogRemoteDataSource(dio);
     final response = await remote.importProductsFromFile(file);
     return response.toDomain();
+  }
+
+  @override
+  Stream<int> watchLowStockCount() {
+    return (db.select(db.products)..where(
+          (p) =>
+              p.deletedAt.isNull() &
+              p.currentStock.isNotNull() &
+              (p.currentStock.equals(0) |
+                  (p.minStock.isNotNull() &
+                      p.currentStock.isSmallerOrEqual(p.minStock))),
+        ))
+        .watch()
+        .map((rows) => rows.length);
   }
 
   @override

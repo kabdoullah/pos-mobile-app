@@ -56,6 +56,19 @@ class PullService {
 
         // Upsert products (idempotent) — single batch transaction.
         if (response.products.isNotEmpty) {
+          // min_stock is not yet known to the backend: it never comes back
+          // in productDto.minStock, so blindly replacing the row on every
+          // pull would silently erase the locally-set threshold. Preserve
+          // the existing local value whenever the server doesn't send one.
+          final existingMinStocks = <String, int?>{
+            for (final row
+                in await (_db.select(_db.products)..where(
+                      (p) => p.id.isIn(response.products.map((p) => p.id)),
+                    ))
+                    .get())
+              row.id: row.minStock,
+          };
+
           await _db.batch((batch) {
             for (final productDto in response.products) {
               final deletedAt = productDto.deletedAt != null
@@ -69,6 +82,9 @@ class PullService {
                   barcode: drift.Value(normalizeBarcode(productDto.barcode)),
                   unitPrice: drift.Value(productDto.unitPrice),
                   currentStock: drift.Value(productDto.currentStock),
+                  minStock: drift.Value(
+                    productDto.minStock ?? existingMinStocks[productDto.id],
+                  ),
                   dirty: const drift.Value(false),
                   updatedAt: drift.Value(DateTime.parse(productDto.updatedAt)),
                   deletedAt: drift.Value(deletedAt),

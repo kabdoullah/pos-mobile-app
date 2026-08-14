@@ -21,6 +21,7 @@ abstract class CatalogRepository {
     required String unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   });
 
   /// Update an existing product.
@@ -30,6 +31,7 @@ abstract class CatalogRepository {
     String? unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   });
 
   /// Delete (soft delete) a product by ID.
@@ -40,6 +42,10 @@ abstract class CatalogRepository {
 
   /// Find a product by barcode. Returns null if not found.
   Future<Product?> getByBarcode(String barcode);
+
+  /// Streams the count of products in rupture (stock = 0) or at/below their
+  /// reorder threshold — re-emits on every local catalog change.
+  Stream<int> watchLowStockCount();
 
   /// Import products in bulk from a CSV or Excel file (best-effort, row by row).
   Future<ProductImportResult> importProductsFromFile(File file);

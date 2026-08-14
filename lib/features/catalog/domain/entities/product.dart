@@ -15,6 +15,9 @@ sealed class Product with _$Product {
     required Decimal unitPrice,
     String? barcode,
     int? currentStock,
+
+    /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
+    int? minStock,
     required DateTime updatedAt,
     DateTime? deletedAt,
   }) = _Product;

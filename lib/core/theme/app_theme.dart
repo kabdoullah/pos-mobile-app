@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
@@ -42,6 +43,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      extensions: const [AppSemanticColors.light],
       scaffoldBackgroundColor: const Color(0xFFFFFBF5), // ivory-warm
       textTheme: _buildTextTheme(colorScheme),
       appBarTheme: _buildAppBarTheme(colorScheme),
@@ -96,6 +98,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      extensions: const [AppSemanticColors.dark],
       scaffoldBackgroundColor: const Color(0xFF0C0906), // near-black warm cacao
       textTheme: _buildTextTheme(colorScheme),
       appBarTheme: _buildAppBarTheme(colorScheme),

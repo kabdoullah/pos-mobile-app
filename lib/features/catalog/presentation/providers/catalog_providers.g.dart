@@ -36,7 +36,7 @@ final class CatalogListProvider
   CatalogList create() => CatalogList();
 }
 
-String _$catalogListHash() => r'ea8de821bd77beba9c581fe796da51b97382f6e3';
+String _$catalogListHash() => r'2c118ecc5d80c4b37ec51199a7f66c93b21f93c0';
 
 /// CatalogListNotifier manages product list with pagination and search.
 

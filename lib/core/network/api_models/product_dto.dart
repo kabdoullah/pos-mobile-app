@@ -16,6 +16,7 @@ sealed class ProductDto with _$ProductDto {
     /// Price in FCFA, received as string from API.
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
+    @JsonKey(name: 'min_stock') int? minStock,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
     @JsonKey(name: 'deleted_at') String? deletedAt,
@@ -36,6 +37,7 @@ sealed class ProductCreateDto with _$ProductCreateDto {
     /// Price in FCFA.
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
+    @JsonKey(name: 'min_stock') int? minStock,
   }) = _ProductCreateDto;
 
   factory ProductCreateDto.fromJson(Map<String, dynamic> json) =>
@@ -51,6 +53,7 @@ sealed class ProductUpdateDto with _$ProductUpdateDto {
     String? barcode,
     @JsonKey(name: 'unit_price') String? unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
+    @JsonKey(name: 'min_stock') int? minStock,
   }) = _ProductUpdateDto;
 
   factory ProductUpdateDto.fromJson(Map<String, dynamic> json) =>

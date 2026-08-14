@@ -33,10 +33,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   late TextEditingController _priceController;
   late TextEditingController _barcodeController;
   late TextEditingController _stockController;
+  late TextEditingController _minStockController;
   late AnimationController _formAnimationController;
   String? _nameError;
   String? _priceError;
   String? _stockError;
+  String? _minStockError;
   bool _isLoading = false;
   bool _prefilled = false;
 
@@ -49,6 +51,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       text: widget.initialBarcode ?? '',
     );
     _stockController = TextEditingController();
+    _minStockController = TextEditingController();
     _formAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
@@ -62,6 +65,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     _priceController.dispose();
     _barcodeController.dispose();
     _stockController.dispose();
+    _minStockController.dispose();
     _formAnimationController.dispose();
     super.dispose();
   }
@@ -77,6 +81,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     String? nameError;
     String? priceError;
     String? stockError;
+    String? minStockError;
 
     if (_nameController.text.trim().isEmpty) {
       nameError = 'Le nom est obligatoire';
@@ -93,13 +98,22 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       stockError = 'Entrez un nombre entier valide';
     }
 
+    final minStockText = _minStockController.text.trim();
+    if (minStockText.isNotEmpty && int.tryParse(minStockText) == null) {
+      minStockError = 'Entrez un nombre entier valide';
+    }
+
     setState(() {
       _nameError = nameError;
       _priceError = priceError;
       _stockError = stockError;
+      _minStockError = minStockError;
     });
 
-    return nameError == null && priceError == null && stockError == null;
+    return nameError == null &&
+        priceError == null &&
+        stockError == null &&
+        minStockError == null;
   }
 
   Future<void> _submit() async {
@@ -114,6 +128,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       final stock = _stockController.text.trim().isEmpty
           ? null
           : int.tryParse(_stockController.text.trim());
+      final minStock = _minStockController.text.trim().isEmpty
+          ? null
+          : int.tryParse(_minStockController.text.trim());
 
       if (widget.productId == null) {
         // Create mode
@@ -124,6 +141,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               unitPrice: price,
               barcode: barcode.isEmpty ? null : barcode,
               currentStock: stock,
+              minStock: minStock,
             );
       } else {
         // Edit mode
@@ -135,6 +153,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               unitPrice: price,
               barcode: barcode.isEmpty ? null : barcode,
               currentStock: stock,
+              minStock: minStock,
             );
       }
 
@@ -209,6 +228,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
           }
           if (product.currentStock != null) {
             _stockController.text = product.currentStock!.toString();
+          }
+          if (product.minStock != null) {
+            _minStockController.text = product.minStock!.toString();
           }
         }
       });
@@ -315,10 +337,22 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   errorText: _stockError,
                 ),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.lg),
               _AnimatedFormField(
                 animation: _formAnimationController,
                 delay: 0.4,
+                child: AppTextField(
+                  label: 'Seuil d\'alerte stock bas',
+                  hint: 'Optionnel — ex: 5',
+                  controller: _minStockController,
+                  keyboardType: TextInputType.number,
+                  errorText: _minStockError,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _AnimatedFormField(
+                animation: _formAnimationController,
+                delay: 0.5,
                 child: PrimaryButton(
                   label: isEditMode ? 'Modifier' : 'Enregistrer',
                   onPressed: _isLoading ? null : _submit,
@@ -329,7 +363,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                 const SizedBox(height: AppSpacing.md),
                 _AnimatedFormField(
                   animation: _formAnimationController,
-                  delay: 0.5,
+                  delay: 0.6,
                   // ✨ cs.error — cs déjà défini en build(), SizedBox fixe supprimé
                   child: OutlinedButton.icon(
                     onPressed: _isLoading ? null : _delete,

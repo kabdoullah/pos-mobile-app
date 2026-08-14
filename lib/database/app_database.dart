@@ -20,6 +20,9 @@ class Products extends Table {
   /// Stock actuel (null = stock non géré).
   IntColumn get currentStock => integer().nullable()();
 
+  /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
+  IntColumn get minStock => integer().nullable()();
+
   /// Marqué pour synchronisation.
   BoolColumn get dirty => boolean().withDefault(const Constant(false))();
 
@@ -140,7 +143,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -154,7 +157,9 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('DROP TABLE IF EXISTS sync_queue');
         await customStatement('DROP TABLE IF EXISTS sync_metadata');
         await m.createAll();
-      } else {
+        return;
+      }
+      if (from < 4) {
         // v3 → v4: remove (saleId, productId) unique constraint from sale_items.
         // SQLite cannot drop constraints in-place — rebuild via temp table.
         await customStatement(
@@ -176,6 +181,10 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           'ALTER TABLE sale_items_new RENAME TO sale_items',
         );
+      }
+      if (from < 5) {
+        // v4 → v5: add reorder threshold to products.
+        await m.addColumn(products, products.minStock);
       }
     },
   );

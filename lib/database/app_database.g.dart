@@ -63,6 +63,17 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _minStockMeta = const VerificationMeta(
+    'minStock',
+  );
+  @override
+  late final GeneratedColumn<int> minStock = GeneratedColumn<int>(
+    'min_stock',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dirtyMeta = const VerificationMeta('dirty');
   @override
   late final GeneratedColumn<bool> dirty = GeneratedColumn<bool>(
@@ -105,6 +116,7 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     barcode,
     unitPrice,
     currentStock,
+    minStock,
     dirty,
     updatedAt,
     deletedAt,
@@ -157,6 +169,12 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         ),
       );
     }
+    if (data.containsKey('min_stock')) {
+      context.handle(
+        _minStockMeta,
+        minStock.isAcceptableOrUnknown(data['min_stock']!, _minStockMeta),
+      );
+    }
     if (data.containsKey('dirty')) {
       context.handle(
         _dirtyMeta,
@@ -206,6 +224,10 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.int,
         data['${effectivePrefix}current_stock'],
       ),
+      minStock: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_stock'],
+      ),
       dirty: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}dirty'],
@@ -243,6 +265,9 @@ class Product extends DataClass implements Insertable<Product> {
   /// Stock actuel (null = stock non géré).
   final int? currentStock;
 
+  /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
+  final int? minStock;
+
   /// Marqué pour synchronisation.
   final bool dirty;
 
@@ -257,6 +282,7 @@ class Product extends DataClass implements Insertable<Product> {
     this.barcode,
     required this.unitPrice,
     this.currentStock,
+    this.minStock,
     required this.dirty,
     required this.updatedAt,
     this.deletedAt,
@@ -272,6 +298,9 @@ class Product extends DataClass implements Insertable<Product> {
     map['unit_price'] = Variable<String>(unitPrice);
     if (!nullToAbsent || currentStock != null) {
       map['current_stock'] = Variable<int>(currentStock);
+    }
+    if (!nullToAbsent || minStock != null) {
+      map['min_stock'] = Variable<int>(minStock);
     }
     map['dirty'] = Variable<bool>(dirty);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -292,6 +321,9 @@ class Product extends DataClass implements Insertable<Product> {
       currentStock: currentStock == null && nullToAbsent
           ? const Value.absent()
           : Value(currentStock),
+      minStock: minStock == null && nullToAbsent
+          ? const Value.absent()
+          : Value(minStock),
       dirty: Value(dirty),
       updatedAt: Value(updatedAt),
       deletedAt: deletedAt == null && nullToAbsent
@@ -311,6 +343,7 @@ class Product extends DataClass implements Insertable<Product> {
       barcode: serializer.fromJson<String?>(json['barcode']),
       unitPrice: serializer.fromJson<String>(json['unitPrice']),
       currentStock: serializer.fromJson<int?>(json['currentStock']),
+      minStock: serializer.fromJson<int?>(json['minStock']),
       dirty: serializer.fromJson<bool>(json['dirty']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
@@ -325,6 +358,7 @@ class Product extends DataClass implements Insertable<Product> {
       'barcode': serializer.toJson<String?>(barcode),
       'unitPrice': serializer.toJson<String>(unitPrice),
       'currentStock': serializer.toJson<int?>(currentStock),
+      'minStock': serializer.toJson<int?>(minStock),
       'dirty': serializer.toJson<bool>(dirty),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
@@ -337,6 +371,7 @@ class Product extends DataClass implements Insertable<Product> {
     Value<String?> barcode = const Value.absent(),
     String? unitPrice,
     Value<int?> currentStock = const Value.absent(),
+    Value<int?> minStock = const Value.absent(),
     bool? dirty,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
@@ -346,6 +381,7 @@ class Product extends DataClass implements Insertable<Product> {
     barcode: barcode.present ? barcode.value : this.barcode,
     unitPrice: unitPrice ?? this.unitPrice,
     currentStock: currentStock.present ? currentStock.value : this.currentStock,
+    minStock: minStock.present ? minStock.value : this.minStock,
     dirty: dirty ?? this.dirty,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
@@ -359,6 +395,7 @@ class Product extends DataClass implements Insertable<Product> {
       currentStock: data.currentStock.present
           ? data.currentStock.value
           : this.currentStock,
+      minStock: data.minStock.present ? data.minStock.value : this.minStock,
       dirty: data.dirty.present ? data.dirty.value : this.dirty,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
@@ -373,6 +410,7 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('barcode: $barcode, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('currentStock: $currentStock, ')
+          ..write('minStock: $minStock, ')
           ..write('dirty: $dirty, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt')
@@ -387,6 +425,7 @@ class Product extends DataClass implements Insertable<Product> {
     barcode,
     unitPrice,
     currentStock,
+    minStock,
     dirty,
     updatedAt,
     deletedAt,
@@ -400,6 +439,7 @@ class Product extends DataClass implements Insertable<Product> {
           other.barcode == this.barcode &&
           other.unitPrice == this.unitPrice &&
           other.currentStock == this.currentStock &&
+          other.minStock == this.minStock &&
           other.dirty == this.dirty &&
           other.updatedAt == this.updatedAt &&
           other.deletedAt == this.deletedAt);
@@ -411,6 +451,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String?> barcode;
   final Value<String> unitPrice;
   final Value<int?> currentStock;
+  final Value<int?> minStock;
   final Value<bool> dirty;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
@@ -421,6 +462,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.barcode = const Value.absent(),
     this.unitPrice = const Value.absent(),
     this.currentStock = const Value.absent(),
+    this.minStock = const Value.absent(),
     this.dirty = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
@@ -432,6 +474,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.barcode = const Value.absent(),
     required String unitPrice,
     this.currentStock = const Value.absent(),
+    this.minStock = const Value.absent(),
     this.dirty = const Value.absent(),
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
@@ -446,6 +489,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Expression<String>? barcode,
     Expression<String>? unitPrice,
     Expression<int>? currentStock,
+    Expression<int>? minStock,
     Expression<bool>? dirty,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
@@ -457,6 +501,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (barcode != null) 'barcode': barcode,
       if (unitPrice != null) 'unit_price': unitPrice,
       if (currentStock != null) 'current_stock': currentStock,
+      if (minStock != null) 'min_stock': minStock,
       if (dirty != null) 'dirty': dirty,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
@@ -470,6 +515,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String?>? barcode,
     Value<String>? unitPrice,
     Value<int?>? currentStock,
+    Value<int?>? minStock,
     Value<bool>? dirty,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
@@ -481,6 +527,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       barcode: barcode ?? this.barcode,
       unitPrice: unitPrice ?? this.unitPrice,
       currentStock: currentStock ?? this.currentStock,
+      minStock: minStock ?? this.minStock,
       dirty: dirty ?? this.dirty,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
@@ -506,6 +553,9 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (currentStock.present) {
       map['current_stock'] = Variable<int>(currentStock.value);
     }
+    if (minStock.present) {
+      map['min_stock'] = Variable<int>(minStock.value);
+    }
     if (dirty.present) {
       map['dirty'] = Variable<bool>(dirty.value);
     }
@@ -529,6 +579,7 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('barcode: $barcode, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('currentStock: $currentStock, ')
+          ..write('minStock: $minStock, ')
           ..write('dirty: $dirty, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
@@ -2331,6 +2382,7 @@ typedef $$ProductsTableCreateCompanionBuilder =
       Value<String?> barcode,
       required String unitPrice,
       Value<int?> currentStock,
+      Value<int?> minStock,
       Value<bool> dirty,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
@@ -2343,6 +2395,7 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String?> barcode,
       Value<String> unitPrice,
       Value<int?> currentStock,
+      Value<int?> minStock,
       Value<bool> dirty,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
@@ -2380,6 +2433,11 @@ class $$ProductsTableFilterComposer
 
   ColumnFilters<int> get currentStock => $composableBuilder(
     column: $table.currentStock,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minStock => $composableBuilder(
+    column: $table.minStock,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2433,6 +2491,11 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get minStock => $composableBuilder(
+    column: $table.minStock,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get dirty => $composableBuilder(
     column: $table.dirty,
     builder: (column) => ColumnOrderings(column),
@@ -2474,6 +2537,9 @@ class $$ProductsTableAnnotationComposer
     column: $table.currentStock,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get minStock =>
+      $composableBuilder(column: $table.minStock, builder: (column) => column);
 
   GeneratedColumn<bool> get dirty =>
       $composableBuilder(column: $table.dirty, builder: (column) => column);
@@ -2518,6 +2584,7 @@ class $$ProductsTableTableManager
                 Value<String?> barcode = const Value.absent(),
                 Value<String> unitPrice = const Value.absent(),
                 Value<int?> currentStock = const Value.absent(),
+                Value<int?> minStock = const Value.absent(),
                 Value<bool> dirty = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -2528,6 +2595,7 @@ class $$ProductsTableTableManager
                 barcode: barcode,
                 unitPrice: unitPrice,
                 currentStock: currentStock,
+                minStock: minStock,
                 dirty: dirty,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
@@ -2540,6 +2608,7 @@ class $$ProductsTableTableManager
                 Value<String?> barcode = const Value.absent(),
                 required String unitPrice,
                 Value<int?> currentStock = const Value.absent(),
+                Value<int?> minStock = const Value.absent(),
                 Value<bool> dirty = const Value.absent(),
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
@@ -2550,6 +2619,7 @@ class $$ProductsTableTableManager
                 barcode: barcode,
                 unitPrice: unitPrice,
                 currentStock: currentStock,
+                minStock: minStock,
                 dirty: dirty,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,

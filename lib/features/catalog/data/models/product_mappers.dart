@@ -14,6 +14,7 @@ extension ProductDtoToDomain on ProductDto {
     unitPrice: Decimal.parse(unitPrice),
     barcode: barcode,
     currentStock: currentStock,
+    minStock: minStock,
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
   );
@@ -32,6 +33,9 @@ extension DomainProductToDrift on domain.Product {
     currentStock: currentStock != null
         ? drift.Value(currentStock)
         : const drift.Value.absent(),
+    minStock: minStock != null
+        ? drift.Value(minStock)
+        : const drift.Value.absent(),
     dirty: const drift.Value(false),
     updatedAt: drift.Value(updatedAt),
     deletedAt: deletedAt != null
@@ -49,6 +53,7 @@ extension DriftProductToDomain on drift_db.Product {
     unitPrice: Decimal.parse(unitPrice),
     barcode: barcode,
     currentStock: currentStock,
+    minStock: minStock,
     updatedAt: updatedAt,
     deletedAt: deletedAt,
   );
@@ -62,6 +67,7 @@ extension DomainProductCreateDtoMapper on domain.Product {
     barcode: barcode,
     unitPrice: unitPrice.toString(),
     currentStock: currentStock,
+    minStock: minStock,
   );
 }
 
@@ -73,5 +79,6 @@ extension DomainProductUpdateDtoMapper on domain.Product {
     barcode: barcode,
     unitPrice: unitPrice.toString(),
     currentStock: currentStock,
+    minStock: minStock,
   );
 }

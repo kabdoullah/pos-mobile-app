@@ -180,6 +180,13 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         final product = products[index];
+                        final stockStatus = product.currentStock != null
+                            ? _stockStatus(
+                                cs,
+                                product.currentStock!,
+                                product.minStock,
+                              )
+                            : null;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -216,13 +223,42 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                     ),
                                   ),
                                 ],
-                                if (product.currentStock != null) ...[
+                                if (stockStatus != null) ...[
                                   const SizedBox(height: AppSpacing.sm),
-                                  Text(
-                                    'Stock: ${product.currentStock}',
-                                    style: AppTypography.bodySmall.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          stockStatus.label,
+                                          style: AppTypography.bodySmall
+                                              .copyWith(
+                                                color: stockStatus.color,
+                                                fontWeight:
+                                                    stockStatus.emphasize
+                                                    ? FontWeight.w600
+                                                    : null,
+                                              ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => context.push(
+                                          Routes.productStockHistory
+                                              .replaceFirst(':id', product.id),
+                                        ),
+                                        icon: const Icon(
+                                          Icons.history,
+                                          size: 18,
+                                        ),
+                                        color: cs.onSurfaceVariant,
+                                        tooltip: 'Historique du stock',
+                                        visualDensity: VisualDensity.compact,
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(
+                                          minWidth: AppSpacing.minTapTarget,
+                                          minHeight: AppSpacing.minTapTarget,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ],
@@ -240,4 +276,21 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       ),
     );
   }
+}
+
+/// Stock display for a product row: only the exception (rupture, stock bas)
+/// gets color — a normal stock level stays neutral so the list stays
+/// scannable for what actually needs attention.
+({String label, Color color, bool emphasize}) _stockStatus(
+  ColorScheme cs,
+  int stock,
+  int? minStock,
+) {
+  if (stock == 0) {
+    return (label: 'Rupture de stock', color: cs.error, emphasize: true);
+  }
+  if (minStock != null && stock <= minStock) {
+    return (label: 'Stock bas: $stock', color: cs.tertiary, emphasize: true);
+  }
+  return (label: 'Stock: $stock', color: cs.onSurfaceVariant, emphasize: false);
 }

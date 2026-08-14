@@ -103,6 +103,7 @@ class CatalogList extends _$CatalogList {
     required String unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   }) async {
     final repo = ref.read(catalogRepositoryProvider);
     await repo.createProduct(
@@ -110,6 +111,7 @@ class CatalogList extends _$CatalogList {
       unitPrice: unitPrice,
       barcode: barcode,
       currentStock: currentStock,
+      minStock: minStock,
     );
     // Refresh list after creation
     await refresh();
@@ -122,6 +124,7 @@ class CatalogList extends _$CatalogList {
     String? unitPrice,
     String? barcode,
     int? currentStock,
+    int? minStock,
   }) async {
     final repo = ref.read(catalogRepositoryProvider);
     await repo.updateProduct(
@@ -130,6 +133,7 @@ class CatalogList extends _$CatalogList {
       unitPrice: unitPrice,
       barcode: barcode,
       currentStock: currentStock,
+      minStock: minStock,
     );
     // Refresh list after update
     await refresh();
