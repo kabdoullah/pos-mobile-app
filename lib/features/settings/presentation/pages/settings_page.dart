@@ -13,6 +13,7 @@ import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_mode_provider.dart';
 import '../../../../shared/widgets/index.dart';
+import '../../../auth/domain/entities/store.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../auth/presentation/pages/store_setup_page.dart';
@@ -47,32 +48,26 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // MA BOUTIQUE section
-            _SettingsSection(
-              title: 'MA BOUTIQUE',
-              children: [
-                _SettingsTile(
-                  icon: Icons.store_outlined,
-                  title: 'Informations boutique',
-                  // ✨ état loading explicite plutôt que subtitle vide
-                  subtitle: storeAsync.when(
-                    loading: () => const Text('Chargement...'),
-                    error: (_, _) => const Text('Erreur de chargement'),
-                    data: (store) => Text(
-                      store?.name ?? 'Non configurée',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  isNavigation: true,
-                  onTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute(
-                      fullscreenDialog: true,
-                      builder: (_) => const StoreSetupPage(isEditMode: true),
-                    ),
+            // Store identity hero — the one element on this page that
+            // isn't a generic settings row. Floats with margins (unlike
+            // the flush-edge section cards below) so it reads as the
+            // anchor of the page, not another list item.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.lg,
+              ),
+              child: _StoreIdentityHeader(
+                storeAsync: storeAsync,
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    fullscreenDialog: true,
+                    builder: (_) => const StoreSetupPage(isEditMode: true),
                   ),
                 ),
-              ],
+              ),
             ),
 
             // IMPRIMANTE section
@@ -492,6 +487,152 @@ class _SettingsTile extends StatelessWidget {
       contentPadding: _kTilePadding,
       onTap: onTap,
     );
+  }
+}
+
+/// Hero header for the store's identity — monogram, name, and address.
+///
+/// The one signature element on this page: everywhere else is a generic
+/// settings row, but this is *this merchant's* shop. Tapping it opens the
+/// same store-edit screen the old "Informations boutique" row used to.
+class _StoreIdentityHeader extends StatelessWidget {
+  /// Creates a [_StoreIdentityHeader].
+  const _StoreIdentityHeader({required this.storeAsync, required this.onTap});
+
+  /// Current store config — loading/error/data mirrors [storeConfigProvider].
+  final AsyncValue<Store?> storeAsync;
+
+  /// Opens the store edit page.
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return storeAsync.when(
+      loading: () => _row(
+        cs: cs,
+        avatar: Icon(
+          Icons.storefront_outlined,
+          color: cs.onSurfaceVariant,
+          size: 28,
+        ),
+        title: const Text('Chargement...'),
+        onTap: null,
+      ),
+      error: (_, _) => _row(
+        cs: cs,
+        avatar: Icon(Icons.error_outline, color: cs.error, size: 28),
+        title: Text(
+          'Erreur de chargement',
+          style: textTheme.titleMedium?.copyWith(color: cs.error),
+        ),
+        subtitle: const Text('Touchez pour réessayer'),
+        onTap: onTap,
+      ),
+      data: (store) {
+        if (store == null) {
+          return _row(
+            cs: cs,
+            avatar: Icon(
+              Icons.storefront_outlined,
+              color: cs.onPrimaryContainer,
+              size: 28,
+            ),
+            title: const Text('Configurer ma boutique'),
+            subtitle: const Text('Ajoutez le nom et l\'adresse du commerce'),
+            onTap: onTap,
+          );
+        }
+
+        final address = store.address?.trim();
+        return _row(
+          cs: cs,
+          avatar: Text(
+            _initials(store.name),
+            style: textTheme.titleMedium?.copyWith(
+              color: cs.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          title: Text(
+            store.name,
+            style: textTheme.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            address == null || address.isEmpty
+                ? 'Ajouter une adresse'
+                : address,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: onTap,
+        );
+      },
+    );
+  }
+
+  Widget _row({
+    required ColorScheme cs,
+    required Widget avatar,
+    required Widget title,
+    required VoidCallback? onTap,
+    Widget? subtitle,
+  }) {
+    return AppCard(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: cs.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: avatar,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                title,
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  DefaultTextStyle.merge(
+                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                    child: subtitle,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (onTap != null)
+            Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
+        ],
+      ),
+    );
+  }
+
+  /// First letters of up to the first two words of [name], uppercased.
+  static String _initials(String name) {
+    final words = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) {
+      return words.first
+          .substring(0, words.first.length >= 2 ? 2 : 1)
+          .toUpperCase();
+    }
+    return (words[0][0] + words[1][0]).toUpperCase();
   }
 }
 
