@@ -20,6 +20,9 @@ class CartState {
   /// Nombre d'articles (produits distincts).
   int get itemCount => items.length;
 
+  /// Nombre d'unités (somme des quantités).
+  int get unitCount => items.fold(0, (sum, item) => sum + item.quantity);
+
   /// Indique si le panier est vide.
   bool get isEmpty => items.isEmpty;
 
@@ -35,16 +38,25 @@ class Cart extends _$Cart {
   @override
   CartState build() => const CartState(items: []);
 
-  /// Ajoute un produit au panier (ou incrémente la quantité s'il y est déjà).
-  /// Retourne false si le stock serait dépassé, true sinon.
-  bool addItem(Product product) {
+  /// Quantité de [productId] déjà dans le panier (0 s'il n'y est pas).
+  int quantityOf(String productId) {
+    for (final item in state.items) {
+      if (item.productId == productId) return item.quantity;
+    }
+    return 0;
+  }
+
+  /// Ajoute [quantity] unités d'un produit au panier (ou les ajoute à la ligne
+  /// existante). Retourne false si le stock serait dépassé, true sinon.
+  bool addItem(Product product, {int quantity = 1}) {
+    assert(quantity > 0, 'La quantité ajoutée doit être positive');
     final existingIndex = state.items.indexWhere(
       (item) => item.productId == product.id,
     );
 
     if (existingIndex >= 0) {
       final existing = state.items[existingIndex];
-      final newQty = existing.quantity + 1;
+      final newQty = existing.quantity + quantity;
       if (product.currentStock != null && newQty > product.currentStock!) {
         return false;
       }
@@ -59,14 +71,14 @@ class Cart extends _$Cart {
       newItems[existingIndex] = updated;
       state = state.copyWith(items: newItems);
     } else {
-      if (product.currentStock != null && product.currentStock! < 1) {
+      if (product.currentStock != null && product.currentStock! < quantity) {
         return false;
       }
       final newItem = CartItem(
         productId: product.id,
         productName: product.name,
         unitPrice: product.unitPrice,
-        quantity: 1,
+        quantity: quantity,
         availableStock: product.currentStock,
       );
       state = state.copyWith(items: [...state.items, newItem]);

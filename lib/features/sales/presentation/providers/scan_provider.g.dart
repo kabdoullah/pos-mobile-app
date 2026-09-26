@@ -47,7 +47,7 @@ final class ScanControllerProvider
   }
 }
 
-String _$scanControllerHash() => r'7cf9ebe8ae40e742049e469a36d4222f1415cfc0';
+String _$scanControllerHash() => r'28bbb52d82ddbdeb5ac8cd8f59bf92131044a880';
 
 /// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
 /// dans le catalogue, ajout au panier.

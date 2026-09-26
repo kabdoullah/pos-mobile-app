@@ -1,11 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
@@ -15,7 +11,9 @@ import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
+import '../payment_method_label.dart';
 import '../providers/sales_providers.dart';
+import '../receipt_pdf.dart';
 
 /// Page de détail d'une vente — vue en lecture seule d'une vente terminée.
 ///
@@ -74,7 +72,7 @@ class SaleDetailPage extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            _paymentMethodLabel(sale.paymentMethod),
+                            sale.paymentMethod.label,
                             style: AppTypography.labelLarge,
                           ),
                         ],
@@ -219,19 +217,7 @@ class SaleDetailPage extends ConsumerWidget {
     Sale sale,
   ) async {
     try {
-      final bytes = await ref.read(
-        downloadSaleReceiptPdfProvider(sale.id).future,
-      );
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/recu_${sale.receiptNumber}.pdf');
-      await file.writeAsBytes(bytes);
-
-      await SharePlus.instance.share(
-        ShareParams(
-          files: [XFile(file.path, mimeType: 'application/pdf')],
-          subject: 'Reçu de vente',
-        ),
-      );
+      await shareSaleReceiptPdf(ref, sale);
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -242,15 +228,5 @@ class SaleDetailPage extends ConsumerWidget {
         );
       }
     }
-  }
-
-  static String _paymentMethodLabel(PaymentMethod method) {
-    return switch (method) {
-      PaymentMethod.cash => 'Espèces',
-      PaymentMethod.orangeMoney => 'Orange Money',
-      PaymentMethod.mtn => 'MTN',
-      PaymentMethod.wave => 'Wave',
-      PaymentMethod.mixed => 'Mixte',
-    };
   }
 }

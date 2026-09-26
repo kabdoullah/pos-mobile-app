@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import 'cart_provider.dart';
@@ -24,6 +25,10 @@ enum ScanResult {
   stockExceeded,
 }
 
+/// Résultat d'un scan, avec le produit trouvé quand il existe (pour le retour
+/// visuel : nom ajouté, stock disponible).
+typedef ScanOutcome = ({ScanResult result, Product? product});
+
 /// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
 /// dans le catalogue, ajout au panier.
 @riverpod
@@ -36,28 +41,28 @@ class ScanController extends _$ScanController {
 
   /// Traite un code-barres scanné : vérifie le délai de carence, cherche dans
   /// le catalogue, met à jour le panier.
-  Future<ScanResult> scan(String barcode) async {
+  Future<ScanOutcome> scan(String barcode) async {
     // Normalisation : retire les espaces et les caractères de contrôle GS1
     // avant toute recherche.
     final normalized = barcode.trim().replaceAll(
       RegExp(r'[\x00-\x1F\x7F]'),
       '',
     );
-    if (normalized.isEmpty) return ScanResult.notFound;
+    if (normalized.isEmpty) return (result: ScanResult.notFound, product: null);
 
     final now = DateTime.now();
     final last = _lastScanTimes[normalized];
     if (last != null && now.difference(last) < _scanCooldown) {
-      return ScanResult.cooldown;
+      return (result: ScanResult.cooldown, product: null);
     }
     _lastScanTimes[normalized] = now;
     _lastScanTimes.removeWhere((_, t) => now.difference(t) > _scanCooldown);
 
     final repo = ref.read(catalogRepositoryProvider);
     final product = await repo.getByBarcode(normalized);
-    if (product == null) return ScanResult.notFound;
+    if (product == null) return (result: ScanResult.notFound, product: null);
 
-    if (!ref.mounted) return ScanResult.notFound;
+    if (!ref.mounted) return (result: ScanResult.notFound, product: null);
 
     final cartState = ref.read(cartProvider);
     final alreadyInCart = cartState.items.any(
@@ -65,7 +70,10 @@ class ScanController extends _$ScanController {
     );
 
     final added = ref.read(cartProvider.notifier).addItem(product);
-    if (!added) return ScanResult.stockExceeded;
-    return alreadyInCart ? ScanResult.quantityIncremented : ScanResult.added;
+    if (!added) return (result: ScanResult.stockExceeded, product: product);
+    return (
+      result: alreadyInCart ? ScanResult.quantityIncremented : ScanResult.added,
+      product: product,
+    );
   }
 }

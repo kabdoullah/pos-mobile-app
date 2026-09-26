@@ -417,3 +417,102 @@ final class DownloadSaleReceiptPdfFamily extends $Family
   @override
   String toString() => r'downloadSaleReceiptPdfProvider';
 }
+
+/// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+///
+/// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+/// l'onglet Catalogue.
+
+@ProviderFor(saleProductSearch)
+final saleProductSearchProvider = SaleProductSearchFamily._();
+
+/// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+///
+/// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+/// l'onglet Catalogue.
+
+final class SaleProductSearchProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Product>>,
+          List<Product>,
+          FutureOr<List<Product>>
+        >
+    with $FutureModifier<List<Product>>, $FutureProvider<List<Product>> {
+  /// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+  ///
+  /// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+  /// l'onglet Catalogue.
+  SaleProductSearchProvider._({
+    required SaleProductSearchFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'saleProductSearchProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$saleProductSearchHash();
+
+  @override
+  String toString() {
+    return r'saleProductSearchProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Product>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Product>> create(Ref ref) {
+    final argument = this.argument as String;
+    return saleProductSearch(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SaleProductSearchProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$saleProductSearchHash() => r'135a3cacc5e860180f2919d86c6a359278850a33';
+
+/// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+///
+/// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+/// l'onglet Catalogue.
+
+final class SaleProductSearchFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<List<Product>>, String> {
+  SaleProductSearchFamily._()
+    : super(
+        retry: null,
+        name: r'saleProductSearchProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+  ///
+  /// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+  /// l'onglet Catalogue.
+
+  SaleProductSearchProvider call(String query) =>
+      SaleProductSearchProvider._(argument: query, from: this);
+
+  @override
+  String toString() => r'saleProductSearchProvider';
+}

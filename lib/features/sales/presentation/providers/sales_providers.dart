@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
 import 'cart_provider.dart';
@@ -58,4 +60,16 @@ Stream<sale_entity.Sale?> saleById(Ref ref, String id) {
 @riverpod
 Future<Uint8List> downloadSaleReceiptPdf(Ref ref, String saleId) {
   return ref.read(salesRepositoryProvider).downloadReceiptPdf(saleId);
+}
+
+/// Recherche de produits pour la caisse (nom ou code-barres, catalogue local).
+///
+/// Distincte de `catalogListProvider` : une recherche en caisse ne filtre pas
+/// l'onglet Catalogue.
+@riverpod
+Future<List<Product>> saleProductSearch(Ref ref, String query) async {
+  final page = await ref
+      .watch(catalogRepositoryProvider)
+      .getProducts(query: query, limit: 30);
+  return page.items;
 }

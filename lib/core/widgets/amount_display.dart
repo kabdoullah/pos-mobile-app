@@ -4,6 +4,13 @@ import 'package:intl/intl.dart';
 
 import '../../app/theme/app_typography.dart';
 
+/// Formate un montant FCFA avec séparateurs de milliers (ex. « 12 500 »).
+String formatAmount(Decimal amount) =>
+    NumberFormat('#,##0', 'fr_FR').format(amount.toDouble());
+
+/// Formate un montant FCFA en texte, devise comprise (ex. « 12 500 FCFA »).
+String formatFcfa(Decimal amount) => '${formatAmount(amount)} FCFA';
+
 /// Variantes de taille de l'affichage de montant.
 enum AmountSize {
   /// Petit texte (14 sp), pour les lignes d'articles.
@@ -50,17 +57,12 @@ class AmountDisplay extends StatelessWidget {
     };
   }
 
-  String _formatAmount() {
-    final formatter = NumberFormat('#,##0', 'fr_FR');
-    return formatter.format(amount.toDouble());
-  }
-
   @override
   Widget build(BuildContext context) {
     // RichText ne propage pas DefaultTextStyle — couleur explicite obligatoire.
     final defaultColor = color ?? Theme.of(context).colorScheme.onSurface;
     final textStyle = _getTextStyle().copyWith(color: defaultColor);
-    final formattedAmount = _formatAmount();
+    final formattedAmount = formatAmount(amount);
 
     return RichText(
       // ✨ centre les lignes entre elles quand le montant passe à la ligne

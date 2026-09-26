@@ -20,12 +20,9 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/inventory/presentation/pages/stock_history_page.dart';
 import '../../features/inventory/presentation/pages/stock_overview_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
-import '../../features/sales/presentation/pages/payment_page.dart';
-import '../../features/sales/presentation/pages/sale_success_page.dart';
 import '../../features/sales/presentation/pages/sales_history_page.dart';
 import '../../features/sales/presentation/pages/sale_detail_page.dart';
 import '../../features/sales/domain/entities/sale.dart';
-import '../../features/sales/domain/entities/cart_item.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/printing/presentation/pages/bluetooth_setup_page.dart';
 import 'main_shell.dart';
@@ -94,14 +91,8 @@ abstract class Routes {
   /// Modale de scan de code-barres.
   static const String barcodeScanner = '/scan';
 
-  /// Nouvelle vente (création de la vente depuis le panier).
+  /// Caisse : scan, panier, paiement et encaissement sur un seul écran.
   static const String newSale = '/sales/new';
-
-  /// Choix du moyen de paiement.
-  static const String payment = '/sales/payment';
-
-  /// Confirmation de vente réussie.
-  static const String saleSuccess = '/sales/success';
 
   /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
@@ -304,26 +295,6 @@ GoRouter appRouter(Ref ref) {
         path: Routes.newSale,
         pageBuilder: (context, state) =>
             PageTransitions.slideRight(context, state, const NewSalePage()),
-      ),
-      GoRoute(
-        path: Routes.payment,
-        pageBuilder: (context, state) =>
-            PageTransitions.scale(context, state, const PaymentPage()),
-      ),
-      GoRoute(
-        path: Routes.saleSuccess,
-        pageBuilder: (context, state) {
-          ({Sale sale, List<CartItem> items})? extra;
-          try {
-            extra = state.extra as ({Sale sale, List<CartItem> items})?;
-          } on TypeError {
-            extra = null;
-          }
-          final child = extra == null
-              ? const SalesHistoryPage()
-              : SaleSuccessPage(sale: extra.sale, items: extra.items);
-          return PageTransitions.fadeScale(context, state, child);
-        },
       ),
       GoRoute(
         path: Routes.saleDetail,
