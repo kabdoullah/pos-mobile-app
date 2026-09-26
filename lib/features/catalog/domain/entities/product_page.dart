@@ -1,20 +1,20 @@
 import 'product.dart';
 
-/// Product page result with pagination metadata.
+/// Page de produits avec métadonnées de pagination.
 class ProductPage {
-  /// Creates a ProductPage.
+  /// Crée une ProductPage.
   const ProductPage({
     required this.items,
     required this.nextCursor,
     required this.hasMore,
   });
 
-  /// List of products in this page.
+  /// Liste des produits de cette page.
   final List<Product> items;
 
-  /// Cursor for fetching next page. Null if no more pages.
+  /// Curseur pour récupérer la page suivante. Null s'il n'y a plus de page.
   final String? nextCursor;
 
-  /// Whether more pages exist.
+  /// Indique s'il reste des pages.
   final bool hasMore;
 }

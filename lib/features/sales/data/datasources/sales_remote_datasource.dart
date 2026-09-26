@@ -6,15 +6,15 @@ import '../../../../core/network/api_models/sale_dto.dart';
 
 part 'sales_remote_datasource.g.dart';
 
-/// Remote data source for sales operations.
+/// Data source distante pour les opérations de vente.
 @RestApi()
 abstract class SalesRemoteDataSource {
-  /// Creates a SalesRemoteDataSource instance.
+  /// Crée une instance SalesRemoteDataSource.
   factory SalesRemoteDataSource(Dio dio, {String baseUrl}) =
       _SalesRemoteDataSource;
 
-  /// Lists sales with pagination.
-  /// Endpoint: GET /api/v1/sales
+  /// Liste les ventes avec pagination.
+  /// Endpoint : GET /api/v1/sales
   @GET('/api/v1/sales')
   Future<CursorPageDto<SaleDto>> listSales({
     @Query('cursor') String? cursor,
@@ -23,18 +23,18 @@ abstract class SalesRemoteDataSource {
     @Query('date_to') String? dateTo,
   });
 
-  /// Gets a sale by ID.
-  /// Endpoint: GET /api/v1/sales/{id}
+  /// Récupère une vente par ID.
+  /// Endpoint : GET /api/v1/sales/{id}
   @GET('/api/v1/sales/{id}')
   Future<SaleDto> getSale(@Path('id') String id);
 
-  /// Gets today's sales summary.
-  /// Endpoint: GET /api/v1/sales/today/summary
+  /// Récupère le récapitulatif des ventes du jour.
+  /// Endpoint : GET /api/v1/sales/today/summary
   @GET('/api/v1/sales/today/summary')
   Future<DailySalesSummaryDto> getTodaySalesSummary();
 
-  /// Creates a sale.
-  /// Endpoint: POST /api/v1/sales
+  /// Crée une vente.
+  /// Endpoint : POST /api/v1/sales
   @POST('/api/v1/sales')
   Future<SaleDto> createSale(@Body() SaleCreateDto request);
 }

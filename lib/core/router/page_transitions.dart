@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../theme/app_animations.dart';
+import '../../app/theme/app_animations.dart';
 
-/// Custom page transition builders for smooth navigation.
+/// Constructeurs de transitions de page personnalisées pour une navigation
+/// fluide.
 ///
-/// Provides fade, slide, and scale transitions for different route types.
-/// Used by GoRouter to create consistent, premium motion.
+/// Fournit des transitions en fondu, glissement et zoom selon le type de route.
+/// Utilisées par GoRouter pour un mouvement cohérent et soigné.
 abstract class PageTransitions {
-  /// Fade transition. For modal-like flows (auth pages, settings).
+  /// Transition en fondu. Pour les parcours de type modale (pages d'auth,
+  /// paramètres).
   static CustomTransitionPage<T> fade<T>(
     BuildContext context,
     GoRouterState state,
@@ -25,7 +27,8 @@ abstract class PageTransitions {
     );
   }
 
-  /// Slide transition (left to right). For forward navigation.
+  /// Transition en glissement (de gauche à droite). Pour la navigation vers
+  /// l'avant.
   static CustomTransitionPage<T> slideRight<T>(
     BuildContext context,
     GoRouterState state,
@@ -46,7 +49,8 @@ abstract class PageTransitions {
     );
   }
 
-  /// Slide transition (right to left, exit). For back navigation.
+  /// Transition en glissement (de droite à gauche, sortie). Pour le retour
+  /// arrière.
   static CustomTransitionPage<T> slideLeft<T>(
     BuildContext context,
     GoRouterState state,
@@ -67,7 +71,8 @@ abstract class PageTransitions {
     );
   }
 
-  /// Scale transition. For detail/modal opens (product detail, sale detail).
+  /// Transition en zoom. Pour l'ouverture de détails/modales (détail produit,
+  /// détail vente).
   static CustomTransitionPage<T> scale<T>(
     BuildContext context,
     GoRouterState state,
@@ -88,7 +93,7 @@ abstract class PageTransitions {
     );
   }
 
-  /// Fade + scale transition. Premium feel for important modals.
+  /// Transition fondu + zoom. Rendu soigné pour les modales importantes.
   static CustomTransitionPage<T> fadeScale<T>(
     BuildContext context,
     GoRouterState state,

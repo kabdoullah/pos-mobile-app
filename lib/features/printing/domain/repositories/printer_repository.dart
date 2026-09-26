@@ -4,54 +4,55 @@ import '../../../auth/domain/entities/store.dart';
 import '../../../sales/domain/entities/cart_item.dart';
 import '../../../sales/domain/entities/sale.dart';
 
-/// Reasons a print operation can fail.
+/// Motifs d'échec d'une impression.
 enum PrintFailureReason {
-  /// No printer MAC address has been saved.
+  /// Aucune adresse MAC d'imprimante n'a été enregistrée.
   noPrinterConfigured,
 
-  /// BT connection attempt failed or timed out.
+  /// La tentative de connexion BT a échoué ou a expiré.
   connectionFailed,
 
-  /// Data could not be sent to the printer.
+  /// Les données n'ont pas pu être envoyées à l'imprimante.
   sendFailed,
 }
 
-/// Thrown when printing fails.
+/// Levée quand l'impression échoue.
 class PrintException implements Exception {
-  /// Creates a [PrintException].
+  /// Crée une [PrintException].
   const PrintException({required this.reason, required this.details});
 
-  /// The underlying failure cause.
+  /// Cause sous-jacente de l'échec.
   final PrintFailureReason reason;
 
-  /// Human-readable error detail string.
+  /// Détail de l'erreur, lisible par un humain.
   final String details;
 
   @override
   String toString() => 'PrintException(${reason.name}): $details';
 }
 
-/// Repository for Bluetooth printer operations.
+/// Repository pour les opérations d'imprimante Bluetooth.
 ///
-/// Abstracts hardware interactions and connection management.
+/// Abstrait les interactions matérielles et la gestion de la connexion.
 abstract interface class PrinterRepository {
-  /// Lists all paired BT devices available on the system.
+  /// Liste tous les appareils BT appairés disponibles sur le système.
   Future<List<BluetoothInfo>> getPairedDevices();
 
-  /// Connects to the device at [mac].
+  /// Se connecte à l'appareil [mac].
   ///
-  /// Returns true on success. Throws [PrintException] on failure.
+  /// Retourne true en cas de succès. Lève [PrintException] en cas d'échec.
   Future<bool> connect(String mac);
 
-  /// Disconnects from the current BT device.
+  /// Se déconnecte de l'appareil BT courant.
   Future<void> disconnect();
 
-  /// Returns true if currently connected to a BT device.
+  /// Retourne true si un appareil BT est actuellement connecté.
   Future<bool> get isConnected;
 
-  /// Prints a receipt for [sale].
+  /// Imprime un reçu pour [sale].
   ///
-  /// Throws [PrintException] if not connected or send fails.
+  /// Lève [PrintException] si l'imprimante n'est pas connectée ou si l'envoi
+  /// échoue.
   Future<void> printReceipt({
     required Store store,
     required Sale sale,

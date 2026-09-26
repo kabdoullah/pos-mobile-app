@@ -4,45 +4,48 @@ import 'package:flutter/widgets.dart';
 import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../shared/providers/connectivity_provider.dart';
+import '../providers/connectivity_provider.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/sync/presentation/providers/sync_providers.dart';
 import '../network/network_providers.dart';
 import 'pull_service.dart';
+import '../../database/database_provider.dart';
+import 'sync_providers.dart';
 
 part 'sync_orchestrator.g.dart';
 
-/// Sealed class representing sync orchestration states.
+/// Classe scellée représentant les états de l'orchestration de synchro.
 sealed class SyncStatus {
   const SyncStatus();
 }
 
-/// Idle state after sync completes. Optionally tracks [lastSyncAt].
+/// État inactif après une synchro terminée. Conserve éventuellement
+/// [lastSyncAt].
 class SyncStatusIdle extends SyncStatus {
-  /// Creates idle state with optional last sync timestamp.
+  /// Crée l'état inactif avec l'horodatage optionnel de la dernière synchro.
   const SyncStatusIdle({this.lastSyncAt});
 
-  /// Timestamp of last successful sync, if any.
+  /// Horodatage de la dernière synchro réussie, s'il y en a une.
   final DateTime? lastSyncAt;
 }
 
-/// Syncing state while push/pull operations are in progress.
+/// État de synchro pendant les opérations d'envoi/récupération.
 class SyncStatusSyncing extends SyncStatus {
-  /// Creates syncing state.
+  /// Crée l'état de synchro en cours.
   const SyncStatusSyncing();
 }
 
-/// Error state when sync fails.
+/// État d'erreur quand la synchro échoue.
 class SyncStatusError extends SyncStatus {
-  /// Creates error state with [message].
+  /// Crée l'état d'erreur avec [message].
   const SyncStatusError({required this.message});
 
-  /// User-facing error message.
+  /// Message d'erreur destiné à l'utilisateur.
   final String message;
 }
 
-/// Orchestrates bidirectional sync: monitors connectivity, triggers periodic syncs,
-/// and coordinates push-before-pull sequencing to prevent data loss.
+/// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
+/// des synchros périodiques et enchaîne l'envoi avant la récupération pour
+/// éviter les pertes de données.
 @Riverpod(keepAlive: true)
 class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
   bool _isSyncing = false;
@@ -51,7 +54,8 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
   Timer? _startupTimer;
   final _logger = Logger();
 
-  /// Initializes sync orchestrator with network monitoring and periodic sync.
+  /// Initialise l'orchestrateur de synchro avec la surveillance réseau et la
+  /// synchro périodique.
   @override
   SyncStatus build() {
     WidgetsBinding.instance.addObserver(this);
@@ -67,9 +71,11 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
       }
     });
 
-    // Sync immediately after PIN verification or any transition to Authenticated.
-    // The startup timer fires before PIN entry completes, so sync is skipped then;
-    // this listener catches the moment auth actually succeeds.
+    // Synchronise juste après la vérification du PIN ou toute transition vers
+    // Authenticated.
+    // Le timer de démarrage se déclenche avant la saisie du PIN, donc la
+    // synchro est alors ignorée ; cet écouteur capte le moment où
+    // l'authentification réussit vraiment.
     ref.listen<AsyncValue<AuthStatus>>(authProvider, (previous, next) {
       final wasAuthenticated = previous?.value is AuthAuthenticated;
       final isNowAuthenticated = next.value is AuthAuthenticated;
@@ -82,11 +88,14 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
 
     _startPeriodicSync();
 
-    // Reset failed entries on startup to retry them (for recoverable errors like timezone bugs).
+    // Remet les entrées en échec en attente au démarrage pour les réessayer
+    // (erreurs récupérables comme les bugs de fuseau horaire).
     _resetFailedEntries();
 
-    // Initial sync on app startup (after 3s delay for app stabilization).
-    // Runs only if already authenticated (e.g. app reopen with valid session + no PIN required).
+    // Synchro initiale au démarrage de l'app (après 3 s pour laisser l'app se
+    // stabiliser).
+    // Ne s'exécute que si l'utilisateur est déjà authentifié (ex. réouverture
+    // de l'app avec une session valide et sans PIN requis).
     _startupTimer = Timer(const Duration(seconds: 3), () {
       final isOnlineAsync = ref.read(isOnlineProvider);
       final isOnline = isOnlineAsync.value ?? false;
@@ -127,8 +136,10 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
     }
   }
 
-  /// Reset failed sync queue entries to pending so they can be retried.
-  /// This helps recover from transient errors like timezone bugs that were fixed in code.
+  /// Remet les entrées en échec de la file de synchro en attente pour qu'elles
+  /// soient réessayées.
+  /// Aide à se remettre d'erreurs passagères, comme les bugs de fuseau horaire
+  /// corrigés depuis dans le code.
   void _resetFailedEntries() {
     unawaited(() async {
       try {
@@ -143,7 +154,7 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
     }());
   }
 
-  /// Starts 5-minute periodic sync timer when online.
+  /// Lance le timer de synchro périodique (5 minutes) quand l'app est en ligne.
   void _startPeriodicSync() {
     _periodicTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       final isOnlineAsync = ref.read(isOnlineProvider);
@@ -155,12 +166,15 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
     });
   }
 
-  /// Orchestrates full sync: push sales, push products, then pull.
-  /// Guarded against concurrent syncs (only one can run at a time).
-  /// Push happens first to ensure local unsent changes are uploaded before pull.
+  /// Orchestre une synchro complète : envoi des ventes, envoi des produits,
+  /// puis récupération.
+  /// Protégé contre les synchros concurrentes (une seule à la fois). L'envoi
+  /// passe en premier pour que les changements locaux non envoyés soient
+  /// remontés avant la récupération.
   ///
-  /// When [forceFullPull] is true, the pull ignores [last_pull_at] and fetches
-  /// the full catalog. Use when the user triggers a manual refresh.
+  /// Quand [forceFullPull] vaut true, la récupération ignore [last_pull_at] et
+  /// récupère tout le catalogue. À utiliser quand l'utilisateur déclenche un
+  /// rafraîchissement manuel.
   Future<void> syncNow({bool forceFullPull = false}) async {
     final authState = ref.read(authProvider);
     if (authState.value is! AuthAuthenticated) {

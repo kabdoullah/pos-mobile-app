@@ -10,12 +10,12 @@ import '../../core/network/api_models/sale_dto.dart';
 import '../../core/network/api_models/sync_changes_dto.dart';
 import '../../core/network/api_models/sync_responses_dto.dart';
 import '../../database/app_database.dart';
-import '../../features/sync/data/datasources/sync_remote_datasource.dart';
 import 'sync_queue_repository.dart';
+import 'sync_remote_datasource.dart';
 
-/// Service for pushing local changes (sales, products) to the server.
+/// Service qui envoie les changements locaux (ventes, produits) au serveur.
 class PushService {
-  /// Constructor.
+  /// Constructeur.
   PushService({
     required SyncRemoteDataSource remoteDataSource,
     required SyncQueueRepository queueRepository,
@@ -31,8 +31,8 @@ class PushService {
   final AppDatabase _db;
   final Logger? _logger;
 
-  /// Push all pending sales to the server.
-  /// Best-effort batch sync with idempotence handling.
+  /// Envoie toutes les ventes en attente au serveur.
+  /// Synchro par lots au mieux, avec gestion de l'idempotence.
   Future<void> pushPendingSales() async {
     try {
       final entries = await _queueRepository.getEntriesByType('sale');
@@ -41,7 +41,7 @@ class PushService {
         return;
       }
 
-      // Process in batches of 50 (backend limit)
+      // Traitement par lots de 50 (limite du backend)
       const batchSize = 50;
       for (var i = 0; i < entries.length; i += batchSize) {
         final batch = entries.skip(i).take(batchSize).toList();
@@ -52,13 +52,13 @@ class PushService {
     }
   }
 
-  /// Push a batch of sales.
+  /// Envoie un lot de ventes.
   Future<void> _pushSalesBatch(List<SyncQueueData> entries) async {
-    // Mark all as syncing in one batch DB operation
+    // Marque tout comme en cours de synchro en une seule opération DB
     await _queueRepository.markSyncingBatch(entries.map((e) => e.id).toList());
 
     try {
-      // Build request
+      // Construction de la requête
       final sales = <SaleCreateDto>[];
       final entryMap = <String, SyncQueueData>{};
 
@@ -68,12 +68,12 @@ class PushService {
         sales.add(SaleCreateDto.fromJson(payload));
       }
 
-      // Call backend
+      // Appel au backend
       final response = await _remoteDataSource.pushSales(
         SalesSyncBatchRequestDto(sales: sales),
       );
 
-      // Process results
+      // Traitement des résultats
       for (final result in response.results) {
         final entry = entryMap[result.id];
         if (entry == null) continue;
@@ -81,14 +81,15 @@ class PushService {
         switch (result.status) {
           case 'created':
           case 'already_exists':
-            // Both treated as success for idempotence
+            // Les deux sont traités comme un succès (idempotence)
             await _queueRepository.markSynced(entry.id);
             if (result.status == 'already_exists') {
               _logger?.i('Sale ${result.id} already synced (idempotent)');
             }
             break;
           case 'failed':
-            // Increment retry; if threshold exceeded, mark permanent failure
+            // Incrémente le compteur d'essais ; au-delà du seuil, échec
+            // définitif
             await _queueRepository.incrementRetry(entry.id);
             final errorMsg = result.error ?? 'Unknown error';
 
@@ -107,7 +108,7 @@ class PushService {
         }
       }
     } catch (e, st) {
-      // Network error; mark entries back as pending for retry
+      // Erreur réseau ; on remet les entrées en attente pour réessayer
       for (final entry in entries) {
         await _queueRepository.markFailed(entry.id, 'Network error: $e');
       }
@@ -115,8 +116,8 @@ class PushService {
     }
   }
 
-  /// Push all pending product changes to the server.
-  /// State-based sync with conflict resolution (server wins).
+  /// Envoie tous les changements de produits en attente au serveur.
+  /// Synchro par état avec résolution de conflit (le serveur gagne).
   Future<void> pushPendingProductChanges() async {
     try {
       final entries = await _queueRepository.getEntriesByType('product');
@@ -133,7 +134,7 @@ class PushService {
     }
   }
 
-  /// Push a single product change.
+  /// Envoie le changement d'un seul produit.
   Future<void> _pushProductChange(SyncQueueData entry) async {
     await _queueRepository.markSyncing(entry.id);
 
@@ -142,13 +143,15 @@ class PushService {
       ProductSyncItemDto productItem;
       try {
         final parsed = ProductSyncItemDto.fromJson(payload);
-        // Re-apply normalizeBarcode so any barcode stored before the pattern
-        // validation was added gets cleaned before reaching the server.
+        // Réapplique normalizeBarcode pour que tout code-barres enregistré
+        // avant l'ajout de la validation du format soit nettoyé avant
+        // d'atteindre le serveur.
         productItem = parsed.copyWith(
           barcode: normalizeBarcode(parsed.barcode),
         );
       } catch (_) {
-        // Legacy payload used camelCase keys — repair from current drift state.
+        // L'ancien payload utilisait des clés en camelCase — on le reconstruit
+        // depuis l'état drift actuel.
         final product = await (_db.select(
           _db.products,
         )..where((p) => p.id.equals(entry.entityId))).getSingleOrNull();
@@ -179,14 +182,15 @@ class PushService {
         case 'updated':
         case 'no_change':
         case 'deleted':
-          // All non-conflict outcomes are treated as success
+          // Tous les résultats hors conflit sont traités comme un succès
           await _queueRepository.markSynced(entry.id);
           _logger?.i(
             'Product ${entry.entityId} synced (status: ${response.status})',
           );
           break;
         case 'conflict':
-          // Server version is newer; overwrite local with server_state
+          // La version serveur est plus récente ; on écrase la version locale
+          // avec server_state
           if (response.serverState != null) {
             await _updateProductFromServerState(response.serverState!);
             _logger?.i(
@@ -201,8 +205,9 @@ class PushService {
           );
       }
     } catch (e) {
-      // 409 conflict: server has a newer or conflicting state.
-      // Parse the body manually since Dio throws for non-2xx responses.
+      // Conflit 409 : le serveur a un état plus récent ou en conflit.
+      // On analyse le corps à la main car Dio lève une exception pour les
+      // réponses non-2xx.
       if (e is DioException &&
           e.response?.statusCode == 409 &&
           e.response?.data is Map<String, dynamic>) {
@@ -221,9 +226,10 @@ class PushService {
             );
 
             if (serverUpdatedAt.isBefore(clientUpdatedAt)) {
-              // Client was newer (timestamp-wise) but barcode was rejected
-              // because it's already used by another product.
-              // Strip barcode and retry to preserve other field changes.
+              // Le client était plus récent (en horodatage) mais le code-barres
+              // a été refusé car il est déjà utilisé par un autre produit.
+              // On retire le code-barres et on réessaie pour conserver les
+              // autres modifications.
               final sentBarcode = storedPayload['barcode'] as String?;
               if (sentBarcode != null) {
                 final stripped = Map<String, dynamic>.from(storedPayload)
@@ -240,7 +246,8 @@ class PushService {
                   'rejected (taken by another product) — stripped, will retry',
                 );
               } else {
-                // No barcode in payload but still got a timestamp-based conflict.
+                // Pas de code-barres dans le payload mais toujours un conflit
+                // d'horodatage.
                 await _updateProductFromServerState(
                   conflictResponse.serverState!,
                 );
@@ -251,7 +258,7 @@ class PushService {
                 );
               }
             } else {
-              // Server genuinely has a newer version — accept it.
+              // Le serveur a vraiment une version plus récente — on l'accepte.
               await _updateProductFromServerState(
                 conflictResponse.serverState!,
               );
@@ -261,8 +268,10 @@ class PushService {
               await _queueRepository.markSynced(entry.id);
             }
           } else {
-            // No server_state = new product whose barcode is taken by another product.
-            // Strip the barcode and retry so the product still gets created.
+            // Pas de server_state = nouveau produit dont le code-barres est
+            // pris par un autre produit.
+            // On retire le code-barres et on réessaie pour que le produit soit
+            // quand même créé.
             final storedPayload =
                 jsonDecode(entry.payload) as Map<String, dynamic>;
             if (storedPayload['barcode'] != null) {
@@ -279,7 +288,8 @@ class PushService {
                 'Product ${entry.entityId} barcode conflict — stripped barcode, will retry',
               );
             } else {
-              // Already no barcode and still 409: server-deleted version wins. Drop.
+              // Déjà sans code-barres et toujours 409 : la version supprimée
+              // côté serveur gagne. On abandonne.
               _logger?.i(
                 'Product ${entry.entityId} conflict — no server_state, dropping local change',
               );
@@ -288,11 +298,12 @@ class PushService {
           }
           return;
         } catch (_) {
-          // Fall through to retry logic if parsing fails.
+          // On passe à la logique de réessai si l'analyse échoue.
         }
       }
 
-      // Non-retriable client errors (4xx): log and mark failed immediately.
+      // Erreurs client non réessayables (4xx) : on journalise et on marque en
+      // échec immédiatement.
       if (e is DioException &&
           e.response?.statusCode != null &&
           e.response!.statusCode! >= 400 &&
@@ -308,7 +319,7 @@ class PushService {
         return;
       }
 
-      // Network / server error: increment retry.
+      // Erreur réseau / serveur : on incrémente le compteur d'essais.
       await _queueRepository.incrementRetry(entry.id);
 
       final retryEntry = await _queueRepository.getEntry(entry.id);
@@ -323,14 +334,16 @@ class PushService {
     }
   }
 
-  /// Update a local product from server state (used in conflict resolution).
+  /// Met à jour un produit local depuis l'état serveur (utilisé en résolution
+  /// de conflit).
   Future<void> _updateProductFromServerState(ProductDto serverState) async {
     final deletedAt = serverState.deletedAt != null
         ? DateTime.parse(serverState.deletedAt!)
         : null;
 
-    // min_stock is not yet known to the backend, so serverState.minStock is
-    // always null — fall back to the local value instead of erasing it.
+    // min_stock n'est pas encore connu du backend, donc serverState.minStock
+    // vaut toujours null — on se replie sur la valeur locale au lieu de
+    // l'effacer.
     final current = await (_db.select(
       _db.products,
     )..where((p) => p.id.equals(serverState.id))).getSingleOrNull();

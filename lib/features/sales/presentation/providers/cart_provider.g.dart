@@ -8,14 +8,14 @@ part of 'cart_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// CartNotifier manages shopping cart state.
+/// CartNotifier gère l'état du panier.
 
 @ProviderFor(Cart)
 final cartProvider = CartProvider._();
 
-/// CartNotifier manages shopping cart state.
+/// CartNotifier gère l'état du panier.
 final class CartProvider extends $NotifierProvider<Cart, CartState> {
-  /// CartNotifier manages shopping cart state.
+  /// CartNotifier gère l'état du panier.
   CartProvider._()
     : super(
         from: null,
@@ -45,7 +45,7 @@ final class CartProvider extends $NotifierProvider<Cart, CartState> {
 
 String _$cartHash() => r'469d0c52c3c957f23f4706d5b0a1a5a07cf4bb10';
 
-/// CartNotifier manages shopping cart state.
+/// CartNotifier gère l'état du panier.
 
 abstract class _$Cart extends $Notifier<CartState> {
   CartState build();

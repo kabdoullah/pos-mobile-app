@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProductDto {
 
- String get id;@JsonKey(name: 'store_id') String get storeId; String get name; String? get barcode;/// Price in FCFA, received as string from API.
+ String get id;@JsonKey(name: 'store_id') String get storeId; String get name; String? get barcode;/// Prix en FCFA, reçu sous forme de chaîne depuis l'API.
 @JsonKey(name: 'unit_price') String get unitPrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'updated_at') String get updatedAt;@JsonKey(name: 'deleted_at') String? get deletedAt;
 /// Create a copy of ProductDto
 /// with the given fields replaced by the non-null parameter values.
@@ -220,7 +220,7 @@ class _ProductDto implements ProductDto {
 @override@JsonKey(name: 'store_id') final  String storeId;
 @override final  String name;
 @override final  String? barcode;
-/// Price in FCFA, received as string from API.
+/// Prix en FCFA, reçu sous forme de chaîne depuis l'API.
 @override@JsonKey(name: 'unit_price') final  String unitPrice;
 @override@JsonKey(name: 'current_stock') final  int? currentStock;
 @override@JsonKey(name: 'min_stock') final  int? minStock;
@@ -301,7 +301,7 @@ as String?,
 /// @nodoc
 mixin _$ProductCreateDto {
 
- String get name; String? get barcode;/// Price in FCFA.
+ String get name; String? get barcode;/// Prix en FCFA.
 @JsonKey(name: 'unit_price') String get unitPrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;
 /// Create a copy of ProductCreateDto
 /// with the given fields replaced by the non-null parameter values.
@@ -499,7 +499,7 @@ class _ProductCreateDto implements ProductCreateDto {
 
 @override final  String name;
 @override final  String? barcode;
-/// Price in FCFA.
+/// Prix en FCFA.
 @override@JsonKey(name: 'unit_price') final  String unitPrice;
 @override@JsonKey(name: 'current_stock') final  int? currentStock;
 @override@JsonKey(name: 'min_stock') final  int? minStock;

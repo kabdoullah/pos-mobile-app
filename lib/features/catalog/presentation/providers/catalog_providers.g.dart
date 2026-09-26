@@ -8,15 +8,15 @@ part of 'catalog_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// CatalogListNotifier manages product list with pagination and search.
+/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
 
 @ProviderFor(CatalogList)
 final catalogListProvider = CatalogListProvider._();
 
-/// CatalogListNotifier manages product list with pagination and search.
+/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
 final class CatalogListProvider
     extends $AsyncNotifierProvider<CatalogList, List<Product>> {
-  /// CatalogListNotifier manages product list with pagination and search.
+  /// CatalogListNotifier gère la liste des produits avec pagination et recherche.
   CatalogListProvider._()
     : super(
         from: null,
@@ -38,7 +38,7 @@ final class CatalogListProvider
 
 String _$catalogListHash() => r'2c118ecc5d80c4b37ec51199a7f66c93b21f93c0';
 
-/// CatalogListNotifier manages product list with pagination and search.
+/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
 
 abstract class _$CatalogList extends $AsyncNotifier<List<Product>> {
   FutureOr<List<Product>> build();
@@ -58,18 +58,18 @@ abstract class _$CatalogList extends $AsyncNotifier<List<Product>> {
   }
 }
 
-/// Get a single product by ID for edit form.
+/// Récupère un produit par ID pour le formulaire d'édition.
 
 @ProviderFor(product)
 final productProvider = ProductFamily._();
 
-/// Get a single product by ID for edit form.
+/// Récupère un produit par ID pour le formulaire d'édition.
 
 final class ProductProvider
     extends
         $FunctionalProvider<AsyncValue<Product?>, Product?, FutureOr<Product?>>
     with $FutureModifier<Product?>, $FutureProvider<Product?> {
-  /// Get a single product by ID for edit form.
+  /// Récupère un produit par ID pour le formulaire d'édition.
   ProductProvider._({
     required ProductFamily super.from,
     required String super.argument,
@@ -115,7 +115,7 @@ final class ProductProvider
 
 String _$productHash() => r'c4b0094f15a99fed91da3547c2a6f45979df978d';
 
-/// Get a single product by ID for edit form.
+/// Récupère un produit par ID pour le formulaire d'édition.
 
 final class ProductFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<Product?>, String> {
@@ -128,7 +128,7 @@ final class ProductFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Get a single product by ID for edit form.
+  /// Récupère un produit par ID pour le formulaire d'édition.
 
   ProductProvider call(String id) =>
       ProductProvider._(argument: id, from: this);

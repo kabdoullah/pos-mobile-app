@@ -57,7 +57,7 @@ void main() {
         dio: mockDio,
       );
 
-      // Simulate a 401 response.
+      // Simule une réponse 401.
       final errorResponse = Response(
         data: {'code': 'TOKEN_EXPIRED', 'detail': 'Token expired.'},
         statusCode: 401,
@@ -69,17 +69,17 @@ void main() {
         type: DioExceptionType.badResponse,
       );
 
-      // Create handler and intercept.
+      // Crée le handler et intercepte.
       final handler = _TestErrorInterceptorHandler();
       await interceptor.onError(dioException, handler);
 
-      // Verify refresh was called once.
+      // Vérifie que le rafraîchissement a été appelé une fois.
       expect(refreshCallCount, 1);
 
-      // Verify auth expired was NOT called.
+      // Vérifie que l'expiration d'auth n'a PAS été appelée.
       expect(onAuthExpiredCalled, false);
 
-      // Verify new tokens were saved.
+      // Vérifie que les nouveaux tokens ont été enregistrés.
       verify(
         () => tokenStorage.saveTokens(
           accessToken: 'new_access',
@@ -87,7 +87,7 @@ void main() {
         ),
       ).called(1);
 
-      // Verify response was resolved (not errored).
+      // Vérifie que la réponse a été résolue (et non passée en erreur).
       expect(handler.resolvedResponse, isNotNull);
       expect(handler.erroredError, isNull);
     });
@@ -134,13 +134,13 @@ void main() {
       final handler = _TestErrorInterceptorHandler();
       await interceptor.onError(dioException, handler);
 
-      // Verify refresh was attempted once.
+      // Vérifie qu'une seule tentative de rafraîchissement a eu lieu.
       expect(refreshCallCount, 1);
 
-      // Verify onAuthExpired was called.
+      // Vérifie que onAuthExpired a été appelé.
       expect(onAuthExpiredCalled, true);
 
-      // Verify error was forwarded.
+      // Vérifie que l'erreur a été transmise.
       expect(handler.erroredError, isNotNull);
       expect(handler.resolvedResponse, isNull);
     });
@@ -164,7 +164,7 @@ void main() {
         String refreshToken,
       ) async {
         refreshCallCount++;
-        // Block until the test signals completion.
+        // Bloque jusqu'à ce que le test signale la fin.
         await refreshCompleter.future;
         return (accessToken: 'new_access', refreshToken: 'new_refresh');
       }
@@ -187,7 +187,7 @@ void main() {
         dio: mockDio,
       );
 
-      // Create 3 concurrent 401 errors.
+      // Crée 3 erreurs 401 concurrentes.
       final errorResponse = Response(
         data: {'code': 'TOKEN_EXPIRED', 'detail': 'Token expired.'},
         statusCode: 401,
@@ -210,25 +210,27 @@ void main() {
         futures.add(interceptor.onError(dioException, handler));
       }
 
-      // Yield to allow tasks to start.
+      // Rend la main pour laisser les tâches démarrer.
       await Future<void>.delayed(Duration.zero);
 
-      // At this point, all 3 should be waiting on the refresh.
+      // À ce stade, les 3 devraient attendre le rafraîchissement.
       expect(refreshCallCount, 1);
 
-      // Unblock the refresh.
+      // Débloque le rafraîchissement.
       refreshCompleter.complete();
 
-      // Wait for all handlers to finish.
+      // Attend la fin de tous les handlers.
       await Future.wait(futures);
 
-      // Verify refresh was still called only once (the lock worked).
+      // Vérifie que le rafraîchissement n'a toujours été appelé qu'une fois (le
+      // verrou a fonctionné).
       expect(refreshCallCount, 1);
 
-      // Verify onAuthExpired was NOT called (refresh succeeded).
+      // Vérifie que onAuthExpired n'a PAS été appelé (le rafraîchissement a
+      // réussi).
       expect(onAuthExpiredCallCount, 0);
 
-      // Verify all handlers either resolved or errored.
+      // Vérifie que tous les handlers ont soit résolu, soit passé une erreur.
       for (final handler in handlers) {
         final hasResult =
             handler.resolvedResponse != null || handler.erroredError != null;
@@ -270,10 +272,10 @@ void main() {
         final handler = _TestErrorInterceptorHandler();
         await interceptor.onError(dioException, handler);
 
-        // Verify onAuthExpired was called.
+        // Vérifie que onAuthExpired a été appelé.
         expect(onAuthExpiredCalled, true);
 
-        // Verify error was forwarded.
+        // Vérifie que l'erreur a été transmise.
         expect(handler.erroredError, isNotNull);
       },
     );
@@ -304,17 +306,18 @@ void main() {
       final handler = _TestErrorInterceptorHandler();
       await interceptor.onError(dioException, handler);
 
-      // Verify onAuthExpired was NOT called.
+      // Vérifie que onAuthExpired n'a PAS été appelé.
       expect(onAuthExpiredCalled, false);
 
-      // Verify error was forwarded as-is (not resolved).
+      // Vérifie que l'erreur a été transmise telle quelle (non résolue).
       expect(handler.erroredError, dioException);
       expect(handler.resolvedResponse, isNull);
     });
   });
 }
 
-/// Test double for ErrorInterceptorHandler to track resolve/error calls.
+/// Double de test pour ErrorInterceptorHandler qui suit les appels
+/// resolve/error.
 class _TestErrorInterceptorHandler extends ErrorInterceptorHandler {
   Response<dynamic>? resolvedResponse;
   DioException? erroredError;

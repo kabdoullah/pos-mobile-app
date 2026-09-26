@@ -6,25 +6,26 @@ import 'cart_provider.dart';
 
 part 'scan_provider.g.dart';
 
-/// Result of a barcode scan attempt.
+/// Résultat d'une tentative de scan de code-barres.
 enum ScanResult {
-  /// Product added to cart for first time.
+  /// Produit ajouté au panier pour la première fois.
   added,
 
-  /// Product quantity incremented (already in cart).
+  /// Quantité du produit incrémentée (déjà dans le panier).
   quantityIncremented,
 
-  /// Barcode not found in catalog.
+  /// Code-barres introuvable dans le catalogue.
   notFound,
 
-  /// Same barcode scanned within cooldown window (2s).
+  /// Même code-barres scanné pendant le délai de carence (2 s).
   cooldown,
 
-  /// Product found but stock is exhausted.
+  /// Produit trouvé mais stock épuisé.
   stockExceeded,
 }
 
-/// Manages barcode scanning: cooldown deduplication, catalog lookup, cart dispatch.
+/// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
+/// dans le catalogue, ajout au panier.
 @riverpod
 class ScanController extends _$ScanController {
   final Map<String, DateTime> _lastScanTimes = {};
@@ -33,9 +34,11 @@ class ScanController extends _$ScanController {
   @override
   void build() {}
 
-  /// Process a scanned barcode: check cooldown, look up in catalog, update cart.
+  /// Traite un code-barres scanné : vérifie le délai de carence, cherche dans
+  /// le catalogue, met à jour le panier.
   Future<ScanResult> scan(String barcode) async {
-    // Normalize: strip whitespace and GS1 control characters before any lookup.
+    // Normalisation : retire les espaces et les caractères de contrôle GS1
+    // avant toute recherche.
     final normalized = barcode.trim().replaceAll(
       RegExp(r'[\x00-\x1F\x7F]'),
       '',

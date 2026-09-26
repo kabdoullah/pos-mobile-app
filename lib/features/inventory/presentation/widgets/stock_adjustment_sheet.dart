@@ -3,19 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/inventory_providers.dart';
 
-/// Bottom sheet for recording a manual stock adjustment (reception, breakage,
-/// inventory correction) on a given product.
+/// Bottom sheet pour enregistrer un ajustement de stock manuel (réception,
+/// casse, correction d'inventaire) sur un produit donné.
 class StockAdjustmentSheet extends ConsumerStatefulWidget {
-  /// Creates a [StockAdjustmentSheet].
+  /// Crée une [StockAdjustmentSheet].
   const StockAdjustmentSheet({required this.productId, super.key});
 
-  /// Product this adjustment applies to.
+  /// Produit concerné par cet ajustement.
   final String productId;
 
   @override
@@ -73,8 +73,9 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
     try {
       final note = _noteController.text.trim();
       await ref
-          .read(stockHistoryProvider(widget.productId).notifier)
-          .createAdjustment(
+          .read(stockAdjustmentProvider.notifier)
+          .submit(
+            productId: widget.productId,
             quantityDelta: _isEntry ? quantity : -quantity,
             note: note.isEmpty ? null : note,
           );

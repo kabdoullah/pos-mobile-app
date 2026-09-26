@@ -7,17 +7,17 @@ import 'package:intl/intl.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../../domain/entities/cart_item.dart';
 import '../providers/cart_provider.dart';
 import '../providers/sales_providers.dart';
 
-/// PaymentPage — payment method selection and change calculation.
+/// PaymentPage — choix du moyen de paiement et calcul de la monnaie à rendre.
 class PaymentPage extends ConsumerStatefulWidget {
-  /// Creates a [PaymentPage].
+  /// Crée une [PaymentPage].
   const PaymentPage({super.key});
 
   @override
@@ -147,7 +147,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Snapshot items BEFORE submitSale clears the cart
+      // Copie des articles AVANT que submitSale vide le panier
       final items = List<CartItem>.from(ref.read(cartProvider).items);
 
       final method = _selectedMethod!;
@@ -183,7 +183,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       ref.read(cartProvider.notifier).clear();
 
       if (mounted) {
-        // Navigate to success screen with sale and items
+        // Navigation vers l'écran de succès avec la vente et les articles
         context.pushReplacement(
           Routes.saleSuccess,
           extra: (sale: sale, items: items),
@@ -229,7 +229,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Total to pay
+                  // Total à payer
                   AppCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +251,8 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  // Payment methods — compact chips to keep input fields visible
+                  // Moyens de paiement — chips compactes pour garder les champs
+                  // de saisie visibles
                   const Text(
                     'Mode de paiement',
                     style: AppTypography.titleMedium,
@@ -259,7 +260,7 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                   const SizedBox(height: AppSpacing.sm),
                   _buildMethodSelector(),
                   const SizedBox(height: AppSpacing.sm),
-                  // Dynamic fields based on payment method
+                  // Champs dynamiques selon le moyen de paiement
                   if (_selectedMethod == PaymentMethod.cash) ...[
                     AppTextField(
                       label: 'Montant reçu (FCFA)',

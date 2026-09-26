@@ -11,22 +11,25 @@ make gen-watch     # watch mode (regenerates continuously)
 make analyze       # static analysis (must pass before commit)
 make format        # dart format (fails if diff — run before commit)
 make test          # flutter test all
-make run           # dev on emulator/device (API: http://10.0.2.2:8000)
-make run-prod      # release against prod API
+make run           # dev flavor on emulator/device (--flavor dev -t lib/main.dart)
+make run-prod      # prod flavor, release
 make build-apk     # release APK (prod flavor)
 make build-apk-dev # debug APK (dev flavor)
+make build-aab     # release AAB (Play Store)
 make clean         # clear Flutter + dart_tool caches
 ```
 
-**Before every commit:** `make format && make analyze`
+**Before every commit:** `make format && make analyze`. CI (`.github/workflows/mobile-ci.yml`) runs `flutter analyze --fatal-infos`, so infos fail CI even though `make analyze` passes them. A pre-commit hook enforces Conventional Commits (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `build`, `ci`, `revert`).
 
-**Single test:** `flutter test test/auth_service_test.dart` or `flutter test test/ -k "test_pattern"`
+**Single test:** `flutter test test/inventory_stock_adjustment_test.dart`, or by name: `flutter test --plain-name "rolls over"`
 
 ## App entry points and flavors
 
 Two entry points, two flavors:
-- `lib/main.dart` — `AppFlavor.dev`, API `http://10.0.2.2:8000` (Android emulator localhost)
-- `lib/main_prod.dart` — `AppFlavor.prod`, API prod
+- `lib/main.dart` — `AppFlavor.dev`, application ID suffix `.dev`
+- `lib/main_prod.dart` — `AppFlavor.prod`
+
+Both currently point at `https://pos-mobile-vkuh.onrender.com` (`docs/flavors.md` lists `https://api.pos-mobile-ci.com` for prod — check before a release).
 
 Both call `AppConfig.setup(flavor:, apiUrl:)` before `runApp`. `AppConfig.isDev` gates debug features. Constants (timeout, PIN lockout, etc.) live in `AppConfig` — see `core/config.dart`.
 
@@ -60,8 +63,9 @@ Two provider locations:
 | `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, token refresh, store setup |
 | `catalog` | Implemented — product listing, barcode scanning, local sync |
 | `sales` | Implemented — cart, payment, receipt printing, sale history |
+| `inventory` | Implemented — Stock tab, low-stock list, manual adjustments, per-product movement history. **Online-only**: movements are server-authoritative (no drift table); only `Products.currentStock` is refreshed locally |
 | `printing` | Implemented — Bluetooth thermal printer (ESC/POS via `print_bluetooth_thermal`) |
-| `sync` | Implemented — offline event queue, catalog dirty-flag sync, connectivity awareness |
+| `sync` | Implemented in `core/sync/` (not a feature folder) — offline event queue, catalog dirty-flag sync, connectivity awareness |
 | `home` | Implemented — dashboard shell (presentation only) |
 | `onboarding` | Implemented — tutorial (presentation only) |
 | `settings` | Implemented — settings (presentation only) |
@@ -76,6 +80,8 @@ Unauthenticated → [phone+password login] → StoreSetupRequired (first reg)
                                           → PinRequired (PIN exists, not yet verified)
                                           → Authenticated
 ```
+
+`StoreSetupRequired` is only reached right after `register()`; app relaunch goes straight to PIN setup/verify.
 
 `AuthStatus` sealed class in `auth_providers.dart`. Router reads `AsyncValue<AuthStatus>` and redirects accordingly. `Routes.emailLogin` maps to `PhoneLoginPage` (name kept for backward compat).
 
@@ -103,6 +109,16 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Testing:** Flat under `test/`, named `<feature>_<concept>_test.dart`. Mock with `mocktail`.
 
+## Cross-cutting invariants (easy to break)
+
+- **Riverpod writes and auto-dispose:** never perform a write through an auto-dispose provider that the calling screen does not `watch` — it is disposed mid-`await` and throws after the server call succeeded (the user retries → duplicate write). Use a `keepAlive` controller, e.g. `StockAdjustment` in `inventory_providers.dart`, `StoreConfig` in `auth/providers/store_provider.dart`.
+- **Account switch:** `Auth` clears the cached store config (`StoreRepository.clearLocal()` + invalidate `storeConfigProvider`) on login/register/logout; `SyncOrchestrator.syncNow()` wipes drift business data when the token's `store_id` differs from the last active store. Anything new cached per-account must follow the same path.
+- **Tabs:** `ShellBranch` enum (`core/router/main_shell.dart`) must stay in the same order as the `StatefulShellRoute` branches in `app_router.dart` and the `NavigationBar` destinations. Use `goBranch(ShellBranch.x.index)`, never a literal index.
+- **Low-stock rule** exists twice: `Product.stockLevel` (Dart) and the SQL in `CatalogRepositoryImpl.watchLowStockProducts()`. Change both together.
+- **"Today"-scoped providers** must watch `todayProvider` (`home_providers.dart`), which rebuilds at local midnight; `watchTodayStats()` fixes the day at subscription.
+- **Known inversion:** `core/sync/sync_orchestrator.dart` imports `features/auth` (sync waits for `AuthAuthenticated`). Don't add more core → feature imports.
+- **Testing `SyncOrchestrator`:** `syncNow()` is a no-op unless `authProvider` is `AuthAuthenticated`, and it reads `tokenStorageProvider` + `databaseProvider` — override all three (see `test/sync_orchestrator_test.dart`). Tests use `package:clock` + `fake_async` for time.
+
 ## App initialization
 
 `main.dart` → `AppConfig.setup()` → `initializeDateFormatting('fr_FR')` → `ProviderScope` (overrides `tokenStorageProvider` with `secureTokenStorageProvider`) → `PosMobileApp` (GoRouter + theme).
@@ -114,7 +130,8 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 - `core/network/dio_client.dart` — Dio with auth/refresh interceptors
 - `core/network/token_storage.dart` — JWT persistence interface
 - `core/storage/pin_storage.dart` — PBKDF2-HMAC-SHA256 PIN hashing
-- `core/sync/` — `SyncOrchestrator`, offline queue, connectivity listener
+- `core/sync/` — `SyncOrchestrator`, offline queue, push/pull services, sync API client, DI (`sync_providers.dart`)
+- `database/database_provider.dart` — `databaseProvider` (app-wide drift singleton)
 - `core/utils/phone_formatter.dart` — Ivorian phone number formatting/validation
 - `features/auth/presentation/providers/auth_providers.dart` — `AuthStatus` sealed class + `Auth` notifier
 - `features/sales/data/models/sale_mappers.dart` — domain `Sale` ↔ API/database (includes Decimal handling)
@@ -128,7 +145,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 ## See also
 
-- Architecture details: `docs/architecture.md`
-- Data model: `docs/data-model.md`
+- Architecture details: `docs/architecture.md`; layer rules: `lib/features/README.md`
+- Data model: `docs/data-model.md`; API: `docs/api.md`; error mapping: `docs/error-mapping.md`; flavors: `docs/flavors.md`
 - ADRs: `docs/adr/`
 - Conventions (path-scoped): `.claude/rules/mobile-conventions.md`

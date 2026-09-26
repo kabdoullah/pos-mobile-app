@@ -8,18 +8,21 @@ part of 'sales_di_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the sales repository implementation (local-first via drift).
+/// Fournit l'implémentation du repository des ventes (local d'abord, via
+/// drift).
 
 @ProviderFor(salesRepository)
 final salesRepositoryProvider = SalesRepositoryProvider._();
 
-/// Provides the sales repository implementation (local-first via drift).
+/// Fournit l'implémentation du repository des ventes (local d'abord, via
+/// drift).
 
 final class SalesRepositoryProvider
     extends
         $FunctionalProvider<SalesRepository, SalesRepository, SalesRepository>
     with $Provider<SalesRepository> {
-  /// Provides the sales repository implementation (local-first via drift).
+  /// Fournit l'implémentation du repository des ventes (local d'abord, via
+  /// drift).
   SalesRepositoryProvider._()
     : super(
         from: null,
@@ -55,12 +58,12 @@ final class SalesRepositoryProvider
 
 String _$salesRepositoryHash() => r'dd95c0d3baeee77cdc2bc036cc08dd2d53dea5a2';
 
-/// Provides the create sale use case (business logic).
+/// Fournit le cas d'usage de création de vente (logique métier).
 
 @ProviderFor(createSaleUseCase)
 final createSaleUseCaseProvider = CreateSaleUseCaseProvider._();
 
-/// Provides the create sale use case (business logic).
+/// Fournit le cas d'usage de création de vente (logique métier).
 
 final class CreateSaleUseCaseProvider
     extends
@@ -70,7 +73,7 @@ final class CreateSaleUseCaseProvider
           CreateSaleUseCase
         >
     with $Provider<CreateSaleUseCase> {
-  /// Provides the create sale use case (business logic).
+  /// Fournit le cas d'usage de création de vente (logique métier).
   CreateSaleUseCaseProvider._()
     : super(
         from: null,

@@ -5,21 +5,21 @@ import 'product_dto.dart';
 part 'product_bulk_dto.freezed.dart';
 part 'product_bulk_dto.g.dart';
 
-/// Outcome of a single row in a bulk product import.
+/// Résultat d'une ligne dans un import produits en masse.
 enum ProductBulkItemStatusDto {
-  /// The row was successfully created.
+  /// La ligne a été créée avec succès.
   @JsonValue('created')
   created,
 
-  /// The row failed to import.
+  /// L'import de la ligne a échoué.
   @JsonValue('failed')
   failed,
 }
 
-/// Result of processing a single row of a bulk product import.
+/// Résultat du traitement d'une ligne d'un import produits en masse.
 @freezed
 sealed class ProductBulkItemResultDto with _$ProductBulkItemResultDto {
-  /// Creates a [ProductBulkItemResultDto].
+  /// Crée un [ProductBulkItemResultDto].
   const factory ProductBulkItemResultDto({
     required int index,
     required ProductBulkItemStatusDto status,
@@ -28,15 +28,16 @@ sealed class ProductBulkItemResultDto with _$ProductBulkItemResultDto {
     String? field,
   }) = _ProductBulkItemResultDto;
 
-  /// Creates a [ProductBulkItemResultDto] from JSON.
+  /// Crée un [ProductBulkItemResultDto] depuis du JSON.
   factory ProductBulkItemResultDto.fromJson(Map<String, dynamic> json) =>
       _$ProductBulkItemResultDtoFromJson(json);
 }
 
-/// Summary response of a best-effort bulk product import.
+/// Réponse récapitulative d'un import produits en masse (au mieux, ligne par
+/// ligne).
 @freezed
 sealed class ProductBulkCreateResponseDto with _$ProductBulkCreateResponseDto {
-  /// Creates a [ProductBulkCreateResponseDto].
+  /// Crée un [ProductBulkCreateResponseDto].
   const factory ProductBulkCreateResponseDto({
     required int processed,
     @JsonKey(name: 'created_count') required int createdCount,
@@ -44,7 +45,7 @@ sealed class ProductBulkCreateResponseDto with _$ProductBulkCreateResponseDto {
     required List<ProductBulkItemResultDto> results,
   }) = _ProductBulkCreateResponseDto;
 
-  /// Creates a [ProductBulkCreateResponseDto] from JSON.
+  /// Crée un [ProductBulkCreateResponseDto] depuis du JSON.
   factory ProductBulkCreateResponseDto.fromJson(Map<String, dynamic> json) =>
       _$ProductBulkCreateResponseDtoFromJson(json);
 }

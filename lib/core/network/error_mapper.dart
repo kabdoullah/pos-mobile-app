@@ -1,7 +1,7 @@
 import 'api_exception.dart';
 
 const _detailMap = <String, String>{
-  // Auth
+  // Authentification
   'This phone number is already registered.': 'Ce numéro est déjà enregistré.',
   'This email is already registered.': 'Cet email est déjà enregistré.',
   'Invalid phone number or password.': 'Numéro ou mot de passe incorrect.',
@@ -13,21 +13,21 @@ const _detailMap = <String, String>{
   'Invalid or expired token.': 'Lien invalide ou expiré',
   'Not authenticated': 'Authentification requise',
   'Invalid credentials': 'Session expirée, veuillez vous reconnecter',
-  // Catalog
+  // Catalogue
   'Product not found.': 'Produit introuvable',
   'A product with this barcode already exists.':
       'Un produit avec ce code-barres existe déjà',
-  // Sales
+  // Ventes
   'Sale not found.': 'Vente introuvable',
-  // Stores
+  // Boutiques
   'Store not found.': 'Boutique introuvable',
   'A store already exists for this user.':
       'Une boutique existe déjà pour cet utilisateur',
-  // Sync
+  // Synchro
   'since must be timezone-aware': 'Paramètre de date invalide',
 };
 
-/// Maps any exception to a French user-facing message.
+/// Convertit n'importe quelle exception en message utilisateur en français.
 String errorToFrench(Object e) {
   if (e is ApiException) {
     return _detailMap[e.message] ?? 'Une erreur est survenue.';

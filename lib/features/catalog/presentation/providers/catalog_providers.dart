@@ -8,7 +8,7 @@ import '../../domain/entities/product.dart';
 
 part 'catalog_providers.g.dart';
 
-/// CatalogListNotifier manages product list with pagination and search.
+/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
 @riverpod
 class CatalogList extends _$CatalogList {
   String _searchQuery = '';
@@ -21,7 +21,7 @@ class CatalogList extends _$CatalogList {
   Future<List<Product>> build() async {
     ref.onDispose(() => _debounceTimer?.cancel());
 
-    // Refresh catalog when a sync cycle completes.
+    // Rafraîchit le catalogue à la fin d'un cycle de synchro.
     ref.listen<SyncStatus>(syncOrchestratorProvider, (prev, next) {
       if (next is SyncStatusIdle) {
         ref.invalidateSelf();
@@ -35,7 +35,7 @@ class CatalogList extends _$CatalogList {
     return page.items;
   }
 
-  /// Debounced search entry-point called from the UI.
+  /// Point d'entrée de recherche avec anti-rebond, appelé depuis l'UI.
   void setSearchQuery(String query) {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(
@@ -44,7 +44,7 @@ class CatalogList extends _$CatalogList {
     );
   }
 
-  /// Search products by name.
+  /// Recherche des produits par nom.
   Future<void> search(String query) async {
     _searchQuery = query;
     _nextCursor = null;
@@ -57,14 +57,16 @@ class CatalogList extends _$CatalogList {
     state = AsyncData(page.items);
   }
 
-  /// Load next page of products.
-  /// Prevents duplicate requests via threshold tracking - only triggers once per new list size.
+  /// Charge la page suivante de produits.
+  /// Évite les requêtes en double en suivant un seuil — ne se déclenche qu'une
+  /// fois par nouvelle taille de liste.
   Future<void> loadMore() async {
     if (!_hasMore || state.isLoading) return;
 
     final currentList = state.whenData((list) => list).value ?? [];
 
-    // Only trigger loadMore once per list size increment
+    // Ne déclencher loadMore qu'une fois par augmentation de la taille de la
+    // liste
     if (currentList.length <= _lastLoadMoreListLength) return;
     _lastLoadMoreListLength = currentList.length;
 
@@ -81,7 +83,8 @@ class CatalogList extends _$CatalogList {
     });
   }
 
-  /// Refresh product list (clear cursor, reload from start).
+  /// Rafraîchit la liste des produits (efface le curseur, recharge depuis le
+  /// début).
   Future<void> refresh() async {
     _nextCursor = null;
     _hasMore = true;
@@ -97,7 +100,7 @@ class CatalogList extends _$CatalogList {
     });
   }
 
-  /// Create a new product.
+  /// Crée un nouveau produit.
   Future<void> createProduct({
     required String name,
     required String unitPrice,
@@ -113,11 +116,11 @@ class CatalogList extends _$CatalogList {
       currentStock: currentStock,
       minStock: minStock,
     );
-    // Refresh list after creation
+    // Rafraîchit la liste après la création
     await refresh();
   }
 
-  /// Update an existing product.
+  /// Met à jour un produit existant.
   Future<void> updateProduct({
     required String id,
     String? name,
@@ -135,20 +138,20 @@ class CatalogList extends _$CatalogList {
       currentStock: currentStock,
       minStock: minStock,
     );
-    // Refresh list after update
+    // Rafraîchit la liste après la mise à jour
     await refresh();
   }
 
-  /// Delete a product by ID.
+  /// Supprime un produit par ID.
   Future<void> deleteProduct(String id) async {
     final repo = ref.read(catalogRepositoryProvider);
     await repo.deleteProduct(id);
-    // Refresh list after deletion
+    // Rafraîchit la liste après la suppression
     await refresh();
   }
 }
 
-/// Get a single product by ID for edit form.
+/// Récupère un produit par ID pour le formulaire d'édition.
 @riverpod
 Future<Product?> product(Ref ref, String id) async {
   final repo = ref.watch(catalogRepositoryProvider);

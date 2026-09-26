@@ -3,17 +3,17 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'product_dto.freezed.dart';
 part 'product_dto.g.dart';
 
-/// Product data transfer object from API.
+/// Objet de transfert produit reçu de l'API.
 @freezed
 sealed class ProductDto with _$ProductDto {
-  /// Creates a [ProductDto].
+  /// Crée un [ProductDto].
   const factory ProductDto({
     required String id,
     @JsonKey(name: 'store_id') required String storeId,
     required String name,
     String? barcode,
 
-    /// Price in FCFA, received as string from API.
+    /// Prix en FCFA, reçu sous forme de chaîne depuis l'API.
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
@@ -26,15 +26,15 @@ sealed class ProductDto with _$ProductDto {
       _$ProductDtoFromJson(json);
 }
 
-/// Request to create a product.
+/// Requête de création d'un produit.
 @freezed
 sealed class ProductCreateDto with _$ProductCreateDto {
-  /// Creates a [ProductCreateDto].
+  /// Crée un [ProductCreateDto].
   const factory ProductCreateDto({
     required String name,
     String? barcode,
 
-    /// Price in FCFA.
+    /// Prix en FCFA.
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
@@ -44,10 +44,10 @@ sealed class ProductCreateDto with _$ProductCreateDto {
       _$ProductCreateDtoFromJson(json);
 }
 
-/// Request to update a product (PATCH).
+/// Requête de mise à jour d'un produit (PATCH).
 @freezed
 sealed class ProductUpdateDto with _$ProductUpdateDto {
-  /// Creates a [ProductUpdateDto].
+  /// Crée un [ProductUpdateDto].
   const factory ProductUpdateDto({
     String? name,
     String? barcode,

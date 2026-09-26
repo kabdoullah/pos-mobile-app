@@ -5,16 +5,17 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 import '../../../../core/responsive/responsive.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/printer_provider.dart';
 
-/// Page for pairing and connecting to a Bluetooth thermal printer.
+/// Page d'appairage et de connexion à une imprimante thermique Bluetooth.
 ///
-/// The page explains that printers must be paired in Android system settings first,
-/// then lists paired devices for selection and connection.
+/// La page explique que les imprimantes doivent d'abord être appairées dans les
+/// paramètres système Android, puis liste les appareils appairés pour les
+/// sélectionner et s'y connecter.
 class BluetoothSetupPage extends ConsumerStatefulWidget {
-  /// Creates a [BluetoothSetupPage].
+  /// Crée une [BluetoothSetupPage].
   const BluetoothSetupPage({super.key});
 
   @override
@@ -36,7 +37,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
   }
 
   Future<void> _checkPermissions() async {
-    // Check BLUETOOTH_CONNECT permission (Android 12+)
+    // Vérifie la permission BLUETOOTH_CONNECT (Android 12+)
     final status = await Permission.bluetoothConnect.status;
     final hasPermission = status.isGranted;
 
@@ -79,7 +80,8 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
 
     setState(() => _isLoading = true);
     try {
-      // Note: BluetoothInfo.macAdress has a typo (single 'd') in print_bluetooth_thermal v1.2.x
+      // Note : BluetoothInfo.macAdress contient une faute de frappe (un seul «
+      // d ») dans print_bluetooth_thermal v1.2.x
       final devices = await PrintBluetoothThermal.pairedBluetooths;
       if (mounted) setState(() => _pairedDevices = devices);
     } catch (e) {
@@ -102,7 +104,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     // ✨ mémoriser le MAC pour afficher le spinner uniquement sur cette carte
     setState(() => _connectingMac = device.macAdress);
 
-    // Note: BluetoothInfo.macAdress (single 'd')
+    // Note : BluetoothInfo.macAdress (un seul « d »)
     await ref
         .read(printerProvider.notifier)
         .connect(device.macAdress, device.name);
@@ -123,7 +125,8 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     }
   }
 
-  // Fix #2: show snackbar + pop instead of broken test-print dialog
+  // Correctif n°2 : snackbar + retour au lieu du dialogue d'impression test
+  // cassé
   void _onConnectSuccess() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -181,7 +184,8 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
                 message:
                     'Appairez d\'abord votre imprimante Bluetooth dans les réglages Android.',
                 actionLabel: 'Ouvrir les réglages Bluetooth',
-                // Fix #3: open Bluetooth settings directly via app_settings
+                // Correctif n°3 : ouvre directement les paramètres Bluetooth
+                // via app_settings
                 onAction: () => AppSettings.openAppSettings(
                   type: AppSettingsType.bluetooth,
                 ),

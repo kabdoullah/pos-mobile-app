@@ -8,17 +8,17 @@ part of 'app_router.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Root router configuration.
+/// Configuration racine du routeur.
 
 @ProviderFor(appRouter)
 final appRouterProvider = AppRouterProvider._();
 
-/// Root router configuration.
+/// Configuration racine du routeur.
 
 final class AppRouterProvider
     extends $FunctionalProvider<GoRouter, GoRouter, GoRouter>
     with $Provider<GoRouter> {
-  /// Root router configuration.
+  /// Configuration racine du routeur.
   AppRouterProvider._()
     : super(
         from: null,
@@ -52,4 +52,4 @@ final class AppRouterProvider
   }
 }
 
-String _$appRouterHash() => r'efc9db7a990e75754b2ce7c08dfb1094a6d84c2e';
+String _$appRouterHash() => r'109a2d749db06bc2b91c9d2a2f7d281f5c23a675';

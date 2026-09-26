@@ -1,53 +1,59 @@
 import 'package:flutter/material.dart';
 
-/// Responsive design helpers for adapting UI across different screen sizes.
+/// Helpers de design responsive pour adapter l'UI aux différentes tailles
+/// d'écran.
 ///
-/// The POS app targets a wide range of Android devices (4.5" to 6.7" screens).
-/// These helpers enable single-codebase layouts that scale appropriately from
-/// small budget phones to larger screens without needing completely different UIs.
+/// L'app POS vise une large gamme d'appareils Android (écrans de 4,5" à 6,7").
+/// Ces helpers permettent des mises en page sur une seule base de code qui
+/// s'adaptent des petits téléphones d'entrée de gamme aux grands écrans, sans
+/// UI complètement différentes.
 extension ResponsiveContext on BuildContext {
-  /// Screen width in logical pixels.
+  /// Largeur de l'écran en pixels logiques.
   double get screenWidth => MediaQuery.of(this).size.width;
 
-  /// Screen height in logical pixels.
+  /// Hauteur de l'écran en pixels logiques.
   double get screenHeight => MediaQuery.of(this).size.height;
 
-  /// Device padding (safe area insets) — sum of all sides.
+  /// Padding de l'appareil (marges de la zone sûre) — somme de tous les côtés.
   EdgeInsets get devicePadding => MediaQuery.of(this).padding;
 
-  /// True if screen width < 360dp. Small budget phones (4.5"–5.0").
+  /// Vrai si la largeur d'écran < 360 dp. Petits téléphones d'entrée de gamme
+  /// (4,5"–5,0").
   bool get isSmallScreen => screenWidth < 360;
 
-  /// True if screen width ≥ 360dp and < 600dp. Medium phones (5.0"–6.0").
+  /// Vrai si la largeur d'écran ≥ 360 dp et < 600 dp. Téléphones moyens
+  /// (5,0"–6,0").
   bool get isMediumScreen => screenWidth >= 360 && screenWidth < 600;
 
-  /// True if screen width ≥ 600dp. Large phones and tablets (6.0"+).
+  /// Vrai si la largeur d'écran ≥ 600 dp. Grands téléphones et tablettes (6,0"
+  /// et plus).
   bool get isLargeScreen => screenWidth >= 600;
 
-  /// Orientation: true if landscape (width > height).
+  /// Orientation : vrai en paysage (largeur > hauteur).
   bool get isLandscape => screenWidth > screenHeight;
 
-  /// Orientation: true if portrait (height > width).
+  /// Orientation : vrai en portrait (hauteur > largeur).
   bool get isPortrait => screenHeight > screenWidth;
 
-  /// Device pixel ratio (logical pixels → physical pixels).
-  /// Helps detect retina/high-DPI screens.
+  /// Densité de pixels de l'appareil (pixels logiques → pixels physiques).
+  /// Aide à détecter les écrans retina / haute densité.
   double get devicePixelRatio => MediaQuery.of(this).devicePixelRatio;
 
-  /// Remaining height after removing status and navigation bars (safe area).
-  /// Useful for calculating remaining space in layouts.
+  /// Hauteur restante une fois retirées les barres d'état et de navigation
+  /// (zone sûre).
+  /// Utile pour calculer l'espace restant dans les mises en page.
   double get availableHeight {
     final padding = MediaQuery.of(this).padding;
     return screenHeight - padding.top - padding.bottom;
   }
 }
 
-/// Pick a value based on screen size classification.
+/// Choisit une valeur selon la catégorie de taille d'écran.
 ///
-/// Enables fluid responsive design without media queries. Returns the most
-/// appropriate value for the current screen size.
+/// Permet un design responsive fluide sans media queries. Retourne la valeur la
+/// plus adaptée à la taille d'écran courante.
 ///
-/// Example:
+/// Exemple :
 /// ```dart
 /// final padding = responsiveValue<double>(
 ///   context,
@@ -71,13 +77,13 @@ T responsiveValue<T>(
   return medium;
 }
 
-/// Pick a layout mode based on screen size.
+/// Choisit un mode de mise en page selon la taille d'écran.
 ///
-/// Simplifies choosing between single-column (mobile) and multi-column
-/// (tablet) layouts. Returns `LayoutMode.compact` for small screens,
-/// `LayoutMode.expanded` for medium/large.
+/// Simplifie le choix entre une mise en page à une colonne (téléphone) et à
+/// plusieurs colonnes (tablette). Retourne `LayoutMode.compact` pour les petits
+/// écrans, `LayoutMode.expanded` pour les moyens/grands.
 ///
-/// Example:
+/// Exemple :
 /// ```dart
 /// final layout = responsiveLayout(context);
 /// if (layout == LayoutMode.compact) {
@@ -90,23 +96,26 @@ LayoutMode responsiveLayout(BuildContext context) {
   return context.isSmallScreen ? LayoutMode.compact : LayoutMode.expanded;
 }
 
-/// Layout classification for responsive design decisions.
+/// Catégorie de mise en page pour les décisions de design responsive.
 enum LayoutMode {
-  /// Single-column vertical layout (mobile phones). Width < 360dp.
+  /// Mise en page verticale à une colonne (téléphones). Largeur < 360 dp.
   compact,
 
-  /// Multi-column or wider layout (tablets or large phones). Width ≥ 360dp.
+  /// Mise en page à plusieurs colonnes ou plus large (tablettes ou grands
+  /// téléphones). Largeur ≥ 360 dp.
   expanded,
 }
 
-/// Breakpoint constants for manual media queries (if needed).
+/// Constantes de points de rupture pour des media queries manuelles (si
+/// besoin).
 abstract class ResponsiveBreakpoints {
-  /// Small screen threshold: 360dp. Includes most budget Android phones.
+  /// Seuil petit écran : 360 dp. Inclut la plupart des téléphones Android
+  /// d'entrée de gamme.
   static const double small = 360;
 
-  /// Medium screen threshold: 600dp. Includes most tablets.
+  /// Seuil écran moyen : 600 dp. Inclut la plupart des tablettes.
   static const double medium = 600;
 
-  /// Large screen threshold: 900dp. Large tablets and foldables.
+  /// Seuil grand écran : 900 dp. Grandes tablettes et appareils pliables.
   static const double large = 900;
 }

@@ -8,22 +8,22 @@ import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_models.dart';
 
-/// Concrete implementation of [AuthRepository].
+/// Implémentation concrète de [AuthRepository].
 class AuthRepositoryImpl implements AuthRepository {
-  /// Creates an AuthRepositoryImpl.
+  /// Crée un AuthRepositoryImpl.
   AuthRepositoryImpl({
     required this.dataSource,
     required this.tokenStorage,
     required this.pinStorage,
   });
 
-  /// Remote data source.
+  /// Data source distante.
   final AuthRemoteDataSource dataSource;
 
-  /// Secure token storage.
+  /// Stockage sécurisé des tokens.
   final SecureTokenStorage tokenStorage;
 
-  /// PIN storage.
+  /// Stockage du PIN.
   final PinStorage pinStorage;
 
   @override
@@ -41,7 +41,7 @@ class AuthRepositoryImpl implements AuthRepository {
         ),
       );
 
-      // Auto-login after registration.
+      // Connexion automatique après l'inscription.
       final tokenRes = await dataSource.login(
         LoginRequestDto(phoneNumber: phoneNumber, password: password),
       );
@@ -161,7 +161,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  /// Converts [DioException] to a [NetworkException].
+  /// Convertit une [DioException] en [NetworkException].
   NetworkException _parseException(DioException e) {
     return parseException(e);
   }

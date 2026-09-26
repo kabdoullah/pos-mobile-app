@@ -12,26 +12,27 @@ import '../../domain/entities/sale.dart' as sale_entity;
 import '../../domain/repositories/sales_repository.dart';
 import '../models/sale_mappers.dart';
 
-/// Concrete implementation of [SalesRepository].
-/// Local-first: reads/writes drift database. Changes enqueued for sync.
-/// Receipt PDF download is the exception — it calls the remote API
-/// directly (no drift mirror), since it is a one-shot action whose result
-/// is not persisted locally.
+/// Implémentation concrète de [SalesRepository].
+/// Local d'abord : lit et écrit dans la base drift. Les changements sont mis en
+/// file pour la synchro.
+/// Le téléchargement du reçu PDF fait exception — il appelle directement l'API
+/// distante (sans miroir drift), car c'est une action ponctuelle dont le
+/// résultat n'est pas conservé en local.
 class SalesRepositoryImpl implements SalesRepository {
-  /// Creates a SalesRepositoryImpl.
+  /// Crée un SalesRepositoryImpl.
   SalesRepositoryImpl({
     required this.db,
     required this.syncQueue,
     required this.dio,
   });
 
-  /// Local drift database instance.
+  /// Instance de la base drift locale.
   final AppDatabase db;
 
-  /// Sync queue repository for marking changes.
+  /// Repository de la file de synchro pour marquer les changements.
   final SyncQueueRepository syncQueue;
 
-  /// Dio instance used for receipt PDF download.
+  /// Instance Dio utilisée pour télécharger le reçu PDF.
   final Dio dio;
 
   @override
@@ -47,7 +48,7 @@ class SalesRepositoryImpl implements SalesRepository {
     final saleId = uuid.v4();
     final now = DateTime.now().toUtc();
 
-    // Build sync payload with items (before transaction)
+    // Construit le payload de synchro avec les articles (avant la transaction)
     final itemPayloads = items
         .map(
           (item) => {
@@ -72,9 +73,9 @@ class SalesRepositoryImpl implements SalesRepository {
       'created_at': now.toIso8601String(),
     };
 
-    // Transaction: insert sale + items + queue entry atomically
+    // Transaction : insertion atomique de la vente + articles + entrée de file
     await db.transaction(() async {
-      // Create sale record
+      // Création de l'enregistrement de la vente
       await db
           .into(db.sales)
           .insert(
@@ -88,7 +89,7 @@ class SalesRepositoryImpl implements SalesRepository {
             ),
           );
 
-      // Create sale items
+      // Création des articles de la vente
       for (final item in items) {
         final itemId = uuid.v4();
         await db
@@ -106,7 +107,8 @@ class SalesRepositoryImpl implements SalesRepository {
             );
       }
 
-      // Decrement stock for each item (products with null stock are unlimited)
+      // Décrémente le stock de chaque article (les produits au stock null sont
+      // illimités)
       for (final item in items) {
         await db.customUpdate(
           'UPDATE products '
@@ -120,7 +122,8 @@ class SalesRepositoryImpl implements SalesRepository {
         );
       }
 
-      // Enqueue for sync within same transaction (ensures atomicity)
+      // Mise en file pour la synchro dans la même transaction (garantit
+      // l'atomicité)
       await syncQueue.enqueueSale(saleId: saleId, salePayload: salePayload);
     });
 
@@ -140,7 +143,8 @@ class SalesRepositoryImpl implements SalesRepository {
     int limit = 50,
   }) async {
     final query = db.select(db.sales);
-    // Keyset pagination: cursor is the createdAt ISO string of the last item.
+    // Pagination par clé : le curseur est la chaîne ISO createdAt du dernier
+    // élément.
     if (cursor != null) {
       final cursorDate = DateTime.parse(cursor);
       query.where((t) => t.createdAt.isSmallerThanValue(cursorDate));
@@ -284,7 +288,7 @@ class SalesRepositoryImpl implements SalesRepository {
     return Uint8List.fromList(response.data!);
   }
 
-  /// Converts domain PaymentMethod to drift string format.
+  /// Convertit le PaymentMethod du domaine au format chaîne drift.
   String _paymentMethodToString(sale_entity.PaymentMethod method) {
     return switch (method) {
       sale_entity.PaymentMethod.cash => 'cash',
@@ -295,7 +299,7 @@ class SalesRepositoryImpl implements SalesRepository {
     };
   }
 
-  /// Converts domain PaymentMethod to API format string.
+  /// Convertit le PaymentMethod du domaine au format chaîne de l'API.
   String _paymentMethodToDtoString(sale_entity.PaymentMethod method) {
     return switch (method) {
       sale_entity.PaymentMethod.cash => 'cash',

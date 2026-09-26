@@ -2,26 +2,27 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'store.freezed.dart';
 
-/// Store configuration for the merchant's shop.
+/// Configuration de la boutique du commerçant.
 ///
-/// Contains basic store info displayed on receipts and in settings.
+/// Contient les informations de base de la boutique affichées sur les reçus et
+/// dans les paramètres.
 @freezed
 sealed class Store with _$Store {
-  /// Creates a [Store].
+  /// Crée un [Store].
   const factory Store({
-    /// Store name (required).
+    /// Nom de la boutique (obligatoire).
     required String name,
 
-    /// Store address (optional).
+    /// Adresse de la boutique (optionnelle).
     String? address,
 
     /// Numéro de Compte Contribuable DGI (optional).
     String? ncc,
 
-    /// Whether the store is subject to VAT (default: false).
+    /// Indique si la boutique est assujettie à la TVA (par défaut : false).
     required bool isSubjectToVat,
 
-    /// Custom footer text for receipts (optional).
+    /// Texte de pied de reçu personnalisé (optionnel).
     String? receiptFooterText,
   }) = _Store;
 }

@@ -8,18 +8,18 @@ part of 'printing_di_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides a singleton [PrinterRepository] implementation.
+/// Fournit une implémentation unique de [PrinterRepository].
 ///
-/// Returns the abstract interface; consumers should not depend on
-/// the concrete [PrinterService] implementation.
+/// Retourne l'interface abstraite ; les consommateurs ne doivent pas dépendre
+/// de l'implémentation concrète [PrinterService].
 
 @ProviderFor(printerRepository)
 final printerRepositoryProvider = PrinterRepositoryProvider._();
 
-/// Provides a singleton [PrinterRepository] implementation.
+/// Fournit une implémentation unique de [PrinterRepository].
 ///
-/// Returns the abstract interface; consumers should not depend on
-/// the concrete [PrinterService] implementation.
+/// Retourne l'interface abstraite ; les consommateurs ne doivent pas dépendre
+/// de l'implémentation concrète [PrinterService].
 
 final class PrinterRepositoryProvider
     extends
@@ -29,10 +29,10 @@ final class PrinterRepositoryProvider
           PrinterRepository
         >
     with $Provider<PrinterRepository> {
-  /// Provides a singleton [PrinterRepository] implementation.
+  /// Fournit une implémentation unique de [PrinterRepository].
   ///
-  /// Returns the abstract interface; consumers should not depend on
-  /// the concrete [PrinterService] implementation.
+  /// Retourne l'interface abstraite ; les consommateurs ne doivent pas dépendre
+  /// de l'implémentation concrète [PrinterService].
   PrinterRepositoryProvider._()
     : super(
         from: null,

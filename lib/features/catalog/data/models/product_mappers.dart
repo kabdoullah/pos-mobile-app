@@ -5,9 +5,9 @@ import '../../../../core/network/api_models/product_dto.dart';
 import '../../../../database/app_database.dart' as drift_db;
 import '../../domain/entities/product.dart' as domain;
 
-/// Maps ProductDto (API) → domain.Product (domain).
+/// Convertit ProductDto (API) → domain.Product (domaine).
 extension ProductDtoToDomain on ProductDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   domain.Product toDomain() => domain.Product(
     id: id,
     name: name,
@@ -20,9 +20,9 @@ extension ProductDtoToDomain on ProductDto {
   );
 }
 
-/// Maps domain.Product → drift ProductsCompanion (drift).
+/// Convertit domain.Product → ProductsCompanion (drift).
 extension DomainProductToDrift on domain.Product {
-  /// Converts domain entity to drift companion.
+  /// Convertit l'entité du domaine en companion drift.
   drift_db.ProductsCompanion toDriftCompanion() => drift_db.ProductsCompanion(
     id: drift.Value(id),
     name: drift.Value(name),
@@ -44,9 +44,9 @@ extension DomainProductToDrift on domain.Product {
   );
 }
 
-/// Maps drift Product row → domain.Product.
+/// Convertit une ligne Product drift → domain.Product.
 extension DriftProductToDomain on drift_db.Product {
-  /// Converts drift row to domain entity.
+  /// Convertit la ligne drift en entité du domaine.
   domain.Product toDomain() => domain.Product(
     id: id,
     name: name,
@@ -59,9 +59,9 @@ extension DriftProductToDomain on drift_db.Product {
   );
 }
 
-/// Maps domain.Product → ProductCreateDto (API request).
+/// Convertit domain.Product → ProductCreateDto (requête API).
 extension DomainProductCreateDtoMapper on domain.Product {
-  /// Converts domain entity to create request DTO.
+  /// Convertit l'entité du domaine en DTO de requête de création.
   ProductCreateDto toCreateDto() => ProductCreateDto(
     name: name,
     barcode: barcode,
@@ -71,9 +71,9 @@ extension DomainProductCreateDtoMapper on domain.Product {
   );
 }
 
-/// Maps domain.Product → ProductUpdateDto (API request).
+/// Convertit domain.Product → ProductUpdateDto (requête API).
 extension DomainProductUpdateDtoMapper on domain.Product {
-  /// Converts domain entity to update request DTO.
+  /// Convertit l'entité du domaine en DTO de requête de mise à jour.
   ProductUpdateDto toUpdateDto() => ProductUpdateDto(
     name: name,
     barcode: barcode,

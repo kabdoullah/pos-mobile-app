@@ -7,16 +7,17 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/theme/illustrations.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../app/theme/illustrations.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/catalog_providers.dart';
+import '../widgets/stock_status.dart';
 
-/// Displays the product catalogue with search, refresh, and navigation
-/// to product creation or editing screens.
+/// Affiche le catalogue produits avec recherche, rafraîchissement et navigation
+/// vers la création ou la modification de produit.
 class CatalogPage extends ConsumerStatefulWidget {
-  /// Creates a [CatalogPage].
+  /// Crée une [CatalogPage].
   const CatalogPage({super.key});
 
   @override
@@ -79,7 +80,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       ),
       body: Column(
         children: [
-          // Search bar
+          // Barre de recherche
           Padding(
             padding: EdgeInsets.all(
               responsiveValue(
@@ -93,7 +94,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 boxShadow: [
                   BoxShadow(
-                    // ✨ cs.primary — dark-mode aware, remplace AppColors.primary hardcodé
+                    // ✨ cs.primary — compatible mode sombre, remplace AppColors.primary hardcodé
                     color: cs.primary.withValues(alpha: 0.08),
                     blurRadius: 4,
                     offset: const Offset(0, 1),
@@ -109,7 +110,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
               ),
             ),
           ),
-          // Product list
+          // Liste des produits
           Expanded(
             child: RefreshIndicator(
               onRefresh: _onRefresh,
@@ -180,13 +181,7 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         final product = products[index];
-                        final stockStatus = product.currentStock != null
-                            ? _stockStatus(
-                                cs,
-                                product.currentStock!,
-                                product.minStock,
-                              )
-                            : null;
+                        final status = stockStatus(cs, product);
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -223,18 +218,17 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
                                     ),
                                   ),
                                 ],
-                                if (stockStatus != null) ...[
+                                if (status != null) ...[
                                   const SizedBox(height: AppSpacing.sm),
                                   Row(
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          stockStatus.label,
+                                          status.label,
                                           style: AppTypography.bodySmall
                                               .copyWith(
-                                                color: stockStatus.color,
-                                                fontWeight:
-                                                    stockStatus.emphasize
+                                                color: status.color,
+                                                fontWeight: status.emphasize
                                                     ? FontWeight.w600
                                                     : null,
                                               ),
@@ -276,21 +270,4 @@ class _CatalogPageState extends ConsumerState<CatalogPage> {
       ),
     );
   }
-}
-
-/// Stock display for a product row: only the exception (rupture, stock bas)
-/// gets color — a normal stock level stays neutral so the list stays
-/// scannable for what actually needs attention.
-({String label, Color color, bool emphasize}) _stockStatus(
-  ColorScheme cs,
-  int stock,
-  int? minStock,
-) {
-  if (stock == 0) {
-    return (label: 'Rupture de stock', color: cs.error, emphasize: true);
-  }
-  if (minStock != null && stock <= minStock) {
-    return (label: 'Stock bas: $stock', color: cs.tertiary, emphasize: true);
-  }
-  return (label: 'Stock: $stock', color: cs.onSurfaceVariant, emphasize: false);
 }

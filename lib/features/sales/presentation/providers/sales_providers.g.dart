@@ -8,12 +8,12 @@ part of 'sales_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Submit current cart as a sale (calls CreateSaleUseCase).
+/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
 
 @ProviderFor(submitSale)
 final submitSaleProvider = SubmitSaleFamily._();
 
-/// Submit current cart as a sale (calls CreateSaleUseCase).
+/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
 
 final class SubmitSaleProvider
     extends
@@ -23,7 +23,7 @@ final class SubmitSaleProvider
           FutureOr<sale_entity.Sale>
         >
     with $FutureModifier<sale_entity.Sale>, $FutureProvider<sale_entity.Sale> {
-  /// Submit current cart as a sale (calls CreateSaleUseCase).
+  /// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
   SubmitSaleProvider._({
     required SubmitSaleFamily super.from,
     required ({
@@ -92,7 +92,7 @@ final class SubmitSaleProvider
 
 String _$submitSaleHash() => r'12a4191801dde3f60aa4934cc19f48d2cfd5646e';
 
-/// Submit current cart as a sale (calls CreateSaleUseCase).
+/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
 
 final class SubmitSaleFamily extends $Family
     with
@@ -115,7 +115,7 @@ final class SubmitSaleFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Submit current cart as a sale (calls CreateSaleUseCase).
+  /// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
 
   SubmitSaleProvider call({
     required Decimal totalAmount,
@@ -138,14 +138,14 @@ final class SubmitSaleFamily extends $Family
   String toString() => r'submitSaleProvider';
 }
 
-/// Watches sales within a date range (inclusive) — re-emits on every drift
-/// change.
+/// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+/// changement drift.
 
 @ProviderFor(salesHistory)
 final salesHistoryProvider = SalesHistoryFamily._();
 
-/// Watches sales within a date range (inclusive) — re-emits on every drift
-/// change.
+/// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+/// changement drift.
 
 final class SalesHistoryProvider
     extends
@@ -157,8 +157,8 @@ final class SalesHistoryProvider
     with
         $FutureModifier<List<sale_entity.Sale>>,
         $StreamProvider<List<sale_entity.Sale>> {
-  /// Watches sales within a date range (inclusive) — re-emits on every drift
-  /// change.
+  /// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+  /// changement drift.
   SalesHistoryProvider._({
     required SalesHistoryFamily super.from,
     required ({DateTime startDate, DateTime endDate}) super.argument,
@@ -209,8 +209,8 @@ final class SalesHistoryProvider
 
 String _$salesHistoryHash() => r'7887999f1aca8cf01b6b360163ef81cedb73826d';
 
-/// Watches sales within a date range (inclusive) — re-emits on every drift
-/// change.
+/// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+/// changement drift.
 
 final class SalesHistoryFamily extends $Family
     with
@@ -227,8 +227,8 @@ final class SalesHistoryFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Watches sales within a date range (inclusive) — re-emits on every drift
-  /// change.
+  /// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+  /// changement drift.
 
   SalesHistoryProvider call({
     required DateTime startDate,
@@ -242,12 +242,12 @@ final class SalesHistoryFamily extends $Family
   String toString() => r'salesHistoryProvider';
 }
 
-/// Downloads the PDF receipt for a sale.
+/// Télécharge le reçu PDF d'une vente.
 
 @ProviderFor(downloadSaleReceiptPdf)
 final downloadSaleReceiptPdfProvider = DownloadSaleReceiptPdfFamily._();
 
-/// Downloads the PDF receipt for a sale.
+/// Télécharge le reçu PDF d'une vente.
 
 final class DownloadSaleReceiptPdfProvider
     extends
@@ -257,7 +257,7 @@ final class DownloadSaleReceiptPdfProvider
           FutureOr<Uint8List>
         >
     with $FutureModifier<Uint8List>, $FutureProvider<Uint8List> {
-  /// Downloads the PDF receipt for a sale.
+  /// Télécharge le reçu PDF d'une vente.
   DownloadSaleReceiptPdfProvider._({
     required DownloadSaleReceiptPdfFamily super.from,
     required String super.argument,
@@ -305,7 +305,7 @@ final class DownloadSaleReceiptPdfProvider
 String _$downloadSaleReceiptPdfHash() =>
     r'9fb8bed472356294a08c6e4a18fa9ab88e34baef';
 
-/// Downloads the PDF receipt for a sale.
+/// Télécharge le reçu PDF d'une vente.
 
 final class DownloadSaleReceiptPdfFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<Uint8List>, String> {
@@ -318,7 +318,7 @@ final class DownloadSaleReceiptPdfFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Downloads the PDF receipt for a sale.
+  /// Télécharge le reçu PDF d'une vente.
 
   DownloadSaleReceiptPdfProvider call(String saleId) =>
       DownloadSaleReceiptPdfProvider._(argument: saleId, from: this);

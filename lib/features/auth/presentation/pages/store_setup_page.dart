@@ -5,24 +5,26 @@ import 'package:logger/logger.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 // ✨ [Design system] import app_colors.dart supprimé — AppColors.textSecondary → cs.onSurfaceVariant
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
 import '../../providers/store_provider.dart';
 import '../widgets/registration_stepper.dart';
 import '../../domain/entities/store.dart';
 
-/// Store setup/configuration page.
+/// Page de création/configuration de la boutique.
 ///
-/// User enters store name, address, optional NCC (tax ID),
-/// and TVA status. Happens after first login before accessing main app.
-/// Can be used in create mode (after registration) or edit mode (from settings).
+/// L'utilisateur saisit le nom de la boutique, l'adresse, le NCC (identifiant
+/// fiscal, optionnel) et le statut TVA. Intervient après la première connexion,
+/// avant d'accéder à l'app. Utilisable en mode création (après l'inscription)
+/// ou en mode édition (depuis les paramètres).
 class StoreSetupPage extends ConsumerStatefulWidget {
-  /// Creates a store setup page.
+  /// Crée une page de configuration de la boutique.
   const StoreSetupPage({this.isEditMode = false, super.key});
 
-  /// If true, page is in edit mode (from settings) and pops instead of routing.
+  /// Si true, la page est en mode édition (depuis les paramètres) et se ferme
+  /// au lieu de router.
   final bool isEditMode;
 
   @override
@@ -40,8 +42,9 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
   bool _isSubjectToVat = true;
   bool _isLoading = false;
 
-  /// True once the edit-mode form has been pre-filled from the existing store.
-  /// Guards against overwriting user edits if the provider re-emits.
+  /// Passe à true une fois le formulaire en mode édition pré-rempli depuis la
+  /// boutique existante.
+  /// Évite d'écraser les modifications de l'utilisateur si le provider réémet.
   bool _prefilled = false;
 
   @override
@@ -52,11 +55,13 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     _nccController = TextEditingController();
   }
 
-  /// Pre-fills the form from the store once its data is available.
+  /// Pré-remplit le formulaire depuis la boutique dès que ses données sont
+  /// disponibles.
   ///
-  /// Handles the async race where `storeConfigProvider` is still loading on
-  /// first build: called both from the initial `ref.read` and from a
-  /// `ref.listen` so a late-arriving value still populates the fields.
+  /// Gère la course asynchrone où `storeConfigProvider` est encore en
+  /// chargement au premier build : appelé à la fois depuis le `ref.read`
+  /// initial et depuis un `ref.listen`, pour qu'une valeur arrivée en retard
+  /// remplisse quand même les champs.
   void _prefillFrom(AsyncValue<Store?> async) {
     if (_prefilled) return;
     final store = async.asData?.value;
@@ -65,7 +70,8 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     _nameController.text = store.name;
     _addressController.text = store.address ?? '';
     _nccController.text = store.ncc ?? '';
-    // Defer setState out of the build phase (this may run during build).
+    // Reporte le setState hors de la phase de build (ceci peut s'exécuter
+    // pendant le build).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) setState(() => _isSubjectToVat = store.isSubjectToVat);
     });
@@ -111,7 +117,7 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
 
       await ref.read(storeConfigProvider.notifier).save(store);
 
-      // Bail out if the widget was unmounted during the save.
+      // On abandonne si le widget a été démonté pendant l'enregistrement.
       if (!mounted) {
         _logger.w('Widget not mounted after save');
         return;
@@ -120,8 +126,9 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
       setState(() => _isLoading = false);
 
       if (widget.isEditMode) {
-        // Edit mode is opened via showModalBottomSheet (root Navigator),
-        // not go_router — pop the Flutter Navigator, not the router.
+        // Le mode édition est ouvert via showModalBottomSheet (Navigator
+        // racine), pas via go_router — on ferme le Navigator Flutter, pas le
+        // routeur.
         Navigator.of(context).pop();
       } else {
         _logger.i('Calling proceedToPinSetup()');
@@ -149,8 +156,9 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Edit mode: pre-fill from the existing store, handling the case where the
-    // provider is still loading on first build (listen catches late values).
+    // Mode édition : pré-remplissage depuis la boutique existante, en gérant le
+    // cas où le provider est encore en chargement au premier build (le listen
+    // récupère les valeurs tardives).
     if (widget.isEditMode && !_prefilled) {
       ref.listen<AsyncValue<Store?>>(storeConfigProvider, (_, next) {
         _prefillFrom(next);
@@ -167,9 +175,10 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     );
 
     return Scaffold(
-      // Edit mode is pushed as a fullscreen dialog from settings — give it a
-      // close affordance. Create mode is reached via the router and has no
-      // back action (onboarding step), so it keeps its in-body header only.
+      // Le mode édition est poussé en dialogue plein écran depuis les
+      // paramètres — on lui donne un moyen de fermer. Le mode création est
+      // atteint via le routeur et n'a pas d'action retour (étape d'onboarding),
+      // il garde donc seulement son en-tête dans le corps.
       appBar: widget.isEditMode
           ? AppBar(
               elevation: 0,
@@ -206,7 +215,8 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    // ✨ [Design system] cs.onSurfaceVariant remplace AppColors.textSecondary — dark mode safe
+                    // ✨ [Design system] cs.onSurfaceVariant remplace
+                    // AppColors.textSecondary — compatible mode sombre
                     Text(
                       'Configurez votre point de vente pour vos reçus et rapports.',
                       style: AppTypography.bodyMedium.copyWith(

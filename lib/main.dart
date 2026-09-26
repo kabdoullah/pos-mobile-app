@@ -3,7 +3,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'core/app.dart';
+import 'app/app.dart';
 import 'core/config.dart';
 import 'core/network/network_providers.dart';
 

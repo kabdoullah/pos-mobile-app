@@ -1,76 +1,58 @@
-import 'package:decimal/decimal.dart';
+import 'dart:async';
+
+import 'package:clock/clock.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/sale.dart';
+import '../../../sales/domain/repositories/sales_repository.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
 part 'home_providers.g.dart';
 
-/// Number of sales shown in the home page "recent activity" mini-list.
+/// Nombre de ventes affichées dans la mini-liste « activité récente » de
+/// l'accueil.
 const _recentSalesLimit = 3;
 
-/// Summarizes today's sales totals by payment method.
-class DailySummary {
-  /// Creates a [DailySummary].
-  const DailySummary({
-    required this.totalAmount,
-    required this.saleCount,
-    required this.cashTotal,
-    required this.mobileMoneyTotal,
-  });
-
-  /// Total revenue today in FCFA.
-  final Decimal totalAmount;
-
-  /// Number of completed sales today.
-  final int saleCount;
-
-  /// Cash portion of total.
-  final Decimal cashTotal;
-
-  /// Mobile money portion (all non-cash types combined).
-  final Decimal mobileMoneyTotal;
-
-  /// Empty summary for loading/error states.
-  static final empty = DailySummary(
-    totalAmount: Decimal.zero,
-    saleCount: 0,
-    cashTotal: Decimal.zero,
-    mobileMoneyTotal: Decimal.zero,
-  );
-}
-
-/// Streams today's sales summary — re-emits automatically on every new sale.
+/// Date du jour (minuit local). Se reconstruit au prochain minuit pour que
+/// chaque provider lié à « aujourd'hui » se réabonne au changement de jour —
+/// sinon un tableau de bord resté ouvert la nuit continue d'afficher la veille.
 @riverpod
-Stream<DailySummary> dailySummary(Ref ref) {
-  return ref
-      .watch(salesRepositoryProvider)
-      .watchTodayStats()
-      .map(
-        (stats) => DailySummary(
-          totalAmount: stats.totalAmount,
-          saleCount: stats.saleCount,
-          cashTotal: stats.cashTotal,
-          mobileMoneyTotal: stats.mobileMoneyTotal,
-        ),
-      );
+DateTime today(Ref ref) {
+  final now = clock.now();
+  final nextMidnight = DateTime(now.year, now.month, now.day + 1);
+  final timer = Timer(nextMidnight.difference(now), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  return DateTime(now.year, now.month, now.day);
 }
 
-/// Streams the most recent sales of the day, newest first — for the home
-/// page "recent activity" mini-list.
+/// Diffuse les totaux de ventes du jour — réémet automatiquement à chaque
+/// nouvelle vente.
+@riverpod
+Stream<DailyStats> dailySummary(Ref ref) {
+  // watchTodayStats() fige « aujourd'hui » à l'abonnement : se réabonner
+  // chaque jour.
+  ref.watch(todayProvider);
+  return ref.watch(salesRepositoryProvider).watchTodayStats();
+}
+
+/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
+/// ancienne — pour la mini-liste « activité récente » de l'accueil.
 @riverpod
 Stream<List<Sale>> recentSales(Ref ref) {
-  final today = DateTime.now();
+  final today = ref.watch(todayProvider);
   return ref
       .watch(salesRepositoryProvider)
       .watchSalesByDateRange(today, today)
       .map((sales) => sales.take(_recentSalesLimit).toList());
 }
 
-/// Streams the count of products in rupture or at/below their reorder
-/// threshold — drives the home page low-stock banner.
+/// Diffuse le nombre de produits en rupture ou sous leur seuil de
+/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
 @riverpod
 Stream<int> lowStockCount(Ref ref) {
-  return ref.watch(catalogRepositoryProvider).watchLowStockCount();
+  return ref
+      .watch(catalogRepositoryProvider)
+      .watchLowStockProducts()
+      .map((products) => products.length);
 }

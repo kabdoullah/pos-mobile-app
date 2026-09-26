@@ -6,10 +6,10 @@ import 'sale_dto.dart';
 part 'sync_responses_dto.freezed.dart';
 part 'sync_responses_dto.g.dart';
 
-/// Request to push a batch of sales.
+/// Requête d'envoi d'un lot de ventes.
 @freezed
 sealed class SalesSyncBatchRequestDto with _$SalesSyncBatchRequestDto {
-  /// Creates a [SalesSyncBatchRequestDto].
+  /// Crée un [SalesSyncBatchRequestDto].
   const factory SalesSyncBatchRequestDto({required List<SaleCreateDto> sales}) =
       _SalesSyncBatchRequestDto;
 
@@ -17,10 +17,10 @@ sealed class SalesSyncBatchRequestDto with _$SalesSyncBatchRequestDto {
       _$SalesSyncBatchRequestDtoFromJson(json);
 }
 
-/// Single sale result from POST /api/v1/sync/sales batch.
+/// Résultat d'une vente dans le lot POST /api/v1/sync/sales.
 @freezed
 sealed class SaleSyncResultDto with _$SaleSyncResultDto {
-  /// Creates a [SaleSyncResultDto].
+  /// Crée un [SaleSyncResultDto].
   const factory SaleSyncResultDto({
     required String id,
     required String status, // 'created', 'already_exists', 'failed'
@@ -32,10 +32,10 @@ sealed class SaleSyncResultDto with _$SaleSyncResultDto {
       _$SaleSyncResultDtoFromJson(json);
 }
 
-/// Response from POST /api/v1/sync/sales.
+/// Réponse de POST /api/v1/sync/sales.
 @freezed
 sealed class SalesSyncBatchResponseDto with _$SalesSyncBatchResponseDto {
-  /// Creates a [SalesSyncBatchResponseDto].
+  /// Crée un [SalesSyncBatchResponseDto].
   const factory SalesSyncBatchResponseDto({
     required int processed,
     required List<SaleSyncResultDto> results,
@@ -45,10 +45,10 @@ sealed class SalesSyncBatchResponseDto with _$SalesSyncBatchResponseDto {
       _$SalesSyncBatchResponseDtoFromJson(json);
 }
 
-/// Response from PUT /api/v1/sync/products.
+/// Réponse de PUT /api/v1/sync/products.
 @freezed
 sealed class ProductSyncResponseDto with _$ProductSyncResponseDto {
-  /// Creates a [ProductSyncResponseDto].
+  /// Crée un [ProductSyncResponseDto].
   const factory ProductSyncResponseDto({
     required String
     status, // 'created', 'updated', 'no_change', 'deleted', 'conflict'

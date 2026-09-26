@@ -1,26 +1,27 @@
 import 'package:dio/dio.dart';
 
-/// Base exception for all network-related errors.
+/// Exception de base pour toutes les erreurs réseau.
 sealed class NetworkException implements Exception {
-  /// Creates a NetworkException with a user-facing message.
+  /// Crée une NetworkException avec un message destiné à l'utilisateur.
   NetworkException(this.message);
 
-  /// User-facing message in French.
+  /// Message destiné à l'utilisateur, en français.
   final String message;
 }
 
-/// No connection, timeout, or network unreachable.
-/// User-facing message is in French.
+/// Pas de connexion, délai dépassé ou réseau injoignable.
+/// Le message destiné à l'utilisateur est en français.
 class ConnectionException extends NetworkException {
-  /// Creates a ConnectionException.
+  /// Crée une ConnectionException.
   ConnectionException()
     : super('Pas de connexion. Vos données sont sauvegardées localement.');
 }
 
-/// API returned 4xx or 5xx with structured error body.
-/// Provides machine-readable error code, user-facing message, and optional field.
+/// L'API a renvoyé un 4xx ou 5xx avec un corps d'erreur structuré.
+/// Fournit un code d'erreur lisible par la machine, un message utilisateur et
+/// un champ optionnel.
 class ApiException extends NetworkException {
-  /// Creates an ApiException.
+  /// Crée une ApiException.
   ApiException({
     required this.statusCode,
     required this.code,
@@ -28,20 +29,20 @@ class ApiException extends NetworkException {
     this.field,
   }) : super(detail);
 
-  /// HTTP status code (400–599).
+  /// Code de statut HTTP (400–599).
   final int statusCode;
 
-  /// Machine-readable error code (e.g., 'INVALID_EMAIL').
+  /// Code d'erreur lisible par la machine (ex. 'INVALID_EMAIL').
   final String code;
 
-  /// Optional field name if validation error.
+  /// Nom du champ concerné en cas d'erreur de validation (optionnel).
   final String? field;
 }
 
-/// 401 Unauthorized — token invalid or expired, refresh failed.
-/// Extends ApiException to preserve HTTP status and error code.
+/// 401 Unauthorized — token invalide ou expiré, rafraîchissement échoué.
+/// Étend ApiException pour conserver le statut HTTP et le code d'erreur.
 class UnauthorizedException extends ApiException {
-  /// Creates an UnauthorizedException.
+  /// Crée une UnauthorizedException.
   UnauthorizedException({
     required super.code,
     required super.detail,
@@ -49,17 +50,17 @@ class UnauthorizedException extends ApiException {
   }) : super(statusCode: 401);
 }
 
-/// 409 Conflict — sync or unique constraint violation.
-/// Extends ApiException to preserve HTTP status and error code.
+/// 409 Conflict — conflit de synchro ou violation de contrainte d'unicité.
+/// Étend ApiException pour conserver le statut HTTP et le code d'erreur.
 class ConflictException extends ApiException {
-  /// Creates a ConflictException.
+  /// Crée une ConflictException.
   ConflictException({required super.code, required super.detail, super.field})
     : super(statusCode: 409);
 }
 
-/// Parses DioException into a project-specific NetworkException.
+/// Convertit une DioException en NetworkException propre au projet.
 NetworkException parseException(DioException e) {
-  // Network errors (no response received).
+  // Erreurs réseau (aucune réponse reçue).
   if (e.type == DioExceptionType.connectionTimeout ||
       e.type == DioExceptionType.receiveTimeout ||
       e.type == DioExceptionType.connectionError ||
@@ -72,7 +73,7 @@ NetworkException parseException(DioException e) {
     e.response!.data as Map<String, dynamic>?,
   );
 
-  // Specific status codes.
+  // Codes de statut spécifiques.
   if (statusCode == 401) {
     return UnauthorizedException(code: code, detail: detail, field: field);
   }
@@ -80,7 +81,7 @@ NetworkException parseException(DioException e) {
     return ConflictException(code: code, detail: detail, field: field);
   }
 
-  // Generic 4xx/5xx.
+  // 4xx/5xx génériques.
   return ApiException(
     statusCode: statusCode,
     code: code,

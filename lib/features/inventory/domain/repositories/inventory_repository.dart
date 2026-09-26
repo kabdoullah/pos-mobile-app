@@ -1,16 +1,17 @@
 import '../entities/stock_movement.dart';
 import '../entities/stock_movement_page.dart';
 
-/// Abstract repository for inventory (stock movement) operations.
+/// Repository abstrait pour les opérations d'inventaire (mouvements de stock).
 abstract class InventoryRepository {
-  /// Get stock movements, optionally filtered by product and paginated by cursor.
+  /// Récupère les mouvements de stock, filtrés en option par produit, et
+  /// paginés par curseur.
   Future<StockMovementPage> getMovements({
     String? productId,
     String? cursor,
     int limit = 50,
   });
 
-  /// Record a manual stock adjustment (reception, breakage, correction).
+  /// Enregistre un ajustement de stock manuel (réception, casse, correction).
   Future<StockMovement> createAdjustment({
     required String productId,
     required int quantityDelta,

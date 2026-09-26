@@ -5,9 +5,9 @@ import '../domain/repositories/printer_repository.dart';
 
 part 'printing_di_providers.g.dart';
 
-/// Provides a singleton [PrinterRepository] implementation.
+/// Fournit une implémentation unique de [PrinterRepository].
 ///
-/// Returns the abstract interface; consumers should not depend on
-/// the concrete [PrinterService] implementation.
+/// Retourne l'interface abstraite ; les consommateurs ne doivent pas dépendre
+/// de l'implémentation concrète [PrinterService].
 @riverpod
 PrinterRepository printerRepository(Ref ref) => const PrinterService();

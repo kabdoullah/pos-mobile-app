@@ -5,13 +5,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/index.dart';
 
-/// Page that displays a barcode scanner and handles camera permission.
+/// Page qui affiche un scanner de code-barres et gère la permission caméra.
 class BarcodeScannerPage extends StatefulWidget {
-  /// Creates a page for scanning barcodes using the device camera.
+  /// Crée une page de scan de codes-barres avec la caméra de l'appareil.
   const BarcodeScannerPage({super.key});
 
   @override
@@ -98,7 +98,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Camera feed
+        // Flux caméra
         MobileScanner(
           controller: _controller,
           onDetect: (capture) {
@@ -107,7 +107,8 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
             if (code != null && mounted) context.pop(code);
           },
         ),
-        // Scrim with viewfinder cutout — evenOdd fill leaves the scan area clear
+        // Voile avec découpe du viseur — le remplissage evenOdd laisse la zone
+        // de scan dégagée
         const CustomPaint(
           painter: _ScanOverlayPainter(overlayColor: AppColors.scrim),
         ),

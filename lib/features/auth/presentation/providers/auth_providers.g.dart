@@ -8,41 +8,56 @@ part of 'auth_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Manages authentication state and actions (login, register, PIN setup/verify, logout).
+/// Gère l'état et les actions d'authentification (connexion, inscription,
+/// création/vérification du PIN, déconnexion).
 ///
-/// State is `AsyncValue<AuthStatus>`:
-/// - `AsyncLoading`: operation in progress (init, login, register, PIN verify, etc.)
-/// - `AsyncData(status)`: operation succeeded, user is in `status`
-/// - `AsyncError(exception)`: operation failed, exception is user-friendly message (see [_toUserFacingException])
+/// L'état est un `AsyncValue<AuthStatus>` :
+/// - `AsyncLoading` : opération en cours (init, connexion, inscription,
+///   vérification du PIN, etc.)
+/// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
+/// - `AsyncError(exception)` : opération échouée, l'exception est un message
+///   lisible par l'utilisateur (voir [_toUserFacingException])
 ///
-/// Init sequence: On app launch, `build()` checks secure storage for tokens + PIN config, then routes accordingly.
-/// Token expiry is handled via [authExpiredControllerProvider] stream — when server invalidates token,
-/// this notifier transitions to `Unauthenticated`, router detects change and redirects to login.
+/// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
+/// config du PIN dans le secure storage, puis route en conséquence.
+/// L'expiration du token est gérée via le flux [authExpiredControllerProvider]
+/// — quand le serveur invalide le token, ce notifier passe à `Unauthenticated`,
+/// le routeur détecte le changement et redirige vers la connexion.
 
 @ProviderFor(Auth)
 final authProvider = AuthProvider._();
 
-/// Manages authentication state and actions (login, register, PIN setup/verify, logout).
+/// Gère l'état et les actions d'authentification (connexion, inscription,
+/// création/vérification du PIN, déconnexion).
 ///
-/// State is `AsyncValue<AuthStatus>`:
-/// - `AsyncLoading`: operation in progress (init, login, register, PIN verify, etc.)
-/// - `AsyncData(status)`: operation succeeded, user is in `status`
-/// - `AsyncError(exception)`: operation failed, exception is user-friendly message (see [_toUserFacingException])
+/// L'état est un `AsyncValue<AuthStatus>` :
+/// - `AsyncLoading` : opération en cours (init, connexion, inscription,
+///   vérification du PIN, etc.)
+/// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
+/// - `AsyncError(exception)` : opération échouée, l'exception est un message
+///   lisible par l'utilisateur (voir [_toUserFacingException])
 ///
-/// Init sequence: On app launch, `build()` checks secure storage for tokens + PIN config, then routes accordingly.
-/// Token expiry is handled via [authExpiredControllerProvider] stream — when server invalidates token,
-/// this notifier transitions to `Unauthenticated`, router detects change and redirects to login.
+/// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
+/// config du PIN dans le secure storage, puis route en conséquence.
+/// L'expiration du token est gérée via le flux [authExpiredControllerProvider]
+/// — quand le serveur invalide le token, ce notifier passe à `Unauthenticated`,
+/// le routeur détecte le changement et redirige vers la connexion.
 final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
-  /// Manages authentication state and actions (login, register, PIN setup/verify, logout).
+  /// Gère l'état et les actions d'authentification (connexion, inscription,
+  /// création/vérification du PIN, déconnexion).
   ///
-  /// State is `AsyncValue<AuthStatus>`:
-  /// - `AsyncLoading`: operation in progress (init, login, register, PIN verify, etc.)
-  /// - `AsyncData(status)`: operation succeeded, user is in `status`
-  /// - `AsyncError(exception)`: operation failed, exception is user-friendly message (see [_toUserFacingException])
+  /// L'état est un `AsyncValue<AuthStatus>` :
+  /// - `AsyncLoading` : opération en cours (init, connexion, inscription,
+  ///   vérification du PIN, etc.)
+  /// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
+  /// - `AsyncError(exception)` : opération échouée, l'exception est un message
+  ///   lisible par l'utilisateur (voir [_toUserFacingException])
   ///
-  /// Init sequence: On app launch, `build()` checks secure storage for tokens + PIN config, then routes accordingly.
-  /// Token expiry is handled via [authExpiredControllerProvider] stream — when server invalidates token,
-  /// this notifier transitions to `Unauthenticated`, router detects change and redirects to login.
+  /// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
+  /// config du PIN dans le secure storage, puis route en conséquence.
+  /// L'expiration du token est gérée via le flux [authExpiredControllerProvider]
+  /// — quand le serveur invalide le token, ce notifier passe à `Unauthenticated`,
+  /// le routeur détecte le changement et redirige vers la connexion.
   AuthProvider._()
     : super(
         from: null,
@@ -62,18 +77,23 @@ final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
   Auth create() => Auth();
 }
 
-String _$authHash() => r'a0ecd49ed01fab563c0b62f1bd6499ab66306757';
+String _$authHash() => r'8743a11b09f1ee1a7e92388345b4ae739fd7e7be';
 
-/// Manages authentication state and actions (login, register, PIN setup/verify, logout).
+/// Gère l'état et les actions d'authentification (connexion, inscription,
+/// création/vérification du PIN, déconnexion).
 ///
-/// State is `AsyncValue<AuthStatus>`:
-/// - `AsyncLoading`: operation in progress (init, login, register, PIN verify, etc.)
-/// - `AsyncData(status)`: operation succeeded, user is in `status`
-/// - `AsyncError(exception)`: operation failed, exception is user-friendly message (see [_toUserFacingException])
+/// L'état est un `AsyncValue<AuthStatus>` :
+/// - `AsyncLoading` : opération en cours (init, connexion, inscription,
+///   vérification du PIN, etc.)
+/// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
+/// - `AsyncError(exception)` : opération échouée, l'exception est un message
+///   lisible par l'utilisateur (voir [_toUserFacingException])
 ///
-/// Init sequence: On app launch, `build()` checks secure storage for tokens + PIN config, then routes accordingly.
-/// Token expiry is handled via [authExpiredControllerProvider] stream — when server invalidates token,
-/// this notifier transitions to `Unauthenticated`, router detects change and redirects to login.
+/// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
+/// config du PIN dans le secure storage, puis route en conséquence.
+/// L'expiration du token est gérée via le flux [authExpiredControllerProvider]
+/// — quand le serveur invalide le token, ce notifier passe à `Unauthenticated`,
+/// le routeur détecte le changement et redirige vers la connexion.
 
 abstract class _$Auth extends $AsyncNotifier<AuthStatus> {
   FutureOr<AuthStatus> build();

@@ -3,16 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/responsive/responsive.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/providers/catalog_providers.dart';
 import '../providers/cart_provider.dart';
 
-/// AddProductToCartSheet — bottom sheet for searching and adding products.
+/// AddProductToCartSheet — bottom sheet pour rechercher et ajouter des
+/// produits.
 class AddProductToCartSheet extends ConsumerStatefulWidget {
-  /// Creates an [AddProductToCartSheet].
+  /// Crée une [AddProductToCartSheet].
   const AddProductToCartSheet({super.key});
 
   @override
@@ -78,7 +79,7 @@ class _AddProductToCartSheetState extends ConsumerState<AddProductToCartSheet> {
       builder: (context, scrollController) {
         return Container(
           decoration: BoxDecoration(
-            // ✨ cs.surface — dark-mode aware, remplace AppColors.background hardcodé
+            // ✨ cs.surface — compatible mode sombre, remplace AppColors.background hardcodé
             color: cs.surface,
             borderRadius: const BorderRadius.vertical(
               top: Radius.circular(AppSpacing.radiusLg),
@@ -86,14 +87,15 @@ class _AddProductToCartSheetState extends ConsumerState<AddProductToCartSheet> {
           ),
           child: Column(
             children: [
-              // Handle
+              // Poignée
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.md),
                 child: Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    // ✨ cs.outlineVariant — dark-mode aware, remplace AppColors.border
+                    // ✨ cs.outlineVariant — compatible mode sombre, remplace
+                    // AppColors.border
                     color: cs.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -186,7 +188,8 @@ class _AddProductToCartSheetState extends ConsumerState<AddProductToCartSheet> {
                                 Container(
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   decoration: BoxDecoration(
-                                    // ✨ cs.primaryContainer — dark-mode aware
+                                    // ✨ cs.primaryContainer — compatible mode
+                                    // sombre
                                     color: cs.primaryContainer,
                                     borderRadius: BorderRadius.circular(
                                       AppSpacing.radiusSm,

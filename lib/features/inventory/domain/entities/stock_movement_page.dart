@@ -1,20 +1,20 @@
 import 'stock_movement.dart';
 
-/// Stock movement page result with pagination metadata.
+/// Page de mouvements de stock avec métadonnées de pagination.
 class StockMovementPage {
-  /// Creates a StockMovementPage.
+  /// Crée une StockMovementPage.
   const StockMovementPage({
     required this.items,
     required this.nextCursor,
     required this.hasMore,
   });
 
-  /// List of stock movements in this page.
+  /// Liste des mouvements de stock de cette page.
   final List<StockMovement> items;
 
-  /// Cursor for fetching next page. Null if no more pages.
+  /// Curseur pour récupérer la page suivante. Null s'il n'y a plus de page.
   final String? nextCursor;
 
-  /// Whether more pages exist.
+  /// Indique s'il reste des pages.
   final bool hasMore;
 }

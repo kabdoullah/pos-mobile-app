@@ -8,19 +8,20 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/catalog_providers.dart';
 
-/// Page for creating or editing a product.
+/// Page de création ou de modification d'un produit.
 class ProductFormPage extends ConsumerStatefulWidget {
-  /// Creates a [ProductFormPage].
+  /// Crée une [ProductFormPage].
   const ProductFormPage({super.key, this.productId, this.initialBarcode});
 
-  /// Product ID for edit mode, null for create mode.
+  /// ID du produit en mode édition, null en mode création.
   final String? productId;
 
-  /// Barcode pre-filled when navigating from a failed scan lookup.
+  /// Code-barres pré-rempli quand on arrive d'une recherche par scan
+  /// infructueuse.
   final String? initialBarcode;
 
   @override
@@ -133,7 +134,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
           : int.tryParse(_minStockController.text.trim());
 
       if (widget.productId == null) {
-        // Create mode
+        // Mode création
         await ref
             .read(catalogListProvider.notifier)
             .createProduct(
@@ -144,7 +145,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               minStock: minStock,
             );
       } else {
-        // Edit mode
+        // Mode édition
         await ref
             .read(catalogListProvider.notifier)
             .updateProduct(
@@ -216,7 +217,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
         ? ref.watch(productProvider(widget.productId!))
         : null;
 
-    // Load form data when in edit mode — once only, regardless of future rebuilds.
+    // Charge les données du formulaire en mode édition — une seule fois, quels
+    // que soient les rebuilds suivants.
     if (productAsync != null && !_prefilled) {
       productAsync.whenData((product) {
         if (product != null) {
@@ -389,7 +391,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   }
 }
 
-/// Private animated form field wrapper — fades and slides in on load.
+/// Enveloppe privée de champ de formulaire animé — apparaît en fondu et
+/// glissement au chargement.
 class _AnimatedFormField extends StatelessWidget {
   const _AnimatedFormField({
     required this.animation,

@@ -5,16 +5,17 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/illustrations.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/illustrations.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
 
-/// Sales history page — displays past sales with date filtering.
+/// Page d'historique des ventes — affiche les ventes passées avec filtre par
+/// date.
 class SalesHistoryPage extends ConsumerStatefulWidget {
-  /// Creates a [SalesHistoryPage].
+  /// Crée une [SalesHistoryPage].
   const SalesHistoryPage({super.key});
 
   @override
@@ -68,7 +69,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
       ],
       body: Column(
         children: [
-          // Date filter header
+          // En-tête du filtre par date
           Container(
             width: double.infinity,
             color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -82,7 +83,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
               textAlign: TextAlign.center,
             ),
           ),
-          // Sales list
+          // Liste des ventes
           Expanded(
             child: salesAsync.when(
               loading: () => const AppLoadingScreen(),
@@ -138,12 +139,12 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
   }
 }
 
-/// Private sale card widget — displays a single sale in history.
+/// Widget privé de carte de vente — affiche une vente dans l'historique.
 class _SaleCard extends ConsumerWidget {
-  /// Creates a [_SaleCard].
+  /// Crée une [_SaleCard].
   const _SaleCard({required this.sale});
 
-  /// The sale to display.
+  /// Vente à afficher.
   final Sale sale;
 
   @override

@@ -8,18 +8,18 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/theme/illustrations.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../app/theme/illustrations.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cart_item.dart';
 import '../pages/add_product_to_cart_sheet.dart';
 import '../providers/cart_provider.dart';
 import '../providers/scan_provider.dart';
 
-/// NewSalePage — permanent scanner with cart bottom sheet overlay.
+/// NewSalePage — scanner permanent avec le panier en bottom sheet par-dessus.
 class NewSalePage extends ConsumerStatefulWidget {
-  /// Creates a new sale page.
+  /// Crée une page de nouvelle vente.
   const NewSalePage({super.key});
 
   @override
@@ -40,9 +40,9 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
-      // Catalogue barcodes are EAN-13/EAN-8. Restricting formats prevents
-      // ML Kit from misreading a partially-focused EAN-13 as a spurious
-      // (checksum-valid but wrong) UPC-A/Code128 symbol.
+      // Les codes-barres du catalogue sont en EAN-13/EAN-8. Restreindre les
+      // formats évite que ML Kit lise un EAN-13 mal cadré comme un symbole
+      // UPC-A/Code128 parasite (somme de contrôle valide mais faux).
       formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8],
     );
     unawaited(_checkPermission());
@@ -141,7 +141,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
     final rawValue = capture.barcodes.firstOrNull?.rawValue;
     if (rawValue == null || !mounted) return;
-    // Normalize before scan and before passing to product form.
+    // Normalise avant le scan et avant de passer au formulaire produit.
     final code = rawValue.trim().replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
     if (code.isEmpty) return;
 
@@ -220,13 +220,16 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Keep ScanController alive while page is mounted — prevents autoDispose
-    // during the async getByBarcode() gap when called via ref.read().
+    // Garde ScanController en vie tant que la page est montée — évite
+    // l'auto-dispose pendant l'attente asynchrone de getByBarcode() quand il
+    // est appelé via ref.read().
     ref.watch(scanControllerProvider);
     final cartState = ref.watch(cartProvider);
 
-    // ✨ PopScope — Android system back goes to home when stack is empty
-    // (happens after SaleSuccessPage uses context.go which clears the stack)
+    // ✨ PopScope — le retour système Android revient à l'accueil quand la pile
+    // est vide
+    // (ce qui arrive après que SaleSuccessPage a utilisé context.go, qui vide
+    // la pile)
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -245,7 +248,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
 
               return Stack(
                 children: [
-                  // Scanner panel
+                  // Panneau du scanner
                   Positioned(
                     top: 0,
                     left: 0,
@@ -268,7 +271,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                       onOpenAppSettings: openAppSettings,
                     ),
                   ),
-                  // Cart panel overlapping the scanner
+                  // Panneau du panier par-dessus le scanner
                   Positioned(
                     top: cartTop,
                     left: 0,
@@ -342,7 +345,7 @@ class _ScannerPanel extends StatelessWidget {
   }
 
   Widget _buildLoadingState() {
-    // camera viewport is always dark regardless of app theme
+    // la zone caméra reste toujours sombre, quel que soit le thème de l'app
     return const ColoredBox(
       color: Color(0xFF0C0906),
       child: Center(child: AppLoadingIndicator()),
@@ -402,7 +405,7 @@ class _ScannerPanel extends StatelessWidget {
       fit: StackFit.expand,
       children: [
         MobileScanner(controller: controller, onDetect: onBarcodeDetected),
-        // ✨ camera overlay — keep fixed dark scrim (camera-specific, not themed)
+        // ✨ overlay caméra — voile sombre fixe (propre à la caméra, non thémé)
         const CustomPaint(
           painter: _ScannerOverlayPainter(overlayColor: Color(0x991C1107)),
         ),
@@ -411,7 +414,7 @@ class _ScannerPanel extends StatelessWidget {
             width: 200,
             height: 200,
             child: CustomPaint(
-              // ✨ secondary gold — viewfinder accent, themed indirectly
+              // ✨ or secondaire — accent du viseur, thémé indirectement
               painter: _ViewfinderCornersPainter(color: Color(0xFFCA8A04)),
             ),
           ),
@@ -476,7 +479,7 @@ class _FloatingIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final button = Material(
-      // ✨ cs.surface — dark-mode aware, remplace AppColors.surface hardcodé
+      // ✨ cs.surface — compatible mode sombre, remplace AppColors.surface hardcodé
       color: cs.surface.withValues(alpha: 0.85),
       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
       child: InkWell(
@@ -487,7 +490,7 @@ class _FloatingIconButton extends StatelessWidget {
           height: AppSpacing.iconButtonSize,
           child: Icon(
             icon,
-            // ✨ cs.onSurface / disabled alpha — dark-mode aware
+            // ✨ cs.onSurface / alpha désactivé — compatible mode sombre
             color: onPressed != null
                 ? cs.onSurface
                 : cs.onSurface.withValues(alpha: 0.38),
@@ -524,7 +527,7 @@ class _CartPanel extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Container(
       decoration: BoxDecoration(
-        // ✨ cs.surface — dark-mode aware, remplace AppColors.surface hardcodé
+        // ✨ cs.surface — compatible mode sombre, remplace AppColors.surface hardcodé
         color: cs.surface,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),
@@ -545,7 +548,8 @@ class _CartPanel extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                // ✨ cs.outlineVariant — dark-mode aware, remplace AppColors.border
+                // ✨ cs.outlineVariant — compatible mode sombre, remplace
+                // AppColors.border
                 color: cs.outlineVariant,
                 borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
               ),
@@ -592,7 +596,7 @@ class _CartPanel extends StatelessWidget {
                     onPressed: onClearCart,
                     color: Theme.of(
                       context,
-                    ).colorScheme.error, // ✨ cs.error — dark-mode aware
+                    ).colorScheme.error, // ✨ cs.error — compatible mode sombre
                     visualDensity: VisualDensity.compact,
                   ),
               ],
@@ -620,9 +624,9 @@ class _CartPanel extends StatelessWidget {
                         direction: DismissDirection.endToStart,
                         onDismissed: (_) => onRemoveItem(item.productId),
                         background: Container(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.error, // ✨ cs.error — dark-mode aware
+                          color: Theme.of(context)
+                              .colorScheme
+                              .error, // ✨ cs.error — compatible mode sombre
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: AppSpacing.md),
                           child: const Icon(Icons.delete, color: Colors.white),
@@ -698,7 +702,7 @@ class _CartItemRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Product name + unit price
+          // Nom du produit + prix unitaire
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -722,7 +726,7 @@ class _CartItemRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              // Line total (prominent)
+              // Total de la ligne (mis en avant)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -735,7 +739,7 @@ class _CartItemRow extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
 
-          // Quantity stepper
+          // Sélecteur de quantité
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -763,15 +767,15 @@ class _CartItemRow extends StatelessWidget {
   }
 }
 
-/// Quantity increment/decrement button with haptic feedback.
+/// Bouton d'augmentation/diminution de la quantité avec retour haptique.
 class _QuantityButton extends StatefulWidget {
-  /// Creates a quantity button.
+  /// Crée un bouton de quantité.
   const _QuantityButton({required this.icon, this.onTap});
 
-  /// Button icon (add or remove).
+  /// Icône du bouton (ajouter ou retirer).
   final IconData icon;
 
-  /// On tap callback. Null disables the button.
+  /// Callback au tap. Null désactive le bouton.
   final VoidCallback? onTap;
 
   @override
@@ -877,11 +881,11 @@ class _ViewfinderCornersPainter extends CustomPainter {
 
     const cornerLength = 24.0;
 
-    // Top-left
+    // Haut-gauche
     canvas.drawLine(Offset.zero, const Offset(cornerLength, 0), paint);
     canvas.drawLine(Offset.zero, const Offset(0, cornerLength), paint);
 
-    // Top-right
+    // Haut-droite
     canvas.drawLine(
       Offset(size.width, 0),
       Offset(size.width - cornerLength, 0),
@@ -893,7 +897,7 @@ class _ViewfinderCornersPainter extends CustomPainter {
       paint,
     );
 
-    // Bottom-left
+    // Bas-gauche
     canvas.drawLine(
       Offset(0, size.height),
       Offset(cornerLength, size.height),
@@ -905,7 +909,7 @@ class _ViewfinderCornersPainter extends CustomPainter {
       paint,
     );
 
-    // Bottom-right
+    // Bas-droite
     canvas.drawLine(
       Offset(size.width, size.height),
       Offset(size.width - cornerLength, size.height),

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,16 +6,27 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../core/router/main_shell.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../sales/domain/entities/sale.dart';
+import '../../../sales/domain/repositories/sales_repository.dart';
 import '../providers/home_providers.dart';
 
-/// Premium financial dashboard with asymmetric layout and refined aesthetics.
+/// Totaux à zéro affichés derrière l'indicateur d'erreur quand les stats du
+/// jour échouent.
+final DailyStats _emptyStats = (
+  saleCount: 0,
+  totalAmount: Decimal.zero,
+  cashTotal: Decimal.zero,
+  mobileMoneyTotal: Decimal.zero,
+);
+
+/// Tableau de bord financier soigné, avec une mise en page asymétrique.
 class HomePage extends ConsumerWidget {
-  /// Creates a [HomePage].
+  /// Crée une [HomePage].
   const HomePage({super.key});
 
   @override
@@ -24,7 +36,10 @@ class HomePage extends ConsumerWidget {
 
     final storeName =
         storeAsync.whenOrNull(data: (s) => s?.name) ?? 'Ma boutique';
-    final dateLabel = DateFormat('EEEE d MMMM', 'fr_FR').format(DateTime.now());
+    final dateLabel = DateFormat(
+      'EEEE d MMMM',
+      'fr_FR',
+    ).format(ref.watch(todayProvider));
     final hPad = responsiveValue(
       context,
       small: AppSpacing.md,
@@ -36,7 +51,9 @@ class HomePage extends ConsumerWidget {
       actions: [
         IconButton(
           icon: const Icon(Icons.settings_outlined),
-          onPressed: () => StatefulNavigationShell.of(context).goBranch(3),
+          onPressed: () => StatefulNavigationShell.of(
+            context,
+          ).goBranch(ShellBranch.settings.index),
           tooltip: 'Paramètres',
         ),
       ],
@@ -44,7 +61,7 @@ class HomePage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: store name + date
+            // En-tête : nom de la boutique + date
             Padding(
               padding: EdgeInsets.fromLTRB(
                 hPad,
@@ -66,13 +83,13 @@ class HomePage extends ConsumerWidget {
               ),
             ),
 
-            // Daily summary card
+            // Carte récapitulative du jour
             Padding(
               padding: EdgeInsets.symmetric(horizontal: hPad),
               child: dailySummaryAsync.when(
                 loading: () => const AppLoadingIndicator(),
                 error: (_, _) => _SummaryCard(
-                  summary: DailySummary.empty,
+                  summary: _emptyStats,
                   hasError: true,
                   onRetry: () => ref.invalidate(dailySummaryProvider),
                 ),
@@ -119,7 +136,7 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// Quick access section for frequent POS operations.
+/// Section d'accès rapide aux opérations de caisse fréquentes.
 class _QuickActionsSection extends StatelessWidget {
   const _QuickActionsSection();
 
@@ -153,8 +170,9 @@ class _QuickActionsSection extends StatelessWidget {
                   child: _QuickActionCard(
                     icon: Icons.shopping_bag_outlined,
                     label: 'Catalogue',
-                    onTap: () =>
-                        StatefulNavigationShell.of(context).goBranch(1),
+                    onTap: () => StatefulNavigationShell.of(
+                      context,
+                    ).goBranch(ShellBranch.catalog.index),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -162,8 +180,9 @@ class _QuickActionsSection extends StatelessWidget {
                   child: _QuickActionCard(
                     icon: Icons.history_outlined,
                     label: 'Historique',
-                    onTap: () =>
-                        StatefulNavigationShell.of(context).goBranch(2),
+                    onTap: () => StatefulNavigationShell.of(
+                      context,
+                    ).goBranch(ShellBranch.salesHistory.index),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -183,7 +202,7 @@ class _QuickActionsSection extends StatelessWidget {
   }
 }
 
-/// Tappable quick-action card with icon and label.
+/// Carte d'action rapide cliquable avec icône et libellé.
 class _QuickActionCard extends StatelessWidget {
   const _QuickActionCard({
     required this.icon,
@@ -229,8 +248,8 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-/// Tappable alert banner for products in rupture or below their reorder
-/// threshold. Hidden entirely when there is nothing to flag.
+/// Bandeau d'alerte cliquable pour les produits en rupture ou sous leur seuil
+/// de réapprovisionnement. Entièrement masqué quand il n'y a rien à signaler.
 class _LowStockBanner extends ConsumerWidget {
   const _LowStockBanner();
 
@@ -257,7 +276,9 @@ class _LowStockBanner extends ConsumerWidget {
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: hPad),
           child: InkWell(
-            onTap: () => StatefulNavigationShell.of(context).goBranch(1),
+            onTap: () => StatefulNavigationShell.of(
+              context,
+            ).goBranch(ShellBranch.inventory.index),
             borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
             child: Container(
               decoration: BoxDecoration(
@@ -300,7 +321,7 @@ class _LowStockBanner extends ConsumerWidget {
   }
 }
 
-/// Premium summary card with gradient background.
+/// Carte récapitulative soignée avec fond en dégradé.
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.summary,
@@ -308,12 +329,12 @@ class _SummaryCard extends StatelessWidget {
     this.onRetry,
   });
 
-  final DailySummary summary;
+  final DailyStats summary;
 
-  /// When true, shows a subtle error indicator at the bottom of the card.
+  /// Si true, affiche un indicateur d'erreur discret en bas de la carte.
   final bool hasError;
 
-  /// Optional retry callback shown when [hasError] is true.
+  /// Callback de réessai optionnel, affiché quand [hasError] vaut true.
   final VoidCallback? onRetry;
 
   @override
@@ -460,7 +481,7 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-/// Labeled metric in the summary card.
+/// Indicateur libellé dans la carte récapitulative.
 class _SummaryMetric extends StatelessWidget {
   const _SummaryMetric({
     required this.label,
@@ -471,7 +492,8 @@ class _SummaryMetric extends StatelessWidget {
   final String label;
   final Widget child;
 
-  /// Optional color dot preceding the label — distinguishes payment breakdowns.
+  /// Point de couleur optionnel devant le libellé — distingue la répartition
+  /// par moyen de paiement.
   final Color? dotColor;
 
   @override
@@ -514,8 +536,9 @@ class _SummaryMetric extends StatelessWidget {
   }
 }
 
-/// "Activité récente" — mini-list of today's latest sales, linking to the
-/// full history. Hidden entirely when there is nothing to show yet.
+/// « Activité récente » — mini-liste des dernières ventes du jour, avec un lien
+/// vers l'historique complet. Entièrement masquée tant qu'il n'y a rien à
+/// afficher.
 class _RecentActivitySection extends ConsumerWidget {
   const _RecentActivitySection();
 
@@ -560,8 +583,9 @@ class _RecentActivitySection extends ConsumerWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () =>
-                          StatefulNavigationShell.of(context).goBranch(2),
+                      onPressed: () => StatefulNavigationShell.of(
+                        context,
+                      ).goBranch(ShellBranch.salesHistory.index),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: const Size(48, 32),
@@ -582,7 +606,7 @@ class _RecentActivitySection extends ConsumerWidget {
   }
 }
 
-/// A single recent-sale row, tappable to open the sale's detail.
+/// Une ligne de vente récente, cliquable pour ouvrir le détail de la vente.
 class _RecentActivityRow extends StatelessWidget {
   const _RecentActivityRow({required this.sale});
 
@@ -644,7 +668,7 @@ class _RecentActivityRow extends StatelessWidget {
   }
 }
 
-/// Formats a timestamp as a short French relative-time label.
+/// Formate un horodatage en court libellé de temps relatif en français.
 String _relativeTimeLabel(DateTime dateTime) {
   final diff = DateTime.now().difference(dateTime);
   if (diff.inMinutes < 1) return 'À l\'instant';

@@ -9,8 +9,9 @@ import '../../providers/catalog_di_providers.dart';
 
 part 'product_import_providers.g.dart';
 
-/// Imports products in bulk from a CSV or Excel file, then triggers a full
-/// sync pull so the newly created products appear in the local catalog.
+/// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+/// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+/// le catalogue local.
 @riverpod
 Future<ProductImportResult> importProductsFromFile(Ref ref, File file) async {
   final result = await ref
@@ -22,7 +23,7 @@ Future<ProductImportResult> importProductsFromFile(Ref ref, File file) async {
   return result;
 }
 
-/// Downloads a blank product import template (`csv` or `xlsx`).
+/// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
 @riverpod
 Future<Uint8List> downloadProductImportTemplate(
   Ref ref, {

@@ -7,17 +7,17 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/error_mapper.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/product_import_result.dart';
 import '../providers/product_import_providers.dart';
 
-/// Page for downloading a blank product import template and importing
-/// products in bulk from a CSV or Excel file.
+/// Page pour télécharger un modèle d'import produits vierge et importer des
+/// produits en masse depuis un fichier CSV ou Excel.
 class ProductImportPage extends ConsumerStatefulWidget {
-  /// Creates a [ProductImportPage].
+  /// Crée une [ProductImportPage].
   const ProductImportPage({super.key});
 
   @override

@@ -18,6 +18,7 @@ import '../../features/catalog/presentation/pages/product_import_page.dart';
 import '../../features/catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/inventory/presentation/pages/stock_history_page.dart';
+import '../../features/inventory/presentation/pages/stock_overview_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
 import '../../features/sales/presentation/pages/payment_page.dart';
 import '../../features/sales/presentation/pages/sale_success_page.dart';
@@ -35,77 +36,81 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(
   debugLabel: 'root',
 );
 
-/// Navigation routes for the app.
+/// Routes de navigation de l'app.
 abstract class Routes {
-  /// Splash/loading screen.
+  /// Écran de démarrage / chargement.
   static const String splash = '/splash';
 
-  /// Onboarding flow (email + password registration).
+  /// Parcours d'inscription (inscription par téléphone + mot de passe).
   static const String register = '/register';
 
-  /// PIN setup after first login.
+  /// Création du PIN après la première connexion.
   static const String pinSetup = '/pin-setup';
 
-  /// Daily PIN login.
+  /// Connexion quotidienne par PIN.
   static const String pinLogin = '/pin-login';
 
-  /// Email login for account recovery / new device.
+  /// Connexion par téléphone pour la récupération de compte / un nouvel
+  /// appareil.
   static const String emailLogin = '/email-login';
 
-  /// Store configuration screen.
+  /// Écran de configuration de la boutique.
   static const String storeSetup = '/store-setup';
 
-  /// Onboarding tutorial.
+  /// Tutoriel d'onboarding.
   static const String tutorial = '/tutorial';
 
-  // Les 4 onglets principaux (Racines des branches)
+  // Les 5 onglets principaux (Racines des branches)
 
-  /// Home/dashboard screen.
+  /// Écran d'accueil / tableau de bord.
   static const String home = '/home';
 
-  /// Catalog (product list).
+  /// Catalogue (liste des produits).
   static const String catalog = '/catalog';
 
-  /// Sales history (past sales with date filtering).
+  /// Vue d'ensemble du stock (produits à réapprovisionner, ajustement rapide).
+  static const String inventory = '/stock';
+
+  /// Historique des ventes (ventes passées avec filtre par date).
   static const String salesHistory = '/sales/history';
 
-  /// Settings page.
+  /// Page des paramètres.
   static const String settings = '/settings';
 
   // Sous-routes (Détails)
 
-  /// Create new product.
+  /// Création d'un produit.
   static const String productNew = '/catalog/new';
 
-  /// Edit product (path parameter :id).
+  /// Modification d'un produit (paramètre de chemin :id).
   static const String productEdit = '/catalog/:id/edit';
 
-  /// Product stock movement history (path parameter :id).
+  /// Historique des mouvements de stock d'un produit (paramètre de chemin :id).
   static const String productStockHistory = '/catalog/:id/movements';
 
-  /// Bulk product import from a CSV/Excel file.
+  /// Import de produits en masse depuis un fichier CSV/Excel.
   static const String productImport = '/catalog/import';
 
-  /// Barcode scanner modal.
+  /// Modale de scan de code-barres.
   static const String barcodeScanner = '/scan';
 
-  /// New sale (create sale from cart).
+  /// Nouvelle vente (création de la vente depuis le panier).
   static const String newSale = '/sales/new';
 
-  /// Payment method selection.
+  /// Choix du moyen de paiement.
   static const String payment = '/sales/payment';
 
-  /// Sale success confirmation.
+  /// Confirmation de vente réussie.
   static const String saleSuccess = '/sales/success';
 
-  /// Sale detail view (receives [Sale] via `extra`).
+  /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
 
-  /// Bluetooth printer setup.
+  /// Configuration de l'imprimante Bluetooth.
   static const String bluetoothSetup = '/settings/printer';
 }
 
-/// Root router configuration.
+/// Configuration racine du routeur.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
   final logger = Logger();
@@ -207,6 +212,7 @@ GoRouter appRouter(Ref ref) {
             MainShell(navigationShell: navigationShell),
           );
         },
+        // Ordre des branches = ordre de l'enum ShellBranch (main_shell.dart).
         branches: [
           // BRANCHE 1 : ACCUEIL
           StatefulShellBranch(
@@ -256,7 +262,16 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-          // BRANCHE 3 : HISTORIQUE DES VENTES
+          // BRANCHE 3 : STOCK
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: Routes.inventory,
+                builder: (context, state) => const StockOverviewPage(),
+              ),
+            ],
+          ),
+          // BRANCHE 4 : HISTORIQUE DES VENTES
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -265,7 +280,7 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-          // BRANCHE 4 : PARAMÈTRES
+          // BRANCHE 5 : PARAMÈTRES
           StatefulShellBranch(
             routes: [
               GoRoute(

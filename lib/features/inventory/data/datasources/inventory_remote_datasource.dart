@@ -6,15 +6,15 @@ import '../../../../core/network/api_models/stock_movement_dto.dart';
 
 part 'inventory_remote_datasource.g.dart';
 
-/// Remote data source for inventory (stock movement) operations.
+/// Data source distante pour les opérations d'inventaire (mouvements de stock).
 @RestApi()
 abstract class InventoryRemoteDataSource {
-  /// Creates an InventoryRemoteDataSource instance.
+  /// Crée une instance InventoryRemoteDataSource.
   factory InventoryRemoteDataSource(Dio dio, {String baseUrl}) =
       _InventoryRemoteDataSource;
 
-  /// Lists stock movements with pagination.
-  /// Endpoint: GET /api/v1/inventory/movements
+  /// Liste les mouvements de stock avec pagination.
+  /// Endpoint : GET /api/v1/inventory/movements
   @GET('/api/v1/inventory/movements')
   Future<CursorPageDto<StockMovementDto>> listMovements({
     @Query('product_id') String? productId,
@@ -22,8 +22,8 @@ abstract class InventoryRemoteDataSource {
     @Query('limit') int? limit,
   });
 
-  /// Records a manual stock adjustment.
-  /// Endpoint: POST /api/v1/inventory/movements
+  /// Enregistre un ajustement de stock manuel.
+  /// Endpoint : POST /api/v1/inventory/movements
   @POST('/api/v1/inventory/movements')
   Future<StockMovementDto> createAdjustment(
     @Body() ManualStockAdjustmentCreateDto request,

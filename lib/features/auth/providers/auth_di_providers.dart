@@ -4,28 +4,38 @@ import '../../../core/network/network_providers.dart';
 import '../data/datasources/auth_remote_datasource.dart';
 import '../data/datasources/stores_remote_datasource.dart';
 import '../data/repositories/auth_repository_impl.dart';
+import '../data/repositories/store_repository_impl.dart';
 import '../domain/repositories/auth_repository.dart';
+import '../domain/repositories/store_repository.dart';
 
 part 'auth_di_providers.g.dart';
 
-/// Provides the remote data source for auth API calls.
+/// Fournit la data source distante pour les appels API d'auth.
 @riverpod
 AuthRemoteDataSource authRemoteDataSource(Ref ref) {
   return AuthRemoteDataSource(ref.read(dioProvider));
 }
 
-/// Provides the remote data source for store API calls.
+/// Fournit la data source distante pour les appels API boutique.
 @riverpod
 StoresRemoteDataSource storesRemoteDataSource(Ref ref) {
   return StoresRemoteDataSource(ref.read(dioProvider));
 }
 
-/// Provides the auth repository implementation.
+/// Fournit l'implémentation du repository d'auth.
 @riverpod
 AuthRepository authRepository(Ref ref) {
   return AuthRepositoryImpl(
     dataSource: ref.read(authRemoteDataSourceProvider),
     tokenStorage: ref.read(secureTokenStorageProvider),
     pinStorage: ref.read(pinStorageProvider),
+  );
+}
+
+/// Fournit le repository boutique (cache secure storage + `/stores/me`).
+@riverpod
+StoreRepository storeRepository(Ref ref) {
+  return StoreRepositoryImpl(
+    remoteDataSource: ref.read(storesRemoteDataSourceProvider),
   );
 }

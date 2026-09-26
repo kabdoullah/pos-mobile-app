@@ -8,15 +8,18 @@ part of 'scan_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Manages barcode scanning: cooldown deduplication, catalog lookup, cart dispatch.
+/// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
+/// dans le catalogue, ajout au panier.
 
 @ProviderFor(ScanController)
 final scanControllerProvider = ScanControllerProvider._();
 
-/// Manages barcode scanning: cooldown deduplication, catalog lookup, cart dispatch.
+/// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
+/// dans le catalogue, ajout au panier.
 final class ScanControllerProvider
     extends $NotifierProvider<ScanController, void> {
-  /// Manages barcode scanning: cooldown deduplication, catalog lookup, cart dispatch.
+  /// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
+  /// dans le catalogue, ajout au panier.
   ScanControllerProvider._()
     : super(
         from: null,
@@ -46,7 +49,8 @@ final class ScanControllerProvider
 
 String _$scanControllerHash() => r'7cf9ebe8ae40e742049e469a36d4222f1415cfc0';
 
-/// Manages barcode scanning: cooldown deduplication, catalog lookup, cart dispatch.
+/// Gère le scan de codes-barres : dédoublonnage par délai de carence, recherche
+/// dans le catalogue, ajout au panier.
 
 abstract class _$ScanController extends $Notifier<void> {
   void build();

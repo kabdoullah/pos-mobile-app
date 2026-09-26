@@ -4,32 +4,32 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../network/token_storage.dart';
 
-/// Storage keys for JWT tokens in secure storage.
+/// Clés de stockage des tokens JWT dans le secure storage.
 abstract class _TokenStorageKeys {
-  /// Access token (short-lived JWT).
+  /// Access token (JWT de courte durée).
   static const String accessToken = 'access_token';
 
-  /// Refresh token (long-lived JWT).
+  /// Refresh token (JWT de longue durée).
   static const String refreshToken = 'refresh_token';
 
-  /// User ID extracted from JWT payload.
+  /// ID utilisateur extrait du payload JWT.
   static const String userId = 'user_id';
 
-  /// Store ID extracted from JWT payload.
+  /// ID de boutique extrait du payload JWT.
   static const String storeId = 'store_id';
 
-  /// User phone number saved at login time (primary identifier).
+  /// Numéro de téléphone enregistré à la connexion (identifiant principal).
   static const String phoneNumber = 'phone_number';
 }
 
-/// Concrete implementation of TokenStorage using flutter_secure_storage.
-/// Also extracts and stores user_id and store_id from the JWT payload.
+/// Implémentation concrète de TokenStorage avec flutter_secure_storage.
+/// Extrait et enregistre aussi user_id et store_id depuis le payload JWT.
 class SecureTokenStorage implements TokenStorage {
-  /// Creates a SecureTokenStorage instance.
+  /// Crée une instance SecureTokenStorage.
   SecureTokenStorage({FlutterSecureStorage? secureStorage})
     : _storage = secureStorage ?? const FlutterSecureStorage();
 
-  /// Underlying secure storage backend.
+  /// Backend de stockage sécurisé sous-jacent.
   final FlutterSecureStorage _storage;
 
   @override
@@ -45,7 +45,7 @@ class SecureTokenStorage implements TokenStorage {
     required String accessToken,
     required String refreshToken,
   }) async {
-    // Extract user_id and store_id from access token payload.
+    // Extrait user_id et store_id du payload de l'access token.
     final (userId: userId, storeId: storeId) = _extractClaimsFromJwt(
       accessToken,
     );
@@ -67,35 +67,38 @@ class SecureTokenStorage implements TokenStorage {
     _storage.delete(key: _TokenStorageKeys.userId),
     _storage.delete(key: _TokenStorageKeys.storeId),
     _storage.delete(key: _TokenStorageKeys.phoneNumber),
-    // Legacy key cleanup for users who had email stored before phone-first migration.
+    // Nettoyage de l'ancienne clé pour les utilisateurs qui avaient un email
+    // enregistré avant la migration vers le téléphone.
     _storage.delete(key: 'email'),
   ]);
 
-  /// Retrieves the stored user ID.
+  /// Récupère l'ID utilisateur enregistré.
   Future<String?> getUserId() => _storage.read(key: _TokenStorageKeys.userId);
 
-  /// Retrieves the stored store ID.
+  /// Récupère l'ID de boutique enregistré.
   @override
   Future<String?> getStoreId() => _storage.read(key: _TokenStorageKeys.storeId);
 
-  /// Saves the user phone number (called after successful login/registration).
+  /// Enregistre le numéro de téléphone de l'utilisateur (appelé après une
+  /// connexion/inscription réussie).
   Future<void> savePhone(String phoneNumber) =>
       _storage.write(key: _TokenStorageKeys.phoneNumber, value: phoneNumber);
 
-  /// Retrieves the stored user phone number.
+  /// Récupère le numéro de téléphone enregistré de l'utilisateur.
   Future<String?> getPhone() =>
       _storage.read(key: _TokenStorageKeys.phoneNumber);
 
-  /// Extracts user_id (sub) and store_id from a JWT access token.
-  /// Does NOT verify the signature (server responsibility).
+  /// Extrait user_id (sub) et store_id d'un access token JWT.
+  /// Ne vérifie PAS la signature (responsabilité du serveur).
   ({String? userId, String? storeId}) _extractClaimsFromJwt(String token) {
     try {
       final parts = token.split('.');
       if (parts.length != 3) return (userId: null, storeId: null);
 
-      // Decode the payload (middle part).
+      // Décode le payload (partie centrale).
       final payload = parts[1];
-      // Add padding if necessary (base64url may omit trailing =).
+      // Ajoute le padding si nécessaire (le base64url peut omettre les =
+      // finaux).
       final padded = payload.padRight((payload.length + 3) ~/ 4 * 4, '=');
 
       final decoded = utf8.decode(base64Url.decode(padded));

@@ -4,17 +4,26 @@ import 'package:drift/drift.dart' as drift;
 
 import '../../database/app_database.dart';
 
-/// Repository for managing the sync queue (SyncQueue table).
+/// Repository de gestion de la file de synchro (table SyncQueue).
 class SyncQueueRepository {
-  /// Constructor.
+  /// Constructeur.
   SyncQueueRepository({required AppDatabase db}) : _db = db;
 
   final AppDatabase _db;
 
   static const int _maxRetries = 5;
 
-  /// Enqueue a sale for synchronization.
-  /// Returns the queue entry ID.
+  /// Nombre en direct des entrées restant à synchroniser (en attente, ou en
+  /// échec en attente de nouvel essai).
+  Stream<int> watchPendingCount() {
+    return (_db.select(_db.syncQueue)
+          ..where((row) => row.status.isIn(['pending', 'failed'])))
+        .watch()
+        .map((rows) => rows.length);
+  }
+
+  /// Ajoute une vente à la file de synchro.
+  /// Retourne l'ID de l'entrée dans la file.
   Future<int> enqueueSale({
     required String saleId,
     required Map<String, dynamic> salePayload,
@@ -33,8 +42,8 @@ class SyncQueueRepository {
     return result;
   }
 
-  /// Enqueue a product change for synchronization.
-  /// Returns the queue entry ID.
+  /// Ajoute un changement de produit à la file de synchro.
+  /// Retourne l'ID de l'entrée dans la file.
   Future<int> enqueueProductChange({
     required String productId,
     required Map<String, dynamic> productPayload,
@@ -53,7 +62,7 @@ class SyncQueueRepository {
     return result;
   }
 
-  /// Get pending or failed entries up to the specified limit.
+  /// Récupère les entrées en attente ou en échec, dans la limite indiquée.
   Future<List<SyncQueueData>> getPendingEntries({
     int limit = 50,
     List<String> entityTypes = const ['sale', 'product'],
@@ -68,7 +77,8 @@ class SyncQueueRepository {
     return entries;
   }
 
-  /// Mark multiple queue entries as syncing in one DB operation.
+  /// Marque plusieurs entrées de la file comme en cours de synchro en une seule
+  /// opération DB.
   Future<void> markSyncingBatch(List<int> ids) async {
     if (ids.isEmpty) return;
     final now = DateTime.now();
@@ -80,7 +90,7 @@ class SyncQueueRepository {
     );
   }
 
-  /// Mark a queue entry as syncing.
+  /// Marque une entrée de la file comme en cours de synchro.
   Future<bool> markSyncing(int id) async {
     final rowsAffected =
         await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
@@ -92,7 +102,7 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Mark a queue entry as successfully synced.
+  /// Marque une entrée de la file comme synchronisée avec succès.
   Future<bool> markSynced(int id) async {
     final rowsAffected =
         await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
@@ -104,7 +114,7 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Mark a queue entry as failed with an error message.
+  /// Marque une entrée de la file en échec avec un message d'erreur.
   Future<bool> markFailed(int id, String error) async {
     final rowsAffected =
         await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
@@ -117,7 +127,7 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Increment the retry count for an entry.
+  /// Incrémente le compteur d'essais d'une entrée.
   Future<bool> incrementRetry(int id) async {
     final entry = await (_db.select(
       _db.syncQueue,
@@ -137,7 +147,7 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Purge synced entries older than 7 days.
+  /// Purge les entrées synchronisées depuis plus de 7 jours.
   Future<int> purgeSynced() async {
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     return (_db.delete(_db.syncQueue)..where(
@@ -148,20 +158,22 @@ class SyncQueueRepository {
         .go();
   }
 
-  /// Get a specific queue entry by ID.
+  /// Récupère une entrée précise de la file par son ID.
   Future<SyncQueueData?> getEntry(int id) async {
     return (_db.select(
       _db.syncQueue,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
-  /// Clear all entries (for testing).
+  /// Efface toutes les entrées (pour les tests).
   Future<int> clear() async {
     return (_db.delete(_db.syncQueue)).go();
   }
 
-  /// Reset failed and stuck-syncing entries to pending.
-  /// Stuck-syncing entries occur when the app crashes between markSyncing and markSynced/markFailed.
+  /// Remet en attente les entrées en échec et celles bloquées en cours de
+  /// synchro.
+  /// Une entrée reste bloquée en cours de synchro quand l'app plante entre
+  /// markSyncing et markSynced/markFailed.
   Future<int> resetFailedEntries() async {
     return (_db.update(
       _db.syncQueue,
@@ -173,7 +185,7 @@ class SyncQueueRepository {
     );
   }
 
-  /// Reset a queue entry to pending with an updated payload.
+  /// Remet une entrée de la file en attente avec un payload mis à jour.
   Future<bool> resetWithPayload(int id, String newPayload) async {
     final rowsAffected =
         await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
@@ -187,7 +199,7 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Get all pending/failed entries by entity type.
+  /// Récupère toutes les entrées en attente/en échec d'un type d'entité.
   Future<List<SyncQueueData>> getEntriesByType(String entityType) async {
     return (_db.select(_db.syncQueue)
           ..where((t) => t.entityType.equals(entityType))

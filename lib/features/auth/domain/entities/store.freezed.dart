@@ -14,11 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Store {
 
-/// Store name (required).
- String get name;/// Store address (optional).
+/// Nom de la boutique (obligatoire).
+ String get name;/// Adresse de la boutique (optionnelle).
  String? get address;/// Numéro de Compte Contribuable DGI (optional).
- String? get ncc;/// Whether the store is subject to VAT (default: false).
- bool get isSubjectToVat;/// Custom footer text for receipts (optional).
+ String? get ncc;/// Indique si la boutique est assujettie à la TVA (par défaut : false).
+ bool get isSubjectToVat;/// Texte de pied de reçu personnalisé (optionnel).
  String? get receiptFooterText;
 /// Create a copy of Store
 /// with the given fields replaced by the non-null parameter values.
@@ -212,15 +212,15 @@ class _Store implements Store {
   const _Store({required this.name, this.address, this.ncc, required this.isSubjectToVat, this.receiptFooterText});
   
 
-/// Store name (required).
+/// Nom de la boutique (obligatoire).
 @override final  String name;
-/// Store address (optional).
+/// Adresse de la boutique (optionnelle).
 @override final  String? address;
 /// Numéro de Compte Contribuable DGI (optional).
 @override final  String? ncc;
-/// Whether the store is subject to VAT (default: false).
+/// Indique si la boutique est assujettie à la TVA (par défaut : false).
 @override final  bool isSubjectToVat;
-/// Custom footer text for receipts (optional).
+/// Texte de pied de reçu personnalisé (optionnel).
 @override final  String? receiptFooterText;
 
 /// Create a copy of Store

@@ -18,26 +18,29 @@ import '../datasources/catalog_remote_datasource.dart';
 import '../models/product_import_mappers.dart';
 import '../models/product_mappers.dart';
 
-/// Concrete implementation of [CatalogRepository].
-/// Local-first: reads/writes drift database. Changes enqueued for sync.
-/// Bulk import and template download are the exception — they call the
-/// remote API directly (no drift mirror), since they are one-shot actions
-/// whose result is reconciled locally via a normal sync pull afterward.
+/// Implémentation concrète de [CatalogRepository].
+/// Local d'abord : lit et écrit dans la base drift. Les changements sont mis en
+/// file pour la synchro.
+/// L'import en masse et le téléchargement du modèle font exception — ils
+/// appellent directement l'API distante (sans miroir drift), car ce sont des
+/// actions ponctuelles dont le résultat est ensuite réconcilié en local par un
+/// pull de synchro normal.
 class CatalogRepositoryImpl implements CatalogRepository {
-  /// Creates a CatalogRepositoryImpl.
+  /// Crée un CatalogRepositoryImpl.
   CatalogRepositoryImpl({
     required this.db,
     required this.syncQueue,
     required this.dio,
   });
 
-  /// Local drift database instance.
+  /// Instance de la base drift locale.
   final AppDatabase db;
 
-  /// Sync queue repository for marking changes.
+  /// Repository de la file de synchro pour marquer les changements.
   final SyncQueueRepository syncQueue;
 
-  /// Dio instance used for bulk import / template download.
+  /// Instance Dio utilisée pour l'import en masse / le téléchargement du
+  /// modèle.
   final Dio dio;
 
   @override
@@ -57,14 +60,17 @@ class CatalogRepositoryImpl implements CatalogRepository {
       );
     }
 
-    // Keyset pagination: cursor is the last item's id from previous page.
-    // ORDER BY id is stable and consistent with UUID string comparison.
+    // Pagination par clé : le curseur est l'id du dernier élément de la page
+    // précédente.
+    // ORDER BY id est stable et cohérent avec la comparaison des UUID en
+    // chaîne.
     if (cursor != null) {
       dbQuery.where((p) => p.id.isBiggerThanValue(cursor));
     }
 
     dbQuery.orderBy([(p) => drift.OrderingTerm(expression: p.id)]);
-    // Fetch limit+1 to determine if more pages exist — no full table scan.
+    // Récupère limit+1 pour savoir s'il reste des pages — sans parcourir toute
+    // la table.
     dbQuery.limit(limit + 1);
 
     final records = await dbQuery.get();
@@ -98,7 +104,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       deletedAt: null,
     );
 
-    // Write to drift
+    // Écriture dans drift
     await db
         .into(db.products)
         .insert(
@@ -115,12 +121,12 @@ class CatalogRepositoryImpl implements CatalogRepository {
             minStock: minStock != null
                 ? drift.Value(minStock)
                 : const drift.Value.absent(),
-            dirty: const drift.Value(true), // Mark for sync
+            dirty: const drift.Value(true), // Marquer pour la synchro
             updatedAt: drift.Value(now),
           ),
         );
 
-    // Enqueue for synchronization
+    // Mise en file pour la synchronisation
     await syncQueue.enqueueProductChange(
       productId: id,
       productPayload: ProductSyncItemDto(
@@ -146,7 +152,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     int? currentStock,
     int? minStock,
   }) async {
-    // Fetch current product
+    // Récupère le produit courant
     final current = await (db.select(
       db.products,
     )..where((p) => p.id.equals(id))).getSingleOrNull();
@@ -163,7 +169,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final updatedStock = currentStock ?? current.currentStock;
     final updatedMinStock = minStock ?? current.minStock;
 
-    // Update drift
+    // Mise à jour de drift
     await (db.update(db.products)..where((p) => p.id.equals(id))).write(
       ProductsCompanion(
         name: drift.Value(updatedName),
@@ -175,12 +181,12 @@ class CatalogRepositoryImpl implements CatalogRepository {
         minStock: updatedMinStock != null
             ? drift.Value(updatedMinStock)
             : const drift.Value.absent(),
-        dirty: const drift.Value(true), // Mark for sync
+        dirty: const drift.Value(true), // Marquer pour la synchro
         updatedAt: drift.Value(now),
       ),
     );
 
-    // Enqueue for synchronization
+    // Mise en file pour la synchronisation
     await syncQueue.enqueueProductChange(
       productId: id,
       productPayload: ProductSyncItemDto(
@@ -215,7 +221,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     )..where((p) => p.id.equals(id))).getSingleOrNull();
     if (current == null) return;
 
-    // Soft delete in drift
+    // Suppression logique dans drift
     await (db.update(db.products)..where((p) => p.id.equals(id))).write(
       ProductsCompanion(
         dirty: const drift.Value(true),
@@ -223,7 +229,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       ),
     );
 
-    // Enqueue for synchronization
+    // Mise en file pour la synchronisation
     await syncQueue.enqueueProductChange(
       productId: id,
       productPayload: ProductSyncItemDto(
@@ -269,18 +275,24 @@ class CatalogRepositoryImpl implements CatalogRepository {
     return response.toDomain();
   }
 
+  // Reprend Product.stockLevel (outOfStock | low) en SQL pour filtrer en local.
   @override
-  Stream<int> watchLowStockCount() {
-    return (db.select(db.products)..where(
-          (p) =>
-              p.deletedAt.isNull() &
-              p.currentStock.isNotNull() &
-              (p.currentStock.equals(0) |
-                  (p.minStock.isNotNull() &
-                      p.currentStock.isSmallerOrEqual(p.minStock))),
-        ))
+  Stream<List<product_domain.Product>> watchLowStockProducts() {
+    return (db.select(db.products)
+          ..where(
+            (p) =>
+                p.deletedAt.isNull() &
+                p.currentStock.isNotNull() &
+                (p.currentStock.equals(0) |
+                    (p.minStock.isNotNull() &
+                        p.currentStock.isSmallerOrEqual(p.minStock))),
+          )
+          ..orderBy([
+            (p) => drift.OrderingTerm.asc(p.currentStock),
+            (p) => drift.OrderingTerm.asc(p.name),
+          ]))
         .watch()
-        .map((rows) => rows.length);
+        .map((rows) => rows.map((row) => row.toDomain()).toList());
   }
 
   @override

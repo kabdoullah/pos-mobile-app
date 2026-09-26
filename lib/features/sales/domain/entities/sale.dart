@@ -3,9 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'sale.freezed.dart';
 
-/// PaymentMethod enum — available payment methods.
+/// Enum PaymentMethod — moyens de paiement disponibles.
 enum PaymentMethod {
-  /// Cash payment.
+  /// Paiement en espèces.
   cash,
 
   /// Orange Money (mobile money).
@@ -17,11 +17,11 @@ enum PaymentMethod {
   /// Wave mobile money.
   wave,
 
-  /// Mixed payment (cash + mobile money).
+  /// Paiement mixte (espèces + mobile money).
   mixed,
 }
 
-/// Sale entity — immutable sale record.
+/// Entité vente — enregistrement de vente immuable.
 @freezed
 sealed class Sale with _$Sale {
   const factory Sale({

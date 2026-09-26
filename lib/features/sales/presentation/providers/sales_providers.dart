@@ -9,7 +9,7 @@ import 'cart_provider.dart';
 
 part 'sales_providers.g.dart';
 
-/// Submit current cart as a sale (calls CreateSaleUseCase).
+/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
 @riverpod
 Future<sale_entity.Sale> submitSale(
   Ref ref, {
@@ -34,8 +34,8 @@ Future<sale_entity.Sale> submitSale(
   return sale;
 }
 
-/// Watches sales within a date range (inclusive) — re-emits on every drift
-/// change.
+/// Observe les ventes d'une plage de dates (incluse) — réémet à chaque
+/// changement drift.
 @riverpod
 Stream<List<sale_entity.Sale>> salesHistory(
   Ref ref, {
@@ -47,7 +47,7 @@ Stream<List<sale_entity.Sale>> salesHistory(
       .watchSalesByDateRange(startDate, endDate);
 }
 
-/// Downloads the PDF receipt for a sale.
+/// Télécharge le reçu PDF d'une vente.
 @riverpod
 Future<Uint8List> downloadSaleReceiptPdf(Ref ref, String saleId) {
   return ref.read(salesRepositoryProvider).downloadReceiptPdf(saleId);

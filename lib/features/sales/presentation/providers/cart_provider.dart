@@ -5,38 +5,38 @@ import '../../../catalog/domain/entities/product.dart';
 
 part 'cart_provider.g.dart';
 
-/// CartState holds the current shopping cart items.
+/// CartState contient les articles du panier courant.
 class CartState {
-  /// Creates a new CartState with the given list of cart items.
+  /// Crée un nouveau CartState avec la liste d'articles donnée.
   const CartState({required this.items});
 
-  /// Current items in the cart.
+  /// Articles actuellement dans le panier.
   final List<CartItem> items;
 
-  /// Total amount in FCFA (sum of all line totals).
+  /// Montant total en FCFA (somme des totaux de ligne).
   Decimal get total =>
       items.fold(Decimal.zero, (sum, item) => sum + item.lineTotal);
 
-  /// Item count (unique products).
+  /// Nombre d'articles (produits distincts).
   int get itemCount => items.length;
 
-  /// Whether cart is empty.
+  /// Indique si le panier est vide.
   bool get isEmpty => items.isEmpty;
 
-  /// Returns a copy of this state with updated values.
+  /// Retourne une copie de cet état avec les valeurs mises à jour.
   CartState copyWith({List<CartItem>? items}) {
     return CartState(items: items ?? this.items);
   }
 }
 
-/// CartNotifier manages shopping cart state.
+/// CartNotifier gère l'état du panier.
 @riverpod
 class Cart extends _$Cart {
   @override
   CartState build() => const CartState(items: []);
 
-  /// Add a product to cart (or increment qty if already in cart).
-  /// Returns false if stock would be exceeded, true otherwise.
+  /// Ajoute un produit au panier (ou incrémente la quantité s'il y est déjà).
+  /// Retourne false si le stock serait dépassé, true sinon.
   bool addItem(Product product) {
     final existingIndex = state.items.indexWhere(
       (item) => item.productId == product.id,
@@ -74,7 +74,7 @@ class Cart extends _$Cart {
     return true;
   }
 
-  /// Remove product from cart by product ID.
+  /// Retire un produit du panier par son ID.
   void removeItem(String productId) {
     final newItems = state.items
         .where((item) => item.productId != productId)
@@ -82,7 +82,8 @@ class Cart extends _$Cart {
     state = state.copyWith(items: newItems);
   }
 
-  /// Update quantity for a product (remove if qty ≤ 0, clamp to available stock).
+  /// Met à jour la quantité d'un produit (retiré si qté ≤ 0, plafonnée au stock
+  /// disponible).
   void updateQuantity(String productId, int qty) {
     if (qty <= 0) {
       removeItem(productId);
@@ -110,7 +111,7 @@ class Cart extends _$Cart {
     }
   }
 
-  /// Clear all items from cart.
+  /// Vide le panier.
   void clear() {
     state = const CartState(items: []);
   }

@@ -10,65 +10,77 @@ import '../../../../core/network/network_providers.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
 import '../../domain/entities/user.dart';
 import '../../../auth/providers/auth_di_providers.dart';
+import '../../providers/store_provider.dart';
 
 part 'auth_providers.g.dart';
 
-/// Authentication status — the user's position in the auth flow.
+/// Statut d'authentification — position de l'utilisateur dans le parcours
+/// d'auth.
 ///
-/// Lifecycle: `Unauthenticated` → (after login) → `StoreSetupRequired`/`PinSetupRequired`/`PinRequired` → `Authenticated`.
-/// Or: any state + token expiry → `Unauthenticated`.
+/// Cycle de vie : `Unauthenticated` → (après connexion) →
+/// `StoreSetupRequired`/`PinSetupRequired`/`PinRequired` → `Authenticated`.
+/// Ou : n'importe quel état + expiration du token → `Unauthenticated`.
 sealed class AuthStatus {
-  /// Constructor.
+  /// Constructeur.
   const AuthStatus();
 }
 
-/// No valid token in secure storage. User must log in or register.
+/// Aucun token valide dans le secure storage. L'utilisateur doit se connecter
+/// ou s'inscrire.
 class AuthUnauthenticated extends AuthStatus {
-  /// Constructor.
+  /// Constructeur.
   const AuthUnauthenticated();
 }
 
-/// Token valid + user authenticated, but store not yet configured (first registration only).
-/// After store setup → `PinSetupRequired`.
+/// Token valide + utilisateur authentifié, mais boutique pas encore configurée
+/// (première inscription uniquement).
+/// Après la configuration de la boutique → `PinSetupRequired`.
 class AuthStoreSetupRequired extends AuthStatus {
-  /// Constructor.
+  /// Constructeur.
   const AuthStoreSetupRequired();
 }
 
-/// Token valid + user authenticated, but PIN not yet created on this device (first login only).
-/// After PIN creation → `Authenticated`.
+/// Token valide + utilisateur authentifié, mais PIN pas encore créé sur cet
+/// appareil (première connexion uniquement).
+/// Après la création du PIN → `Authenticated`.
 class AuthPinSetupRequired extends AuthStatus {
-  /// Constructor.
+  /// Constructeur.
   const AuthPinSetupRequired();
 }
 
-/// Token valid + user authenticated, PIN exists locally, but not yet verified in this session.
-/// User must unlock via PIN verification → `Authenticated`.
+/// Token valide + utilisateur authentifié, PIN présent localement mais pas
+/// encore vérifié dans cette session.
+/// L'utilisateur doit déverrouiller par vérification du PIN → `Authenticated`.
 class AuthPinRequired extends AuthStatus {
-  /// Constructor.
+  /// Constructeur.
   const AuthPinRequired();
 }
 
-/// Token valid + user authenticated + PIN verified in this session.
-/// User has full access to app.
+/// Token valide + utilisateur authentifié + PIN vérifié dans cette session.
+/// L'utilisateur a accès à toute l'app.
 class AuthAuthenticated extends AuthStatus {
-  /// Creates an authenticated status.
+  /// Crée un statut authentifié.
   const AuthAuthenticated(this.user);
 
-  /// The authenticated user (extracted from JWT claims).
+  /// L'utilisateur authentifié (extrait des claims JWT).
   final User user;
 }
 
-/// Manages authentication state and actions (login, register, PIN setup/verify, logout).
+/// Gère l'état et les actions d'authentification (connexion, inscription,
+/// création/vérification du PIN, déconnexion).
 ///
-/// State is `AsyncValue<AuthStatus>`:
-/// - `AsyncLoading`: operation in progress (init, login, register, PIN verify, etc.)
-/// - `AsyncData(status)`: operation succeeded, user is in `status`
-/// - `AsyncError(exception)`: operation failed, exception is user-friendly message (see [_toUserFacingException])
+/// L'état est un `AsyncValue<AuthStatus>` :
+/// - `AsyncLoading` : opération en cours (init, connexion, inscription,
+///   vérification du PIN, etc.)
+/// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
+/// - `AsyncError(exception)` : opération échouée, l'exception est un message
+///   lisible par l'utilisateur (voir [_toUserFacingException])
 ///
-/// Init sequence: On app launch, `build()` checks secure storage for tokens + PIN config, then routes accordingly.
-/// Token expiry is handled via [authExpiredControllerProvider] stream — when server invalidates token,
-/// this notifier transitions to `Unauthenticated`, router detects change and redirects to login.
+/// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
+/// config du PIN dans le secure storage, puis route en conséquence.
+/// L'expiration du token est gérée via le flux [authExpiredControllerProvider]
+/// — quand le serveur invalide le token, ce notifier passe à `Unauthenticated`,
+/// le routeur détecte le changement et redirige vers la connexion.
 @riverpod
 class Auth extends _$Auth {
   static final _logger = Logger();
@@ -77,9 +89,11 @@ class Auth extends _$Auth {
   Future<AuthStatus> build() async {
     _logger.i('[Auth.build] Initializing auth state');
 
-    // Listen for token expiry events from Dio refresh interceptor.
-    // When interceptor detects 401 + failed refresh, it emits to this stream.
-    // ignore: close_sinks — lifecycle owned by authExpiredControllerProvider
+    // Écoute les événements d'expiration du token émis par l'intercepteur de
+    // rafraîchissement Dio.
+    // Quand l'intercepteur détecte un 401 + un rafraîchissement échoué, il émet
+    // sur ce flux.
+    // ignore: close_sinks — cycle de vie géré par authExpiredControllerProvider
     final expiredController = ref.read(authExpiredControllerProvider);
     final sub = expiredController.stream.listen((_) {
       _logger.w('[Auth] Token expired detected, resetting to Unauthenticated');
@@ -87,11 +101,13 @@ class Auth extends _$Auth {
     });
     ref.onDispose(sub.cancel);
 
-    // Async init (direct — no fire-and-forget hack needed in AsyncNotifier).
+    // Init asynchrone (directe — pas besoin d'astuce fire-and-forget dans un
+    // AsyncNotifier).
     return _resolveInitialStatus();
   }
 
-  /// Check stored tokens + PIN config to determine initial state on app launch.
+  /// Vérifie les tokens enregistrés et la config du PIN pour déterminer l'état
+  /// initial au lancement.
   Future<AuthStatus> _resolveInitialStatus() async {
     try {
       final repo = ref.read(authRepositoryProvider);
@@ -120,11 +136,14 @@ class Auth extends _$Auth {
     }
   }
 
-  /// Authenticate user with phone number + password.
+  /// Authentifie l'utilisateur par numéro de téléphone + mot de passe.
   ///
-  /// Calls backend login endpoint, saves JWT tokens to secure storage.
-  /// Then checks PIN config: if yes → PinRequired (verify existing PIN), if no → PinSetupRequired (create new PIN).
-  /// Errors are automatically captured in `AsyncError` via [AsyncValue.guard].
+  /// Appelle l'endpoint de connexion du backend, enregistre les tokens JWT dans
+  /// le secure storage.
+  /// Vérifie ensuite la config du PIN : si présent → PinRequired (vérifier le
+  /// PIN existant), sinon → PinSetupRequired (créer un nouveau PIN).
+  /// Les erreurs sont capturées automatiquement dans `AsyncError` via
+  /// [AsyncValue.guard].
   Future<void> login(String phoneNumber, String password) async {
     _logger.i('[Auth.login] Starting for $phoneNumber');
     state = const AsyncLoading<AuthStatus>();
@@ -134,6 +153,7 @@ class Auth extends _$Auth {
         final repo = ref.read(authRepositoryProvider);
         await repo.login(phoneNumber: phoneNumber, password: password);
         _logger.i('[Auth.login] Backend login succeeded');
+        await _resetStoreCache();
 
         final hasPinSetup = await repo.hasPinSetup();
         final status = hasPinSetup
@@ -151,11 +171,13 @@ class Auth extends _$Auth {
     });
   }
 
-  /// Register a new user account (phone + password, email optionnel).
+  /// Crée un compte utilisateur (téléphone + mot de passe, email optionnel).
   ///
-  /// Creates account on backend, saves tokens to secure storage.
-  /// Transitions to `StoreSetupRequired` (user must configure store name, address, VAT status).
-  /// After store setup → `PinSetupRequired`.
+  /// Crée le compte sur le backend, enregistre les tokens dans le secure
+  /// storage.
+  /// Passe à `StoreSetupRequired` (l'utilisateur doit configurer le nom,
+  /// l'adresse et le statut TVA de la boutique).
+  /// Après la configuration de la boutique → `PinSetupRequired`.
   Future<void> register(
     String phoneNumber,
     String password, {
@@ -173,6 +195,7 @@ class Auth extends _$Auth {
           email: email,
         );
         _logger.i('[Auth.register] Backend registration succeeded');
+        await _resetStoreCache();
         return const AuthStoreSetupRequired();
       } catch (e) {
         final msg = _toUserFacingException(e);
@@ -182,12 +205,14 @@ class Auth extends _$Auth {
     });
   }
 
-  /// Verify user's 4-digit PIN for daily session unlock.
+  /// Vérifie le PIN à 4 chiffres de l'utilisateur pour déverrouiller la session
+  /// du jour.
   ///
-  /// Checks PIN against PBKDF2-HMAC-SHA256 hash in local secure storage.
-  /// On success: fetches current user from token → `Authenticated`.
-  /// On PIN mismatch: throws "PIN incorrect".
-  /// On 4th failed attempt: local storage auto-lockout for 5 minutes.
+  /// Compare le PIN au hash PBKDF2-HMAC-SHA256 du secure storage local.
+  /// En cas de succès : récupère l'utilisateur courant depuis le token →
+  /// `Authenticated`.
+  /// En cas de PIN erroné : lève « PIN incorrect ».
+  /// À la 4e tentative échouée : blocage automatique local pendant 5 minutes.
   Future<void> verifyPin(String pin) async {
     _logger.i('[Auth.verifyPin] Attempt with PIN length=${pin.length}');
     state = const AsyncLoading<AuthStatus>();
@@ -222,7 +247,7 @@ class Auth extends _$Auth {
         }
       } catch (e) {
         if (e is Exception && e.toString().contains('PIN verrouillé')) {
-          // PinLockedException from repo — keep exact message
+          // PinLockedException venant du repo — on garde le message exact
           _logger.e('[Auth.verifyPin] PIN locked: $e');
           rethrow;
         }
@@ -232,7 +257,7 @@ class Auth extends _$Auth {
       }
     });
 
-    // Trigger sync when user becomes fully authenticated.
+    // Déclenche la synchro quand l'utilisateur devient pleinement authentifié.
     if (state is AsyncData<AuthStatus>) {
       final status = (state as AsyncData<AuthStatus>).value;
       if (status is AuthAuthenticated) {
@@ -242,9 +267,10 @@ class Auth extends _$Auth {
     }
   }
 
-  /// User has navigated past store setup (from store_setup_page.dart).
-  /// Refreshes JWT so the new access token carries store_id, then
-  /// transitions to PIN setup screen.
+  /// L'utilisateur a dépassé la configuration de la boutique (depuis
+  /// store_setup_page.dart).
+  /// Rafraîchit le JWT pour que le nouvel access token porte le store_id, puis
+  /// passe à l'écran de création du PIN.
   Future<void> proceedToPinSetup() async {
     _logger.i('[Auth.proceedToPinSetup] Refreshing token with store_id');
     try {
@@ -258,11 +284,11 @@ class Auth extends _$Auth {
     state = const AsyncData(AuthPinSetupRequired());
   }
 
-  /// Create a new 4-digit PIN (after first login).
+  /// Crée un nouveau PIN à 4 chiffres (après la première connexion).
   ///
-  /// Saves PIN hash + salt to local secure storage.
-  /// Resets PIN attempt counter.
-  /// Then transitions to `Authenticated`.
+  /// Enregistre le hash et le sel du PIN dans le secure storage local.
+  /// Remet à zéro le compteur de tentatives de PIN.
+  /// Puis passe à `Authenticated`.
   Future<void> setupPin(String pin) async {
     _logger.i('[Auth.setupPin] Setting PIN with length=${pin.length}');
     state = const AsyncLoading<AuthStatus>();
@@ -295,7 +321,7 @@ class Auth extends _$Auth {
       }
     });
 
-    // Trigger sync when user becomes fully authenticated.
+    // Déclenche la synchro quand l'utilisateur devient pleinement authentifié.
     if (state is AsyncData<AuthStatus>) {
       final status = (state as AsyncData<AuthStatus>).value;
       if (status is AuthAuthenticated) {
@@ -305,31 +331,41 @@ class Auth extends _$Auth {
     }
   }
 
-  /// Log out the current user.
+  /// Déconnecte l'utilisateur courant.
   ///
-  /// Clears tokens from secure storage + PIN from local storage.
-  /// Always transitions to `Unauthenticated`, even if clear fails.
+  /// Efface les tokens du secure storage et le PIN du stockage local.
+  /// Passe toujours à `Unauthenticated`, même si l'effacement échoue.
   Future<void> logout() async {
     _logger.i('[Auth.logout] Logging out');
     try {
       final repo = ref.read(authRepositoryProvider);
       await repo.logout();
+      await _resetStoreCache();
       _logger.i('[Auth.logout] Storage cleared');
     } finally {
       state = const AsyncData(AuthUnauthenticated());
     }
   }
 
-  /// Clears any error state, resetting to Unauthenticated.
-  /// Called by login/register pages on mount to avoid stale errors.
+  /// Efface la boutique en cache du compte précédent, pour qu'un autre compte
+  /// sur cet appareil ne l'affiche ni ne l'imprime jamais (nom, NCC, TVA,
+  /// pied de reçu). La lecture suivante recharge la boutique du compte connecté.
+  Future<void> _resetStoreCache() async {
+    await ref.read(storeRepositoryProvider).clearLocal();
+    ref.invalidate(storeConfigProvider);
+  }
+
+  /// Efface tout état d'erreur en revenant à Unauthenticated.
+  /// Appelé par les pages de connexion/inscription à l'affichage pour éviter
+  /// des erreurs obsolètes.
   void clearError() {
     if (state is AsyncError) {
       state = const AsyncData(AuthUnauthenticated());
     }
   }
 
-  /// Convert exceptions to user-friendly French messages.
-  /// Used inside [AsyncValue.guard] to store meaningful errors.
+  /// Convertit les exceptions en messages clairs en français.
+  /// Utilisé dans [AsyncValue.guard] pour stocker des erreurs parlantes.
   String _toUserFacingException(Object e) {
     if (e is! NetworkException) {
       final msg = e.toString();

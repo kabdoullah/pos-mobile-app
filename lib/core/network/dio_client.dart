@@ -9,12 +9,14 @@ import 'auth_interceptor.dart';
 import 'refresh_interceptor.dart';
 import 'token_storage.dart';
 
-/// Builds and configures a Dio instance with JWT auth, refresh, and error handling.
+/// Construit et configure une instance Dio avec auth JWT, rafraîchissement et
+/// gestion des erreurs.
 Dio buildDio({
   required TokenStorage tokenStorage,
   required void Function() onAuthExpired,
 }) {
-  // Dedicated Dio for refresh calls (no interceptors to prevent infinite loops).
+  // Dio dédié aux appels de rafraîchissement (sans intercepteurs pour éviter
+  // les boucles infinies).
   final refreshDio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiUrl,
@@ -25,7 +27,7 @@ Dio buildDio({
     ),
   );
 
-  // Refresh call: POST /api/v1/auth/refresh
+  // Appel de rafraîchissement : POST /api/v1/auth/refresh
   Future<({String accessToken, String refreshToken})> refreshCall(
     String refreshToken,
   ) async {
@@ -59,7 +61,7 @@ Dio buildDio({
     );
   }
 
-  // Main Dio instance.
+  // Instance Dio principale.
   final dio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiUrl,
@@ -71,7 +73,7 @@ Dio buildDio({
     ),
   );
 
-  // Add interceptors.
+  // Ajout des intercepteurs.
   dio.interceptors.add(AuthInterceptor(tokenStorage: tokenStorage));
   dio.interceptors.add(
     RefreshInterceptor(
@@ -82,7 +84,7 @@ Dio buildDio({
     ),
   );
 
-  // Debug logging in dev.
+  // Logs de débogage en dev.
   if (kDebugMode) {
     dio.interceptors.add(
       LogInterceptor(

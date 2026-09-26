@@ -1,9 +1,9 @@
 import '../../../../core/network/api_models/store_dto.dart';
 import '../../domain/entities/store.dart';
 
-/// Maps StoreDto (API) → Store (domain).
+/// Convertit StoreDto (API) → Store (domaine).
 extension StoreDtoToDomain on StoreDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   Store toDomain() => Store(
     name: name,
     address: address,
@@ -13,9 +13,9 @@ extension StoreDtoToDomain on StoreDto {
   );
 }
 
-/// Maps Store (domain) → StoreUpdateDto (API request).
+/// Convertit Store (domaine) → StoreUpdateDto (requête API).
 extension StoreUpdateDtoMapper on Store {
-  /// Converts domain entity to update request DTO.
+  /// Convertit l'entité du domaine en DTO de requête de mise à jour.
   StoreUpdateDto toUpdateDto() => StoreUpdateDto(
     name: name,
     address: address,
@@ -25,9 +25,9 @@ extension StoreUpdateDtoMapper on Store {
   );
 }
 
-/// Maps Store (domain) → StoreCreateDto (API request).
+/// Convertit Store (domaine) → StoreCreateDto (requête API).
 extension StoreCreateDtoMapper on Store {
-  /// Converts domain entity to create request DTO.
+  /// Convertit l'entité du domaine en DTO de requête de création.
   StoreCreateDto toCreateDto() => StoreCreateDto(
     name: name,
     address: address,

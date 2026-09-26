@@ -1,18 +1,19 @@
 import '../../../../core/network/api_models/product_bulk_dto.dart';
 import '../../domain/entities/product_import_result.dart';
 
-/// Maps [ProductBulkItemStatusDto] → [ProductImportItemStatus].
+/// Convertit [ProductBulkItemStatusDto] → [ProductImportItemStatus].
 extension ProductBulkItemStatusDtoToDomain on ProductBulkItemStatusDto {
-  /// Converts API DTO status to domain status.
+  /// Convertit le statut du DTO de l'API en statut du domaine.
   ProductImportItemStatus toDomain() => switch (this) {
     ProductBulkItemStatusDto.created => ProductImportItemStatus.created,
     ProductBulkItemStatusDto.failed => ProductImportItemStatus.failed,
   };
 }
 
-/// Maps ProductBulkItemResultDto (API) → ProductImportItemResult (domain).
+/// Convertit ProductBulkItemResultDto (API) → ProductImportItemResult
+/// (domaine).
 extension ProductBulkItemResultDtoToDomain on ProductBulkItemResultDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   ProductImportItemResult toDomain() => ProductImportItemResult(
     index: index,
     status: status.toDomain(),
@@ -21,9 +22,10 @@ extension ProductBulkItemResultDtoToDomain on ProductBulkItemResultDto {
   );
 }
 
-/// Maps ProductBulkCreateResponseDto (API) → ProductImportResult (domain).
+/// Convertit ProductBulkCreateResponseDto (API) → ProductImportResult
+/// (domaine).
 extension ProductBulkCreateResponseDtoToDomain on ProductBulkCreateResponseDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   ProductImportResult toDomain() => ProductImportResult(
     processed: processed,
     createdCount: createdCount,

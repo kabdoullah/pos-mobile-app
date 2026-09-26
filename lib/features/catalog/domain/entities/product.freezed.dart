@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Product {
 
- String get id; String get name;/// FCFA as Decimal.
+ String get id; String get name;/// FCFA en Decimal.
  Decimal get unitPrice; String? get barcode; int? get currentStock;/// Seuil de réapprovisionnement (null = pas d'alerte configurée).
  int? get minStock; DateTime get updatedAt; DateTime? get deletedAt;
 /// Create a copy of Product
@@ -208,13 +208,13 @@ return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentS
 /// @nodoc
 
 
-class _Product implements Product {
-  const _Product({required this.id, required this.name, required this.unitPrice, this.barcode, this.currentStock, this.minStock, required this.updatedAt, this.deletedAt});
+class _Product extends Product {
+  const _Product({required this.id, required this.name, required this.unitPrice, this.barcode, this.currentStock, this.minStock, required this.updatedAt, this.deletedAt}): super._();
   
 
 @override final  String id;
 @override final  String name;
-/// FCFA as Decimal.
+/// FCFA en Decimal.
 @override final  Decimal unitPrice;
 @override final  String? barcode;
 @override final  int? currentStock;

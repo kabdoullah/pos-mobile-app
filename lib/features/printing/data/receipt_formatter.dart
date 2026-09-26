@@ -7,9 +7,10 @@ import '../../auth/domain/entities/store.dart';
 import '../../sales/domain/entities/cart_item.dart';
 import '../../sales/domain/entities/sale.dart';
 
-/// Formats receipt data into ESC/POS byte sequences for 58mm thermal paper.
+/// Met en forme les données du reçu en séquences d'octets ESC/POS pour papier
+/// thermique 58 mm.
 ///
-/// Receipt width: 32 monospaced characters.
+/// Largeur du reçu : 32 caractères à chasse fixe.
 class ReceiptFormatter {
   static final _log = Logger();
 
@@ -17,10 +18,11 @@ class ReceiptFormatter {
   static const String _separator = '--------------------------------';
   static const String _doubleSeparator = '================================';
 
-  /// Builds ESC/POS bytes for the given sale receipt.
+  /// Construit les octets ESC/POS du reçu de la vente donnée.
   ///
-  /// [items] may be null when printing from history (offline session data unavailable).
-  /// Throws [Exception] if formatting fails.
+  /// [items] peut être null lors d'une impression depuis l'historique (données
+  /// de session hors ligne indisponibles).
+  /// Lève une [Exception] si la mise en forme échoue.
   static Future<List<int>> format({
     required Store store,
     required Sale sale,
@@ -30,7 +32,7 @@ class ReceiptFormatter {
     final generator = Generator(PaperSize.mm58, profile);
     final bytes = <int>[];
 
-    // --- HEADER ---
+    // --- EN-TÊTE ---
     bytes.addAll(
       generator.text(
         store.name,
@@ -55,7 +57,7 @@ class ReceiptFormatter {
     }
     bytes.addAll(generator.text(_separator));
 
-    // --- DATE / RECEIPT INFO ---
+    // --- DATE / INFOS DU REÇU ---
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
     bytes.addAll(
       generator.text('Date : ${dateFormatter.format(sale.createdAt)}'),
@@ -69,7 +71,7 @@ class ReceiptFormatter {
     );
     bytes.addAll(generator.text(_separator));
 
-    // --- ITEMS ---
+    // --- ARTICLES ---
     if (items != null && items.isNotEmpty) {
       bytes.addAll(
         generator.text('${items.length} article${items.length > 1 ? 's' : ''}'),
@@ -87,7 +89,7 @@ class ReceiptFormatter {
     }
     bytes.addAll(generator.text(_separator));
 
-    // --- TOTALS ---
+    // --- TOTAUX ---
     if (sale.vatAmount != Decimal.zero) {
       final htAmount = sale.totalAmount - sale.vatAmount;
       bytes.addAll(
@@ -114,11 +116,11 @@ class ReceiptFormatter {
     }
     bytes.addAll(generator.text(_separator));
 
-    // --- PAYMENT ---
+    // --- PAIEMENT ---
     bytes.addAll(generator.text('Mode : ${_paymentLabel(sale.paymentMethod)}'));
     bytes.addAll(generator.text(_separator));
 
-    // --- FOOTER ---
+    // --- PIED DE PAGE ---
     if (store.receiptFooterText != null &&
         store.receiptFooterText!.isNotEmpty) {
       bytes.addAll(
@@ -140,7 +142,8 @@ class ReceiptFormatter {
     return bytes;
   }
 
-  /// Two-line item: product name on line 1, qty × unit_price = total on line 2.
+  /// Article sur deux lignes : nom du produit en ligne 1, qté × prix unitaire =
+  /// total en ligne 2.
   static List<int> _formatLineItem(Generator gen, CartItem item) {
     final name = item.productName.length > _lineWidth
         ? '${item.productName.substring(0, _lineWidth - 3)}...'
@@ -152,19 +155,19 @@ class ReceiptFormatter {
     return [...gen.text(name), ...gen.text(detail)];
   }
 
-  /// Left-right aligned text padded to [_lineWidth] characters.
+  /// Texte aligné à gauche et à droite, complété à [_lineWidth] caractères.
   static String _padLine(String left, String right) {
     final total = left.length + right.length;
     if (total >= _lineWidth) return '$left $right';
     return left + ' ' * (_lineWidth - total) + right;
   }
 
-  /// Formats a Decimal amount as localized FCFA string.
+  /// Formate un montant Decimal en chaîne FCFA localisée.
   static String _formatFcfa(Decimal amount) {
     return NumberFormat('#,##0', 'fr_FR').format(amount.toDouble());
   }
 
-  /// Returns localized payment method label.
+  /// Retourne le libellé localisé du moyen de paiement.
   static String _paymentLabel(PaymentMethod method) {
     return switch (method) {
       PaymentMethod.cash => 'Espèces',

@@ -8,30 +8,33 @@ part of 'store_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides access to the current store configuration.
+/// Configuration boutique du compte connecté (utilisée partout : accueil,
+/// paramètres, écran PIN, reçus).
 ///
-/// Reads from and writes to flutter_secure_storage.
-// keepAlive: store config is app-wide and must survive across screens.
-// Without it, the provider auto-disposes during store setup (no widget
-// watches it there) and `save()` throws setting state on a disposed notifier.
+/// keepAlive : la config boutique doit survivre d'un écran à l'autre. Sans
+/// cela, le provider est libéré pendant la configuration de la boutique (aucun
+/// widget ne l'y écoute) et `save()` lève une exception en modifiant l'état
+/// d'un notifier libéré. Invalidé par [Auth] à chaque changement de compte.
 
 @ProviderFor(StoreConfig)
 final storeConfigProvider = StoreConfigProvider._();
 
-/// Provides access to the current store configuration.
+/// Configuration boutique du compte connecté (utilisée partout : accueil,
+/// paramètres, écran PIN, reçus).
 ///
-/// Reads from and writes to flutter_secure_storage.
-// keepAlive: store config is app-wide and must survive across screens.
-// Without it, the provider auto-disposes during store setup (no widget
-// watches it there) and `save()` throws setting state on a disposed notifier.
+/// keepAlive : la config boutique doit survivre d'un écran à l'autre. Sans
+/// cela, le provider est libéré pendant la configuration de la boutique (aucun
+/// widget ne l'y écoute) et `save()` lève une exception en modifiant l'état
+/// d'un notifier libéré. Invalidé par [Auth] à chaque changement de compte.
 final class StoreConfigProvider
     extends $AsyncNotifierProvider<StoreConfig, Store?> {
-  /// Provides access to the current store configuration.
+  /// Configuration boutique du compte connecté (utilisée partout : accueil,
+  /// paramètres, écran PIN, reçus).
   ///
-  /// Reads from and writes to flutter_secure_storage.
-  // keepAlive: store config is app-wide and must survive across screens.
-  // Without it, the provider auto-disposes during store setup (no widget
-  // watches it there) and `save()` throws setting state on a disposed notifier.
+  /// keepAlive : la config boutique doit survivre d'un écran à l'autre. Sans
+  /// cela, le provider est libéré pendant la configuration de la boutique (aucun
+  /// widget ne l'y écoute) et `save()` lève une exception en modifiant l'état
+  /// d'un notifier libéré. Invalidé par [Auth] à chaque changement de compte.
   StoreConfigProvider._()
     : super(
         from: null,
@@ -51,14 +54,15 @@ final class StoreConfigProvider
   StoreConfig create() => StoreConfig();
 }
 
-String _$storeConfigHash() => r'bda47ffe48d56ebeacb8e744757a057648600bca';
+String _$storeConfigHash() => r'4b5f96c14bf9bf4d553dc33df4ef9b82eaf6839d';
 
-/// Provides access to the current store configuration.
+/// Configuration boutique du compte connecté (utilisée partout : accueil,
+/// paramètres, écran PIN, reçus).
 ///
-/// Reads from and writes to flutter_secure_storage.
-// keepAlive: store config is app-wide and must survive across screens.
-// Without it, the provider auto-disposes during store setup (no widget
-// watches it there) and `save()` throws setting state on a disposed notifier.
+/// keepAlive : la config boutique doit survivre d'un écran à l'autre. Sans
+/// cela, le provider est libéré pendant la configuration de la boutique (aucun
+/// widget ne l'y écoute) et `save()` lève une exception en modifiant l'état
+/// d'un notifier libéré. Invalidé par [Auth] à chaque changement de compte.
 
 abstract class _$StoreConfig extends $AsyncNotifier<Store?> {
   FutureOr<Store?> build();

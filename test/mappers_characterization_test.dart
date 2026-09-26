@@ -364,7 +364,7 @@ void main() {
         final domain = dto.toDomain();
         final companion = domain.toDriftCompanion();
 
-        // Decimal.toString() removes trailing zeros
+        // Decimal.toString() supprime les zéros finaux
         expect(companion.totalAmount.value, '50000.5');
         expect(companion.vatAmount.value, '5000.05');
         expect(companion.paymentMethod.value, 'mixed');
@@ -390,8 +390,10 @@ void main() {
         expect(dto.totalAmount, '1234567.89');
         expect(dto.vatAmount, '123456.78');
         expect(dto.paymentMethod, PaymentMethodDto.mixed);
-        // toCreateDto uses toStringAsFixed(2) for API format
-        expect(dto.cashAmount, '600000.00');
+        // Decimal.toString() en sortie (règle monétaire de CLAUDE.md) : pas de
+        // complétion forcée à 2 décimales — le backend le lit comme le même
+        // Decimal.
+        expect(dto.cashAmount, '600000');
         expect(dto.mobileMoneyAmount, '634567.89');
       });
 

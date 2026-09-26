@@ -10,25 +10,25 @@ import 'package:share_plus/share_plus.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
-import '../../../../shared/providers/connectivity_provider.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../domain/entities/sale.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../providers/sales_providers.dart';
 
-/// SaleSuccessPage — confirmation screen after successful sale.
+/// SaleSuccessPage — écran de confirmation après une vente réussie.
 class SaleSuccessPage extends ConsumerStatefulWidget {
-  /// Creates a [SaleSuccessPage].
+  /// Crée une [SaleSuccessPage].
   const SaleSuccessPage({required this.sale, required this.items, super.key});
 
-  /// The sale that was just created.
+  /// Vente qui vient d'être créée.
   final Sale sale;
 
-  /// The items in the sale.
+  /// Articles de la vente.
   final List<CartItem> items;
 
   @override
@@ -120,7 +120,8 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
               const SizedBox(height: AppSpacing.md),
               Text(
                 'La transaction a été complétée avec succès',
-                // ✨ cs.onSurfaceVariant — dark-mode safe, remplace AppColors.textSecondary
+                // ✨ cs.onSurfaceVariant — compatible mode sombre, remplace
+                // AppColors.textSecondary
                 style: AppTypography.bodyMedium.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -159,7 +160,8 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              // ✨ cs.tertiaryContainer + cs.onTertiaryContainer — offline banner dark-mode safe
+              // ✨ cs.tertiaryContainer + cs.onTertiaryContainer — bandeau hors
+              // ligne compatible mode sombre
               if (!isOnline)
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),

@@ -6,18 +6,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../providers/auth_providers.dart';
 import '../../providers/store_provider.dart';
 import '../widgets/pin_numpad.dart';
 
-/// Daily PIN login screen with custom numpad.
+/// Écran de connexion quotidienne par PIN avec pavé numérique personnalisé.
 ///
-/// Replaces system keyboard with a 3×4 numpad and dot indicators.
-/// Handles 5-attempt lockout; shake animation on wrong PIN.
+/// Remplace le clavier système par un pavé 3×4 et des points indicateurs. Gère
+/// le blocage après 5 tentatives ; animation de secousse sur un PIN erroné.
 class PinLoginPage extends ConsumerStatefulWidget {
-  /// Creates a PIN login page.
+  /// Crée une page de connexion par PIN.
   const PinLoginPage({super.key});
 
   @override
@@ -86,9 +86,9 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
   Future<void> _verifyPin() async {
     try {
       await ref.read(authProvider.notifier).verifyPin(_pin);
-      // Router redirects automatically on AuthAuthenticated state
+      // Le routeur redirige automatiquement sur l'état AuthAuthenticated
     } catch (_) {
-      // Error displayed via authValue.asError
+      // Erreur affichée via authValue.asError
     }
   }
 
@@ -136,7 +136,7 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             child: Column(
               children: [
                 const Spacer(),
-                // Lock icon in branded container
+                // Icône de cadenas dans un conteneur aux couleurs de la marque
                 Container(
                   width: 72,
                   height: 72,
@@ -165,12 +165,13 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                // Dot indicators — shake on wrong PIN
+                // Points indicateurs — secousse sur un PIN erroné
                 SlideTransition(
                   position: _shakeAnimation,
                   child: PinDots(filledCount: _pin.length),
                 ),
-                // Error slot — fixed height to avoid layout jump
+                // Emplacement de l'erreur — hauteur fixe pour éviter un saut de
+                // mise en page
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 200),
                   child: systemError != null
@@ -191,7 +192,7 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
                       : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
                 ),
                 const Spacer(),
-                // Custom numpad — no system keyboard
+                // Pavé numérique personnalisé — pas de clavier système
                 if (isLoading)
                   const SizedBox(
                     height: 290,

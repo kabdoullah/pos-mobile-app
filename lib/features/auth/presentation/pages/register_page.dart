@@ -9,19 +9,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/registration_stepper.dart';
 
-/// User registration page (phone + password, email optionnel).
+/// Page d'inscription (téléphone + mot de passe, email optionnel).
 ///
-/// Phone number is the primary identifier. Email is optional for account recovery.
-/// Creates new account and stores JWT tokens securely.
+/// Le numéro de téléphone est l'identifiant principal. L'email est optionnel,
+/// pour la récupération de compte. Crée le compte et enregistre les tokens JWT
+/// de façon sécurisée.
 class RegisterPage extends ConsumerStatefulWidget {
-  /// Creates a register page.
+  /// Crée une page d'inscription.
   const RegisterPage({super.key});
 
   @override
@@ -46,7 +47,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
     _phoneController = TextEditingController();
-    // Clear any stale auth error from previous login attempt.
+    // Efface toute erreur d'auth obsolète d'une tentative de connexion
+    // précédente.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) ref.read(authProvider.notifier).clearError();
     });
@@ -83,7 +85,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       isValid = false;
     }
 
-    // Password validation.
+    // Validation du mot de passe.
     if (password.isEmpty) {
       _passwordError = 'Mot de passe requis';
       isValid = false;
@@ -92,7 +94,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       isValid = false;
     }
 
-    // Confirm password validation.
+    // Validation de la confirmation du mot de passe.
     if (confirmPassword.isEmpty) {
       _confirmPasswordError = 'Confirmation requise';
       isValid = false;
@@ -101,7 +103,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       isValid = false;
     }
 
-    // Email validation (optional — only validate format if provided).
+    // Validation de l'email (optionnel — on ne vérifie le format que s'il est
+    // renseigné).
     if (email.isNotEmpty && !_isValidEmail(email)) {
       _emailError = 'Email invalide';
       isValid = false;
@@ -127,15 +130,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         _passwordController.text,
         email: email.isEmpty ? null : email,
       );
-      // Router redirect automatically handles navigation based on new auth state.
+      // La redirection du routeur gère automatiquement la navigation selon le
+      // nouvel état d'auth.
     } catch (_) {
-      // Error state already handled by authProvider state display above.
+      // L'état d'erreur est déjà géré par l'affichage de l'état authProvider
+      // ci-dessus.
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✨ Centralize colorScheme access — used throughout build
+    // ✨ Accès centralisé à colorScheme — utilisé dans tout le build
     final cs = Theme.of(context).colorScheme;
     final authValue = ref.watch(authProvider);
     final isLoading = authValue.isLoading;
@@ -173,7 +178,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       'Créer votre compte',
-                      // ✨ Explicit onSurface — readable in both light and dark
+                      // ✨ onSurface explicite — lisible en clair comme en
+                      // sombre
                       style: AppTypography.titleLarge.copyWith(
                         color: cs.onSurface,
                       ),
@@ -181,7 +187,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       'Renseignez vos informations pour ouvrir votre espace marchand.',
-                      // ✨ colorScheme.onSurfaceVariant replaces AppColors.textSecondary — dark mode safe
+                      // ✨ colorScheme.onSurfaceVariant remplace
+                      // AppColors.textSecondary — compatible mode sombre
                       style: AppTypography.bodyMedium.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
@@ -195,12 +202,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ✨ AnimatedSwitcher — smooth 200ms entrance/exit, no layout jump
+                      // ✨ AnimatedSwitcher — entrée/sortie fluides en 200 ms,
+                      // sans saut de mise en page
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
                         child: errorMessage != null
                             ? Semantics(
-                                // ✨ liveRegion — screen reader announces error immediately
+                                // ✨ liveRegion — le lecteur d'écran annonce
+                                // l'erreur immédiatement
                                 liveRegion: true,
                                 key: const ValueKey('error-banner'),
                                 child: Container(
@@ -209,7 +218,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   ),
                                   padding: const EdgeInsets.all(AppSpacing.md),
                                   decoration: BoxDecoration(
-                                    // ✨ M3 errorContainer — adapts to dark mode
+                                    // ✨ errorContainer M3 — s'adapte au mode
+                                    // sombre
                                     color: cs.errorContainer,
                                     border: Border.all(color: cs.error),
                                     borderRadius: BorderRadius.circular(
@@ -221,7 +231,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // ✨ Icon — don't rely on color alone (WCAG 1.4.1)
+                                      // ✨ Icône — ne pas s'appuyer uniquement
+                                      // sur la couleur (WCAG 1.4.1)
                                       Icon(
                                         Icons.error_outline,
                                         color: cs.onErrorContainer,
@@ -231,7 +242,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                       Expanded(
                                         child: Text(
                                           errorMessage,
-                                          // ✨ onErrorContainer — proper contrast on error bg
+                                          // ✨ onErrorContainer — bon contraste
+                                          // sur le fond d'erreur
                                           style: AppTypography.bodyMedium
                                               .copyWith(
                                                 color: cs.onErrorContainer,
@@ -291,7 +303,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         children: [
                           Text(
                             'Vous avez un compte ? ',
-                            // ✨ onSurfaceVariant replaces implicit default — explicit dark mode safe
+                            // ✨ onSurfaceVariant remplace la valeur implicite
+                            // par défaut — compatible mode sombre explicitement
                             style: AppTypography.bodyMedium.copyWith(
                               color: cs.onSurfaceVariant,
                             ),

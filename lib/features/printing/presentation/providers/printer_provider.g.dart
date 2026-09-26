@@ -9,20 +9,32 @@ part of 'printer_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// Manages Bluetooth printer connection lifecycle and printing.
+///
+/// keepAlive : un seul lien BT pour toute l'app. Les pages de reçu appellent
+/// [print] sans écouter ce provider — une instance auto-dispose serait
+/// recréée (puis libérée) à chaque impression.
 
 @ProviderFor(Printer)
 final printerProvider = PrinterProvider._();
 
 /// Manages Bluetooth printer connection lifecycle and printing.
+///
+/// keepAlive : un seul lien BT pour toute l'app. Les pages de reçu appellent
+/// [print] sans écouter ce provider — une instance auto-dispose serait
+/// recréée (puis libérée) à chaque impression.
 final class PrinterProvider extends $NotifierProvider<Printer, PrinterState> {
   /// Manages Bluetooth printer connection lifecycle and printing.
+  ///
+  /// keepAlive : un seul lien BT pour toute l'app. Les pages de reçu appellent
+  /// [print] sans écouter ce provider — une instance auto-dispose serait
+  /// recréée (puis libérée) à chaque impression.
   PrinterProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'printerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -43,9 +55,13 @@ final class PrinterProvider extends $NotifierProvider<Printer, PrinterState> {
   }
 }
 
-String _$printerHash() => r'b052bb4b6bfc82dc4fa78251061fc19586337553';
+String _$printerHash() => r'ab1ec7d7e4fd9e4abbef1f3c01df0cec8f13fa5d';
 
 /// Manages Bluetooth printer connection lifecycle and printing.
+///
+/// keepAlive : un seul lien BT pour toute l'app. Les pages de reçu appellent
+/// [print] sans écouter ce provider — une instance auto-dispose serait
+/// recréée (puis libérée) à chaque impression.
 
 abstract class _$Printer extends $Notifier<PrinterState> {
   PrinterState build();

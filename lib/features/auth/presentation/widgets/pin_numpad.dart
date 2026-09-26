@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_spacing.dart';
+import '../../../../app/theme/app_spacing.dart';
 
-/// 4-dot PIN progress indicator.
+/// Indicateur de progression du PIN à 4 points.
 ///
-/// Each dot fills (primary color) as digits are entered.
+/// Chaque point se remplit (couleur principale) au fil de la saisie des
+/// chiffres.
 class PinDots extends StatelessWidget {
-  /// Creates a PIN dots indicator.
+  /// Crée un indicateur de points du PIN.
   const PinDots({super.key, required this.filledCount, this.length = 4});
 
-  /// Number of filled dots (digits entered).
+  /// Nombre de points remplis (chiffres saisis).
   final int filledCount;
 
-  /// Total number of dots (PIN length).
+  /// Nombre total de points (longueur du PIN).
   final int length;
 
   @override
@@ -43,9 +44,9 @@ class PinDots extends StatelessWidget {
   }
 }
 
-/// Custom PIN numpad — 3×4 grid, no system keyboard.
+/// Pavé numérique PIN personnalisé — grille 3×4, pas de clavier système.
 ///
-/// Layout:
+/// Disposition :
 /// ```
 /// 1  2  3
 /// 4  5  6
@@ -53,7 +54,7 @@ class PinDots extends StatelessWidget {
 /// _  0  ⌫
 /// ```
 class PinNumpad extends StatelessWidget {
-  /// Creates a PIN numpad.
+  /// Crée un pavé numérique PIN.
   const PinNumpad({
     super.key,
     required this.onDigit,
@@ -61,13 +62,14 @@ class PinNumpad extends StatelessWidget {
     this.enabled = true,
   });
 
-  /// Called with the digit string when a number key is tapped.
+  /// Appelé avec le chiffre (en chaîne) quand une touche numérique est tapée.
   final void Function(String digit) onDigit;
 
-  /// Called when the backspace key is tapped.
+  /// Appelé quand la touche retour arrière est tapée.
   final VoidCallback onBackspace;
 
-  /// Whether key interaction is enabled (disable during async ops).
+  /// Indique si les touches sont actives (désactivées pendant les opérations
+  /// asynchrones).
   final bool enabled;
 
   static const List<List<String?>> _layout = [

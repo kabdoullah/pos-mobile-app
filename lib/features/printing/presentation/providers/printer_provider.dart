@@ -12,65 +12,70 @@ import '../../../sales/domain/entities/sale.dart';
 
 part 'printer_provider.g.dart';
 
-/// Storage keys for printer preferences in flutter_secure_storage.
+/// Clés de stockage des préférences d'imprimante dans flutter_secure_storage.
 abstract class _PrinterKeys {
-  /// Saved printer MAC address key.
+  /// Clé de l'adresse MAC de l'imprimante enregistrée.
   static const String mac = 'printer_mac';
 
-  /// Saved printer device name key.
+  /// Clé du nom de l'imprimante enregistrée.
   static const String name = 'printer_name';
 }
 
-/// Sealed state for the Bluetooth printer.
+/// État scellé de l'imprimante Bluetooth.
 sealed class PrinterState {
-  /// Creates a [PrinterState].
+  /// Crée un [PrinterState].
   const PrinterState();
 }
 
-/// No printer connected; may have a saved MAC from a previous session.
+/// Aucune imprimante connectée ; une adresse MAC d'une session précédente peut
+/// être enregistrée.
 class PrinterDisconnected extends PrinterState {
-  /// Creates a [PrinterDisconnected] state.
+  /// Crée un état [PrinterDisconnected].
   const PrinterDisconnected({this.savedMac, this.savedName});
 
-  /// Saved MAC from secure storage, if any.
+  /// Adresse MAC enregistrée dans le secure storage, s'il y en a une.
   final String? savedMac;
 
-  /// Saved device name from secure storage, if any.
+  /// Nom de l'appareil enregistré dans le secure storage, s'il y en a un.
   final String? savedName;
 }
 
-/// Currently attempting to connect to a printer.
+/// Tentative de connexion à une imprimante en cours.
 class PrinterConnecting extends PrinterState {
-  /// Creates a [PrinterConnecting] state.
+  /// Crée un état [PrinterConnecting].
   const PrinterConnecting();
 }
 
-/// Successfully connected to a BT printer.
+/// Connecté avec succès à une imprimante BT.
 class PrinterConnected extends PrinterState {
-  /// Creates a [PrinterConnected] state.
+  /// Crée un état [PrinterConnected].
   const PrinterConnected({required this.mac, required this.name});
 
-  /// MAC address of the connected printer.
+  /// Adresse MAC de l'imprimante connectée.
   final String mac;
 
-  /// Display name of the connected printer.
+  /// Nom affiché de l'imprimante connectée.
   final String name;
 }
 
-/// An error occurred during connection or printing.
+/// Une erreur est survenue pendant la connexion ou l'impression.
 class PrinterError extends PrinterState {
-  /// Creates a [PrinterError] state.
+  /// Crée un état [PrinterError].
   const PrinterError({required this.message, this.savedMac});
 
-  /// Human-readable error message.
+  /// Message d'erreur lisible par un humain.
   final String message;
 
-  /// Saved MAC, if available (for reconnect UI).
+  /// Adresse MAC enregistrée, si disponible (pour l'UI de reconnexion).
   final String? savedMac;
 }
 
 /// Manages Bluetooth printer connection lifecycle and printing.
-@riverpod
+///
+/// keepAlive : un seul lien BT pour toute l'app. Les pages de reçu appellent
+/// [print] sans écouter ce provider — une instance auto-dispose serait
+/// recréée (puis libérée) à chaque impression.
+@Riverpod(keepAlive: true)
 class Printer extends _$Printer {
   static const _storage = FlutterSecureStorage();
   static final _log = Logger();
@@ -81,20 +86,29 @@ class Printer extends _$Printer {
     return const PrinterDisconnected();
   }
 
-  /// Loads saved printer info from secure storage asynchronously.
-  /// Updates state once loaded.
+  /// Charge de façon asynchrone les infos de l'imprimante enregistrée depuis le
+  /// secure storage.
+  /// Met à jour l'état une fois chargées.
   Future<void> _loadSavedPrinter() async {
-    final mac = await _storage.read(key: _PrinterKeys.mac);
-    final name = await _storage.read(key: _PrinterKeys.name);
-    if (mac != null && state is PrinterDisconnected) {
-      // Only update if still disconnected (not in an active operation)
-      state = PrinterDisconnected(savedMac: mac, savedName: name);
+    final saved = await _readSavedPrinter();
+    if (saved != null && state is PrinterDisconnected) {
+      // Ne met à jour que si toujours déconnecté (aucune opération en cours)
+      state = PrinterDisconnected(savedMac: saved.mac, savedName: saved.name);
     }
   }
 
-  /// Connects to the BT device at [mac] with display [name].
+  /// Imprimante enregistrée lors du dernier [connect] réussi, lue depuis le
+  /// stockage (et non depuis [state], qui ne l'a peut-être pas encore chargée).
+  Future<({String mac, String name})?> _readSavedPrinter() async {
+    final mac = await _storage.read(key: _PrinterKeys.mac);
+    if (mac == null) return null;
+    return (mac: mac, name: await _storage.read(key: _PrinterKeys.name) ?? mac);
+  }
+
+  /// Se connecte à l'appareil BT [mac] affiché sous le nom [name].
   ///
-  /// Updates state to [PrinterConnecting], then [PrinterConnected] or [PrinterError].
+  /// Passe l'état à [PrinterConnecting], puis à [PrinterConnected] ou
+  /// [PrinterError].
   Future<void> connect(String mac, String name) async {
     state = const PrinterConnecting();
     try {
@@ -111,7 +125,7 @@ class Printer extends _$Printer {
     }
   }
 
-  /// Disconnects the current BT printer.
+  /// Déconnecte l'imprimante BT courante.
   Future<void> disconnect() async {
     final service = ref.read(printerRepositoryProvider);
     final current = state;
@@ -126,12 +140,13 @@ class Printer extends _$Printer {
     }
   }
 
-  /// Prints a receipt. Reconnects if necessary using saved MAC.
+  /// Imprime un reçu. Se reconnecte si nécessaire avec l'adresse MAC
+  /// enregistrée.
   ///
-  /// Throws [PrintException] if printer not configured or send fails.
+  /// Lève [PrintException] si aucune imprimante n'est configurée ou si l'envoi
+  /// échoue.
   Future<void> print({required Sale sale, List<CartItem>? items}) async {
-    final storeAsync = ref.read(storeConfigProvider);
-    final store = storeAsync.whenOrNull(data: (s) => s);
+    final store = await ref.read(storeConfigProvider.future);
     if (store == null) {
       throw const PrintException(
         reason: PrintFailureReason.noPrinterConfigured,
@@ -141,37 +156,32 @@ class Printer extends _$Printer {
 
     final service = ref.read(printerRepositoryProvider);
 
-    // Auto-reconnect if we have a saved MAC and not connected
-    if (state is! PrinterConnected) {
-      final savedMac = switch (state) {
-        PrinterDisconnected(:final savedMac) => savedMac,
-        PrinterError(:final savedMac) => savedMac,
-        _ => null,
-      };
-
-      if (savedMac == null) {
+    // Reconnexion automatique à l'imprimante enregistrée si non connecté.
+    final current = state;
+    final ({String mac, String name}) printer;
+    if (current is PrinterConnected) {
+      printer = (mac: current.mac, name: current.name);
+    } else {
+      final saved = await _readSavedPrinter();
+      if (saved == null) {
         throw const PrintException(
           reason: PrintFailureReason.noPrinterConfigured,
           details: 'No printer configured',
         );
       }
-
-      final savedName = await _storage.read(key: _PrinterKeys.name) ?? savedMac;
-      await connect(savedMac, savedName);
+      printer = saved;
+      await connect(printer.mac, printer.name);
     }
 
-    await service.printReceipt(store: store, sale: sale, items: items);
-    // Libère le lien BT immédiatement après impression.
-    await service.disconnect();
-    state = PrinterDisconnected(
-      savedMac: switch (state) {
-        PrinterConnected(:final mac) => mac,
-        _ => null,
-      },
-      savedName: switch (state) {
-        PrinterConnected(:final name) => name,
-        _ => null,
-      },
-    );
+    try {
+      await service.printReceipt(store: store, sale: sale, items: items);
+    } finally {
+      // Libère le lien BT immédiatement après impression (même en échec).
+      await service.disconnect();
+      state = PrinterDisconnected(
+        savedMac: printer.mac,
+        savedName: printer.name,
+      );
+    }
   }
 }

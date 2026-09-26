@@ -3,10 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'store_dto.freezed.dart';
 part 'store_dto.g.dart';
 
-/// Store data transfer object from API.
+/// Objet de transfert boutique reçu de l'API.
 @freezed
 sealed class StoreDto with _$StoreDto {
-  /// Creates a [StoreDto].
+  /// Crée un [StoreDto].
   const factory StoreDto({
     required String id,
     @JsonKey(name: 'owner_id') required String ownerId,
@@ -24,10 +24,10 @@ sealed class StoreDto with _$StoreDto {
       _$StoreDtoFromJson(json);
 }
 
-/// Request to create a store.
+/// Requête de création d'une boutique.
 @freezed
 sealed class StoreCreateDto with _$StoreCreateDto {
-  /// Creates a [StoreCreateDto].
+  /// Crée un [StoreCreateDto].
   const factory StoreCreateDto({
     required String name,
     String? address,
@@ -40,10 +40,10 @@ sealed class StoreCreateDto with _$StoreCreateDto {
       _$StoreCreateDtoFromJson(json);
 }
 
-/// Request to update a store (PATCH).
+/// Requête de mise à jour d'une boutique (PATCH).
 @freezed
 sealed class StoreUpdateDto with _$StoreUpdateDto {
-  /// Creates a [StoreUpdateDto].
+  /// Crée un [StoreUpdateDto].
   const factory StoreUpdateDto({
     String? name,
     String? address,

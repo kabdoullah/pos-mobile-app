@@ -1,9 +1,9 @@
 import '../../../../core/network/api_models/stock_movement_dto.dart';
 import '../../domain/entities/stock_movement.dart';
 
-/// Maps [StockMovementReasonDto] → [StockMovementReason].
+/// Convertit [StockMovementReasonDto] → [StockMovementReason].
 extension StockMovementReasonDtoToDomain on StockMovementReasonDto {
-  /// Converts API DTO reason to domain reason.
+  /// Convertit le motif du DTO de l'API en motif du domaine.
   StockMovementReason toDomain() => switch (this) {
     StockMovementReasonDto.sale => StockMovementReason.sale,
     StockMovementReasonDto.manualAdjustment =>
@@ -12,9 +12,9 @@ extension StockMovementReasonDtoToDomain on StockMovementReasonDto {
   };
 }
 
-/// Maps StockMovementDto (API) → StockMovement (domain).
+/// Convertit StockMovementDto (API) → StockMovement (domaine).
 extension StockMovementDtoToDomain on StockMovementDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   StockMovement toDomain() => StockMovement(
     id: id,
     productId: productId,

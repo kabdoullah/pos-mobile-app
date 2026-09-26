@@ -4,36 +4,38 @@ import '../entities/cart_item.dart';
 import '../entities/sale.dart';
 import '../repositories/sales_repository.dart';
 
-/// Exception for create sale business rule violations.
+/// Exception pour les violations des règles métier de création de vente.
 class CreateSaleException implements Exception {
-  /// Create an exception with a message.
+  /// Crée une exception avec un message.
   CreateSaleException(this.message);
 
-  /// Error message.
+  /// Message d'erreur.
   final String message;
 
   @override
   String toString() => 'CreateSaleException: $message';
 }
 
-/// Business logic for creating a sale.
-/// Encapsulates all rules: validation, UUID generation, amount calculation.
+/// Logique métier de création d'une vente.
+/// Regroupe toutes les règles : validation, génération de l'UUID, calcul des
+/// montants.
 class CreateSaleUseCase {
-  /// Create a use case instance.
+  /// Crée une instance du cas d'usage.
   CreateSaleUseCase({required this.repository});
 
-  /// The repository for persisting sales.
+  /// Repository qui persiste les ventes.
   final SalesRepository repository;
 
-  /// Create a sale from cart items and payment details.
+  /// Crée une vente à partir des articles du panier et des détails de paiement.
   ///
-  /// Validates:
-  /// - Cart is not empty
-  /// - Payment totals match sale total (especially for mixed payments)
-  /// - All amounts are non-negative
+  /// Vérifie que :
+  /// - le panier n'est pas vide
+  /// - les totaux de paiement correspondent au total de la vente (surtout pour
+  ///   les paiements mixtes)
+  /// - aucun montant n'est négatif
   ///
-  /// Generates a client-side UUID for idempotent sync.
-  /// Persists the sale and items atomically via repository.
+  /// Génère un UUID côté client pour une synchro idempotente.
+  /// Enregistre la vente et ses articles de façon atomique via le repository.
   Future<Sale> call({
     required List<CartItem> items,
     required Decimal totalAmount,
@@ -42,12 +44,12 @@ class CreateSaleUseCase {
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
   }) async {
-    // Validation: cart not empty
+    // Validation : panier non vide
     if (items.isEmpty) {
       throw CreateSaleException('Le panier est vide');
     }
 
-    // Validation: amounts not negative
+    // Validation : montants non négatifs
     if (totalAmount < Decimal.zero) {
       throw CreateSaleException('Montant total invalide');
     }
@@ -55,7 +57,7 @@ class CreateSaleUseCase {
       throw CreateSaleException('Montant TVA invalide');
     }
 
-    // Validation: stock check
+    // Validation : contrôle du stock
     for (final item in items) {
       if (item.availableStock != null && item.quantity > item.availableStock!) {
         throw CreateSaleException(
@@ -65,7 +67,7 @@ class CreateSaleUseCase {
       }
     }
 
-    // Recalculate total from items as double-check
+    // Recalcule le total depuis les articles, par sécurité
     final calculatedTotal = items.fold<Decimal>(
       Decimal.zero,
       (sum, item) => sum + item.lineTotal,
@@ -76,7 +78,7 @@ class CreateSaleUseCase {
       );
     }
 
-    // Validation: payment validation
+    // Validation : contrôle du paiement
     if (paymentMethod == PaymentMethod.mixed) {
       final cash = cashAmount ?? Decimal.zero;
       final mobileMoney = mobileMoneyAmount ?? Decimal.zero;
@@ -89,7 +91,8 @@ class CreateSaleUseCase {
       }
     }
 
-    // Create sale via repository (which handles persistence + sync)
+    // Création de la vente via le repository (qui gère la persistance + la
+    // synchro)
     return repository.createSale(
       items: items,
       totalAmount: totalAmount,

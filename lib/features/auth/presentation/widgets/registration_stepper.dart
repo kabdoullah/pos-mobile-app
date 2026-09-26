@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 
-/// Horizontal step indicator for the 3-step registration flow.
+/// Indicateur d'étapes horizontal pour le parcours d'inscription en 3 étapes.
 ///
-/// Shows past steps as filled + check, active step as filled + number,
-/// future steps as outlined + muted number.
+/// Affiche les étapes passées remplies avec une coche, l'étape active remplie
+/// avec son numéro, les étapes à venir en contour avec un numéro atténué.
 class RegistrationStepper extends StatelessWidget {
-  /// Creates a registration stepper.
+  /// Crée un indicateur d'étapes d'inscription.
   const RegistrationStepper({required this.currentStep, super.key});
 
-  /// Current step index (1-based). Must be between 1 and [_labels.length].
+  /// Index de l'étape courante (à partir de 1). Doit être compris entre 1 et
+  /// [_labels.length].
   final int currentStep;
 
   static const List<String> _labels = ['Compte', 'Boutique', 'Sécurité'];

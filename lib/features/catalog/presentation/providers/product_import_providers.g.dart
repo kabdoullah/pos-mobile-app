@@ -8,14 +8,16 @@ part of 'product_import_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Imports products in bulk from a CSV or Excel file, then triggers a full
-/// sync pull so the newly created products appear in the local catalog.
+/// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+/// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+/// le catalogue local.
 
 @ProviderFor(importProductsFromFile)
 final importProductsFromFileProvider = ImportProductsFromFileFamily._();
 
-/// Imports products in bulk from a CSV or Excel file, then triggers a full
-/// sync pull so the newly created products appear in the local catalog.
+/// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+/// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+/// le catalogue local.
 
 final class ImportProductsFromFileProvider
     extends
@@ -27,8 +29,9 @@ final class ImportProductsFromFileProvider
     with
         $FutureModifier<ProductImportResult>,
         $FutureProvider<ProductImportResult> {
-  /// Imports products in bulk from a CSV or Excel file, then triggers a full
-  /// sync pull so the newly created products appear in the local catalog.
+  /// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+  /// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+  /// le catalogue local.
   ImportProductsFromFileProvider._({
     required ImportProductsFromFileFamily super.from,
     required File super.argument,
@@ -77,8 +80,9 @@ final class ImportProductsFromFileProvider
 String _$importProductsFromFileHash() =>
     r'5fd08f7bee862727a43c3feaaac04323eb6905ba';
 
-/// Imports products in bulk from a CSV or Excel file, then triggers a full
-/// sync pull so the newly created products appear in the local catalog.
+/// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+/// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+/// le catalogue local.
 
 final class ImportProductsFromFileFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<ProductImportResult>, File> {
@@ -91,8 +95,9 @@ final class ImportProductsFromFileFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Imports products in bulk from a CSV or Excel file, then triggers a full
-  /// sync pull so the newly created products appear in the local catalog.
+  /// Importe des produits en masse depuis un fichier CSV ou Excel, puis déclenche
+  /// un pull de synchro complet pour que les nouveaux produits apparaissent dans
+  /// le catalogue local.
 
   ImportProductsFromFileProvider call(File file) =>
       ImportProductsFromFileProvider._(argument: file, from: this);
@@ -101,13 +106,13 @@ final class ImportProductsFromFileFamily extends $Family
   String toString() => r'importProductsFromFileProvider';
 }
 
-/// Downloads a blank product import template (`csv` or `xlsx`).
+/// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
 
 @ProviderFor(downloadProductImportTemplate)
 final downloadProductImportTemplateProvider =
     DownloadProductImportTemplateFamily._();
 
-/// Downloads a blank product import template (`csv` or `xlsx`).
+/// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
 
 final class DownloadProductImportTemplateProvider
     extends
@@ -117,7 +122,7 @@ final class DownloadProductImportTemplateProvider
           FutureOr<Uint8List>
         >
     with $FutureModifier<Uint8List>, $FutureProvider<Uint8List> {
-  /// Downloads a blank product import template (`csv` or `xlsx`).
+  /// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
   DownloadProductImportTemplateProvider._({
     required DownloadProductImportTemplateFamily super.from,
     required String super.argument,
@@ -165,7 +170,7 @@ final class DownloadProductImportTemplateProvider
 String _$downloadProductImportTemplateHash() =>
     r'50afa70112581759aace31a444076a9f80454cc9';
 
-/// Downloads a blank product import template (`csv` or `xlsx`).
+/// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
 
 final class DownloadProductImportTemplateFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<Uint8List>, String> {
@@ -178,7 +183,7 @@ final class DownloadProductImportTemplateFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Downloads a blank product import template (`csv` or `xlsx`).
+  /// Télécharge un modèle d'import produits vierge (`csv` ou `xlsx`).
 
   DownloadProductImportTemplateProvider call({required String format}) =>
       DownloadProductImportTemplateProvider._(argument: format, from: this);

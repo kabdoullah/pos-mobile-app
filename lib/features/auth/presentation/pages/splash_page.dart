@@ -2,36 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_colors.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../presentation/providers/auth_providers.dart';
 
-/// Handles initial routing after app launch.
+/// Gère le routage initial après le lancement de l'app.
 ///
-/// Renders an invisible placeholder while the native splash is shown.
-/// Removes the native splash when auth state resolves; the router's
-/// `ref.listen` in `appRouter` then triggers the appropriate redirect.
+/// Affiche un placeholder invisible pendant que le splash natif est visible.
+/// Retire le splash natif quand l'état d'auth est résolu ; le `ref.listen` du
+/// routeur dans `appRouter` déclenche alors la redirection adaptée.
 class SplashPage extends ConsumerWidget {
-  /// Creates a splash page.
+  /// Crée une page de démarrage.
   const SplashPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Remove native splash when auth transitions from loading → resolved.
+    // Retire le splash natif quand l'auth passe de chargement → résolu.
     ref.listen(authProvider, (previous, next) {
       if (previous?.isLoading == true && !next.isLoading) {
         FlutterNativeSplash.remove();
       }
     });
 
-    // Edge case: auth already resolved on first build (hot reload, fast init).
+    // Cas limite : auth déjà résolue au premier build (hot reload, init
+    // rapide).
     if (!ref.watch(authProvider).isLoading) {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => FlutterNativeSplash.remove(),
       );
     }
 
-    // Native splash covers this entirely. Color matches background to avoid
-    // a flash on the single frame between remove() and router redirect.
+    // Le splash natif couvre entièrement cet écran. La couleur correspond au
+    // fond pour éviter un flash sur l'unique frame entre remove() et la
+    // redirection du routeur.
     return const ColoredBox(color: AppColors.background);
   }
 }

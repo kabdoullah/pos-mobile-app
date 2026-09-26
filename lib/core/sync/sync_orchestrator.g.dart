@@ -8,18 +8,21 @@ part of 'sync_orchestrator.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Orchestrates bidirectional sync: monitors connectivity, triggers periodic syncs,
-/// and coordinates push-before-pull sequencing to prevent data loss.
+/// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
+/// des synchros périodiques et enchaîne l'envoi avant la récupération pour
+/// éviter les pertes de données.
 
 @ProviderFor(SyncOrchestrator)
 final syncOrchestratorProvider = SyncOrchestratorProvider._();
 
-/// Orchestrates bidirectional sync: monitors connectivity, triggers periodic syncs,
-/// and coordinates push-before-pull sequencing to prevent data loss.
+/// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
+/// des synchros périodiques et enchaîne l'envoi avant la récupération pour
+/// éviter les pertes de données.
 final class SyncOrchestratorProvider
     extends $NotifierProvider<SyncOrchestrator, SyncStatus> {
-  /// Orchestrates bidirectional sync: monitors connectivity, triggers periodic syncs,
-  /// and coordinates push-before-pull sequencing to prevent data loss.
+  /// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
+  /// des synchros périodiques et enchaîne l'envoi avant la récupération pour
+  /// éviter les pertes de données.
   SyncOrchestratorProvider._()
     : super(
         from: null,
@@ -49,8 +52,9 @@ final class SyncOrchestratorProvider
 
 String _$syncOrchestratorHash() => r'f1be16c43c74d582fc2e8a6b394a2ba021f271cd';
 
-/// Orchestrates bidirectional sync: monitors connectivity, triggers periodic syncs,
-/// and coordinates push-before-pull sequencing to prevent data loss.
+/// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
+/// des synchros périodiques et enchaîne l'envoi avant la récupération pour
+/// éviter les pertes de données.
 
 abstract class _$SyncOrchestrator extends $Notifier<SyncStatus> {
   SyncStatus build();

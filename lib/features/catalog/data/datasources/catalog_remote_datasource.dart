@@ -9,15 +9,15 @@ import '../../../../core/network/api_models/product_dto.dart';
 
 part 'catalog_remote_datasource.g.dart';
 
-/// Remote data source for catalog operations.
+/// Data source distante pour les opérations du catalogue.
 @RestApi()
 abstract class CatalogRemoteDataSource {
-  /// Creates a CatalogRemoteDataSource instance.
+  /// Crée une instance CatalogRemoteDataSource.
   factory CatalogRemoteDataSource(Dio dio, {String baseUrl}) =
       _CatalogRemoteDataSource;
 
-  /// Lists products with pagination.
-  /// Endpoint: GET /api/v1/products
+  /// Liste les produits avec pagination.
+  /// Endpoint : GET /api/v1/products
   @GET('/api/v1/products')
   Future<CursorPageDto<ProductDto>> listProducts({
     @Query('cursor') String? cursor,
@@ -25,36 +25,36 @@ abstract class CatalogRemoteDataSource {
     @Query('search') String? search,
   });
 
-  /// Gets a product by ID.
-  /// Endpoint: GET /api/v1/products/{id}
+  /// Récupère un produit par ID.
+  /// Endpoint : GET /api/v1/products/{id}
   @GET('/api/v1/products/{id}')
   Future<ProductDto> getProduct(@Path('id') String id);
 
-  /// Gets a product by barcode.
-  /// Endpoint: GET /api/v1/products/by-barcode/{barcode}
+  /// Récupère un produit par code-barres.
+  /// Endpoint : GET /api/v1/products/by-barcode/{barcode}
   @GET('/api/v1/products/by-barcode/{barcode}')
   Future<ProductDto> getProductByBarcode(@Path('barcode') String barcode);
 
-  /// Creates a new product.
-  /// Endpoint: POST /api/v1/products
+  /// Crée un nouveau produit.
+  /// Endpoint : POST /api/v1/products
   @POST('/api/v1/products')
   Future<ProductDto> createProduct(@Body() ProductCreateDto request);
 
-  /// Updates a product (PATCH).
-  /// Endpoint: PATCH /api/v1/products/{id}
+  /// Met à jour un produit (PATCH).
+  /// Endpoint : PATCH /api/v1/products/{id}
   @PATCH('/api/v1/products/{id}')
   Future<ProductDto> updateProduct(
     @Path('id') String id,
     @Body() ProductUpdateDto request,
   );
 
-  /// Deletes a product (soft delete).
-  /// Endpoint: DELETE /api/v1/products/{id}
+  /// Supprime un produit (suppression logique).
+  /// Endpoint : DELETE /api/v1/products/{id}
   @DELETE('/api/v1/products/{id}')
   Future<void> deleteProduct(@Path('id') String id);
 
-  /// Imports products in bulk from a CSV or Excel file.
-  /// Endpoint: POST /api/v1/products/bulk/file
+  /// Importe des produits en masse depuis un fichier CSV ou Excel.
+  /// Endpoint : POST /api/v1/products/bulk/file
   @POST('/api/v1/products/bulk/file')
   @MultiPart()
   Future<ProductBulkCreateResponseDto> importProductsFromFile(

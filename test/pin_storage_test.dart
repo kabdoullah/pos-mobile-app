@@ -5,7 +5,7 @@ import 'package:mobile/core/storage/pin_storage.dart';
 
 class MockSecureStorage extends Mock implements FlutterSecureStorage {}
 
-/// In-memory [FlutterSecureStorage] for round-trip hashing tests.
+/// [FlutterSecureStorage] en mémoire pour les tests de hachage aller-retour.
 class InMemorySecureStorage extends Fake implements FlutterSecureStorage {
   final Map<String, String> _data = {};
 
@@ -216,7 +216,7 @@ void main() {
       final salt2 = await storage.read(key: 'pin_salt');
 
       expect(salt1, isNotNull);
-      expect(salt1!.length, 64); // 32 bytes as hex
+      expect(salt1!.length, 64); // 32 octets en hex
       expect(salt1, isNot(equals(salt2)));
     });
 

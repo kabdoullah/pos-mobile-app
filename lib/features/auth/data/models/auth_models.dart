@@ -3,10 +3,10 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'auth_models.freezed.dart';
 part 'auth_models.g.dart';
 
-/// Request payload for user registration.
+/// Payload de requête pour l'inscription.
 @freezed
 sealed class RegisterRequestDto with _$RegisterRequestDto {
-  /// Creates a RegisterRequestDto.
+  /// Crée un RegisterRequestDto.
   const factory RegisterRequestDto({
     @JsonKey(name: 'phone_number') required String phoneNumber,
     required String password,
@@ -17,10 +17,10 @@ sealed class RegisterRequestDto with _$RegisterRequestDto {
       _$RegisterRequestDtoFromJson(json);
 }
 
-/// Response after successful registration.
+/// Réponse après une inscription réussie.
 @freezed
 sealed class RegisterResponseDto with _$RegisterResponseDto {
-  /// Creates a RegisterResponseDto.
+  /// Crée un RegisterResponseDto.
   const factory RegisterResponseDto({
     @JsonKey(name: 'user_id') required String userId,
     @JsonKey(name: 'phone_number') required String phoneNumber,
@@ -31,10 +31,10 @@ sealed class RegisterResponseDto with _$RegisterResponseDto {
       _$RegisterResponseDtoFromJson(json);
 }
 
-/// Request payload for login.
+/// Payload de requête pour la connexion.
 @freezed
 sealed class LoginRequestDto with _$LoginRequestDto {
-  /// Creates a LoginRequestDto.
+  /// Crée un LoginRequestDto.
   const factory LoginRequestDto({
     @JsonKey(name: 'phone_number') required String phoneNumber,
     required String password,
@@ -44,10 +44,10 @@ sealed class LoginRequestDto with _$LoginRequestDto {
       _$LoginRequestDtoFromJson(json);
 }
 
-/// Response containing access and refresh tokens.
+/// Réponse contenant l'access token et le refresh token.
 @freezed
 sealed class TokenResponseDto with _$TokenResponseDto {
-  /// Creates a TokenResponseDto.
+  /// Crée un TokenResponseDto.
   const factory TokenResponseDto({
     @JsonKey(name: 'access_token') required String accessToken,
     @JsonKey(name: 'refresh_token') required String refreshToken,
@@ -59,10 +59,10 @@ sealed class TokenResponseDto with _$TokenResponseDto {
       _$TokenResponseDtoFromJson(json);
 }
 
-/// Request payload for password reset request.
+/// Payload de requête pour une demande de réinitialisation du mot de passe.
 @freezed
 sealed class ForgotPasswordRequestDto with _$ForgotPasswordRequestDto {
-  /// Creates a ForgotPasswordRequestDto.
+  /// Crée un ForgotPasswordRequestDto.
   const factory ForgotPasswordRequestDto({required String email}) =
       _ForgotPasswordRequestDto;
 
@@ -70,10 +70,10 @@ sealed class ForgotPasswordRequestDto with _$ForgotPasswordRequestDto {
       _$ForgotPasswordRequestDtoFromJson(json);
 }
 
-/// Request payload for confirming password reset.
+/// Payload de requête pour confirmer la réinitialisation du mot de passe.
 @freezed
 sealed class ResetPasswordRequestDto with _$ResetPasswordRequestDto {
-  /// Creates a ResetPasswordRequestDto.
+  /// Crée un ResetPasswordRequestDto.
   const factory ResetPasswordRequestDto({
     required String token,
     @JsonKey(name: 'new_password') required String newPassword,
@@ -83,10 +83,10 @@ sealed class ResetPasswordRequestDto with _$ResetPasswordRequestDto {
       _$ResetPasswordRequestDtoFromJson(json);
 }
 
-/// Request payload for token refresh.
+/// Payload de requête pour le rafraîchissement du token.
 @freezed
 sealed class RefreshRequestDto with _$RefreshRequestDto {
-  /// Creates a RefreshRequestDto.
+  /// Crée un RefreshRequestDto.
   const factory RefreshRequestDto({
     @JsonKey(name: 'refresh_token') required String refreshToken,
   }) = _RefreshRequestDto;

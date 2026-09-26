@@ -7,26 +7,27 @@ import '../../sales/domain/entities/sale.dart';
 import '../domain/repositories/printer_repository.dart';
 import 'receipt_formatter.dart';
 
-/// Orchestrates BT discovery, connection, and data transmission.
+/// Orchestre la découverte BT, la connexion et la transmission des données.
 ///
-/// Uses [print_bluetooth_thermal] for all BT operations.
-/// Does NOT maintain persistent connection state — that is managed by [PrinterProvider].
+/// Utilise [print_bluetooth_thermal] pour toutes les opérations BT.
+/// Ne conserve PAS d'état de connexion persistant — c'est [PrinterProvider] qui
+/// s'en charge.
 class PrinterService implements PrinterRepository {
-  /// Creates a [PrinterService].
+  /// Crée un [PrinterService].
   const PrinterService();
 
   static final _log = Logger();
 
-  /// Lists all paired BT devices available on the system.
+  /// Liste tous les appareils BT appairés disponibles sur le système.
   @override
   Future<List<BluetoothInfo>> getPairedDevices() async {
     return PrintBluetoothThermal.pairedBluetooths;
   }
 
-  /// Connects to the device at [mac].
+  /// Se connecte à l'appareil [mac].
   ///
-  /// Returns true on success. Throws [PrintException] on failure.
-  /// Note: [PrintBluetoothThermal.disconnect] is a getter, not a method.
+  /// Retourne true en cas de succès. Lève [PrintException] en cas d'échec.
+  /// Note : [PrintBluetoothThermal.disconnect] est un getter, pas une méthode.
   @override
   Future<bool> connect(String mac) async {
     _log.i('Connecting to BT device: $mac');
@@ -40,21 +41,24 @@ class PrinterService implements PrinterRepository {
     return result;
   }
 
-  /// Disconnects from the current BT device.
+  /// Se déconnecte de l'appareil BT courant.
   @override
   Future<void> disconnect() async {
-    // Note: disconnect is a getter, not a method in print_bluetooth_thermal v1.2.x
+    // Note : disconnect est un getter, pas une méthode, dans
+    // print_bluetooth_thermal v1.2.x
     await PrintBluetoothThermal.disconnect;
   }
 
-  /// Returns true if currently connected to a BT device.
+  /// Retourne true si un appareil BT est actuellement connecté.
   @override
   Future<bool> get isConnected => PrintBluetoothThermal.connectionStatus;
 
-  /// Prints a receipt for [sale].
+  /// Imprime un reçu pour [sale].
   ///
-  /// Formats bytes via [ReceiptFormatter] and sends to the connected printer.
-  /// Throws [PrintException] if not connected or send fails.
+  /// Formate les octets via [ReceiptFormatter] et les envoie à l'imprimante
+  /// connectée.
+  /// Lève [PrintException] si l'imprimante n'est pas connectée ou si l'envoi
+  /// échoue.
   @override
   Future<void> printReceipt({
     required Store store,

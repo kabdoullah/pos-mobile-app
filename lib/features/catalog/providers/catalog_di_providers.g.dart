@@ -8,12 +8,12 @@ part of 'catalog_di_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the catalog repository implementation (local-first via drift).
+/// Fournit l'implémentation du repository catalogue (local d'abord, via drift).
 
 @ProviderFor(catalogRepository)
 final catalogRepositoryProvider = CatalogRepositoryProvider._();
 
-/// Provides the catalog repository implementation (local-first via drift).
+/// Fournit l'implémentation du repository catalogue (local d'abord, via drift).
 
 final class CatalogRepositoryProvider
     extends
@@ -23,7 +23,7 @@ final class CatalogRepositoryProvider
           CatalogRepository
         >
     with $Provider<CatalogRepository> {
-  /// Provides the catalog repository implementation (local-first via drift).
+  /// Fournit l'implémentation du repository catalogue (local d'abord, via drift).
   CatalogRepositoryProvider._()
     : super(
         from: null,

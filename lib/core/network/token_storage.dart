@@ -1,21 +1,22 @@
-/// Abstraction for secure token persistence (JWT tokens).
-/// Implementation (SecureTokenStorage) deferred to next phase.
+/// Abstraction de la persistance sécurisée des tokens (JWT).
+/// Implémentation (SecureTokenStorage) reportée à la phase suivante.
 abstract interface class TokenStorage {
-  /// Retrieves the access token from secure storage, or null if not found.
+  /// Récupère l'access token depuis le secure storage, ou null s'il est absent.
   Future<String?> getAccessToken();
 
-  /// Retrieves the refresh token from secure storage, or null if not found.
+  /// Récupère le refresh token depuis le secure storage, ou null s'il est
+  /// absent.
   Future<String?> getRefreshToken();
 
-  /// Persists both access and refresh tokens to secure storage.
+  /// Enregistre l'access token et le refresh token dans le secure storage.
   Future<void> saveTokens({
     required String accessToken,
     required String refreshToken,
   });
 
-  /// Clears all stored tokens (logout).
+  /// Efface tous les tokens enregistrés (déconnexion).
   Future<void> clearTokens();
 
-  /// Retrieves the active store id, or null if not set.
+  /// Récupère l'id de la boutique active, ou null s'il n'est pas défini.
   Future<String?> getStoreId();
 }

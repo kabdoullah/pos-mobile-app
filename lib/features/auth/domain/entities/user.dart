@@ -7,7 +7,7 @@ part 'user.freezed.dart';
 /// Immutable. Construite uniquement après authentification réussie.
 @freezed
 sealed class User with _$User {
-  /// Constructor.
+  /// Constructeur.
   const factory User({
     required String id,
     required String phoneNumber,

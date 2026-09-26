@@ -2,22 +2,23 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'stock_movement.freezed.dart';
 
-/// Reason a stock movement was recorded.
+/// Motif d'enregistrement d'un mouvement de stock.
 enum StockMovementReason {
-  /// Stock decreased by a sale.
+  /// Stock diminué par une vente.
   sale,
 
-  /// Manual adjustment (reception, breakage, inventory correction).
+  /// Ajustement manuel (réception, casse, correction d'inventaire).
   manualAdjustment,
 
-  /// Stock set directly via a catalog update.
+  /// Stock fixé directement via une mise à jour du catalogue.
   catalogUpdate,
 }
 
-/// Stock movement entity — an entry in a product's stock audit trail.
+/// Entité mouvement de stock — une entrée du journal d'audit du stock d'un
+/// produit.
 @freezed
 sealed class StockMovement with _$StockMovement {
-  /// Creates a [StockMovement].
+  /// Crée un [StockMovement].
   const factory StockMovement({
     required String id,
     required String productId,

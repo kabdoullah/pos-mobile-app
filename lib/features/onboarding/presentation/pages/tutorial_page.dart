@@ -5,18 +5,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/index.dart';
 
-/// Tutorial carousel for onboarding.
+/// Carrousel de tutoriel pour l'onboarding.
 ///
-/// 4 slides introducing core features:
-/// 1. Add products
-/// 2. Make sales
-/// 3. Print receipts
-/// 4. View sales history
+/// 4 écrans présentent les fonctionnalités principales :
+/// 1. Ajouter des produits
+/// 2. Faire des ventes
+/// 3. Imprimer des reçus
+/// 4. Consulter l'historique des ventes
 class TutorialPage extends StatefulWidget {
-  /// Creates a tutorial page.
+  /// Crée une page de tutoriel.
   const TutorialPage({super.key});
 
   @override
@@ -92,7 +92,7 @@ class _TutorialPageState extends State<TutorialPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Dismiss button
+            // Bouton pour passer
             Align(
               alignment: Alignment.topRight,
               child: Padding(
@@ -109,7 +109,7 @@ class _TutorialPageState extends State<TutorialPage> {
               ),
             ),
 
-            // Carousel
+            // Carrousel
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
@@ -129,7 +129,7 @@ class _TutorialPageState extends State<TutorialPage> {
               ),
             ),
 
-            // Page indicators
+            // Indicateurs de page
             Padding(
               padding: EdgeInsets.symmetric(vertical: padding),
               child: Row(
@@ -158,7 +158,7 @@ class _TutorialPageState extends State<TutorialPage> {
               ),
             ),
 
-            // Bottom button
+            // Bouton du bas
             Padding(
               padding: EdgeInsets.all(padding),
               child: PrimaryButton(
@@ -175,7 +175,7 @@ class _TutorialPageState extends State<TutorialPage> {
   }
 }
 
-/// Tutorial slide widget.
+/// Widget d'un écran du tutoriel.
 class _SlideBuilder extends StatelessWidget {
   const _SlideBuilder({
     required this.slide,
@@ -187,10 +187,10 @@ class _SlideBuilder extends StatelessWidget {
   final TutorialSlide slide;
   final double padding;
 
-  /// 1-indexed position of this slide in the workflow (e.g. `2`).
+  /// Position (à partir de 1) de cet écran dans le parcours (ex. `2`).
   final int step;
 
-  /// Total number of slides — the workflow's step count.
+  /// Nombre total d'écrans — le nombre d'étapes du parcours.
   final int totalSteps;
 
   @override
@@ -201,7 +201,8 @@ class _SlideBuilder extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Hand-drawn line icon — one per real POS action, not a stock glyph.
+        // Icône dessinée à la main — une par vraie action de caisse, pas un
+        // pictogramme générique.
         Container(
           width: 120,
           height: 120,
@@ -217,8 +218,9 @@ class _SlideBuilder extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        // Eyebrow — these slides ARE the real order a merchant works in,
-        // so the step count carries real information, not decoration.
+        // Surtitre — ces écrans suivent VRAIMENT l'ordre de travail d'un
+        // commerçant, donc le numéro d'étape apporte une vraie information, ce
+        // n'est pas de la décoration.
         Text(
           'ÉTAPE $step SUR $totalSteps',
           style: textTheme.labelSmall?.copyWith(
@@ -228,8 +230,8 @@ class _SlideBuilder extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
 
-        // Title — the one place onboarding is allowed to be louder than
-        // the app's restrained daily-use screens.
+        // Titre — le seul endroit où l'onboarding a le droit d'être plus
+        // expressif que les écrans sobres de l'usage quotidien.
         Padding(
           padding: EdgeInsets.symmetric(horizontal: padding),
           child: Text(
@@ -254,9 +256,9 @@ class _SlideBuilder extends StatelessWidget {
   }
 }
 
-/// Represents a single tutorial slide.
+/// Représente un écran du tutoriel.
 class TutorialSlide {
-  /// Constructor.
+  /// Constructeur.
   const TutorialSlide({
     required this.title,
     required this.description,
@@ -264,25 +266,26 @@ class TutorialSlide {
     this.isAccent = false,
   });
 
-  /// Slide title.
+  /// Titre de l'écran.
   final String title;
 
-  /// Slide description.
+  /// Description de l'écran.
   final String description;
 
-  /// Builds the slide's hand-drawn line icon, tinted [Color].
+  /// Construit l'icône dessinée à la main de l'écran, teintée de [Color].
   final CustomPainter Function(Color color) iconPainter;
 
-  /// Whether to use secondary (accent) color instead of primary.
+  /// Utilise la couleur secondaire (accent) au lieu de la principale.
   final bool isAccent;
 }
 
-/// Base for the tutorial's hand-drawn line icons — one visual language,
-/// distinct from the app's default Material icon set.
+/// Base des icônes dessinées à la main du tutoriel — un langage visuel propre,
+/// distinct du jeu d'icônes Material par défaut de l'app.
 abstract class _LineIcon extends CustomPainter {
   const _LineIcon(this.color);
 
-  /// Stroke color, driven by the slide's theme color (primary or accent).
+  /// Couleur du trait, dictée par la couleur de thème de l'écran (principale ou
+  /// accent).
   final Color color;
 
   Paint get _stroke => Paint()
@@ -301,7 +304,8 @@ abstract class _LineIcon extends CustomPainter {
       oldDelegate.color != color;
 }
 
-/// Stock icon — an open crate, mid-unpack, with a small "add" mark.
+/// Icône stock — une caisse ouverte, en cours de déballage, avec une petite
+/// marque « ajouter ».
 class _StockIcon extends _LineIcon {
   const _StockIcon(super.color);
 
@@ -327,7 +331,7 @@ class _StockIcon extends _LineIcon {
   }
 }
 
-/// Sale icon — a hand-held terminal with a payment signal.
+/// Icône vente — un terminal portatif avec un signal de paiement.
 class _SaleIcon extends _LineIcon {
   const _SaleIcon(super.color);
 
@@ -353,7 +357,7 @@ class _SaleIcon extends _LineIcon {
   }
 }
 
-/// Receipt icon — a printer with the paper strip curling out.
+/// Icône reçu — une imprimante d'où sort un ticket qui s'enroule.
 class _ReceiptIcon extends _LineIcon {
   const _ReceiptIcon(super.color);
 
@@ -381,7 +385,8 @@ class _ReceiptIcon extends _LineIcon {
   }
 }
 
-/// Sales-trend icon — three rising bars, the payoff slide.
+/// Icône tendance des ventes — trois barres croissantes, l'écran
+/// d'aboutissement.
 class _TrendIcon extends _LineIcon {
   const _TrendIcon(super.color);
 

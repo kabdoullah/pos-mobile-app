@@ -6,10 +6,10 @@ import 'package:mobile/features/sales/domain/repositories/sales_repository.dart'
 import 'package:mobile/features/sales/domain/usecases/create_sale_usecase.dart';
 import 'package:mocktail/mocktail.dart';
 
-// Mock repository
+// Repository simulé
 class MockSalesRepository extends Mock implements SalesRepository {}
 
-// Helpers
+// Utilitaires
 CartItem makeCartItem({
   String productId = 'prod-1',
   String productName = 'Produit test',
@@ -77,7 +77,7 @@ void main() {
           ),
         );
 
-        // Repository should never be called
+        // Le repository ne doit jamais être appelé
         verifyZeroInteractions(mockRepository);
       });
     });
@@ -130,7 +130,7 @@ void main() {
 
     group('Validation: cart total coherence', () {
       test('throws when calculated total does not match provided total', () {
-        // Create items that sum to 150
+        // Crée des articles dont la somme vaut 150
         final items = [
           makeCartItem(unitPrice: Decimal.parse('100'), quantity: 1),
           makeCartItem(
@@ -143,7 +143,7 @@ void main() {
         expect(
           () => useCase(
             items: items,
-            totalAmount: Decimal.parse('200'), // Mismatch: actual is 150
+            totalAmount: Decimal.parse('200'), // Écart : le total réel est 150
             vatAmount: Decimal.parse('0'),
             paymentMethod: PaymentMethod.cash,
           ),
@@ -160,13 +160,13 @@ void main() {
       });
 
       test('double-check detects money precision mismatch', () {
-        // Items sum to 1234.56 exactly
+        // La somme des articles vaut exactement 1234.56
         final items = [
           makeCartItem(unitPrice: Decimal.parse('1234.56'), quantity: 1),
         ];
 
-        // Provide a different total that would pass with double arithmetic
-        // but fails with Decimal (more precise)
+        // Fournit un total différent qui passerait en arithmétique double mais
+        // échoue en Decimal (plus précis)
         expect(
           () => useCase(
             items: items,
@@ -235,7 +235,7 @@ void main() {
               vatAmount: Decimal.parse('0'),
               paymentMethod: PaymentMethod.mixed,
               cashAmount: Decimal.parse('60'),
-              mobileMoneyAmount: Decimal.parse('30'), // Total: 90, not 100
+              mobileMoneyAmount: Decimal.parse('30'), // Total : 90, pas 100
             ),
             throwsA(
               isA<CreateSaleException>().having(
@@ -545,7 +545,7 @@ void main() {
             quantity: 3,
           ),
         ];
-        // Total: 15000*2 + 8500*1 + 2500*3 = 30000 + 8500 + 7500 = 46000
+        // Total : 15000*2 + 8500*1 + 2500*3 = 30000 + 8500 + 7500 = 46000
         final expectedTotal = Decimal.parse('46000');
         final expectedVat = Decimal.parse('4600');
 

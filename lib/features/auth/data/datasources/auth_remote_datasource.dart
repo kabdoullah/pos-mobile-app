@@ -5,35 +5,35 @@ import '../models/auth_models.dart';
 
 part 'auth_remote_datasource.g.dart';
 
-/// Remote data source for authentication via HTTP API.
+/// Data source distante pour l'authentification via l'API HTTP.
 @RestApi()
 abstract class AuthRemoteDataSource {
-  /// Creates an AuthRemoteDataSource instance.
+  /// Crée une instance AuthRemoteDataSource.
   factory AuthRemoteDataSource(Dio dio, {String baseUrl}) =
       _AuthRemoteDataSource;
 
-  /// Registers a new user account.
-  /// Endpoint: POST /api/v1/auth/register
+  /// Crée un compte utilisateur.
+  /// Endpoint : POST /api/v1/auth/register
   @POST('/api/v1/auth/register')
   Future<RegisterResponseDto> register(@Body() RegisterRequestDto request);
 
-  /// Logs in with email and password.
-  /// Endpoint: POST /api/v1/auth/login
+  /// Connexion par téléphone et mot de passe.
+  /// Endpoint : POST /api/v1/auth/login
   @POST('/api/v1/auth/login')
   Future<TokenResponseDto> login(@Body() LoginRequestDto request);
 
-  /// Requests a password reset email.
-  /// Endpoint: POST /api/v1/auth/forgot-password
+  /// Demande un email de réinitialisation du mot de passe.
+  /// Endpoint : POST /api/v1/auth/forgot-password
   @POST('/api/v1/auth/forgot-password')
   Future<void> forgotPassword(@Body() ForgotPasswordRequestDto request);
 
-  /// Confirms a password reset.
-  /// Endpoint: POST /api/v1/auth/reset-password
+  /// Confirme la réinitialisation du mot de passe.
+  /// Endpoint : POST /api/v1/auth/reset-password
   @POST('/api/v1/auth/reset-password')
   Future<void> resetPassword(@Body() ResetPasswordRequestDto request);
 
-  /// Refreshes the access token using the refresh token.
-  /// Endpoint: POST /api/v1/auth/refresh
+  /// Rafraîchit l'access token à l'aide du refresh token.
+  /// Endpoint : POST /api/v1/auth/refresh
   @POST('/api/v1/auth/refresh')
   Future<TokenResponseDto> refresh(@Body() RefreshRequestDto request);
 }

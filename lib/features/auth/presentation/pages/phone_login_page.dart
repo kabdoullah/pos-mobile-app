@@ -8,18 +8,19 @@ import 'package:logger/logger.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../auth/providers/auth_di_providers.dart';
 import '../providers/auth_providers.dart';
 
-/// Phone number login screen (primary authentication).
+/// Écran de connexion par numéro de téléphone (authentification principale).
 ///
-/// Also entry point for new device login and account recovery via forgot-password dialog.
+/// Sert aussi de point d'entrée pour la connexion sur un nouvel appareil et la
+/// récupération de compte via le dialogue de mot de passe oublié.
 class PhoneLoginPage extends ConsumerStatefulWidget {
-  /// Creates a phone login page.
+  /// Crée une page de connexion par téléphone.
   const PhoneLoginPage({super.key});
 
   @override

@@ -1,15 +1,15 @@
-/// Outcome of a single row in a bulk product import.
+/// Résultat d'une ligne dans un import produits en masse.
 enum ProductImportItemStatus {
-  /// The row was successfully created.
+  /// La ligne a été créée avec succès.
   created,
 
-  /// The row failed to import.
+  /// L'import de la ligne a échoué.
   failed,
 }
 
-/// Result of processing a single row of a bulk product import.
+/// Résultat du traitement d'une ligne d'un import produits en masse.
 class ProductImportItemResult {
-  /// Creates a ProductImportItemResult.
+  /// Crée un ProductImportItemResult.
   const ProductImportItemResult({
     required this.index,
     required this.status,
@@ -17,22 +17,23 @@ class ProductImportItemResult {
     this.field,
   });
 
-  /// Row index (0-based) in the imported file.
+  /// Index de la ligne (à partir de 0) dans le fichier importé.
   final int index;
 
-  /// Whether this row was created or failed.
+  /// Indique si la ligne a été créée ou a échoué.
   final ProductImportItemStatus status;
 
-  /// Error message when [status] is failed.
+  /// Message d'erreur quand [status] est en échec.
   final String? error;
 
-  /// Name of the field that caused the failure, if applicable.
+  /// Nom du champ à l'origine de l'échec, le cas échéant.
   final String? field;
 }
 
-/// Summary result of a best-effort bulk product import.
+/// Résultat récapitulatif d'un import produits en masse (au mieux, ligne par
+/// ligne).
 class ProductImportResult {
-  /// Creates a ProductImportResult.
+  /// Crée un ProductImportResult.
   const ProductImportResult({
     required this.processed,
     required this.createdCount,
@@ -40,15 +41,15 @@ class ProductImportResult {
     required this.items,
   });
 
-  /// Total number of rows processed.
+  /// Nombre total de lignes traitées.
   final int processed;
 
-  /// Number of rows successfully created.
+  /// Nombre de lignes créées avec succès.
   final int createdCount;
 
-  /// Number of rows that failed.
+  /// Nombre de lignes en échec.
   final int failedCount;
 
-  /// Per-row results.
+  /// Résultats ligne par ligne.
   final List<ProductImportItemResult> items;
 }

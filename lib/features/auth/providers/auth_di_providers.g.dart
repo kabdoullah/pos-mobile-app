@@ -8,12 +8,12 @@ part of 'auth_di_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the remote data source for auth API calls.
+/// Fournit la data source distante pour les appels API d'auth.
 
 @ProviderFor(authRemoteDataSource)
 final authRemoteDataSourceProvider = AuthRemoteDataSourceProvider._();
 
-/// Provides the remote data source for auth API calls.
+/// Fournit la data source distante pour les appels API d'auth.
 
 final class AuthRemoteDataSourceProvider
     extends
@@ -23,7 +23,7 @@ final class AuthRemoteDataSourceProvider
           AuthRemoteDataSource
         >
     with $Provider<AuthRemoteDataSource> {
-  /// Provides the remote data source for auth API calls.
+  /// Fournit la data source distante pour les appels API d'auth.
   AuthRemoteDataSourceProvider._()
     : super(
         from: null,
@@ -61,12 +61,12 @@ final class AuthRemoteDataSourceProvider
 String _$authRemoteDataSourceHash() =>
     r'b75e3f967c2880ad7b794f6ec502786be39f16ed';
 
-/// Provides the remote data source for store API calls.
+/// Fournit la data source distante pour les appels API boutique.
 
 @ProviderFor(storesRemoteDataSource)
 final storesRemoteDataSourceProvider = StoresRemoteDataSourceProvider._();
 
-/// Provides the remote data source for store API calls.
+/// Fournit la data source distante pour les appels API boutique.
 
 final class StoresRemoteDataSourceProvider
     extends
@@ -76,7 +76,7 @@ final class StoresRemoteDataSourceProvider
           StoresRemoteDataSource
         >
     with $Provider<StoresRemoteDataSource> {
-  /// Provides the remote data source for store API calls.
+  /// Fournit la data source distante pour les appels API boutique.
   StoresRemoteDataSourceProvider._()
     : super(
         from: null,
@@ -114,17 +114,17 @@ final class StoresRemoteDataSourceProvider
 String _$storesRemoteDataSourceHash() =>
     r'e702a98344a9da3d439d413bf416fd8b874dddf4';
 
-/// Provides the auth repository implementation.
+/// Fournit l'implémentation du repository d'auth.
 
 @ProviderFor(authRepository)
 final authRepositoryProvider = AuthRepositoryProvider._();
 
-/// Provides the auth repository implementation.
+/// Fournit l'implémentation du repository d'auth.
 
 final class AuthRepositoryProvider
     extends $FunctionalProvider<AuthRepository, AuthRepository, AuthRepository>
     with $Provider<AuthRepository> {
-  /// Provides the auth repository implementation.
+  /// Fournit l'implémentation du repository d'auth.
   AuthRepositoryProvider._()
     : super(
         from: null,
@@ -159,3 +159,50 @@ final class AuthRepositoryProvider
 }
 
 String _$authRepositoryHash() => r'0da870bc4ca82306657c28fd6b74cd7518609c06';
+
+/// Fournit le repository boutique (cache secure storage + `/stores/me`).
+
+@ProviderFor(storeRepository)
+final storeRepositoryProvider = StoreRepositoryProvider._();
+
+/// Fournit le repository boutique (cache secure storage + `/stores/me`).
+
+final class StoreRepositoryProvider
+    extends
+        $FunctionalProvider<StoreRepository, StoreRepository, StoreRepository>
+    with $Provider<StoreRepository> {
+  /// Fournit le repository boutique (cache secure storage + `/stores/me`).
+  StoreRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'storeRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$storeRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<StoreRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  StoreRepository create(Ref ref) {
+    return storeRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(StoreRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<StoreRepository>(value),
+    );
+  }
+}
+
+String _$storeRepositoryHash() => r'9ffdd3e9e8c31e0ae8cc92402f76328e934c4ad9';

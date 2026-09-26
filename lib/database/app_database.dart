@@ -135,7 +135,7 @@ class SyncQueue extends Table {
 /// Base de données drift de l'application.
 @DriftDatabase(tables: [Products, Sales, SaleItems, SyncQueue, SyncMetadata])
 class AppDatabase extends _$AppDatabase {
-  /// Constructor.
+  /// Constructeur.
   AppDatabase() : super(_openConnection());
 
   /// Constructor pour les tests : injecte un [QueryExecutor] (ex. mémoire).
@@ -150,7 +150,7 @@ class AppDatabase extends _$AppDatabase {
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
       if (from < 3) {
-        // Pre-production schemas: drop all and recreate.
+        // Schémas de pré-production : tout supprimer et recréer.
         await customStatement('DROP TABLE IF EXISTS sale_items');
         await customStatement('DROP TABLE IF EXISTS sales');
         await customStatement('DROP TABLE IF EXISTS products');
@@ -160,8 +160,10 @@ class AppDatabase extends _$AppDatabase {
         return;
       }
       if (from < 4) {
-        // v3 → v4: remove (saleId, productId) unique constraint from sale_items.
-        // SQLite cannot drop constraints in-place — rebuild via temp table.
+        // v3 → v4 : retire la contrainte d'unicité (saleId, productId) de
+        // sale_items.
+        // SQLite ne peut pas supprimer une contrainte sur place —
+        // reconstruction via une table temporaire.
         await customStatement(
           'CREATE TABLE sale_items_new ('
           '  id TEXT NOT NULL PRIMARY KEY,'
@@ -183,7 +185,7 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 5) {
-        // v4 → v5: add reorder threshold to products.
+        // v4 → v5 : ajoute le seuil de réapprovisionnement aux produits.
         await m.addColumn(products, products.minStock);
       }
     },

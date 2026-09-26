@@ -1,6 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// Onglets de la [MainShell], dans l'ordre des branches de la
+/// [StatefulShellRoute] (`app_router.dart`) et des destinations ci-dessous —
+/// à garder synchronisés. Utiliser `ShellBranch.x.index` avec `goBranch`.
+enum ShellBranch {
+  /// Accueil (dashboard).
+  home,
+
+  /// Catalogue produits.
+  catalog,
+
+  /// Vue d'ensemble du stock.
+  inventory,
+
+  /// Historique des ventes.
+  salesHistory,
+
+  /// Paramètres.
+  settings,
+}
+
 /// Coquille principale : Scaffold + [NavigationBar] Material 3 pilotés par
 /// [StatefulNavigationShell].
 ///
@@ -39,6 +59,11 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.shopping_bag_outlined),
             selectedIcon: Icon(Icons.shopping_bag),
             label: 'Catalogue',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.inventory_2_outlined),
+            selectedIcon: Icon(Icons.inventory_2),
+            label: 'Stock',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),

@@ -8,23 +8,24 @@ import '../datasources/inventory_remote_datasource.dart';
 import '../models/stock_movement_mappers.dart';
 import '../../../../core/network/api_models/stock_movement_dto.dart';
 
-/// Concrete implementation of [InventoryRepository].
+/// Implémentation concrète de [InventoryRepository].
 ///
-/// Online-only: stock movements are a server-authoritative audit trail
-/// (includes entries from other devices and automatic reasons like `sale` or
-/// `catalog_update`), so unlike [CatalogRepositoryImpl] there is no local
-/// drift mirror table or sync queue for movements themselves. After a manual
-/// adjustment succeeds, only the cached `Products.currentStock` value is
-/// updated locally from the server-computed result.
+/// En ligne uniquement : les mouvements de stock forment un journal d'audit
+/// dont le serveur fait autorité (il inclut les entrées d'autres appareils et
+/// les motifs automatiques comme `sale` ou `catalog_update`). Contrairement à
+/// [CatalogRepositoryImpl], il n'y a donc ni table miroir drift ni file de
+/// synchro pour les mouvements eux-mêmes. Après un ajustement manuel réussi,
+/// seule la valeur en cache `Products.currentStock` est mise à jour en local à
+/// partir du résultat calculé par le serveur.
 class InventoryRepositoryImpl implements InventoryRepository {
-  /// Creates an InventoryRepositoryImpl.
+  /// Crée un InventoryRepositoryImpl.
   InventoryRepositoryImpl({required this.remoteDataSource, required this.db});
 
-  /// Remote data source for inventory operations.
+  /// Data source distante pour les opérations d'inventaire.
   final InventoryRemoteDataSource remoteDataSource;
 
-  /// Local drift database instance, used only to refresh the cached
-  /// product stock after a successful adjustment.
+  /// Instance de la base drift locale, utilisée uniquement pour rafraîchir le
+  /// stock produit en cache après un ajustement réussi.
   final AppDatabase db;
 
   @override
@@ -62,8 +63,9 @@ class InventoryRepositoryImpl implements InventoryRepository {
 
     final resultingStock = dto.resultingStock;
     if (resultingStock != null) {
-      // Refresh the cached stock value only — this reflects a value already
-      // applied server-side, so it must not be marked dirty or re-enqueued.
+      // Rafraîchit uniquement la valeur de stock en cache — elle reflète une
+      // valeur déjà appliquée côté serveur, elle ne doit donc pas être marquée
+      // dirty ni remise en file.
       await (db.update(db.products)..where((p) => p.id.equals(productId)))
           .write(ProductsCompanion(currentStock: drift.Value(resultingStock)));
     }

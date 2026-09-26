@@ -2,12 +2,13 @@ import 'package:drift/drift.dart' as drift;
 import 'package:logger/logger.dart';
 
 import '../../database/app_database.dart';
-import '../../features/sync/data/datasources/sync_remote_datasource.dart';
 import '../utils/barcode_utils.dart';
+import 'sync_remote_datasource.dart';
 
-/// Service for pulling changes from server and writing to local drift database.
+/// Service qui récupère les changements du serveur et les écrit dans la base
+/// drift locale.
 class PullService {
-  /// Constructor.
+  /// Constructeur.
   const PullService({
     required SyncRemoteDataSource remoteDataSource,
     required AppDatabase db,
@@ -22,14 +23,16 @@ class PullService {
 
   static const int _defaultLimit = 100;
 
-  /// Pulls all changes from server and writes to drift (idempotent).
+  /// Récupère tous les changements du serveur et les écrit dans drift
+  /// (idempotent).
   ///
-  /// Returns true if pull succeeded, false otherwise.
-  /// On success, updates last_pull_at metadata.
+  /// Retourne true si la récupération a réussi, false sinon. En cas de succès,
+  /// met à jour la métadonnée last_pull_at.
   ///
-  /// When [forceFullPull] is true, ignores [last_pull_at] and fetches the
-  /// full catalog (since=null). Use for manual refresh to recover from
-  /// products inserted on the server with timestamps older than last_pull_at.
+  /// Quand [forceFullPull] vaut true, ignore [last_pull_at] et récupère tout le
+  /// catalogue (since=null). À utiliser pour un rafraîchissement manuel, afin
+  /// de récupérer les produits insérés côté serveur avec un horodatage
+  /// antérieur à last_pull_at.
   Future<bool> pullChanges({bool forceFullPull = false}) async {
     try {
       final storage = SyncMetadataStorage(_db);
@@ -42,7 +45,7 @@ class PullService {
       bool hasMore = true;
       String? serverTime;
 
-      // Paginate through all results.
+      // Parcourt toutes les pages de résultats.
       while (hasMore) {
         _logger?.d('Fetching page. Cursor: $cursor');
 
@@ -54,12 +57,13 @@ class PullService {
 
         serverTime = response.serverTime;
 
-        // Upsert products (idempotent) — single batch transaction.
+        // Upsert des produits (idempotent) — une seule transaction par lot.
         if (response.products.isNotEmpty) {
-          // min_stock is not yet known to the backend: it never comes back
-          // in productDto.minStock, so blindly replacing the row on every
-          // pull would silently erase the locally-set threshold. Preserve
-          // the existing local value whenever the server doesn't send one.
+          // min_stock n'est pas encore connu du backend : il ne revient jamais
+          // dans productDto.minStock, donc remplacer aveuglément la ligne à
+          // chaque récupération effacerait silencieusement le seuil défini
+          // localement. On conserve la valeur locale existante quand le serveur
+          // n'en envoie pas.
           final existingMinStocks = <String, int?>{
             for (final row
                 in await (_db.select(_db.products)..where(
@@ -95,7 +99,8 @@ class PullService {
           });
         }
 
-        // Upsert sales (idempotent, append-only) — single batch transaction.
+        // Upsert des ventes (idempotent, append-only) — une seule transaction
+        // par lot.
         if (response.sales.isNotEmpty) {
           await _db.batch((batch) {
             for (final saleDto in response.sales) {
@@ -115,12 +120,13 @@ class PullService {
           });
         }
 
-        // Pagination check.
+        // Vérification de la pagination.
         hasMore = response.hasMore;
         cursor = response.nextCursor;
       }
 
-      // Update metadata only if pull completed successfully.
+      // Met à jour les métadonnées seulement si la récupération s'est terminée
+      // avec succès.
       if (serverTime != null) {
         final timestamp = DateTime.parse(serverTime);
         await storage.setLastPullAt(timestamp);
@@ -135,14 +141,15 @@ class PullService {
   }
 }
 
-/// Manages sync metadata (last pull timestamp) stored in drift.
+/// Gère les métadonnées de synchro (horodatage du dernier pull) stockées dans
+/// drift.
 class SyncMetadataStorage {
-  /// Constructor.
+  /// Constructeur.
   const SyncMetadataStorage(this._db);
 
   final AppDatabase _db;
 
-  /// Key for storing last pull timestamp.
+  /// Clé de stockage de l'horodatage du dernier pull.
   static const String _lastPullKey = 'last_pull_at';
 
   /// Clé du store actuellement actif dans la DB locale.
@@ -169,7 +176,7 @@ class SyncMetadataStorage {
         );
   }
 
-  /// Reads last pull timestamp. Returns null if never pulled.
+  /// Lit l'horodatage du dernier pull. Retourne null si aucun pull n'a eu lieu.
   Future<DateTime?> getLastPullAt() async {
     final record = await (_db.select(
       _db.syncMetadata,
@@ -179,7 +186,8 @@ class SyncMetadataStorage {
     return DateTime.parse(record.value);
   }
 
-  /// Stores last pull timestamp (server_time from sync response).
+  /// Enregistre l'horodatage du dernier pull (server_time de la réponse de
+  /// synchro).
   Future<void> setLastPullAt(DateTime timestamp) async {
     await _db
         .into(_db.syncMetadata)
@@ -192,7 +200,8 @@ class SyncMetadataStorage {
         );
   }
 
-  /// Clears all sync metadata (used in tests or reset scenarios).
+  /// Efface toutes les métadonnées de synchro (utilisé en test ou pour une
+  /// remise à zéro).
   Future<void> clear() async {
     await (_db.delete(_db.syncMetadata)).go();
   }

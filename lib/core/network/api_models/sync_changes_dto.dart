@@ -6,10 +6,10 @@ import 'sale_dto.dart';
 part 'sync_changes_dto.freezed.dart';
 part 'sync_changes_dto.g.dart';
 
-/// Response from GET /api/v1/sync/changes.
+/// Réponse de GET /api/v1/sync/changes.
 @freezed
 sealed class SyncChangesDto with _$SyncChangesDto {
-  /// Creates a [SyncChangesDto].
+  /// Crée un [SyncChangesDto].
   const factory SyncChangesDto({
     required List<ProductDto> products,
     required List<SaleDto> sales,
@@ -22,10 +22,10 @@ sealed class SyncChangesDto with _$SyncChangesDto {
       _$SyncChangesDtoFromJson(json);
 }
 
-/// Request body for PUT /api/v1/sync/products (state-based sync).
+/// Corps de requête de PUT /api/v1/sync/products (synchro par état).
 @freezed
 sealed class ProductSyncBatchDto with _$ProductSyncBatchDto {
-  /// Creates a [ProductSyncBatchDto].
+  /// Crée un [ProductSyncBatchDto].
   const factory ProductSyncBatchDto({required List<ProductSyncItemDto> items}) =
       _ProductSyncBatchDto;
 
@@ -33,10 +33,10 @@ sealed class ProductSyncBatchDto with _$ProductSyncBatchDto {
       _$ProductSyncBatchDtoFromJson(json);
 }
 
-/// Single product for sync batch.
+/// Produit unique d'un lot de synchro.
 @freezed
 sealed class ProductSyncItemDto with _$ProductSyncItemDto {
-  /// Creates a [ProductSyncItemDto].
+  /// Crée un [ProductSyncItemDto].
   const factory ProductSyncItemDto({
     required String id,
     required String name,
@@ -52,10 +52,10 @@ sealed class ProductSyncItemDto with _$ProductSyncItemDto {
       _$ProductSyncItemDtoFromJson(json);
 }
 
-/// Response from sync endpoints.
+/// Réponse des endpoints de synchro.
 @freezed
 sealed class SyncResponseDto with _$SyncResponseDto {
-  /// Creates a [SyncResponseDto].
+  /// Crée un [SyncResponseDto].
   const factory SyncResponseDto({
     required String message,
     @JsonKey(name: 'synced_count') required int syncedCount,

@@ -1,23 +1,38 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:mobile/core/network/network_providers.dart';
+import 'package:mobile/core/network/token_storage.dart';
 import 'package:mobile/core/sync/pull_service.dart';
 import 'package:mobile/core/sync/push_service.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
-import 'package:mobile/features/sync/data/datasources/sync_remote_datasource.dart';
-import 'package:mobile/features/sync/presentation/providers/sync_providers.dart';
-import 'package:mobile/shared/providers/connectivity_provider.dart';
+import 'package:mobile/database/app_database.dart';
+import 'package:mobile/features/auth/domain/entities/user.dart';
+import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/core/providers/connectivity_provider.dart';
+import 'package:mobile/database/database_provider.dart';
+import 'package:mobile/core/sync/sync_providers.dart';
 
 class MockPushService extends Mock implements PushService {}
 
 class MockPullService extends Mock implements PullService {}
 
-class MockSyncRemoteDataSource extends Mock implements SyncRemoteDataSource {}
+class MockTokenStorage extends Mock implements TokenStorage {}
+
+/// syncNow() ne s'exécute que pour une session authentifiée.
+class _AuthenticatedAuth extends Auth {
+  @override
+  Future<AuthStatus> build() async =>
+      const AuthAuthenticated(User(id: 'u1', phoneNumber: '+2250700000000'));
+}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('SyncOrchestrator', () {
     late MockPushService mockPushService;
     late MockPullService mockPullService;
@@ -32,37 +47,61 @@ void main() {
       when(
         () => mockPushService.pushPendingProductChanges(),
       ).thenAnswer((_) async => {});
-      when(() => mockPullService.pullChanges()).thenAnswer((_) async => true);
+      when(
+        () => mockPullService.pullChanges(
+          forceFullPull: any(named: 'forceFullPull'),
+        ),
+      ).thenAnswer((_) async => true);
     });
 
-    test('syncNow when called twice concurrently ignores second call', () async {
+    /// Container authentifié ; pas de store id dans le token, donc la garde
+    /// de changement de boutique ne fait rien.
+    Future<ProviderContainer> makeContainer({PushService? push}) async {
+      final tokenStorage = MockTokenStorage();
+      when(tokenStorage.getStoreId).thenAnswer((_) async => null);
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+
       final container = ProviderContainer(
         overrides: [
-          pushServiceProvider.overrideWithValue(mockPushService),
+          pushServiceProvider.overrideWithValue(push ?? mockPushService),
           pullServiceProvider.overrideWithValue(mockPullService),
           isOnlineProvider.overrideWith(
             (_) => Stream.value(true).asBroadcastStream(),
           ),
+          authProvider.overrideWith(_AuthenticatedAuth.new),
+          tokenStorageProvider.overrideWithValue(tokenStorage),
+          databaseProvider.overrideWithValue(db),
         ],
       );
-      addTearDown(container.dispose);
+      addTearDown(() async {
+        container.dispose();
+        await db.close();
+      });
+      await container.read(authProvider.future);
+      return container;
+    }
 
-      when(() => mockPushService.pushPendingSales()).thenAnswer(
-        (_) => Future<void>.delayed(const Duration(milliseconds: 100)),
-      );
+    test(
+      'syncNow when called twice concurrently ignores second call',
+      () async {
+        when(() => mockPushService.pushPendingSales()).thenAnswer(
+          (_) => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        final container = await makeContainer();
+        final orchestrator = container.read(syncOrchestratorProvider.notifier);
 
-      final orchestrator = container.read(syncOrchestratorProvider.notifier);
+        // Appelle syncNow deux fois sans attendre
+        unawaited(orchestrator.syncNow());
+        unawaited(orchestrator.syncNow());
 
-      // Call syncNow twice without awaiting
-      unawaited(orchestrator.syncNow());
-      unawaited(orchestrator.syncNow());
+        // Attend la fin de la première synchro
+        await Future<void>.delayed(const Duration(milliseconds: 200));
 
-      // Wait for first sync to complete
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-
-      // Verify pushPendingSales was called only once (second call was ignored)
-      verify(() => mockPushService.pushPendingSales()).called(1);
-    });
+        // Vérifie que pushPendingSales n'a été appelé qu'une fois (le second
+        // appel a été ignoré)
+        verify(() => mockPushService.pushPendingSales()).called(1);
+      },
+    );
 
     test(
       'syncNow calls push before pull (push sales, products, then pull)',
@@ -77,71 +116,54 @@ void main() {
         ) async {
           callOrder.add('pushProducts');
         });
-        when(() => mockPullService.pullChanges()).thenAnswer((_) async {
+        when(
+          () => mockPullService.pullChanges(
+            forceFullPull: any(named: 'forceFullPull'),
+          ),
+        ).thenAnswer((_) async {
           callOrder.add('pull');
           return true;
         });
 
-        final container = ProviderContainer(
-          overrides: [
-            pushServiceProvider.overrideWithValue(mockPushService),
-            pullServiceProvider.overrideWithValue(mockPullService),
-            isOnlineProvider.overrideWith(
-              (_) => Stream.value(true).asBroadcastStream(),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        final orchestrator = container.read(syncOrchestratorProvider.notifier);
-        await orchestrator.syncNow();
+        final container = await makeContainer();
+        await container.read(syncOrchestratorProvider.notifier).syncNow();
 
         expect(callOrder, equals(['pushSales', 'pushProducts', 'pull']));
       },
     );
 
-    // Test for connectivity-triggered sync is omitted due to complex
-    // timing with ref.listen in build(). Manual testing confirms debounce
-    // works as intended (see adr/0005-sync-hybrid.md).
+    // Le test de synchro déclenchée par la connectivité est omis à cause du
+    // timing complexe de ref.listen dans build(). Les tests manuels confirment
+    // que l'anti-rebond fonctionne comme prévu (voir adr/0005-sync-hybrid.md).
 
     test(
       'syncNow updates state to SyncStatusSyncing then SyncStatusIdle',
       () async {
-        // Override mocks with delay to ensure we see the syncing state
+        // Surcharge les mocks avec un délai pour être sûr de voir l'état de
+        // synchro
         when(() => mockPushService.pushPendingSales()).thenAnswer(
           (_) => Future<void>.delayed(const Duration(milliseconds: 300)),
         );
-
-        final container = ProviderContainer(
-          overrides: [
-            pushServiceProvider.overrideWithValue(mockPushService),
-            pullServiceProvider.overrideWithValue(mockPullService),
-            isOnlineProvider.overrideWith(
-              (_) => Stream.value(true).asBroadcastStream(),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
+        final container = await makeContainer();
         final orchestrator = container.read(syncOrchestratorProvider.notifier);
 
-        // Initially idle
+        // Inactif au départ
         expect(container.read(syncOrchestratorProvider), isA<SyncStatusIdle>());
 
-        // Call syncNow (but don't await immediately)
+        // Appelle syncNow (sans attendre tout de suite)
         final syncFuture = orchestrator.syncNow();
         await Future<void>.delayed(const Duration(milliseconds: 50));
 
-        // Should be syncing
+        // Doit être en cours de synchro
         expect(
           container.read(syncOrchestratorProvider),
           isA<SyncStatusSyncing>(),
         );
 
-        // Wait for completion
+        // Attend la fin
         await syncFuture;
 
-        // Should be idle again with lastSyncAt set
+        // Doit être de nouveau inactif avec lastSyncAt renseigné
         final finalState = container.read(syncOrchestratorProvider);
         expect(finalState, isA<SyncStatusIdle>());
         expect((finalState as SyncStatusIdle).lastSyncAt, isNotNull);
@@ -157,22 +179,21 @@ void main() {
         errorMockPushService.pushPendingProductChanges,
       ).thenAnswer((_) async => {});
 
-      final container = ProviderContainer(
-        overrides: [
-          pushServiceProvider.overrideWithValue(errorMockPushService),
-          pullServiceProvider.overrideWithValue(mockPullService),
-          isOnlineProvider.overrideWith(
-            (_) => Stream.value(true).asBroadcastStream(),
-          ),
-        ],
+      final container = await makeContainer(push: errorMockPushService);
+      await container.read(syncOrchestratorProvider.notifier).syncNow();
+
+      expect(container.read(syncOrchestratorProvider), isA<SyncStatusError>());
+    });
+
+    test('syncNow is skipped while not authenticated', () async {
+      final container = await makeContainer();
+      container.read(authProvider.notifier).state = const AsyncData(
+        AuthPinRequired(),
       );
-      addTearDown(container.dispose);
 
-      final orchestrator = container.read(syncOrchestratorProvider.notifier);
-      await orchestrator.syncNow();
+      await container.read(syncOrchestratorProvider.notifier).syncNow();
 
-      final state = container.read(syncOrchestratorProvider);
-      expect(state, isA<SyncStatusError>());
+      verifyNever(() => mockPushService.pushPendingSales());
     });
   });
 }

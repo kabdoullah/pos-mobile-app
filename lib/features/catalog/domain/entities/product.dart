@@ -3,15 +3,27 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'product.freezed.dart';
 
-/// Product entity — immutable product model.
+/// Situation du stock d'un produit par rapport à son seuil de réapprovisionnement.
+enum StockLevel {
+  /// Stock exactement à zéro (rupture).
+  outOfStock,
+
+  /// Stock inférieur ou égal au seuil de réapprovisionnement configuré.
+  low,
+
+  /// Stock au-dessus du seuil, ou aucun seuil configuré.
+  normal,
+}
+
+/// Entité produit — modèle de produit immuable.
 @freezed
 sealed class Product with _$Product {
-  /// Creates a [Product].
+  /// Crée un [Product].
   const factory Product({
     required String id,
     required String name,
 
-    /// FCFA as Decimal.
+    /// FCFA en Decimal.
     required Decimal unitPrice,
     String? barcode,
     int? currentStock,
@@ -21,4 +33,19 @@ sealed class Product with _$Product {
     required DateTime updatedAt,
     DateTime? deletedAt,
   }) = _Product;
+
+  const Product._();
+
+  /// Situation du stock par rapport à [minStock] ; `null` si le stock n'est
+  /// pas suivi.
+  ///
+  /// Doit rester alignée sur la requête « stock bas » du repository catalogue.
+  StockLevel? get stockLevel {
+    final stock = currentStock;
+    if (stock == null) return null;
+    if (stock == 0) return StockLevel.outOfStock;
+    final threshold = minStock;
+    if (threshold != null && stock <= threshold) return StockLevel.low;
+    return StockLevel.normal;
+  }
 }

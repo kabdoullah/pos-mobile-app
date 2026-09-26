@@ -7,48 +7,50 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config.dart';
 
-/// Storage keys for PIN data.
+/// Clés de stockage des données du PIN.
 abstract class _PinStorageKeys {
-  /// PIN hash (format `pbkdf2_sha256$<iterations>$<hex>`).
+  /// Hash du PIN (format `pbkdf2_sha256$<iterations>$<hex>`).
   static const String pinHash = 'pin_hash';
 
-  /// Salt used for PIN hashing (hex).
+  /// Sel utilisé pour le hachage du PIN (hex).
   static const String pinSalt = 'pin_salt';
 
-  /// Failed PIN attempt count.
+  /// Nombre de tentatives de PIN échouées.
   static const String pinAttempts = 'pin_attempts';
 
-  /// Timestamp when PIN lockout expires (ISO 8601).
+  /// Horodatage de fin du blocage du PIN (ISO 8601).
   static const String pinLockoutUntil = 'pin_lockout_until';
 }
 
-/// Stores and verifies a locally-hashed PIN with lockout protection.
+/// Enregistre et vérifie un PIN haché localement, avec protection par blocage.
 class PinStorage {
-  /// Creates a PinStorage instance.
+  /// Crée une instance PinStorage.
   PinStorage({
     FlutterSecureStorage? secureStorage,
     Duration lockoutDuration = const Duration(minutes: 5),
   }) : _storage = secureStorage ?? const FlutterSecureStorage(),
        _lockoutDuration = lockoutDuration;
 
-  /// Underlying secure storage backend.
+  /// Backend de stockage sécurisé sous-jacent.
   final FlutterSecureStorage _storage;
 
-  /// Duration of the PIN lockout after max attempts.
+  /// Durée du blocage du PIN après le nombre maximal de tentatives.
   final Duration _lockoutDuration;
 
-  /// Max PIN attempts before lockout.
+  /// Nombre maximal de tentatives de PIN avant blocage.
   static int get maxAttempts => AppConfig.maxPinAttempts;
 
-  /// PBKDF2 iteration count. Tuned for a slow-enough KDF on a one-shot verify.
+  /// Nombre d'itérations PBKDF2. Réglé pour une dérivation assez lente sur une
+  /// vérification ponctuelle.
   static const int _pbkdf2Iterations = 150000;
 
-  /// Prefix marking the current hash format. Legacy SHA-256 hashes lack it.
+  /// Préfixe qui marque le format de hash actuel. Les anciens hash SHA-256 ne
+  /// l'ont pas.
   static const String _hashPrefix = 'pbkdf2_sha256';
 
-  /// Saves the PIN as a salted PBKDF2-HMAC-SHA256 hash.
+  /// Enregistre le PIN sous forme de hash PBKDF2-HMAC-SHA256 salé.
   Future<void> savePinHash(String pin) async {
-    // Generate a cryptographically random salt (64 hex chars = 32 bytes).
+    // Génère un sel aléatoire cryptographique (64 caractères hex = 32 octets).
     final salt = _generateRandomHex(32);
     final hash = _hashPin(pin, salt);
 
@@ -60,12 +62,12 @@ class PinStorage {
     ]);
   }
 
-  /// Verifies a PIN against the stored hash.
-  /// Returns true if correct. On failure, increments attempts and triggers
-  /// lockout if max attempts exceeded.
-  /// Throws [PinLockedException] if PIN is currently locked.
+  /// Vérifie un PIN par rapport au hash enregistré.
+  /// Retourne true s'il est correct. En cas d'échec, incrémente les tentatives
+  /// et déclenche le blocage si le maximum est dépassé.
+  /// Lève [PinLockedException] si le PIN est actuellement bloqué.
   Future<bool> verifyPin(String pin) async {
-    // Check lockout first.
+    // Vérifier d'abord le blocage.
     final (locked: isLocked, remainingSeconds: remaining) =
         await _checkLockout();
     if (isLocked) {
@@ -79,8 +81,8 @@ class PinStorage {
       return false;
     }
 
-    // Legacy-format hash — reject without counting an attempt; the user must
-    // re-setup their PIN (handled by hasPinConfigured at routing time).
+    // Hash à l'ancien format — rejeté sans compter de tentative ; l'utilisateur
+    // doit recréer son PIN (géré par hasPinConfigured au moment du routage).
     if (!storedHash.startsWith('$_hashPrefix\$')) {
       return false;
     }
@@ -89,12 +91,12 @@ class PinStorage {
     final isCorrect = _constantTimeEquals(computedHash, storedHash);
 
     if (!isCorrect) {
-      // Increment attempts.
+      // Incrémente les tentatives.
       final attempts = await getPinAttempts();
       final newAttempts = attempts + 1;
 
       if (newAttempts >= maxAttempts) {
-        // Lock out.
+        // Blocage.
         final lockoutUntil = DateTime.now()
             .add(_lockoutDuration)
             .toIso8601String();
@@ -113,29 +115,29 @@ class PinStorage {
     return isCorrect;
   }
 
-  /// Checks if a PIN has been configured.
+  /// Vérifie si un PIN a été configuré.
   ///
-  /// A legacy hash from a previous (insecure) format is treated as absent and
-  /// cleared, forcing the user through PIN re-setup.
+  /// Un hash à l'ancien format (non sécurisé) est considéré comme absent et
+  /// effacé, ce qui oblige l'utilisateur à recréer son PIN.
   Future<bool> hasPinConfigured() async {
     final hash = await _storage.read(key: _PinStorageKeys.pinHash);
     if (hash == null) return false;
     if (!hash.startsWith('$_hashPrefix\$')) {
-      // Legacy SHA-256 hash — incompatible, drop it.
+      // Ancien hash SHA-256 — incompatible, on le supprime.
       await clearPin();
       return false;
     }
     return true;
   }
 
-  /// Gets the current failed PIN attempt count.
+  /// Récupère le nombre actuel de tentatives de PIN échouées.
   Future<int> getPinAttempts() async {
     final attempts = await _storage.read(key: _PinStorageKeys.pinAttempts);
     if (attempts == null || attempts.isEmpty) return 0;
     return int.tryParse(attempts) ?? 0;
   }
 
-  /// Resets the PIN attempt counter and clears lockout.
+  /// Remet à zéro le compteur de tentatives de PIN et lève le blocage.
   Future<void> resetAttempts() async {
     await Future.wait([
       _storage.write(key: _PinStorageKeys.pinAttempts, value: '0'),
@@ -143,7 +145,7 @@ class PinStorage {
     ]);
   }
 
-  /// Clears all PIN-related data.
+  /// Efface toutes les données liées au PIN.
   Future<void> clearPin() async {
     await Future.wait([
       _storage.delete(key: _PinStorageKeys.pinHash),
@@ -153,8 +155,9 @@ class PinStorage {
     ]);
   }
 
-  /// Checks if PIN is currently locked due to too many failed attempts.
-  /// Returns tuple with (locked, remainingSeconds).
+  /// Vérifie si le PIN est actuellement bloqué suite à trop de tentatives
+  /// échouées.
+  /// Retourne un tuple (locked, remainingSeconds).
   Future<({bool locked, int remainingSeconds})> _checkLockout() async {
     final lockoutStr = await _storage.read(
       key: _PinStorageKeys.pinLockoutUntil,
@@ -168,7 +171,7 @@ class PinStorage {
       final now = DateTime.now();
 
       if (now.isAfter(lockoutUntil)) {
-        // Lockout expired, clear it.
+        // Blocage expiré, on l'efface.
         await _storage.delete(key: _PinStorageKeys.pinLockoutUntil);
         return (locked: false, remainingSeconds: 0);
       }
@@ -176,16 +179,16 @@ class PinStorage {
       final remaining = lockoutUntil.difference(now).inSeconds;
       return (locked: true, remainingSeconds: remaining);
     } catch (_) {
-      // Malformed timestamp, clear it.
+      // Horodatage mal formé, on l'efface.
       await _storage.delete(key: _PinStorageKeys.pinLockoutUntil);
       return (locked: false, remainingSeconds: 0);
     }
   }
 
-  /// Hashes a PIN with the given salt using PBKDF2-HMAC-SHA256.
+  /// Hache un PIN avec le sel donné en PBKDF2-HMAC-SHA256.
   ///
-  /// Returns a self-describing string `pbkdf2_sha256$<iterations>$<hex>` so the
-  /// format can be detected and migrated later.
+  /// Retourne une chaîne auto-descriptive `pbkdf2_sha256$<iterations>$<hex>`
+  /// pour que le format puisse être détecté et migré plus tard.
   String _hashPin(String pin, String salt) {
     final derived = _pbkdf2(
       password: utf8.encode(pin),
@@ -197,7 +200,7 @@ class PinStorage {
     return '$_hashPrefix\$$_pbkdf2Iterations\$$hex';
   }
 
-  /// PBKDF2-HMAC-SHA256 (RFC 8018) over the vetted `crypto` HMAC primitive.
+  /// PBKDF2-HMAC-SHA256 (RFC 8018) sur la primitive HMAC éprouvée de `crypto`.
   List<int> _pbkdf2({
     required List<int> password,
     required List<int> salt,
@@ -210,7 +213,7 @@ class PinStorage {
     final output = <int>[];
 
     for (var i = 1; i <= blockCount; i++) {
-      // INT(i): block index as a 4-byte big-endian integer.
+      // INT(i) : index du bloc en entier big-endian sur 4 octets.
       final indexBytes = [
         (i >> 24) & 0xff,
         (i >> 16) & 0xff,
@@ -231,7 +234,7 @@ class PinStorage {
     return output.sublist(0, keyLength);
   }
 
-  /// Decodes a hex string into bytes.
+  /// Décode une chaîne hex en octets.
   List<int> _hexDecode(String hex) {
     final bytes = <int>[];
     for (var i = 0; i < hex.length; i += 2) {
@@ -240,7 +243,8 @@ class PinStorage {
     return bytes;
   }
 
-  /// Constant-time string equality — prevents timing-based attacks on PIN hashes.
+  /// Égalité de chaînes à temps constant — empêche les attaques temporelles sur
+  /// les hash de PIN.
   bool _constantTimeEquals(String a, String b) {
     if (a.length != b.length) return false;
     var result = 0;
@@ -250,7 +254,7 @@ class PinStorage {
     return result == 0;
   }
 
-  /// Generates a cryptographically random hex string of [bytes] length.
+  /// Génère une chaîne hex aléatoire cryptographique de longueur [bytes].
   String _generateRandomHex(int bytes) {
     final rng = Random.secure();
     final random = List<int>.generate(bytes, (_) => rng.nextInt(256));
@@ -258,12 +262,13 @@ class PinStorage {
   }
 }
 
-/// Thrown when PIN verification is blocked due to too many failed attempts.
+/// Levée quand la vérification du PIN est bloquée après trop de tentatives
+/// échouées.
 class PinLockedException implements Exception {
-  /// Creates a PinLockedException.
+  /// Crée une PinLockedException.
   PinLockedException({required this.remainingSeconds});
 
-  /// Seconds until the lockout expires.
+  /// Secondes restantes avant la fin du blocage.
   final int remainingSeconds;
 
   @override

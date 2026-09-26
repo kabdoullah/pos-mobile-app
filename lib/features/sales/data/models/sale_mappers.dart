@@ -5,7 +5,7 @@ import '../../../../core/network/api_models/sale_dto.dart';
 import '../../../../database/app_database.dart' as drift_db;
 import '../../domain/entities/sale.dart' as domain;
 
-/// Maps PaymentMethodDto (API) → domain.PaymentMethod.
+/// Convertit PaymentMethodDto (API) → domain.PaymentMethod.
 domain.PaymentMethod _paymentMethodFromString(String method) {
   return switch (method) {
     'cash' => domain.PaymentMethod.cash,
@@ -17,7 +17,7 @@ domain.PaymentMethod _paymentMethodFromString(String method) {
   };
 }
 
-/// Maps domain.PaymentMethod → string (API).
+/// Convertit domain.PaymentMethod → chaîne (API).
 String _paymentMethodToString(domain.PaymentMethod method) {
   return switch (method) {
     domain.PaymentMethod.cash => 'cash',
@@ -28,9 +28,9 @@ String _paymentMethodToString(domain.PaymentMethod method) {
   };
 }
 
-/// Maps SaleDto (API) → domain.Sale.
+/// Convertit SaleDto (API) → domain.Sale.
 extension SaleDtoToDomain on SaleDto {
-  /// Converts API DTO to domain entity.
+  /// Convertit le DTO de l'API en entité du domaine.
   domain.Sale toDomain() => domain.Sale(
     id: id,
     receiptNumber: receiptNumber ?? 0,
@@ -41,9 +41,9 @@ extension SaleDtoToDomain on SaleDto {
   );
 }
 
-/// Maps domain.Sale → drift SalesCompanion.
+/// Convertit domain.Sale → SalesCompanion drift.
 extension DomainSaleToDrift on domain.Sale {
-  /// Converts domain entity to drift companion.
+  /// Convertit l'entité du domaine en companion drift.
   drift_db.SalesCompanion toDriftCompanion() => drift_db.SalesCompanion(
     id: drift.Value(id),
     receiptNumber: drift.Value(receiptNumber),
@@ -54,9 +54,9 @@ extension DomainSaleToDrift on domain.Sale {
   );
 }
 
-/// Maps drift Sale row → domain.Sale.
+/// Convertit une ligne Sale drift → domain.Sale.
 extension DriftSaleToDomain on drift_db.Sale {
-  /// Converts drift row to domain entity.
+  /// Convertit la ligne drift en entité du domaine.
   domain.Sale toDomain() => domain.Sale(
     id: id,
     receiptNumber: receiptNumber,
@@ -67,9 +67,9 @@ extension DriftSaleToDomain on drift_db.Sale {
   );
 }
 
-/// Maps domain.Sale → SaleCreateDto (API request).
+/// Convertit domain.Sale → SaleCreateDto (requête API).
 extension DomainSaleCreateDtoMapper on domain.Sale {
-  /// Converts domain entity to create request DTO.
+  /// Convertit l'entité du domaine en DTO de requête de création.
   SaleCreateDto toCreateDto({
     required List<SaleItemCreateDto> items,
     Decimal? cashAmount,

@@ -2,12 +2,13 @@ import 'package:dio/dio.dart';
 
 import 'token_storage.dart';
 
-/// Injects Bearer token into request headers for authenticated endpoints.
+/// Injecte le token Bearer dans les en-têtes des requêtes vers les endpoints
+/// authentifiés.
 class AuthInterceptor extends Interceptor {
-  /// Creates an AuthInterceptor.
+  /// Crée un AuthInterceptor.
   AuthInterceptor({required this.tokenStorage});
 
-  /// Handles secure token retrieval.
+  /// Gère la récupération sécurisée du token.
   final TokenStorage tokenStorage;
 
   static const _publicPaths = {
@@ -16,7 +17,7 @@ class AuthInterceptor extends Interceptor {
     '/api/v1/auth/forgot-password',
     '/api/v1/auth/reset-password',
     '/health',
-  }; // Routes that don't require authentication
+  }; // Routes qui ne nécessitent pas d'authentification
 
   @override
   Future<void> onRequest(

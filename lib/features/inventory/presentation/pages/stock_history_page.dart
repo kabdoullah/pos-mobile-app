@@ -4,22 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../core/theme/illustrations.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../app/theme/illustrations.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/stock_movement.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 
-/// Displays a product's stock movement history (audit trail) with
-/// pagination, and an entry point to record a manual adjustment.
+/// Affiche l'historique des mouvements de stock d'un produit (journal d'audit)
+/// avec pagination, et un point d'entrée pour enregistrer un ajustement manuel.
 class StockHistoryPage extends ConsumerWidget {
-  /// Creates a [StockHistoryPage].
+  /// Crée une [StockHistoryPage].
   const StockHistoryPage({required this.productId, super.key});
 
-  /// Product this history belongs to.
+  /// Produit auquel appartient cet historique.
   final String productId;
 
   Future<void> _openAdjustmentSheet(BuildContext context) {

@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 
-/// A quick date-range preset.
+/// Préréglage rapide de plage de dates.
 enum _DatePreset { today, yesterday, last7Days, thisMonth, custom }
 
-/// Bottom sheet for filtering sales by date — quick presets plus an
-/// explicit "Du / Au" custom range (avoids Flutter's built-in
-/// [showDateRangePicker], whose two-tap full-screen calendar is unclear).
+/// Bottom sheet de filtre des ventes par date — préréglages rapides plus une
+/// plage personnalisée explicite « Du / Au » (évite le [showDateRangePicker]
+/// intégré de Flutter, dont le calendrier plein écran en deux taps est peu
+/// clair).
 class DateRangeFilterSheet extends StatefulWidget {
-  /// Creates a [DateRangeFilterSheet].
+  /// Crée une [DateRangeFilterSheet].
   const DateRangeFilterSheet({required this.initialRange, super.key});
 
-  /// The currently applied range, used to preselect a preset or the
-  /// custom fields.
+  /// Plage actuellement appliquée, utilisée pour présélectionner un préréglage
+  /// ou les champs personnalisés.
   final DateTimeRange initialRange;
 
   @override

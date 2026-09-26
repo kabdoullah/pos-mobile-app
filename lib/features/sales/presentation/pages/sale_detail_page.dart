@@ -9,23 +9,23 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../providers/sales_providers.dart';
 
-/// Sale detail page — read-only view of a completed sale.
+/// Page de détail d'une vente — vue en lecture seule d'une vente terminée.
 ///
-/// Receives [Sale] via GoRouter extra — not by ID lookup.
-/// Items are not available outside the originating session.
+/// Reçoit la [Sale] via le extra de GoRouter — pas par recherche d'ID.
+/// Les articles ne sont pas disponibles en dehors de la session d'origine.
 class SaleDetailPage extends ConsumerWidget {
-  /// Creates a [SaleDetailPage].
+  /// Crée une [SaleDetailPage].
   const SaleDetailPage({required this.sale, super.key});
 
-  /// The sale to display.
+  /// Vente à afficher.
   final Sale sale;
 
   @override
@@ -44,7 +44,7 @@ class SaleDetailPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header card with sale info
+            // Carte d'en-tête avec les infos de la vente
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +106,7 @@ class SaleDetailPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            // Info card about items not available
+            // Carte d'information sur les articles indisponibles
             Container(
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
@@ -132,7 +132,7 @@ class SaleDetailPage extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            // Reprint button
+            // Bouton de réimpression
             PrimaryButton(
               label: 'Réimprimer le reçu',
               icon: Icons.print,
@@ -152,10 +152,11 @@ class SaleDetailPage extends ConsumerWidget {
     );
   }
 
-  /// Handles printing the receipt.
+  /// Gère l'impression du reçu.
   Future<void> _handlePrint(BuildContext context, WidgetRef ref) async {
     try {
-      // Items are null when printing from history (not in session)
+      // Les articles sont null lors d'une impression depuis l'historique (hors
+      // session)
       await ref.read(printerProvider.notifier).print(sale: sale, items: null);
 
       if (context.mounted) {
@@ -186,7 +187,7 @@ class SaleDetailPage extends ConsumerWidget {
               content: Text('Erreur d\'impression: ${e.details}'),
               backgroundColor: Theme.of(
                 context,
-              ).colorScheme.error, // ✨ cs.error — dark-mode aware
+              ).colorScheme.error, // ✨ cs.error — compatible mode sombre
             ),
           );
         }
@@ -198,14 +199,14 @@ class SaleDetailPage extends ConsumerWidget {
             content: Text(errorToFrench(e)),
             backgroundColor: Theme.of(
               context,
-            ).colorScheme.error, // ✨ cs.error — dark-mode aware
+            ).colorScheme.error, // ✨ cs.error — compatible mode sombre
           ),
         );
       }
     }
   }
 
-  /// Handles downloading and sharing the PDF receipt.
+  /// Gère le téléchargement et le partage du reçu PDF.
   Future<void> _handleDownloadPdf(BuildContext context, WidgetRef ref) async {
     try {
       final bytes = await ref.read(

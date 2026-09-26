@@ -6,10 +6,12 @@ import 'package:logger/logger.dart';
 import 'api_exception.dart';
 import 'token_storage.dart';
 
-/// Handles 401 responses by refreshing the token and retrying the request.
-/// Prevents concurrent refresh calls using a Completer-based lock.
+/// Gère les réponses 401 en rafraîchissant le token puis en rejouant la
+/// requête.
+/// Empêche les rafraîchissements concurrents grâce à un verrou basé sur un
+/// Completer.
 class RefreshInterceptor extends Interceptor {
-  /// Creates a RefreshInterceptor.
+  /// Crée un RefreshInterceptor.
   RefreshInterceptor({
     required this.tokenStorage,
     required this.refreshCall,
@@ -17,28 +19,31 @@ class RefreshInterceptor extends Interceptor {
     required this.dio,
   });
 
-  /// Handles secure token persistence.
+  /// Gère la persistance sécurisée des tokens.
   final TokenStorage tokenStorage;
 
-  /// Function to call POST /api/v1/auth/refresh with refresh token.
-  /// Returns new (accessToken, refreshToken) pair.
+  /// Fonction appelant POST /api/v1/auth/refresh avec le refresh token.
+  /// Retourne la nouvelle paire (accessToken, refreshToken).
   final Future<({String accessToken, String refreshToken})> Function(
     String refreshToken,
   )
   refreshCall;
 
-  /// Called when refresh fails (token expired). Triggers logout redirect.
+  /// Appelée quand le rafraîchissement échoue (token expiré). Déclenche la
+  /// redirection de déconnexion.
   final void Function() onAuthExpired;
 
-  /// Dio instance for retrying the original request after token refresh.
+  /// Instance Dio pour rejouer la requête d'origine après rafraîchissement du
+  /// token.
   final Dio dio;
 
   static final _logger = Logger();
 
-  /// Ensures only one refresh attempt at a time.
+  /// Garantit une seule tentative de rafraîchissement à la fois.
   bool _isRefreshing = false;
 
-  /// Completer for waiters of the current refresh attempt.
+  /// Completer pour ceux qui attendent la tentative de rafraîchissement en
+  /// cours.
   Completer<bool>? _refreshCompleter;
 
   static const _publicPaths = {
@@ -59,13 +64,13 @@ class RefreshInterceptor extends Interceptor {
       return;
     }
 
-    // Don't refresh tokens for public endpoints.
+    // Ne pas rafraîchir les tokens pour les endpoints publics.
     if (_isPublicPath(err.requestOptions.path)) {
       handler.next(err);
       return;
     }
 
-    // If already refreshing, wait for the result.
+    // Si un rafraîchissement est déjà en cours, attendre son résultat.
     if (_isRefreshing) {
       final success = await _refreshCompleter!.future;
       if (success) {
@@ -76,7 +81,7 @@ class RefreshInterceptor extends Interceptor {
       return;
     }
 
-    // Begin refresh.
+    // Début du rafraîchissement.
     _isRefreshing = true;
     _refreshCompleter = Completer<bool>();
 
@@ -97,8 +102,9 @@ class RefreshInterceptor extends Interceptor {
       );
 
       _refreshCompleter!.complete(true);
-      // Retry the original request with the new token.
-      // The request re-enters onRequest() which adds the new token to headers.
+      // Rejoue la requête d'origine avec le nouveau token.
+      // La requête repasse par onRequest(), qui ajoute le nouveau token aux
+      // en-têtes.
       handler.resolve(await dio.fetch(err.requestOptions));
     } catch (e) {
       _logger.e('Token refresh failed: $e');

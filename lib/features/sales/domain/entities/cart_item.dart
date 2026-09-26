@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'cart_item.freezed.dart';
 
-/// CartItem entity — represents a product line in a shopping cart.
+/// Entité CartItem — une ligne produit dans un panier.
 @freezed
 sealed class CartItem with _$CartItem {
   const factory CartItem({
@@ -17,6 +17,6 @@ sealed class CartItem with _$CartItem {
   }) = _CartItem;
   const CartItem._();
 
-  /// Line total: quantity × unitPrice (both in FCFA).
+  /// Total de la ligne : quantité × prix unitaire (tous deux en FCFA).
   Decimal get lineTotal => unitPrice * Decimal.fromInt(quantity);
 }

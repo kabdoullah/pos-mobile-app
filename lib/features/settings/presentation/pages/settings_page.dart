@@ -10,9 +10,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../../core/router/app_router.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/theme_mode_provider.dart';
-import '../../../../shared/widgets/index.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/theme_mode_provider.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../auth/domain/entities/store.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/providers/store_provider.dart';
@@ -20,11 +20,12 @@ import '../../../auth/presentation/pages/store_setup_page.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/providers/sales_di_providers.dart';
-import '../../../sync/presentation/providers/sync_providers.dart';
+import '../../../../core/sync/sync_providers.dart';
 
-/// Settings page — store info, printer config, account management.
+/// Page des paramètres — infos boutique, config de l'imprimante, gestion du
+/// compte.
 class SettingsPage extends ConsumerStatefulWidget {
-  /// Creates a [SettingsPage].
+  /// Crée une [SettingsPage].
   const SettingsPage({super.key});
 
   @override
@@ -32,7 +33,8 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  // Guard against double-tap on async actions (concurrent jobs).
+  // Protection contre le double tap sur les actions asynchrones (tâches
+  // concurrentes).
   bool _exporting = false;
   bool _syncing = false;
 
@@ -48,10 +50,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Store identity hero — the one element on this page that
-            // isn't a generic settings row. Floats with margins (unlike
-            // the flush-edge section cards below) so it reads as the
-            // anchor of the page, not another list item.
+            // Mise en avant de l'identité de la boutique — le seul élément de
+            // cette page qui n'est pas une ligne de paramètre générique. Flotte
+            // avec des marges (contrairement aux cartes de section bord à bord
+            // en dessous) pour se lire comme l'ancre de la page, et non comme
+            // un élément de liste de plus.
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
@@ -70,7 +73,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
             ),
 
-            // IMPRIMANTE section
+            // Section IMPRIMANTE
             _SettingsSection(
               title: 'IMPRIMANTE',
               children: [
@@ -112,7 +115,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
 
-            // SUPPORT section
+            // Section SUPPORT
             _SettingsSection(
               title: 'SUPPORT',
               children: [
@@ -126,7 +129,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
 
-            // SAUVEGARDE section
+            // Section SAUVEGARDE
             _SettingsSection(
               title: 'SAUVEGARDE',
               children: [
@@ -142,7 +145,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
 
-            // APPARENCE section
+            // Section APPARENCE
             _SettingsSection(
               title: 'APPARENCE',
               children: [
@@ -182,12 +185,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
 
-            // COMPTE section
+            // Section COMPTE
             _SettingsSection(
               title: 'COMPTE',
               children: [
                 ListTile(
-                  // Couleur via colorScheme → adapte light/dark.
+                  // Couleur via colorScheme → s'adapte au clair/sombre.
                   leading: Icon(Icons.logout_outlined, color: cs.error),
                   title: Text(
                     'Se déconnecter',
@@ -235,7 +238,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
-  // Couleurs theme-aware → s'adaptent au mode sombre.
+  // Couleurs issues du thème → s'adaptent au mode sombre.
   Widget? _printerSubtitle(BuildContext context, PrinterState state) {
     final cs = Theme.of(context).colorScheme;
     return switch (state) {
@@ -306,7 +309,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       sink.writeln('Date,Reçu N°,Total (FCFA),TVA (FCFA),Mode de paiement');
 
-      // Paginate in chunks of 200 to avoid OOM on low-end devices.
+      // Pagination par tranches de 200 pour éviter de saturer la mémoire sur
+      // les appareils d'entrée de gamme.
       const chunkSize = 200;
       String? cursor;
       while (true) {
@@ -404,18 +408,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-/// Shared content padding for every settings row (defined once).
+/// Padding de contenu commun à toutes les lignes de paramètres (défini une
+/// seule fois).
 const EdgeInsets _kTilePadding = EdgeInsets.symmetric(
   horizontal: AppSpacing.md,
   vertical: AppSpacing.sm,
 );
 
-/// Reusable settings row.
+/// Ligne de paramètre réutilisable.
 ///
-/// [isNavigation] shows a chevron (true navigation only, never on actions).
-/// [busy] swaps the trailing for a spinner and ignores taps.
+/// [isNavigation] affiche un chevron (vraie navigation uniquement, jamais sur
+/// les actions).
+/// [busy] remplace l'élément de fin par un indicateur de chargement et ignore
+/// les taps.
 class _SettingsTile extends StatelessWidget {
-  /// Creates a [_SettingsTile].
+  /// Crée un [_SettingsTile].
   const _SettingsTile({
     required this.icon,
     required this.title,
@@ -427,28 +434,28 @@ class _SettingsTile extends StatelessWidget {
     this.trailingWidget,
   });
 
-  /// Leading icon.
+  /// Icône de début.
   final IconData icon;
 
-  /// Row title.
+  /// Titre de la ligne.
   final String title;
 
-  /// Optional subtitle widget.
+  /// Widget de sous-titre optionnel.
   final Widget? subtitle;
 
-  /// Tap callback. Null disables the row.
+  /// Callback au tap. Null désactive la ligne.
   final VoidCallback? onTap;
 
-  /// Whether to show a navigation chevron as trailing.
+  /// Affiche ou non un chevron de navigation en fin de ligne.
   final bool isNavigation;
 
-  /// Whether an async action is in progress.
+  /// Indique si une action asynchrone est en cours.
   final bool busy;
 
-  /// Badge count on the leading icon — 0 hides the badge.
+  /// Pastille de compteur sur l'icône de début — 0 masque la pastille.
   final int badgeCount;
 
-  /// Optional trailing widget — overrides built-in chevron/spinner logic.
+  /// Widget de fin optionnel — remplace la logique intégrée chevron/indicateur.
   final Widget? trailingWidget;
 
   @override
@@ -490,19 +497,22 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Hero header for the store's identity — monogram, name, and address.
+/// En-tête mettant en avant l'identité de la boutique — monogramme, nom et
+/// adresse.
 ///
-/// The one signature element on this page: everywhere else is a generic
-/// settings row, but this is *this merchant's* shop. Tapping it opens the
-/// same store-edit screen the old "Informations boutique" row used to.
+/// Le seul élément signature de cette page : tout le reste est une ligne de
+/// paramètre générique, mais ceci est la boutique *de ce commerçant*. Un tap
+/// ouvre le même écran d'édition de la boutique que l'ancienne ligne «
+/// Informations boutique ».
 class _StoreIdentityHeader extends StatelessWidget {
-  /// Creates a [_StoreIdentityHeader].
+  /// Crée un [_StoreIdentityHeader].
   const _StoreIdentityHeader({required this.storeAsync, required this.onTap});
 
-  /// Current store config — loading/error/data mirrors [storeConfigProvider].
+  /// Config boutique courante — chargement/erreur/données reflètent
+  /// [storeConfigProvider].
   final AsyncValue<Store?> storeAsync;
 
-  /// Opens the store edit page.
+  /// Ouvre la page d'édition de la boutique.
   final VoidCallback onTap;
 
   @override
@@ -619,7 +629,8 @@ class _StoreIdentityHeader extends StatelessWidget {
     );
   }
 
-  /// First letters of up to the first two words of [name], uppercased.
+  /// Premières lettres des deux premiers mots (au plus) de [name], en
+  /// majuscules.
   static String _initials(String name) {
     final words = name
         .trim()
@@ -636,15 +647,15 @@ class _StoreIdentityHeader extends StatelessWidget {
   }
 }
 
-/// Private settings section widget.
+/// Widget privé de section de paramètres.
 class _SettingsSection extends StatelessWidget {
-  /// Creates a [_SettingsSection].
+  /// Crée une [_SettingsSection].
   const _SettingsSection({required this.title, required this.children});
 
-  /// Section title.
+  /// Titre de la section.
   final String title;
 
-  /// Section content widgets.
+  /// Widgets du contenu de la section.
   final List<Widget> children;
 
   @override

@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('App boots without crashing', (tester) async {
-    // Basic smoke test; async provider initialization is not part of this test.
+    // Test de fumée basique ; l'initialisation asynchrone des providers ne fait
+    // pas partie de ce test.
     expect(true, true);
   });
 }

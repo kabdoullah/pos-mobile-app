@@ -5,17 +5,18 @@ import '../entities/product.dart';
 import '../entities/product_import_result.dart';
 import '../entities/product_page.dart';
 
-/// Abstract repository for catalog operations.
+/// Repository abstrait pour les opérations du catalogue.
 abstract class CatalogRepository {
-  /// Get products, optionally filtered by search query and paginated by cursor.
-  /// Returns a page with pagination metadata.
+  /// Récupère les produits, filtrés en option par une recherche, et paginés par
+  /// curseur.
+  /// Retourne une page avec ses métadonnées de pagination.
   Future<ProductPage> getProducts({
     String? query,
     String? cursor,
     int limit = 50,
   });
 
-  /// Create a new product.
+  /// Crée un nouveau produit.
   Future<Product> createProduct({
     required String name,
     required String unitPrice,
@@ -24,7 +25,7 @@ abstract class CatalogRepository {
     int? minStock,
   });
 
-  /// Update an existing product.
+  /// Met à jour un produit existant.
   Future<Product> updateProduct({
     required String id,
     String? name,
@@ -34,22 +35,24 @@ abstract class CatalogRepository {
     int? minStock,
   });
 
-  /// Delete (soft delete) a product by ID.
+  /// Supprime (logiquement) un produit par ID.
   Future<void> deleteProduct(String id);
 
-  /// Get a single product by ID.
+  /// Récupère un produit par ID.
   Future<Product?> getProduct(String id);
 
-  /// Find a product by barcode. Returns null if not found.
+  /// Cherche un produit par code-barres. Retourne null s'il est introuvable.
   Future<Product?> getByBarcode(String barcode);
 
-  /// Streams the count of products in rupture (stock = 0) or at/below their
-  /// reorder threshold — re-emits on every local catalog change.
-  Stream<int> watchLowStockCount();
+  /// Diffuse les produits en rupture (stock = 0) ou sous leur seuil de
+  /// réapprovisionnement, triés par stock croissant (ruptures d'abord) — réémet
+  /// à chaque changement du catalogue local.
+  Stream<List<Product>> watchLowStockProducts();
 
-  /// Import products in bulk from a CSV or Excel file (best-effort, row by row).
+  /// Importe des produits en masse depuis un fichier CSV ou Excel (au mieux,
+  /// ligne par ligne).
   Future<ProductImportResult> importProductsFromFile(File file);
 
-  /// Download a blank import template (`csv` or `xlsx`).
+  /// Télécharge un modèle d'import vierge (`csv` ou `xlsx`).
   Future<Uint8List> downloadImportTemplate({required String format});
 }

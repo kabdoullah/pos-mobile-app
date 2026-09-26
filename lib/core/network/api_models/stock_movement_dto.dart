@@ -3,25 +3,25 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'stock_movement_dto.freezed.dart';
 part 'stock_movement_dto.g.dart';
 
-/// Reason a stock movement was recorded.
+/// Motif d'enregistrement d'un mouvement de stock.
 enum StockMovementReasonDto {
-  /// Stock decreased by a sale.
+  /// Stock diminué par une vente.
   @JsonValue('sale')
   sale,
 
-  /// Manual adjustment (reception, breakage, inventory correction).
+  /// Ajustement manuel (réception, casse, correction d'inventaire).
   @JsonValue('manual_adjustment')
   manualAdjustment,
 
-  /// Stock set directly via a catalog update.
+  /// Stock fixé directement via une mise à jour du catalogue.
   @JsonValue('catalog_update')
   catalogUpdate,
 }
 
-/// Stock movement data transfer object from API.
+/// Objet de transfert mouvement de stock reçu de l'API.
 @freezed
 sealed class StockMovementDto with _$StockMovementDto {
-  /// Creates a [StockMovementDto].
+  /// Crée un [StockMovementDto].
   const factory StockMovementDto({
     required String id,
     @JsonKey(name: 'store_id') required String storeId,
@@ -35,23 +35,23 @@ sealed class StockMovementDto with _$StockMovementDto {
     @JsonKey(name: 'created_at') required String createdAt,
   }) = _StockMovementDto;
 
-  /// Creates a [StockMovementDto] from JSON.
+  /// Crée un [StockMovementDto] depuis du JSON.
   factory StockMovementDto.fromJson(Map<String, dynamic> json) =>
       _$StockMovementDtoFromJson(json);
 }
 
-/// Request to create a manual stock adjustment.
+/// Requête de création d'un ajustement de stock manuel.
 @freezed
 sealed class ManualStockAdjustmentCreateDto
     with _$ManualStockAdjustmentCreateDto {
-  /// Creates a [ManualStockAdjustmentCreateDto].
+  /// Crée un [ManualStockAdjustmentCreateDto].
   const factory ManualStockAdjustmentCreateDto({
     @JsonKey(name: 'product_id') required String productId,
     @JsonKey(name: 'quantity_delta') required int quantityDelta,
     String? note,
   }) = _ManualStockAdjustmentCreateDto;
 
-  /// Creates a [ManualStockAdjustmentCreateDto] from JSON.
+  /// Crée un [ManualStockAdjustmentCreateDto] depuis du JSON.
   factory ManualStockAdjustmentCreateDto.fromJson(Map<String, dynamic> json) =>
       _$ManualStockAdjustmentCreateDtoFromJson(json);
 }

@@ -4,18 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/pin_numpad.dart';
 import '../widgets/registration_stepper.dart';
 
-/// PIN setup screen — two-step create + confirm flow with custom numpad.
+/// Écran de création du PIN — parcours en deux étapes (création + confirmation)
+/// avec pavé numérique personnalisé.
 ///
-/// Step 0: user enters a new PIN (trivial PINs rejected).
-/// Step 1: user confirms the PIN; match triggers [AuthNotifier.setupPin].
+/// Étape 0 : l'utilisateur saisit un nouveau PIN (les PIN trop simples sont
+/// refusés).
+/// Étape 1 : l'utilisateur confirme le PIN ; s'ils correspondent,
+/// [AuthNotifier.setupPin] est appelé.
 class PinSetupPage extends ConsumerStatefulWidget {
-  /// Creates a PIN setup page.
+  /// Crée une page de création du PIN.
   const PinSetupPage({super.key});
 
   @override
@@ -26,7 +29,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
   String _pin = '';
   String _firstPin = '';
 
-  /// 0 = create, 1 = confirm.
+  /// 0 = création, 1 = confirmation.
   int _step = 0;
   String? _error;
 
@@ -97,7 +100,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
         await ref.read(authProvider.notifier).setupPin(_firstPin);
         _logger.i('setupPin() completed, router should redirect');
       } catch (_) {
-        // Error displayed via authValue.asError
+        // Erreur affichée via authValue.asError
       }
     }
   }
@@ -118,7 +121,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
               const SizedBox(height: AppSpacing.md),
               const RegistrationStepper(currentStep: 3),
               const Spacer(),
-              // System error banner
+              // Bandeau d'erreur système
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: systemError != null
@@ -206,9 +209,9 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              // Dot indicators
+              // Points indicateurs
               PinDots(filledCount: _pin.length),
-              // Field error (trivial PIN / mismatch)
+              // Erreur de champ (PIN trop simple / non concordant)
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _error != null
@@ -229,7 +232,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                     : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
               ),
               const Spacer(),
-              // Custom numpad
+              // Pavé numérique personnalisé
               if (isLoading)
                 const SizedBox(
                   height: 290,

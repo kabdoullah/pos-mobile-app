@@ -3,9 +3,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'sale_dto.freezed.dart';
 part 'sale_dto.g.dart';
 
-/// Available payment methods.
+/// Moyens de paiement disponibles.
 enum PaymentMethodDto {
-  /// Cash payment.
+  /// Paiement en espèces.
   @JsonValue('cash')
   cash,
 
@@ -21,15 +21,15 @@ enum PaymentMethodDto {
   @JsonValue('mobile_money_wave')
   mobileMoneyWave,
 
-  /// Mixed payment (cash + mobile money).
+  /// Paiement mixte (espèces + mobile money).
   @JsonValue('mixed')
   mixed,
 }
 
-/// Sale item in a transaction.
+/// Article vendu dans une transaction.
 @freezed
 sealed class SaleItemDto with _$SaleItemDto {
-  /// Creates a [SaleItemDto].
+  /// Crée un [SaleItemDto].
   const factory SaleItemDto({
     required String id,
     @JsonKey(name: 'sale_id') required String saleId,
@@ -44,10 +44,10 @@ sealed class SaleItemDto with _$SaleItemDto {
       _$SaleItemDtoFromJson(json);
 }
 
-/// Sale data transfer object from API.
+/// Objet de transfert vente reçu de l'API.
 @freezed
 sealed class SaleDto with _$SaleDto {
-  /// Creates a [SaleDto].
+  /// Crée un [SaleDto].
   const factory SaleDto({
     required String id,
     @JsonKey(name: 'store_id') required String storeId,
@@ -66,10 +66,10 @@ sealed class SaleDto with _$SaleDto {
       _$SaleDtoFromJson(json);
 }
 
-/// Request to create a sale item.
+/// Requête de création d'un article de vente.
 @freezed
 sealed class SaleItemCreateDto with _$SaleItemCreateDto {
-  /// Creates a [SaleItemCreateDto].
+  /// Crée un [SaleItemCreateDto].
   const factory SaleItemCreateDto({
     @JsonKey(name: 'product_id') String? productId,
     @JsonKey(name: 'product_name_at_sale') required String productNameAtSale,
@@ -82,10 +82,10 @@ sealed class SaleItemCreateDto with _$SaleItemCreateDto {
       _$SaleItemCreateDtoFromJson(json);
 }
 
-/// Request to create a sale.
+/// Requête de création d'une vente.
 @freezed
 sealed class SaleCreateDto with _$SaleCreateDto {
-  /// Creates a [SaleCreateDto].
+  /// Crée un [SaleCreateDto].
   const factory SaleCreateDto({
     required String id,
     required List<SaleItemCreateDto> items,
@@ -101,10 +101,10 @@ sealed class SaleCreateDto with _$SaleCreateDto {
       _$SaleCreateDtoFromJson(json);
 }
 
-/// Daily sales summary.
+/// Récapitulatif des ventes du jour.
 @freezed
 sealed class DailySalesSummaryDto with _$DailySalesSummaryDto {
-  /// Creates a [DailySalesSummaryDto].
+  /// Crée un [DailySalesSummaryDto].
   const factory DailySalesSummaryDto({
     required String date,
     @JsonKey(name: 'total_amount') required String totalAmount,

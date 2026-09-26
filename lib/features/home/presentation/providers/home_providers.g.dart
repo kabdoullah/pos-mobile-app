@@ -8,22 +8,77 @@ part of 'home_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Streams today's sales summary — re-emits automatically on every new sale.
+/// Date du jour (minuit local). Se reconstruit au prochain minuit pour que
+/// chaque provider lié à « aujourd'hui » se réabonne au changement de jour —
+/// sinon un tableau de bord resté ouvert la nuit continue d'afficher la veille.
+
+@ProviderFor(today)
+final todayProvider = TodayProvider._();
+
+/// Date du jour (minuit local). Se reconstruit au prochain minuit pour que
+/// chaque provider lié à « aujourd'hui » se réabonne au changement de jour —
+/// sinon un tableau de bord resté ouvert la nuit continue d'afficher la veille.
+
+final class TodayProvider
+    extends $FunctionalProvider<DateTime, DateTime, DateTime>
+    with $Provider<DateTime> {
+  /// Date du jour (minuit local). Se reconstruit au prochain minuit pour que
+  /// chaque provider lié à « aujourd'hui » se réabonne au changement de jour —
+  /// sinon un tableau de bord resté ouvert la nuit continue d'afficher la veille.
+  TodayProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'todayProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$todayHash();
+
+  @$internal
+  @override
+  $ProviderElement<DateTime> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DateTime create(Ref ref) {
+    return today(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DateTime value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DateTime>(value),
+    );
+  }
+}
+
+String _$todayHash() => r'312ff09771b21954125112cb793c2c1bad578aeb';
+
+/// Diffuse les totaux de ventes du jour — réémet automatiquement à chaque
+/// nouvelle vente.
 
 @ProviderFor(dailySummary)
 final dailySummaryProvider = DailySummaryProvider._();
 
-/// Streams today's sales summary — re-emits automatically on every new sale.
+/// Diffuse les totaux de ventes du jour — réémet automatiquement à chaque
+/// nouvelle vente.
 
 final class DailySummaryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<DailySummary>,
-          DailySummary,
-          Stream<DailySummary>
+          AsyncValue<DailyStats>,
+          DailyStats,
+          Stream<DailyStats>
         >
-    with $FutureModifier<DailySummary>, $StreamProvider<DailySummary> {
-  /// Streams today's sales summary — re-emits automatically on every new sale.
+    with $FutureModifier<DailyStats>, $StreamProvider<DailyStats> {
+  /// Diffuse les totaux de ventes du jour — réémet automatiquement à chaque
+  /// nouvelle vente.
   DailySummaryProvider._()
     : super(
         from: null,
@@ -40,26 +95,25 @@ final class DailySummaryProvider
 
   @$internal
   @override
-  $StreamProviderElement<DailySummary> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
+  $StreamProviderElement<DailyStats> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
 
   @override
-  Stream<DailySummary> create(Ref ref) {
+  Stream<DailyStats> create(Ref ref) {
     return dailySummary(ref);
   }
 }
 
-String _$dailySummaryHash() => r'38f9816c0a8ab44a6f89b9d17f453a714fccec5f';
+String _$dailySummaryHash() => r'6ae9c0c466860e62c16e2e937e07c97bc371d7cb';
 
-/// Streams the most recent sales of the day, newest first — for the home
-/// page "recent activity" mini-list.
+/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
+/// ancienne — pour la mini-liste « activité récente » de l'accueil.
 
 @ProviderFor(recentSales)
 final recentSalesProvider = RecentSalesProvider._();
 
-/// Streams the most recent sales of the day, newest first — for the home
-/// page "recent activity" mini-list.
+/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
+/// ancienne — pour la mini-liste « activité récente » de l'accueil.
 
 final class RecentSalesProvider
     extends
@@ -69,8 +123,8 @@ final class RecentSalesProvider
           Stream<List<Sale>>
         >
     with $FutureModifier<List<Sale>>, $StreamProvider<List<Sale>> {
-  /// Streams the most recent sales of the day, newest first — for the home
-  /// page "recent activity" mini-list.
+  /// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
+  /// ancienne — pour la mini-liste « activité récente » de l'accueil.
   RecentSalesProvider._()
     : super(
         from: null,
@@ -96,22 +150,22 @@ final class RecentSalesProvider
   }
 }
 
-String _$recentSalesHash() => r'add86df4d1870cad4c910f8c894286095ef7b849';
+String _$recentSalesHash() => r'873d362435a91ec85a763315a8a91ba61d9da61d';
 
-/// Streams the count of products in rupture or at/below their reorder
-/// threshold — drives the home page low-stock banner.
+/// Diffuse le nombre de produits en rupture ou sous leur seuil de
+/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
 
 @ProviderFor(lowStockCount)
 final lowStockCountProvider = LowStockCountProvider._();
 
-/// Streams the count of products in rupture or at/below their reorder
-/// threshold — drives the home page low-stock banner.
+/// Diffuse le nombre de produits en rupture ou sous leur seuil de
+/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
 
 final class LowStockCountProvider
     extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
     with $FutureModifier<int>, $StreamProvider<int> {
-  /// Streams the count of products in rupture or at/below their reorder
-  /// threshold — drives the home page low-stock banner.
+  /// Diffuse le nombre de produits en rupture ou sous leur seuil de
+  /// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
   LowStockCountProvider._()
     : super(
         from: null,
@@ -137,4 +191,4 @@ final class LowStockCountProvider
   }
 }
 
-String _$lowStockCountHash() => r'144ef669259133e3a60560ba23e94949483bef97';
+String _$lowStockCountHash() => r'6ec9fe52279937a1a97d19bfbc55c91d761ddb6d';

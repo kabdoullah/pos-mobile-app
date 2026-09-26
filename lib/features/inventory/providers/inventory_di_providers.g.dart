@@ -8,12 +8,12 @@ part of 'inventory_di_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provides the inventory repository implementation (online-only).
+/// Fournit l'implémentation du repository d'inventaire (en ligne uniquement).
 
 @ProviderFor(inventoryRepository)
 final inventoryRepositoryProvider = InventoryRepositoryProvider._();
 
-/// Provides the inventory repository implementation (online-only).
+/// Fournit l'implémentation du repository d'inventaire (en ligne uniquement).
 
 final class InventoryRepositoryProvider
     extends
@@ -23,7 +23,7 @@ final class InventoryRepositoryProvider
           InventoryRepository
         >
     with $Provider<InventoryRepository> {
-  /// Provides the inventory repository implementation (online-only).
+  /// Fournit l'implémentation du repository d'inventaire (en ligne uniquement).
   InventoryRepositoryProvider._()
     : super(
         from: null,

@@ -5,7 +5,7 @@ import 'package:decimal/decimal.dart';
 import '../entities/cart_item.dart';
 import '../entities/sale.dart';
 
-/// Aggregated totals for a single day — computed in SQL.
+/// Totaux agrégés d'une journée — calculés en SQL.
 typedef DailyStats = ({
   int saleCount,
   Decimal totalAmount,
@@ -13,9 +13,9 @@ typedef DailyStats = ({
   Decimal mobileMoneyTotal,
 });
 
-/// Abstract repository for sales operations.
+/// Repository abstrait pour les opérations de vente.
 abstract class SalesRepository {
-  /// Create and submit a new sale with items.
+  /// Crée et enregistre une nouvelle vente avec ses articles.
   Future<Sale> createSale({
     required List<CartItem> items,
     required Decimal totalAmount,
@@ -25,30 +25,31 @@ abstract class SalesRepository {
     Decimal? mobileMoneyAmount,
   });
 
-  /// Get sale history, optionally paginated.
+  /// Récupère l'historique des ventes, paginé en option.
   Future<List<Sale>> getSales({String? cursor, int limit = 50});
 
-  /// Get a single sale by ID.
+  /// Récupère une vente par ID.
   Future<Sale?> getSale(String id);
 
-  /// Returns all sales created today (local device timezone).
+  /// Retourne toutes les ventes créées aujourd'hui (fuseau horaire local de
+  /// l'appareil).
   Future<List<Sale>> getTodaySales();
 
-  /// Watches aggregated totals for today — re-emits on every INSERT into sales.
+  /// Observe les totaux agrégés du jour — réémet à chaque INSERT dans sales.
   Stream<DailyStats> watchTodayStats();
 
-  /// Returns all sales created within [startDate, endDate] inclusive
-  /// (local device timezone).
+  /// Retourne toutes les ventes créées dans [startDate, endDate] inclus (fuseau
+  /// horaire local de l'appareil).
   Future<List<Sale>> getSalesByDateRange(DateTime startDate, DateTime endDate);
 
-  /// Watches all sales created within [startDate, endDate] inclusive —
-  /// re-emits on every change.
+  /// Observe toutes les ventes créées dans [startDate, endDate] inclus — réémet
+  /// à chaque changement.
   Stream<List<Sale>> watchSalesByDateRange(
     DateTime startDate,
     DateTime endDate,
   );
 
-  /// Downloads the PDF receipt for a sale from the server (one-shot, not
-  /// cached locally).
+  /// Télécharge le reçu PDF d'une vente depuis le serveur (ponctuel, pas mis en
+  /// cache localement).
   Future<Uint8List> downloadReceiptPdf(String saleId);
 }
