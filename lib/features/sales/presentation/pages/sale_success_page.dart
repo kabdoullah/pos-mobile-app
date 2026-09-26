@@ -68,6 +68,10 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    // Version drift en direct : le numéro de reçu remplace le provisoire dès
+    // que la synchro l'attribue.
+    final sale =
+        ref.watch(saleByIdProvider(widget.sale.id)).value ?? widget.sale;
     final isOnlineAsync = ref.watch(isOnlineProvider);
     final isOnline = isOnlineAsync.when(
       data: (v) => v,
@@ -137,7 +141,7 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
                       children: [
                         const Text('Montant', style: AppTypography.bodyMedium),
                         AmountDisplay(
-                          amount: widget.sale.totalAmount,
+                          amount: sale.totalAmount,
                           size: AmountSize.large,
                         ),
                       ],
@@ -151,7 +155,20 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
                           style: AppTypography.bodyMedium,
                         ),
                         Text(
-                          _paymentMethodLabel(widget.sale.paymentMethod),
+                          _paymentMethodLabel(sale.paymentMethod),
+                          style: AppTypography.labelMedium,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Reçu N°', style: AppTypography.bodyMedium),
+                        Text(
+                          sale.receiptNumber > 0
+                              ? '#${sale.receiptNumber}'
+                              : 'En attente de synchronisation',
                           style: AppTypography.labelMedium,
                         ),
                       ],
@@ -190,15 +207,19 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
               const SizedBox(height: AppSpacing.xl),
               PrimaryButton(
                 label: 'Imprimer le reçu',
-                onPressed: () => _printReceipt(context, ref),
+                onPressed: () => _printReceipt(context, ref, sale),
                 icon: Icons.print,
               ),
-              const SizedBox(height: AppSpacing.md),
-              SecondaryButton(
-                label: 'Télécharger le reçu (PDF)',
-                icon: Icons.picture_as_pdf,
-                onPressed: () => _downloadReceiptPdf(context, ref),
-              ),
+              // Le serveur n'a pas encore la vente tant qu'elle n'a pas de
+              // numéro : le PDF n'est pas disponible.
+              if (sale.receiptNumber > 0) ...[
+                const SizedBox(height: AppSpacing.md),
+                SecondaryButton(
+                  label: 'Télécharger le reçu (PDF)',
+                  icon: Icons.picture_as_pdf,
+                  onPressed: () => _downloadReceiptPdf(context, ref, sale),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               SecondaryButton(
                 label: 'Nouvelle vente',
@@ -230,11 +251,15 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
     };
   }
 
-  Future<void> _printReceipt(BuildContext context, WidgetRef ref) async {
+  Future<void> _printReceipt(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+  ) async {
     try {
       await ref
           .read(printerProvider.notifier)
-          .print(sale: widget.sale, items: widget.items);
+          .print(sale: sale, items: widget.items);
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
@@ -256,13 +281,17 @@ class _SaleSuccessPageState extends ConsumerState<SaleSuccessPage>
     }
   }
 
-  Future<void> _downloadReceiptPdf(BuildContext context, WidgetRef ref) async {
+  Future<void> _downloadReceiptPdf(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+  ) async {
     try {
       final bytes = await ref.read(
-        downloadSaleReceiptPdfProvider(widget.sale.id).future,
+        downloadSaleReceiptPdfProvider(sale.id).future,
       );
       final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/recu_${widget.sale.receiptNumber}.pdf');
+      final file = File('${dir.path}/recu_${sale.receiptNumber}.pdf');
       await file.writeAsBytes(bytes);
 
       await SharePlus.instance.share(

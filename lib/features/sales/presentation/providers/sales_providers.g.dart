@@ -242,6 +242,97 @@ final class SalesHistoryFamily extends $Family
   String toString() => r'salesHistoryProvider';
 }
 
+/// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+/// dès que la synchro l'attribue.
+
+@ProviderFor(saleById)
+final saleByIdProvider = SaleByIdFamily._();
+
+/// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+/// dès que la synchro l'attribue.
+
+final class SaleByIdProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<sale_entity.Sale?>,
+          sale_entity.Sale?,
+          Stream<sale_entity.Sale?>
+        >
+    with
+        $FutureModifier<sale_entity.Sale?>,
+        $StreamProvider<sale_entity.Sale?> {
+  /// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+  /// dès que la synchro l'attribue.
+  SaleByIdProvider._({
+    required SaleByIdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'saleByIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$saleByIdHash();
+
+  @override
+  String toString() {
+    return r'saleByIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<sale_entity.Sale?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<sale_entity.Sale?> create(Ref ref) {
+    final argument = this.argument as String;
+    return saleById(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SaleByIdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$saleByIdHash() => r'61bd70a933b0bb7b8a72ea720bf2df507b8e5017';
+
+/// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+/// dès que la synchro l'attribue.
+
+final class SaleByIdFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<sale_entity.Sale?>, String> {
+  SaleByIdFamily._()
+    : super(
+        retry: null,
+        name: r'saleByIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+  /// dès que la synchro l'attribue.
+
+  SaleByIdProvider call(String id) =>
+      SaleByIdProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'saleByIdProvider';
+}
+
 /// Télécharge le reçu PDF d'une vente.
 
 @ProviderFor(downloadSaleReceiptPdf)

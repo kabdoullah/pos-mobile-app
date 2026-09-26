@@ -30,6 +30,8 @@ class SaleDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Version drift en direct : le numéro de reçu apparaît dès la synchro.
+    final sale = ref.watch(saleByIdProvider(this.sale.id)).value ?? this.sale;
     final dateFormatter = DateFormat('EEEE d MMMM yyyy HH:mm', 'fr_FR');
     final receiptNumber = sale.receiptNumber > 0
         ? '#${sale.receiptNumber}'
@@ -136,14 +138,14 @@ class SaleDetailPage extends ConsumerWidget {
             PrimaryButton(
               label: 'Réimprimer le reçu',
               icon: Icons.print,
-              onPressed: () => _handlePrint(context, ref),
+              onPressed: () => _handlePrint(context, ref, sale),
             ),
             if (sale.receiptNumber > 0) ...[
               const SizedBox(height: AppSpacing.md),
               SecondaryButton(
                 label: 'Télécharger le reçu (PDF)',
                 icon: Icons.picture_as_pdf,
-                onPressed: () => _handleDownloadPdf(context, ref),
+                onPressed: () => _handleDownloadPdf(context, ref, sale),
               ),
             ],
           ],
@@ -153,7 +155,11 @@ class SaleDetailPage extends ConsumerWidget {
   }
 
   /// Gère l'impression du reçu.
-  Future<void> _handlePrint(BuildContext context, WidgetRef ref) async {
+  Future<void> _handlePrint(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+  ) async {
     try {
       // Les articles sont null lors d'une impression depuis l'historique (hors
       // session)
@@ -207,7 +213,11 @@ class SaleDetailPage extends ConsumerWidget {
   }
 
   /// Gère le téléchargement et le partage du reçu PDF.
-  Future<void> _handleDownloadPdf(BuildContext context, WidgetRef ref) async {
+  Future<void> _handleDownloadPdf(
+    BuildContext context,
+    WidgetRef ref,
+    Sale sale,
+  ) async {
     try {
       final bytes = await ref.read(
         downloadSaleReceiptPdfProvider(sale.id).future,

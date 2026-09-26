@@ -31,6 +31,10 @@ abstract class SalesRepository {
   /// Récupère une vente par ID.
   Future<Sale?> getSale(String id);
 
+  /// Observe une vente par ID — réémet quand la synchro lui attribue son
+  /// numéro de reçu.
+  Stream<Sale?> watchSale(String id);
+
   /// Retourne toutes les ventes créées aujourd'hui (fuseau horaire local de
   /// l'appareil).
   Future<List<Sale>> getTodaySales();

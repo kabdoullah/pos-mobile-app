@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,8 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -181,6 +185,12 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
       // ✨ vider le panier ici — submitSaleProvider (auto-dispose) peut être
       // disposé pendant l'await, rendant ref.mounted false et skippant le clear
       ref.read(cartProvider.notifier).clear();
+
+      // Synchro immédiate si en ligne : le serveur attribue le numéro de reçu
+      // en quelques secondes au lieu d'attendre le prochain cycle périodique.
+      if (ref.read(isOnlineProvider).value ?? false) {
+        unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
+      }
 
       if (mounted) {
         // Navigation vers l'écran de succès avec la vente et les articles

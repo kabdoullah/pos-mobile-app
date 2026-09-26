@@ -81,8 +81,21 @@ class PushService {
         switch (result.status) {
           case 'created':
           case 'already_exists':
-            // Les deux sont traités comme un succès (idempotence)
-            await _queueRepository.markSynced(entry.id);
+            // Les deux sont traités comme un succès (idempotence). Le numéro de
+            // reçu attribué par le serveur remplace le provisoire (0) sans
+            // attendre le pull, qui filtre par date et peut ne jamais la
+            // renvoyer.
+            final receiptNumber = result.receiptNumber;
+            await _db.transaction(() async {
+              if (receiptNumber != null && receiptNumber > 0) {
+                await (_db.update(
+                  _db.sales,
+                )..where((t) => t.id.equals(result.id))).write(
+                  SalesCompanion(receiptNumber: drift.Value(receiptNumber)),
+                );
+              }
+              await _queueRepository.markSynced(entry.id);
+            });
             if (result.status == 'already_exists') {
               _logger?.i('Sale ${result.id} already synced (idempotent)');
             }

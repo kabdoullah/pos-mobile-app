@@ -47,6 +47,13 @@ Stream<List<sale_entity.Sale>> salesHistory(
       .watchSalesByDateRange(startDate, endDate);
 }
 
+/// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
+/// dès que la synchro l'attribue.
+@riverpod
+Stream<sale_entity.Sale?> saleById(Ref ref, String id) {
+  return ref.watch(salesRepositoryProvider).watchSale(id);
+}
+
 /// Télécharge le reçu PDF d'une vente.
 @riverpod
 Future<Uint8List> downloadSaleReceiptPdf(Ref ref, String saleId) {
