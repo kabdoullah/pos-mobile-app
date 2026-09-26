@@ -94,6 +94,10 @@ abstract class Routes {
   /// Caisse : scan, panier, paiement et encaissement sur un seul écran.
   static const String newSale = '/sales/new';
 
+  /// Historique ouvert depuis la caisse : même page que l'onglet, mais hors
+  /// shell pour pouvoir l'empiler au-dessus de la caisse (panier conservé).
+  static const String checkoutHistory = '/sales/recent';
+
   /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
 
@@ -220,36 +224,6 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: Routes.catalog,
                 builder: (context, state) => const CatalogPage(),
-                routes: [
-                  // ATTENTION : 'parentNavigatorKey: _rootNavigatorKey' force la page à s'ouvrir
-                  // en PLEIN ÉCRAN par-dessus votre barre de navigation.
-                  GoRoute(
-                    path: 'new', // Résout en /catalog/new
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const ProductFormPage(),
-                  ),
-                  GoRoute(
-                    path: ':id/edit', // Résout en /catalog/:id/edit
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) {
-                      final id = state.pathParameters['id']!;
-                      return ProductFormPage(productId: id);
-                    },
-                  ),
-                  GoRoute(
-                    path: ':id/movements', // Résout en /catalog/:id/movements
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) {
-                      final id = state.pathParameters['id']!;
-                      return StockHistoryPage(productId: id);
-                    },
-                  ),
-                  GoRoute(
-                    path: 'import', // Résout en /catalog/import
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const ProductImportPage(),
-                  ),
-                ],
               ),
             ],
           ),
@@ -277,13 +251,6 @@ GoRouter appRouter(Ref ref) {
               GoRoute(
                 path: Routes.settings,
                 builder: (context, state) => const SettingsPage(),
-                routes: [
-                  GoRoute(
-                    path: 'printer', // Résout en /settings/printer
-                    parentNavigatorKey: _rootNavigatorKey,
-                    builder: (context, state) => const BluetoothSetupPage(),
-                  ),
-                ],
               ),
             ],
           ),
@@ -291,6 +258,38 @@ GoRouter appRouter(Ref ref) {
       ),
 
       // Écrans hors des onglets : plein écran, empilés par-dessus la shell.
+      //
+      // Ne JAMAIS déclarer une page plein écran comme sous-route d'une branche
+      // (même avec parentNavigatorKey racine) : un `push` depuis une page déjà
+      // au-dessus de la shell (caisse, détail de vente) reconstruit la shell
+      // et fait planter le Navigator (clés de page dupliquées). Les chemins
+      // restent ceux d'origine (/catalog/new…), seule la déclaration change.
+      GoRoute(
+        path: Routes.productNew,
+        builder: (context, state) => const ProductFormPage(),
+      ),
+      GoRoute(
+        path: Routes.productImport,
+        builder: (context, state) => const ProductImportPage(),
+      ),
+      GoRoute(
+        path: Routes.productEdit,
+        builder: (context, state) =>
+            ProductFormPage(productId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.productStockHistory,
+        builder: (context, state) =>
+            StockHistoryPage(productId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.bluetoothSetup,
+        builder: (context, state) => const BluetoothSetupPage(),
+      ),
+      GoRoute(
+        path: Routes.checkoutHistory,
+        builder: (context, state) => const SalesHistoryPage(),
+      ),
       GoRoute(
         path: Routes.newSale,
         pageBuilder: (context, state) =>

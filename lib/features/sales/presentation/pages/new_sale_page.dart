@@ -415,7 +415,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
               tooltip: 'Historique des ventes',
               icon: const Icon(Icons.history),
               onPressed: () =>
-                  _withCameraPaused(() => context.push(Routes.salesHistory)),
+                  _withCameraPaused(() => context.push(Routes.checkoutHistory)),
             ),
             IconButton(
               tooltip: 'Imprimante',
