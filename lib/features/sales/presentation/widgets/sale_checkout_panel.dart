@@ -99,14 +99,30 @@ class SaleCheckoutPanel extends ConsumerWidget {
                         visualDensity: VisualDensity.compact,
                       ),
                     ),
-                  const Spacer(),
-                  Text(
-                    'Total ',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: cs.onSurfaceVariant,
+                  // Gros montant + bouton Remise sur écran étroit : le total
+                  // se réduit au lieu de déborder.
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          children: [
+                            Text(
+                              'Total ',
+                              style: AppTypography.labelMedium.copyWith(
+                                color: cs.onSurfaceVariant,
+                              ),
+                            ),
+                            AmountDisplay(
+                              amount: total,
+                              size: AmountSize.large,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  AmountDisplay(amount: total, size: AmountSize.large),
                 ],
               ),
               AnimatedSize(

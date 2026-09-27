@@ -17,6 +17,7 @@ import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
 import '../../domain/entities/sale.dart';
@@ -25,6 +26,7 @@ import '../providers/checkout_provider.dart';
 import '../providers/sales_providers.dart';
 import '../providers/scan_provider.dart';
 import '../widgets/discount_sheet.dart';
+import '../widgets/product_browser.dart';
 import '../widgets/product_search_results.dart';
 import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_cart.dart';
@@ -34,9 +36,18 @@ import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
 
-/// Écran de caisse (onglet Caisse) : scan/recherche, panier, paiement et
-/// encaissement sur un seul écran. La confirmation s'affiche en bottom sheet,
-/// puis la caisse est immédiatement prête pour la vente suivante.
+/// Vue de la zone principale de la caisse hors recherche.
+enum _SaleView {
+  /// Catalogue parcourable.
+  products,
+
+  /// Lignes du panier.
+  cart,
+}
+
+/// Écran de caisse (onglet Caisse) : scan/recherche, catalogue, panier,
+/// paiement et encaissement sur un seul écran. La confirmation s'affiche en
+/// bottom sheet, puis la caisse est immédiatement prête pour la vente suivante.
 ///
 /// La page reste montée quand on change d'onglet : le panier est conservé.
 class NewSalePage extends ConsumerStatefulWidget {
@@ -59,6 +70,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   final _searchFocus = FocusNode();
   Timer? _searchDebounce;
   String _query = '';
+  _SaleView _view = _SaleView.products;
 
   SaleToastData? _toast;
   Timer? _toastTimer;
@@ -231,7 +243,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       return;
     }
     unawaited(HapticFeedback.lightImpact());
-    // Retour immédiat au panier après un ajout depuis la recherche.
+    // Après un ajout depuis la recherche, retour immédiat à la vue courante.
     _clearSearch();
     _showToast(
       SaleToastData(
@@ -416,6 +428,12 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     ref.watch(scanControllerProvider);
     ref.watch(checkoutProvider);
     final cart = ref.watch(cartProvider);
+    // Panier vide (vente encaissée, panier vidé) : retour au catalogue, pour
+    // que le prochain ajout n'ouvre pas le panier par surprise.
+    ref.listen(cartProvider.select((c) => c.isEmpty), (_, isEmpty) {
+      if (isEmpty) setState(() => _view = _SaleView.products);
+    });
+    final view = cart.isEmpty ? _SaleView.products : _view;
     final storeName = ref.watch(storeConfigProvider).value?.name;
 
     // Onglet masqué (IndexedStack de la shell) : TickerMode est désactivé.
@@ -497,6 +515,20 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                     )
                   : const SizedBox(width: double.infinity),
             ),
+            if (_query.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: _SaleViewSwitch(
+                  view: view,
+                  cartUnits: cart.unitCount,
+                  onChanged: (value) => setState(() => _view = value),
+                ),
+              ),
             Expanded(
               child: Stack(
                 children: [
@@ -507,17 +539,29 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                             onQuickAdd: _addProduct,
                             onOpen: _openProduct,
                           )
-                        : SaleCart(
-                            items: cart.items,
-                            onQuantityChanged: ref
-                                .read(cartProvider.notifier)
-                                .updateQuantity,
-                            onRemove: ref
-                                .read(cartProvider.notifier)
-                                .removeItem,
-                            onItemTap: _editCartItem,
-                            onClear: _clearCart,
-                          ),
+                        : switch (view) {
+                            _SaleView.products => ProductBrowser(
+                              products: ref.watch(stockProductsProvider),
+                              onProductTap: _openProduct,
+                              onQuickAdd: _addProduct,
+                              onRetry: () =>
+                                  ref.invalidate(stockProductsProvider),
+                              onAddProduct: () => _withCameraPaused(
+                                () => context.push(Routes.productNew),
+                              ),
+                            ),
+                            _SaleView.cart => SaleCart(
+                              items: cart.items,
+                              onQuantityChanged: ref
+                                  .read(cartProvider.notifier)
+                                  .updateQuantity,
+                              onRemove: ref
+                                  .read(cartProvider.notifier)
+                                  .removeItem,
+                              onItemTap: _editCartItem,
+                              onClear: _clearCart,
+                            ),
+                          },
                   ),
                   Positioned(
                     top: AppSpacing.xs,
@@ -546,6 +590,46 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Bascule entre le catalogue et le panier ; l'onglet panier indique le
+/// nombre d'articles et reste désactivé tant que le panier est vide.
+class _SaleViewSwitch extends StatelessWidget {
+  const _SaleViewSwitch({
+    required this.view,
+    required this.cartUnits,
+    required this.onChanged,
+  });
+
+  final _SaleView view;
+  final int cartUnits;
+  final ValueChanged<_SaleView> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: SegmentedButton<_SaleView>(
+        showSelectedIcon: false,
+        style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        segments: [
+          const ButtonSegment(
+            value: _SaleView.products,
+            icon: Icon(Icons.grid_view_rounded),
+            label: Text('Produits'),
+          ),
+          ButtonSegment(
+            value: _SaleView.cart,
+            enabled: cartUnits > 0,
+            icon: const Icon(Icons.shopping_basket_outlined),
+            label: Text(cartUnits > 0 ? 'Panier · $cartUnits' : 'Panier'),
+          ),
+        ],
+        selected: {view},
+        onSelectionChanged: (selection) => onChanged(selection.single),
       ),
     );
   }

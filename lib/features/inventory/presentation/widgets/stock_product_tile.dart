@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/providers/product_image_providers.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import 'stock_status_badge.dart';
 
 /// Ligne produit de l'onglet Stock : nom, prix, quantité, badge d'état et
@@ -45,7 +44,7 @@ class StockProductTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            _ProductThumb(product: product),
+            ProductThumbnail(product: product),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -81,21 +80,5 @@ class StockProductTile extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-/// Vignette de la photo du produit (cache disque, téléchargée au besoin).
-class _ProductThumb extends ConsumerWidget {
-  const _ProductThumb({required this.product});
-
-  final Product product;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final version = product.imageVersion;
-    final file = version == null
-        ? null
-        : ref.watch(productImageFileProvider(product.id, version)).value;
-    return AppThumbnail(file: file);
   }
 }

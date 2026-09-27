@@ -99,47 +99,52 @@ class _ToastBody extends StatelessWidget {
     };
     final onAction = data.onAction;
 
-    return Semantics(
-      liveRegion: true,
-      child: Material(
-        color: background,
-        elevation: 3,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            onAction == null ? AppSpacing.md : AppSpacing.xs,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: foreground),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  data.message,
-                  style: AppTypography.bodyMedium.copyWith(color: foreground),
-                ),
-              ),
-              if (onAction != null) ...[
-                TextButton(
-                  onPressed: onDismiss,
-                  style: TextButton.styleFrom(foregroundColor: foreground),
-                  child: const Text('Annuler'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    onDismiss();
-                    onAction();
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: cs.inversePrimary,
+    // Sans action, la pastille laisse passer les appuis : elle ne masque pas
+    // le bouton + du produit qu'on vient d'ajouter (ajouts en rafale).
+    return IgnorePointer(
+      ignoring: onAction == null,
+      child: Semantics(
+        liveRegion: true,
+        child: Material(
+          color: background,
+          elevation: 3,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              onAction == null ? AppSpacing.md : AppSpacing.xs,
+              AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: foreground),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    data.message,
+                    style: AppTypography.bodyMedium.copyWith(color: foreground),
                   ),
-                  child: Text(data.actionLabel ?? 'OK'),
                 ),
+                if (onAction != null) ...[
+                  TextButton(
+                    onPressed: onDismiss,
+                    style: TextButton.styleFrom(foregroundColor: foreground),
+                    child: const Text('Annuler'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      onDismiss();
+                      onAction();
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: cs.inversePrimary,
+                    ),
+                    child: Text(data.actionLabel ?? 'OK'),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
