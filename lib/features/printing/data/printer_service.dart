@@ -65,6 +65,7 @@ class PrinterService implements PrinterRepository {
     required Sale sale,
     List<CartItem>? items,
     String? sellerName,
+    List<int>? logo,
   }) async {
     await _send(
       await ReceiptFormatter.format(
@@ -72,14 +73,17 @@ class PrinterService implements PrinterRepository {
         sale: sale,
         items: items,
         sellerName: sellerName,
+        logo: logo,
       ),
     );
     _log.i('Receipt printed successfully');
   }
 
   @override
-  Future<void> printTestPage({required Store store}) async {
-    await _send(await ReceiptFormatter.formatTestPage(store: store));
+  Future<void> printTestPage({required Store store, List<int>? logo}) async {
+    await _send(
+      await ReceiptFormatter.formatTestPage(store: store, logo: logo),
+    );
     _log.i('Test page printed successfully');
   }
 

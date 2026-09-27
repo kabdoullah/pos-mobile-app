@@ -5,6 +5,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/providers/product_image_providers.dart';
 import '../providers/sales_providers.dart';
 
 /// Résultats de recherche de la caisse, affichés à la place du panier pendant
@@ -63,6 +64,7 @@ class ProductSearchResults extends ConsumerWidget {
             return ListTile(
               enabled: !outOfStock,
               onTap: () => onOpen(product),
+              leading: _ProductThumb(product: product),
               title: Text(
                 product.name,
                 maxLines: 1,
@@ -88,5 +90,21 @@ class ProductSearchResults extends ConsumerWidget {
         );
       },
     );
+  }
+}
+
+/// Vignette de la photo du produit (cache disque, téléchargée au besoin).
+class _ProductThumb extends ConsumerWidget {
+  const _ProductThumb({required this.product});
+
+  final Product product;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final version = product.imageVersion;
+    final file = version == null
+        ? null
+        : ref.watch(productImageFileProvider(product.id, version)).value;
+    return AppThumbnail(file: file);
   }
 }

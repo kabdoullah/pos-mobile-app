@@ -1,9 +1,13 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/domain/entities/store.dart';
 import '../../../../core/utils/phone_formatter.dart';
@@ -62,7 +66,8 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
       await ref
           .read(storeConfigProvider.notifier)
           .save(
-            widget.store.copyWith(
+            // État courant (le logo a pu changer depuis l'ouverture).
+            (ref.read(storeConfigProvider).value ?? widget.store).copyWith(
               receiptFooterText: footer.isEmpty ? null : footer,
             ),
           );
@@ -105,6 +110,8 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
+              const _LogoRow(),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _footerController,
                 maxLength: receiptFooterMaxLength,
@@ -126,9 +133,10 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               ),
               const SizedBox(height: AppSpacing.xs),
               _TicketPreview(
-                store: widget.store,
+                store: ref.watch(storeConfigProvider).value ?? widget.store,
                 footer: _footerController.text.trim(),
                 sellerName: ref.watch(sellerProfileProvider).value,
+                logo: ref.watch(storeLogoBytesProvider).value,
               ),
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -157,11 +165,13 @@ class _TicketPreview extends StatelessWidget {
     required this.store,
     required this.footer,
     required this.sellerName,
+    required this.logo,
   });
 
   final Store store;
   final String footer;
   final String? sellerName;
+  final List<int>? logo;
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +198,17 @@ class _TicketPreview extends StatelessWidget {
           textAlign: TextAlign.center,
           child: Column(
             children: [
+              if (logo case final bytes?)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: Image.memory(
+                    Uint8List.fromList(bytes),
+                    height: 48,
+                    // Rendu en niveaux de gris, comme sur l'imprimante.
+                    color: Colors.grey,
+                    colorBlendMode: BlendMode.saturation,
+                  ),
+                ),
               Text(
                 store.name,
                 style: style.copyWith(fontWeight: FontWeight.bold),
@@ -207,6 +228,95 @@ class _TicketPreview extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Logo de la boutique : aperçu, choix et retrait (en ligne uniquement).
+class _LogoRow extends ConsumerStatefulWidget {
+  const _LogoRow();
+
+  @override
+  ConsumerState<_LogoRow> createState() => _LogoRowState();
+}
+
+class _LogoRowState extends ConsumerState<_LogoRow> {
+  bool _busy = false;
+
+  Future<void> _edit({required bool hasLogo}) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!(ref.read(isOnlineProvider).value ?? false)) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Changement de logo disponible avec une connexion.'),
+        ),
+      );
+      return;
+    }
+    final choice = await showImageSourceSheet(
+      context,
+      title: 'Logo de la boutique',
+      canRemove: hasLogo,
+    );
+    if (choice == null || !mounted) return;
+    setState(() => _busy = true);
+    final store = ref.read(storeConfigProvider.notifier);
+    try {
+      if (choice is File) {
+        await store.uploadLogo(choice);
+      } else if (choice == ImageSourceChoice.remove) {
+        await store.deleteLogo();
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Logo non enregistré : ${errorToFrench(e)}')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final hasLogo = ref.watch(storeConfigProvider).value?.logoVersion != null;
+    final bytes = ref.watch(storeLogoBytesProvider).value;
+
+    return Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          child: SizedBox.square(
+            dimension: 56,
+            child: bytes == null
+                ? ColoredBox(
+                    color: cs.surfaceContainerHighest,
+                    child: Icon(
+                      Icons.storefront_outlined,
+                      color: cs.onSurfaceVariant,
+                    ),
+                  )
+                : Image.memory(Uint8List.fromList(bytes), fit: BoxFit.contain),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            hasLogo ? 'Logo imprimé en tête des reçus' : 'Aucun logo',
+            style: AppTypography.bodyMedium,
+          ),
+        ),
+        if (_busy)
+          const SizedBox.square(
+            dimension: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else
+          TextButton(
+            onPressed: () => _edit(hasLogo: hasLogo),
+            child: Text(hasLogo ? 'Changer' : 'Ajouter'),
+          ),
+      ],
     );
   }
 }

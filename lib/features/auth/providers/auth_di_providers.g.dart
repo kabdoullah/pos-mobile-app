@@ -205,7 +205,7 @@ final class StoreRepositoryProvider
   }
 }
 
-String _$storeRepositoryHash() => r'9ffdd3e9e8c31e0ae8cc92402f76328e934c4ad9';
+String _$storeRepositoryHash() => r'8e31df622690ef1a8c9a41cbad9216fe75c1f541';
 
 /// Fournit le repository du profil (nom du vendeur, cache + `/users/me`).
 

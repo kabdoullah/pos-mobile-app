@@ -1,13 +1,18 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/network/error_mapper.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
+import '../../../catalog/presentation/providers/product_image_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_movement_tile.dart';
@@ -79,6 +84,8 @@ class _ProductDetail extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          _PhotoSection(product: product),
+          const SizedBox(height: AppSpacing.md),
           Text(product.name, style: AppTypography.titleLarge),
           const SizedBox(height: AppSpacing.xs),
           AmountDisplay(amount: product.unitPrice, size: AmountSize.large),
@@ -235,6 +242,92 @@ class _RecentMovements extends ConsumerWidget {
                     ))
                       StockMovementTile(movement: movement),
                   ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Photo du produit (en ligne pour la modifier ; affichée depuis le cache).
+class _PhotoSection extends ConsumerStatefulWidget {
+  const _PhotoSection({required this.product});
+
+  final Product product;
+
+  @override
+  ConsumerState<_PhotoSection> createState() => _PhotoSectionState();
+}
+
+class _PhotoSectionState extends ConsumerState<_PhotoSection> {
+  bool _busy = false;
+
+  Future<void> _edit() async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!(ref.read(isOnlineProvider).value ?? false)) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Ajout de photo disponible avec une connexion.'),
+        ),
+      );
+      return;
+    }
+    final hasPhoto = widget.product.imageVersion != null;
+    final choice = await showImageSourceSheet(
+      context,
+      title: hasPhoto ? 'Photo du produit' : 'Ajouter une photo',
+      canRemove: hasPhoto,
+    );
+    if (choice == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final editor = ref.read(productImageEditorProvider.notifier);
+    try {
+      if (choice is File) {
+        await editor.upload(widget.product.id, choice);
+      } else if (choice == ImageSourceChoice.remove) {
+        await editor.remove(widget.product.id);
+      }
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Photo non enregistrée : ${errorToFrench(e)}')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final version = widget.product.imageVersion;
+    final file = version == null
+        ? null
+        : ref.watch(productImageFileProvider(widget.product.id, version)).value;
+
+    return Row(
+      children: [
+        AppThumbnail(file: file, size: 96),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: _busy
+              ? const Align(
+                  alignment: Alignment.centerLeft,
+                  child: SizedBox.square(
+                    dimension: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                )
+              : Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _edit,
+                    icon: const Icon(Icons.photo_camera_outlined),
+                    label: Text(
+                      version == null
+                          ? 'Ajouter une photo'
+                          : 'Changer la photo',
+                    ),
+                  ),
                 ),
         ),
       ],

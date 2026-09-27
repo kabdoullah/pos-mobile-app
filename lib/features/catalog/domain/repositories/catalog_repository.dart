@@ -42,6 +42,17 @@ abstract class CatalogRepository {
   /// Supprime une catégorie ; ses produits deviennent « sans catégorie ».
   Future<void> deleteCategory(String id);
 
+  /// Image du produit à la [version] donnée (cache disque, sinon serveur) ;
+  /// null si indisponible (hors ligne et pas en cache).
+  Future<File?> productImage(String productId, String version);
+
+  /// Envoie une photo (en ligne uniquement). [ProductNotOnServerException] si
+  /// le produit, créé hors ligne, n'est pas encore synchronisé.
+  Future<void> uploadProductImage(String productId, File image);
+
+  /// Retire la photo du produit (en ligne uniquement).
+  Future<void> deleteProductImage(String productId);
+
   /// Met à jour un produit existant.
   Future<Product> updateProduct({
     required String id,
@@ -76,4 +87,14 @@ abstract class CatalogRepository {
 
   /// Télécharge un modèle d'import vierge (`csv` ou `xlsx`).
   Future<Uint8List> downloadImportTemplate({required String format});
+}
+
+/// Levée à l'envoi d'une photo quand le produit n'existe pas encore sur le
+/// serveur (créé hors ligne, pas encore synchronisé).
+class ProductNotOnServerException implements Exception {
+  /// Crée l'exception.
+  const ProductNotOnServerException();
+
+  @override
+  String toString() => 'Le produit n’est pas encore synchronisé.';
 }

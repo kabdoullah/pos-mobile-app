@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../../../../core/storage/image_file_cache.dart';
 
 import '../../domain/entities/store.dart';
 import '../../domain/repositories/store_repository.dart';
@@ -33,12 +37,17 @@ class StoreRepositoryImpl implements StoreRepository {
   StoreRepositoryImpl({
     required this.remoteDataSource,
     FlutterSecureStorage? storage,
-  }) : _storage = storage ?? const FlutterSecureStorage();
+    ImageFileCache? imageCache,
+  }) : _storage = storage ?? const FlutterSecureStorage(),
+       _imageCache = imageCache ?? ImageFileCache();
+
+  static const String _logoKey = 'store_logo';
 
   /// Data source distante pour les appels API boutique.
   final StoresRemoteDataSource remoteDataSource;
 
   final FlutterSecureStorage _storage;
+  final ImageFileCache _imageCache;
 
   @override
   Future<Store?> getStore() async {
@@ -79,6 +88,37 @@ class StoreRepositoryImpl implements StoreRepository {
   @override
   Future<void> clearLocal() async {
     await Future.wait(_StoreKeys.all.map((key) => _storage.delete(key: key)));
+    await _imageCache.remove(_logoKey);
+  }
+
+  @override
+  Future<Store> uploadLogo(File image) async {
+    final store = (await remoteDataSource.uploadLogo(image)).toDomain();
+    await _writeLocal(store);
+    await _imageCache.remove(_logoKey);
+    return store;
+  }
+
+  @override
+  Future<Store> deleteLogo(Store current) async {
+    await remoteDataSource.deleteLogo();
+    final store = current.copyWith(logoVersion: null);
+    await _writeLocal(store);
+    await _imageCache.remove(_logoKey);
+    return store;
+  }
+
+  @override
+  Future<List<int>?> logoBytes(String version) async {
+    final cached = await _imageCache.get(_logoKey, version);
+    if (cached != null) return cached.readAsBytes();
+    try {
+      final response = await remoteDataSource.getLogo();
+      await _imageCache.put(_logoKey, version, response.data);
+      return response.data;
+    } on Exception {
+      return null;
+    }
   }
 
   Future<void> _writeLocal(Store store) async {

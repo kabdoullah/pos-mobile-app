@@ -162,14 +162,27 @@ class Printer extends _$Printer {
           sale: sale,
           items: items,
           sellerName: sellerName,
+          logo: await _logo(),
         );
       });
 
   /// Imprime un ticket de test sur l'imprimante enregistrée.
   ///
   /// Lève [PrintException] comme [print].
-  Future<void> printTest() =>
-      _printWith((service, store) => service.printTestPage(store: store));
+  Future<void> printTest() => _printWith(
+    (service, store) async =>
+        service.printTestPage(store: store, logo: await _logo()),
+  );
+
+  /// Logo de la boutique depuis le cache (null sans logo ou s'il n'a jamais
+  /// pu être téléchargé : le ticket s'imprime alors sans).
+  Future<List<int>?> _logo() async {
+    try {
+      return await ref.read(storeLogoBytesProvider.future);
+    } on Exception {
+      return null;
+    }
+  }
 
   /// Oublie l'imprimante enregistrée : coupe le lien et efface l'adresse MAC.
   /// La prochaine impression demandera de choisir une imprimante.

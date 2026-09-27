@@ -1,5 +1,8 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/storage/image_file_cache.dart';
 import 'package:mobile/core/network/api_models/store_dto.dart';
 import 'package:mobile/features/auth/data/datasources/stores_remote_datasource.dart';
 import 'package:mobile/features/auth/data/repositories/store_repository_impl.dart';
@@ -70,11 +73,17 @@ void main() {
   late _MockRemote remote;
   late _FakeStorage storage;
   late StoreRepositoryImpl repo;
+  late Directory imageDir;
 
   setUp(() {
     remote = _MockRemote();
     storage = _FakeStorage();
-    repo = StoreRepositoryImpl(remoteDataSource: remote, storage: storage);
+    imageDir = Directory.systemTemp.createTempSync('store_repo_test');
+    repo = StoreRepositoryImpl(
+      remoteDataSource: remote,
+      storage: storage,
+      imageCache: ImageFileCache(baseDirectory: () async => imageDir),
+    );
   });
 
   test('serves the local cache without calling the backend', () async {
@@ -113,9 +122,19 @@ void main() {
       ),
     );
     expect(storage.values, hasLength(5));
+    // Logo du compte précédent en cache.
+    await ImageFileCache(
+      baseDirectory: () async => imageDir,
+    ).put('store_logo', 'v1', [1, 2, 3]);
 
     await repo.clearLocal();
 
     expect(storage.values, isEmpty);
+    expect(
+      await ImageFileCache(
+        baseDirectory: () async => imageDir,
+      ).get('store_logo', 'v1'),
+      isNull,
+    );
   });
 }

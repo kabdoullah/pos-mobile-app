@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
@@ -26,4 +28,22 @@ abstract class StoresRemoteDataSource {
   /// Endpoint : POST /api/v1/stores
   @POST('/api/v1/stores')
   Future<StoreDto> createStore(@Body() StoreCreateDto request);
+
+  /// Remplace le logo (multipart, champ `file`) ; renvoie la boutique avec son
+  /// nouveau `logo_version`.
+  /// Endpoint : PUT /api/v1/stores/me/logo
+  @PUT('/api/v1/stores/me/logo')
+  @MultiPart()
+  Future<StoreDto> uploadLogo(@Part(name: 'file') File file);
+
+  /// Retire le logo.
+  /// Endpoint : DELETE /api/v1/stores/me/logo
+  @DELETE('/api/v1/stores/me/logo')
+  Future<void> deleteLogo();
+
+  /// Logo WebP brut.
+  /// Endpoint : GET /api/v1/stores/me/logo
+  @GET('/api/v1/stores/me/logo')
+  @DioResponseType(ResponseType.bytes)
+  Future<HttpResponse<List<int>>> getLogo();
 }

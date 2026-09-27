@@ -7,6 +7,7 @@ import 'local_data_reset_service.dart';
 import 'pull_service.dart';
 import 'push_service.dart';
 import 'sync_queue_repository.dart';
+import '../storage/image_file_cache.dart';
 
 part 'sync_providers.g.dart';
 
@@ -14,7 +15,10 @@ part 'sync_providers.g.dart';
 /// de store).
 @riverpod
 LocalDataResetService localDataResetService(Ref ref) {
-  return LocalDataResetService(ref.read(databaseProvider));
+  return LocalDataResetService(
+    ref.read(databaseProvider),
+    imageCache: ref.read(imageFileCacheProvider),
+  );
 }
 
 /// Fournit le service de récupération des changements.
@@ -51,3 +55,7 @@ PushService pushService(Ref ref) {
 Stream<int> pendingSyncCount(Ref ref) {
   return ref.watch(syncQueueRepositoryProvider).watchPendingCount();
 }
+
+/// Cache disque des images serveur (photos produit, logo).
+@Riverpod(keepAlive: true)
+ImageFileCache imageFileCache(Ref ref) => ImageFileCache();

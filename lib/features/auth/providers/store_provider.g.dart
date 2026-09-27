@@ -54,7 +54,7 @@ final class StoreConfigProvider
   StoreConfig create() => StoreConfig();
 }
 
-String _$storeConfigHash() => r'4b5f96c14bf9bf4d553dc33df4ef9b82eaf6839d';
+String _$storeConfigHash() => r'901e51c4b1d53f010245f114f525b0f1850df3dd';
 
 /// Configuration boutique du compte connecté (utilisée partout : accueil,
 /// paramètres, écran PIN, reçus).
@@ -81,3 +81,46 @@ abstract class _$StoreConfig extends $AsyncNotifier<Store?> {
     element.handleCreate(ref, build);
   }
 }
+
+/// Octets du logo courant (cache disque, sinon serveur) — aperçu et impression.
+
+@ProviderFor(storeLogoBytes)
+final storeLogoBytesProvider = StoreLogoBytesProvider._();
+
+/// Octets du logo courant (cache disque, sinon serveur) — aperçu et impression.
+
+final class StoreLogoBytesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<int>?>,
+          List<int>?,
+          FutureOr<List<int>?>
+        >
+    with $FutureModifier<List<int>?>, $FutureProvider<List<int>?> {
+  /// Octets du logo courant (cache disque, sinon serveur) — aperçu et impression.
+  StoreLogoBytesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'storeLogoBytesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$storeLogoBytesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<int>?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<int>?> create(Ref ref) {
+    return storeLogoBytes(ref);
+  }
+}
+
+String _$storeLogoBytesHash() => r'28fb5bd7571965d00e42e560460a0dbd5afba1fa';

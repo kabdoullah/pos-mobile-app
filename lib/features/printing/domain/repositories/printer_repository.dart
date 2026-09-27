@@ -71,9 +71,10 @@ abstract interface class PrinterRepository {
     required Sale sale,
     List<CartItem>? items,
     String? sellerName,
+    List<int>? logo,
   });
 
   /// Imprime un ticket de test (en-tête de la boutique, date, pied de page) —
   /// vérifie l'imprimante sans simuler de vente.
-  Future<void> printTestPage({required Store store});
+  Future<void> printTestPage({required Store store, List<int>? logo});
 }

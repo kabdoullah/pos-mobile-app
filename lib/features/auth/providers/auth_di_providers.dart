@@ -9,6 +9,7 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/store_repository.dart';
 import '../data/repositories/profile_repository_impl.dart';
 import '../domain/repositories/profile_repository.dart';
+import '../../../core/sync/sync_providers.dart';
 
 part 'auth_di_providers.g.dart';
 
@@ -39,6 +40,7 @@ AuthRepository authRepository(Ref ref) {
 StoreRepository storeRepository(Ref ref) {
   return StoreRepositoryImpl(
     remoteDataSource: ref.read(storesRemoteDataSourceProvider),
+    imageCache: ref.read(imageFileCacheProvider),
   );
 }
 

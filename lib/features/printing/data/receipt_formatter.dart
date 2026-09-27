@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/foundation.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:image/image.dart' as img;
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
@@ -30,13 +31,14 @@ class ReceiptFormatter {
     required Sale sale,
     List<CartItem>? items,
     String? sellerName,
+    List<int>? logo,
   }) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm58, profile);
     final bytes = <int>[];
 
     // --- EN-TÊTE ---
-    bytes.addAll(_header(generator, store));
+    bytes.addAll(_header(generator, store, logo));
 
     // --- DATE / INFOS DU REÇU ---
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
@@ -123,12 +125,15 @@ class ReceiptFormatter {
 
   /// Construit les octets ESC/POS d'un ticket de test : en-tête, mention
   /// « Test d'impression », date et pied de page — sans numéro de reçu.
-  static Future<List<int>> formatTestPage({required Store store}) async {
+  static Future<List<int>> formatTestPage({
+    required Store store,
+    List<int>? logo,
+  }) async {
     final profile = await CapabilityProfile.load();
     final generator = Generator(PaperSize.mm58, profile);
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
     return [
-      ..._header(generator, store),
+      ..._header(generator, store, logo),
       ..._text(
         generator,
         "TEST D'IMPRESSION",
@@ -147,8 +152,8 @@ class ReceiptFormatter {
   }
 
   /// En-tête commun : nom de la boutique, NCC, adresse, séparateur.
-  static List<int> _header(Generator generator, Store store) {
-    final bytes = <int>[];
+  static List<int> _header(Generator generator, Store store, List<int>? logo) {
+    final bytes = <int>[..._logo(generator, logo)];
     bytes.addAll(
       _text(
         generator,
@@ -209,6 +214,36 @@ class ReceiptFormatter {
       ),
     );
     return bytes;
+  }
+
+  /// Largeur imprimable d'une imprimante 58 mm (px).
+  static const int _logoMaxWidth = 384;
+
+  /// Logo en tête de ticket (image raster ESC/POS). Un logo illisible ne doit
+  /// jamais empêcher d'imprimer le reçu : il est alors simplement omis.
+  static List<int> _logo(Generator generator, List<int>? bytes) {
+    if (bytes == null || bytes.isEmpty) return const [];
+    try {
+      var image = img.decodeImage(Uint8List.fromList(bytes));
+      if (image == null) return const [];
+      if (image.width > _logoMaxWidth) {
+        image = img.copyResize(image, width: _logoMaxWidth);
+      }
+      // Fond blanc sous les zones transparentes, sinon elles s'impriment noir.
+      final flattened = img.Image(width: image.width, height: image.height)
+        ..clear(img.ColorRgb8(255, 255, 255));
+      img.compositeImage(flattened, image);
+      return [
+        ...generator.imageRaster(flattened, align: PosAlign.center),
+        ...generator.feed(1),
+      ];
+      // Le décodeur lève aussi des Error (RangeError sur un fichier tronqué) :
+      // tout échec de décodage doit seulement omettre le logo.
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      _log.w('Logo non imprimable, ignoré : $e');
+      return const [];
+    }
   }
 
   /// Remplacements des caractères absents du jeu Latin-1 de l'imprimante

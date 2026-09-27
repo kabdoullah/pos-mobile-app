@@ -38,6 +38,7 @@ class _FakePrinter implements PrinterRepository {
     required Sale sale,
     List<CartItem>? items,
     String? sellerName,
+    List<int>? logo,
   }) async {
     lastSellerName = sellerName;
     if (failSend) {
@@ -50,7 +51,8 @@ class _FakePrinter implements PrinterRepository {
   }
 
   @override
-  Future<void> printTestPage({required Store store}) async => testPages++;
+  Future<void> printTestPage({required Store store, List<int>? logo}) async =>
+      testPages++;
 }
 
 class _Seller extends SellerProfile {

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import '../entities/store.dart';
 
 /// Interface du repository boutique. Implémenté dans la couche `data`.
@@ -16,4 +18,14 @@ abstract class StoreRepository {
   /// Efface le cache local — à appeler quand le compte connecté change, pour
   /// ne jamais afficher ni imprimer la boutique d'un autre compte.
   Future<void> clearLocal();
+
+  /// Envoie un nouveau logo (en ligne) ; renvoie la boutique mise à jour.
+  Future<Store> uploadLogo(File image);
+
+  /// Retire le logo (en ligne) ; renvoie la boutique mise à jour.
+  Future<Store> deleteLogo(Store current);
+
+  /// Octets du logo à la [version] donnée (cache disque, sinon serveur) ;
+  /// null si indisponible. Utilisé à l'impression, donc lu hors ligne.
+  Future<List<int>?> logoBytes(String version);
 }

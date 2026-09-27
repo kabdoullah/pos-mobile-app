@@ -62,7 +62,7 @@ final class LocalDataResetServiceProvider
 }
 
 String _$localDataResetServiceHash() =>
-    r'a46791d6aec7debe6ec5d769f2dc2fb900781245';
+    r'922b18fe0c3310f8b6a3d4bfc48b82ae9a984097';
 
 /// Fournit le service de récupération des changements.
 
@@ -249,3 +249,49 @@ final class PendingSyncCountProvider
 }
 
 String _$pendingSyncCountHash() => r'a6617ec5e24f5f95dc116e73f4ab768576e2c0f8';
+
+/// Cache disque des images serveur (photos produit, logo).
+
+@ProviderFor(imageFileCache)
+final imageFileCacheProvider = ImageFileCacheProvider._();
+
+/// Cache disque des images serveur (photos produit, logo).
+
+final class ImageFileCacheProvider
+    extends $FunctionalProvider<ImageFileCache, ImageFileCache, ImageFileCache>
+    with $Provider<ImageFileCache> {
+  /// Cache disque des images serveur (photos produit, logo).
+  ImageFileCacheProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'imageFileCacheProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$imageFileCacheHash();
+
+  @$internal
+  @override
+  $ProviderElement<ImageFileCache> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ImageFileCache create(Ref ref) {
+    return imageFileCache(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ImageFileCache value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ImageFileCache>(value),
+    );
+  }
+}
+
+String _$imageFileCacheHash() => r'd9c0a6ae678a0275ab4ab4fcabf671b348646cb5';

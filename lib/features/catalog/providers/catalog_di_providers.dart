@@ -15,5 +15,6 @@ CatalogRepository catalogRepository(Ref ref) {
     db: ref.watch(databaseProvider),
     syncQueue: ref.watch(syncQueueRepositoryProvider),
     dio: ref.watch(dioProvider),
+    imageCache: ref.watch(imageFileCacheProvider),
   );
 }

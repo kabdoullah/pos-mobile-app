@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../domain/entities/store.dart';
@@ -26,4 +28,28 @@ class StoreConfig extends _$StoreConfig {
     await ref.read(storeRepositoryProvider).saveStore(store);
     state = AsyncData(store);
   }
+
+  /// Envoie un nouveau logo (en ligne) ; l'erreur réseau remonte à l'UI.
+  Future<void> uploadLogo(File image) async {
+    state = AsyncData(
+      await ref.read(storeRepositoryProvider).uploadLogo(image),
+    );
+  }
+
+  /// Retire le logo (en ligne).
+  Future<void> deleteLogo() async {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncData(
+      await ref.read(storeRepositoryProvider).deleteLogo(current),
+    );
+  }
+}
+
+/// Octets du logo courant (cache disque, sinon serveur) — aperçu et impression.
+@riverpod
+Future<List<int>?> storeLogoBytes(Ref ref) async {
+  final version = (await ref.watch(storeConfigProvider.future))?.logoVersion;
+  if (version == null) return null;
+  return ref.read(storeRepositoryProvider).logoBytes(version);
 }
