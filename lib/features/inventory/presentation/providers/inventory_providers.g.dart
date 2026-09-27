@@ -357,7 +357,7 @@ final class StockAdjustmentProvider
   }
 }
 
-String _$stockAdjustmentHash() => r'526cd030ab4e05c50061845c1e51a7e2ae0b0f89';
+String _$stockAdjustmentHash() => r'1a464f24f4be75b570f3a8a352306bee46ac137a';
 
 /// Enregistre les ajustements de stock manuels, puis marque comme périmées
 /// toutes les vues du stock du produit (historique, fiche produit, liste du

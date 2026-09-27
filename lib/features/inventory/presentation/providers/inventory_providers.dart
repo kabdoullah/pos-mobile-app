@@ -161,7 +161,6 @@ class StockAdjustment extends _$StockAdjustment {
     ref
       ..invalidate(stockHistoryProvider(productId))
       ..invalidate(stockHistoryProvider(null))
-      ..invalidate(productProvider(productId))
-      ..invalidate(catalogListProvider);
+      ..invalidate(productProvider(productId));
   }
 }

@@ -141,8 +141,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       if (widget.productId == null) {
         // Mode création
         await ref
-            .read(catalogListProvider.notifier)
-            .createProduct(
+            .read(productEditorProvider.notifier)
+            .create(
               name: name,
               unitPrice: price,
               barcode: barcode.isEmpty ? null : barcode,
@@ -153,8 +153,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       } else {
         // Mode édition
         await ref
-            .read(catalogListProvider.notifier)
-            .updateProduct(
+            .read(productEditorProvider.notifier)
+            .update(
               id: widget.productId!,
               name: name,
               unitPrice: price,
@@ -201,9 +201,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     setState(() => _isLoading = true);
 
     try {
-      await ref
-          .read(catalogListProvider.notifier)
-          .deleteProduct(widget.productId!);
+      await ref.read(productEditorProvider.notifier).delete(widget.productId!);
       if (mounted) {
         context.pop();
       }

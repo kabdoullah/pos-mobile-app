@@ -8,49 +8,77 @@ part of 'catalog_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
+/// Écritures sur les produits (création, modification, suppression).
+///
+/// keepAlive : le formulaire produit ne l'écoute pas et attend l'écriture —
+/// une instance auto-dispose serait libérée pendant l'`await` et lèverait une
+/// erreur après que le produit a bien été enregistré. Les listes (onglet
+/// Stock, caisse) se mettent à jour d'elles-mêmes via les flux drift.
 
-@ProviderFor(CatalogList)
-final catalogListProvider = CatalogListProvider._();
+@ProviderFor(ProductEditor)
+final productEditorProvider = ProductEditorProvider._();
 
-/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
-final class CatalogListProvider
-    extends $AsyncNotifierProvider<CatalogList, List<Product>> {
-  /// CatalogListNotifier gère la liste des produits avec pagination et recherche.
-  CatalogListProvider._()
+/// Écritures sur les produits (création, modification, suppression).
+///
+/// keepAlive : le formulaire produit ne l'écoute pas et attend l'écriture —
+/// une instance auto-dispose serait libérée pendant l'`await` et lèverait une
+/// erreur après que le produit a bien été enregistré. Les listes (onglet
+/// Stock, caisse) se mettent à jour d'elles-mêmes via les flux drift.
+final class ProductEditorProvider
+    extends $NotifierProvider<ProductEditor, void> {
+  /// Écritures sur les produits (création, modification, suppression).
+  ///
+  /// keepAlive : le formulaire produit ne l'écoute pas et attend l'écriture —
+  /// une instance auto-dispose serait libérée pendant l'`await` et lèverait une
+  /// erreur après que le produit a bien été enregistré. Les listes (onglet
+  /// Stock, caisse) se mettent à jour d'elles-mêmes via les flux drift.
+  ProductEditorProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'catalogListProvider',
-        isAutoDispose: true,
+        name: r'productEditorProvider',
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$catalogListHash();
+  String debugGetCreateSourceHash() => _$productEditorHash();
 
   @$internal
   @override
-  CatalogList create() => CatalogList();
+  ProductEditor create() => ProductEditor();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(void value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<void>(value),
+    );
+  }
 }
 
-String _$catalogListHash() => r'0474ffa9ceba57d3293722999f03c3a6c79a471e';
+String _$productEditorHash() => r'5281f0c80917243ad514367a7517de1f11b6f974';
 
-/// CatalogListNotifier gère la liste des produits avec pagination et recherche.
+/// Écritures sur les produits (création, modification, suppression).
+///
+/// keepAlive : le formulaire produit ne l'écoute pas et attend l'écriture —
+/// une instance auto-dispose serait libérée pendant l'`await` et lèverait une
+/// erreur après que le produit a bien été enregistré. Les listes (onglet
+/// Stock, caisse) se mettent à jour d'elles-mêmes via les flux drift.
 
-abstract class _$CatalogList extends $AsyncNotifier<List<Product>> {
-  FutureOr<List<Product>> build();
+abstract class _$ProductEditor extends $Notifier<void> {
+  void build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<AsyncValue<List<Product>>, List<Product>>;
+    final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<AsyncValue<List<Product>>, List<Product>>,
-              AsyncValue<List<Product>>,
+              AnyNotifier<void, void>,
+              void,
               Object?,
               Object?
             >;
