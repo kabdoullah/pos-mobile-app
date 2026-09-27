@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
+import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
 import 'cart_provider.dart';
 
@@ -54,6 +55,35 @@ Stream<List<sale_entity.Sale>> salesHistory(
 @riverpod
 Stream<sale_entity.Sale?> saleById(Ref ref, String id) {
   return ref.watch(salesRepositoryProvider).watchSale(id);
+}
+
+/// Observe les lignes d'une vente (vide si la vente vient du serveur).
+@riverpod
+Stream<List<CartItem>> saleItems(Ref ref, String saleId) {
+  return ref.watch(salesRepositoryProvider).watchSaleItems(saleId);
+}
+
+/// Nombre de ventes et chiffre d'affaires d'une liste de ventes.
+({int count, Decimal total}) salesTotals(List<sale_entity.Sale> sales) => (
+  count: sales.length,
+  total: sales.fold(Decimal.zero, (sum, sale) => sum + sale.totalAmount),
+);
+
+/// Recherche par numéro de reçu (préfixe « # » accepté). Une vente pas encore
+/// synchronisée n'a pas de numéro : elle ne correspond à aucune recherche.
+List<sale_entity.Sale> searchSalesByReceipt(
+  List<sale_entity.Sale> sales,
+  String query,
+) {
+  final digits = query.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.isEmpty) return sales;
+  return sales
+      .where(
+        (sale) =>
+            sale.receiptNumber > 0 &&
+            sale.receiptNumber.toString().contains(digits),
+      )
+      .toList();
 }
 
 /// Télécharge le reçu PDF d'une vente.

@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as drift;
 
 import '../../../../core/network/api_models/sale_dto.dart';
 import '../../../../database/app_database.dart' as drift_db;
+import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart' as domain;
 
 /// Convertit PaymentMethodDto (API) → domain.PaymentMethod.
@@ -64,6 +65,18 @@ extension DriftSaleToDomain on drift_db.Sale {
     vatAmount: Decimal.parse(vatAmount),
     paymentMethod: _paymentMethodFromString(paymentMethod),
     createdAt: createdAt,
+  );
+}
+
+/// Convertit une ligne de vente drift → ligne du domaine (même type que le
+/// panier : c'est ce qu'attend l'impression du ticket).
+extension DriftSaleItemToDomain on drift_db.SaleItem {
+  /// Convertit la ligne drift en [CartItem] (stock non pertinent : `null`).
+  CartItem toCartItem() => CartItem(
+    productId: productId,
+    productName: productName,
+    unitPrice: Decimal.parse(unitPrice),
+    quantity: quantity,
   );
 }
 

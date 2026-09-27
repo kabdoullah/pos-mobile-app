@@ -8,6 +8,25 @@ import '../../../../core/widgets/index.dart';
 /// Préréglage rapide de plage de dates.
 enum _DatePreset { today, yesterday, last7Days, thisMonth, custom }
 
+/// Libellé court d'une période (« Aujourd'hui », « Hier »…), ou ses dates
+/// pour une période personnalisée.
+String periodLabel(DateTimeRange range) {
+  return switch (_DateRangeFilterSheetState._presetFor(range)) {
+    _DatePreset.today => "Aujourd'hui",
+    _DatePreset.yesterday => 'Hier',
+    _DatePreset.last7Days => '7 derniers jours',
+    _DatePreset.thisMonth => 'Ce mois-ci',
+    _DatePreset.custom || null => _formatRange(range),
+  };
+}
+
+String _formatRange(DateTimeRange range) {
+  final format = DateFormat('d MMM', 'fr_FR');
+  final start = format.format(range.start);
+  final end = format.format(range.end);
+  return start == end ? start : '$start – $end';
+}
+
 /// Bottom sheet de filtre des ventes par date — préréglages rapides plus une
 /// plage personnalisée explicite « Du / Au » (évite le [showDateRangePicker]
 /// intégré de Flutter, dont le calendrier plein écran en deux taps est peu

@@ -35,6 +35,10 @@ abstract class SalesRepository {
   /// numéro de reçu.
   Stream<Sale?> watchSale(String id);
 
+  /// Observe les lignes d'une vente enregistrée sur cet appareil. Liste vide
+  /// pour une vente reçue du serveur (le pull ne rapatrie pas les lignes).
+  Stream<List<CartItem>> watchSaleItems(String saleId);
+
   /// Retourne toutes les ventes créées aujourd'hui (fuseau horaire local de
   /// l'appareil).
   Future<List<Sale>> getTodaySales();

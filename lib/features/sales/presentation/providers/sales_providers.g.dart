@@ -333,6 +333,90 @@ final class SaleByIdFamily extends $Family
   String toString() => r'saleByIdProvider';
 }
 
+/// Observe les lignes d'une vente (vide si la vente vient du serveur).
+
+@ProviderFor(saleItems)
+final saleItemsProvider = SaleItemsFamily._();
+
+/// Observe les lignes d'une vente (vide si la vente vient du serveur).
+
+final class SaleItemsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CartItem>>,
+          List<CartItem>,
+          Stream<List<CartItem>>
+        >
+    with $FutureModifier<List<CartItem>>, $StreamProvider<List<CartItem>> {
+  /// Observe les lignes d'une vente (vide si la vente vient du serveur).
+  SaleItemsProvider._({
+    required SaleItemsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'saleItemsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$saleItemsHash();
+
+  @override
+  String toString() {
+    return r'saleItemsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CartItem>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CartItem>> create(Ref ref) {
+    final argument = this.argument as String;
+    return saleItems(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SaleItemsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$saleItemsHash() => r'8a8df4bb849c483153a38bd8aa099aa581b8382e';
+
+/// Observe les lignes d'une vente (vide si la vente vient du serveur).
+
+final class SaleItemsFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<List<CartItem>>, String> {
+  SaleItemsFamily._()
+    : super(
+        retry: null,
+        name: r'saleItemsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Observe les lignes d'une vente (vide si la vente vient du serveur).
+
+  SaleItemsProvider call(String saleId) =>
+      SaleItemsProvider._(argument: saleId, from: this);
+
+  @override
+  String toString() => r'saleItemsProvider';
+}
+
 /// Télécharge le reçu PDF d'une vente.
 
 @ProviderFor(downloadSaleReceiptPdf)

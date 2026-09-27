@@ -236,6 +236,13 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
+  Stream<List<CartItem>> watchSaleItems(String saleId) {
+    return (db.select(db.saleItems)..where((t) => t.saleId.equals(saleId)))
+        .watch()
+        .map((rows) => rows.map((row) => row.toCartItem()).toList());
+  }
+
+  @override
   Future<List<sale_entity.Sale>> getTodaySales() async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
