@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'app/app.dart';
+import 'app/theme/theme_mode_provider.dart';
 import 'core/config.dart';
 import 'core/network/network_providers.dart';
 
@@ -18,9 +19,13 @@ void main() async {
     apiUrl: 'https://pos-mobile-vkuh.onrender.com',
   );
   await initializeDateFormatting('fr_FR');
+  // Lu avant runApp : la première frame suit le thème choisi par
+  // l'utilisateur, pas celui du système.
+  final themeMode = await ThemeModeNotifier.readSaved();
   runApp(
     ProviderScope(
       overrides: [
+        themeModeProvider.overrideWith(() => ThemeModeNotifier(themeMode)),
         tokenStorageProvider.overrideWith(
           (ref) => ref.watch(secureTokenStorageProvider),
         ),
