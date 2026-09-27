@@ -8,24 +8,27 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../../core/router/app_router.dart';
-import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/theme_mode_provider.dart';
+import '../../../../core/network/error_mapper.dart';
+import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/router/app_router.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
+import '../../../../core/sync/sync_providers.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../auth/domain/entities/store.dart';
+import '../../../auth/presentation/pages/store_setup_page.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/providers/store_provider.dart';
-import '../../../auth/presentation/pages/store_setup_page.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/providers/sales_di_providers.dart';
-import '../../../../core/sync/sync_providers.dart';
+import '../widgets/receipt_settings_sheet.dart';
+import '../widgets/settings_section.dart';
 
-/// Page des paramètres — infos boutique, config de l'imprimante, gestion du
-/// compte.
+/// Paramètres, par sections : commerce, caisse, application, compte.
 class SettingsPage extends ConsumerStatefulWidget {
-  /// Crée une [SettingsPage].
+  /// Crée la page des paramètres.
   const SettingsPage({super.key});
 
   @override
@@ -33,37 +36,54 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  // Protection contre le double tap sur les actions asynchrones (tâches
-  // concurrentes).
+  // Protection contre le double tap sur les actions asynchrones.
   bool _exporting = false;
   bool _syncing = false;
 
+  void _showMessage(String message, {bool isError = false}) {
+    final cs = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: isError ? cs.error : null,
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final storeAsync = ref.watch(storeConfigProvider);
-    final printerState = ref.watch(printerProvider);
-    final cs = Theme.of(context).colorScheme;
+    final store = ref.watch(storeConfigProvider).value;
+    final auth = ref.watch(authProvider).value;
+    final phone = auth is AuthAuthenticated ? auth.user.phoneNumber : null;
+    final storeAddress = store?.address;
+    final footer = store?.receiptFooterText;
 
     return AppScaffold(
       title: 'Paramètres',
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Mise en avant de l'identité de la boutique — le seul élément de
-            // cette page qui n'est pas une ligne de paramètre générique. Flotte
-            // avec des marges (contrairement aux cartes de section bord à bord
-            // en dessous) pour se lire comme l'ancre de la page, et non comme
-            // un élément de liste de plus.
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.lg,
-              ),
-              child: _StoreIdentityHeader(
-                storeAsync: storeAsync,
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+        children: [
+          SettingsSection(
+            title: 'COMMERCE',
+            children: [
+              SettingsTile(
+                icon: Icons.storefront_outlined,
+                title: store == null ? 'Configurer ma boutique' : 'Mon magasin',
+                subtitle: Text(
+                  store == null
+                      ? 'Nom et adresse du commerce'
+                      : [
+                          store.name,
+                          if (storeAddress != null && storeAddress.isNotEmpty)
+                            storeAddress,
+                        ].join(' · '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                showChevron: true,
                 onTap: () => Navigator.of(context).push<void>(
                   MaterialPageRoute(
                     fullscreenDialog: true,
@@ -71,235 +91,190 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                 ),
               ),
-            ),
-
-            // Section IMPRIMANTE
-            _SettingsSection(
-              title: 'IMPRIMANTE',
-              children: [
-                _SettingsTile(
-                  icon: Icons.print_outlined,
-                  title: 'Configuration imprimante',
-                  subtitle: _printerSubtitle(context, printerState),
-                  isNavigation: true,
-                  onTap: () => context.push(Routes.bluetoothSetup),
-                ),
-              ],
-            ),
-
-            // DONNÉES section
-            _SettingsSection(
-              title: 'DONNÉES',
-              children: [
-                _SettingsTile(
-                  icon: Icons.file_download_outlined,
-                  title: 'Exporter CSV',
-                  subtitle: const Text('Télécharger les ventes'),
-                  busy: _exporting,
-                  onTap: _exporting ? null : _exportCsv,
-                ),
-                const Divider(indent: AppSpacing.md, endIndent: AppSpacing.md),
-                // ✨ feature à venir — désactivée visuellement, sans SnackBar trompeur
-                const _SettingsTile(
-                  icon: Icons.picture_as_pdf_outlined,
-                  title: 'Exporter PDF',
-                  subtitle: Text('Rapport mensuel'),
-                  onTap: null,
-                  trailingWidget: Chip(
-                    label: Text('Bientôt'),
-                    visualDensity: VisualDensity.compact,
-                    padding: EdgeInsets.zero,
-                    labelPadding: EdgeInsets.symmetric(horizontal: 6),
+              if (store != null)
+                SettingsTile(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Reçus',
+                  subtitle: Text(
+                    footer == null || footer.isEmpty
+                        ? 'Personnaliser le pied de page'
+                        : footer,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                  showChevron: true,
+                  onTap: () => showReceiptSettingsSheet(context, store),
                 ),
-              ],
-            ),
-
-            // Section SUPPORT
-            _SettingsSection(
-              title: 'SUPPORT',
-              children: [
-                _SettingsTile(
-                  icon: Icons.help_outline,
-                  title: 'Relancer le tutoriel',
-                  subtitle: const Text('Redémarrer la visite guidée'),
-                  isNavigation: true,
-                  onTap: () => context.push(Routes.tutorial),
-                ),
-              ],
-            ),
-
-            // Section SAUVEGARDE
-            _SettingsSection(
-              title: 'SAUVEGARDE',
-              children: [
-                _SettingsTile(
-                  icon: Icons.cloud_sync_outlined,
-                  title: 'Sauvegarder maintenant',
-                  subtitle: _syncSubtitle(context),
-                  busy: _syncing,
-                  // ✨ badge alerte quand des ventes attendent la sync
-                  badgeCount: ref.watch(pendingSyncCountProvider).value ?? 0,
-                  onTap: _syncing ? null : _handleManualSync,
-                ),
-              ],
-            ),
-
-            // Section APPARENCE
-            _SettingsSection(
-              title: 'APPARENCE',
-              children: [
-                // ListTile au lieu d'un Row fait main → alignement cohérent
-                // avec les autres rangées.
-                ListTile(
-                  leading: const Icon(Icons.palette_outlined),
-                  title: const Text('Thème'),
-                  trailing: SegmentedButton<ThemeMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: ThemeMode.light,
-                        icon: Icon(Icons.light_mode_outlined, size: 18),
-                        tooltip: 'Clair',
-                      ),
-                      ButtonSegment(
-                        value: ThemeMode.system,
-                        icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                        tooltip: 'Système',
-                      ),
-                      ButtonSegment(
-                        value: ThemeMode.dark,
-                        icon: Icon(Icons.dark_mode_outlined, size: 18),
-                        tooltip: 'Sombre',
-                      ),
-                    ],
-                    selected: {ref.watch(themeModeProvider)},
-                    onSelectionChanged: (modes) => ref
-                        .read(themeModeProvider.notifier)
-                        .setMode(modes.first),
-                    style: SegmentedButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                  contentPadding: _kTilePadding,
-                ),
-              ],
-            ),
-
-            // Section COMPTE
-            _SettingsSection(
-              title: 'COMPTE',
-              children: [
-                ListTile(
-                  // Couleur via colorScheme → s'adapte au clair/sombre.
-                  leading: Icon(Icons.logout_outlined, color: cs.error),
-                  title: Text(
-                    'Se déconnecter',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelLarge?.copyWith(color: cs.error),
-                  ),
-                  contentPadding: _kTilePadding,
-                  onTap: _confirmLogout,
-                ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmLogout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Se déconnecter'),
-        content: const Text('Êtes-vous sûr ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-              foregroundColor: Theme.of(ctx).colorScheme.onError,
-            ),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Déconnecter'),
+          SettingsSection(
+            title: 'CAISSE',
+            children: [
+              SettingsTile(
+                icon: Icons.print_outlined,
+                title: 'Imprimante',
+                subtitle: Text(_printerLabel(ref.watch(printerProvider))),
+                showChevron: true,
+                onTap: () => context.push(Routes.bluetoothSetup),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: 'APPLICATION',
+            children: [
+              SettingsTile(
+                icon: Icons.cloud_sync_outlined,
+                title: 'Synchronisation',
+                subtitle: Text(_syncLabel()),
+                busy: _syncing,
+                onTap: _syncNow,
+                trailing: const Icon(Icons.refresh),
+              ),
+              SettingsTile(
+                icon: Icons.palette_outlined,
+                title: 'Apparence',
+                trailing: SegmentedButton<ThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined, size: 18),
+                      tooltip: 'Clair',
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
+                      tooltip: 'Système',
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined, size: 18),
+                      tooltip: 'Sombre',
+                    ),
+                  ],
+                  selected: {ref.watch(themeModeProvider)},
+                  onSelectionChanged: (modes) =>
+                      ref.read(themeModeProvider.notifier).setMode(modes.first),
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ),
+              SettingsTile(
+                icon: Icons.file_download_outlined,
+                title: 'Exporter les ventes',
+                subtitle: const Text('Fichier CSV à partager'),
+                busy: _exporting,
+                onTap: _exportCsv,
+              ),
+              SettingsTile(
+                icon: Icons.help_outline,
+                title: 'Revoir le tutoriel',
+                subtitle: const Text('Visite guidée de l’application'),
+                showChevron: true,
+                onTap: () => context.push(Routes.tutorial),
+              ),
+            ],
+          ),
+          SettingsSection(
+            title: 'COMPTE',
+            children: [
+              if (phone != null)
+                SettingsTile(
+                  icon: Icons.person_outline,
+                  title: 'Mon compte',
+                  subtitle: Text(formatPhoneCiDisplay(phone)),
+                ),
+              SettingsTile(
+                icon: Icons.logout_outlined,
+                title: 'Se déconnecter',
+                destructive: true,
+                onTap: _confirmLogout,
+              ),
+            ],
           ),
         ],
       ),
     );
-    if (confirm == true && mounted) {
+  }
+
+  String _printerLabel(PrinterState state) => switch (state) {
+    PrinterConnected(:final name) => 'Connectée : $name',
+    PrinterConnecting() => 'Connexion…',
+    PrinterDisconnected(savedName: final name?) => name,
+    PrinterDisconnected() => 'Aucune imprimante configurée',
+    PrinterError() => 'Erreur de connexion — touchez pour vérifier',
+  };
+
+  /// État de synchro en mots simples (jamais de jargon technique).
+  String _syncLabel() {
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
+    final status = ref.watch(syncOrchestratorProvider);
+    final pending = ref.watch(pendingSyncCountProvider).value ?? 0;
+    if (!isOnline) return 'Hors ligne — reprise automatique';
+    return switch (status) {
+      SyncStatusSyncing() => 'Synchronisation…',
+      SyncStatusError() => 'Échec — touchez pour réessayer',
+      SyncStatusIdle() when pending > 0 =>
+        pending == 1 ? '1 vente en attente' : '$pending ventes en attente',
+      SyncStatusIdle(lastSyncAt: final at?) =>
+        'Synchronisé à ${DateFormat.Hm('fr_FR').format(at)}',
+      SyncStatusIdle() => 'Synchronisé',
+    };
+  }
+
+  Future<void> _syncNow() async {
+    if (!(ref.read(isOnlineProvider).value ?? false)) {
+      _showMessage(
+        'Hors ligne : la synchronisation reprendra au retour du réseau.',
+      );
+      return;
+    }
+    setState(() => _syncing = true);
+    // syncNow() ne lève pas : le résultat se lit dans l'état de l'orchestrateur.
+    await ref.read(syncOrchestratorProvider.notifier).syncNow();
+    if (!mounted) return;
+    setState(() => _syncing = false);
+    switch (ref.read(syncOrchestratorProvider)) {
+      case SyncStatusError():
+        _showMessage(
+          'La synchronisation a échoué. Réessayez dans un instant.',
+          isError: true,
+        );
+      case SyncStatusSyncing():
+        _showMessage('Synchronisation déjà en cours…');
+      case SyncStatusIdle():
+        _showMessage('Tout est synchronisé');
+    }
+  }
+
+  Future<void> _confirmLogout() async {
+    final pending = ref.read(pendingSyncCountProvider).value ?? 0;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Se déconnecter ?',
+      // Si un autre compte se connecte ensuite, la synchro efface les données
+      // locales de l'ancien compte (y compris les ventes non envoyées).
+      message: pending == 0
+          ? 'Vous devrez saisir votre numéro et votre mot de passe pour vous '
+                'reconnecter.'
+          : pending == 1
+          ? '1 vente pas encore synchronisée. Synchronisez avant de vous '
+                'déconnecter : si un autre compte se connecte sur ce '
+                'téléphone, elle sera effacée.'
+          : '$pending ventes pas encore synchronisées. Synchronisez avant de '
+                'vous déconnecter : si un autre compte se connecte sur ce '
+                'téléphone, elles seront effacées.',
+      confirmLabel: 'Se déconnecter',
+      isDangerous: true,
+    );
+    if (confirmed && mounted) {
       unawaited(ref.read(authProvider.notifier).logout());
     }
   }
 
-  // Couleurs issues du thème → s'adaptent au mode sombre.
-  Widget? _printerSubtitle(BuildContext context, PrinterState state) {
-    final cs = Theme.of(context).colorScheme;
-    return switch (state) {
-      PrinterConnected(name: final name) => Text(
-        name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: cs.primary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      PrinterDisconnected(savedName: final name) => Text(
-        name == null ? 'Aucune imprimante' : 'Prête: $name',
-      ),
-      PrinterError(message: final msg) => Text(
-        'Erreur: $msg',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyMedium?.copyWith(color: cs.error),
-      ),
-      _ => const Text('Non configurée'),
-    };
-  }
-
-  Widget? _syncSubtitle(BuildContext context) {
-    final syncStatus = ref.watch(syncOrchestratorProvider);
-    final pendingCount = ref.watch(pendingSyncCountProvider).value ?? 0;
-
-    return switch (syncStatus) {
-      SyncStatusSyncing() => const Text('Synchronisation en cours...'),
-      SyncStatusError() => Text(
-        'Erreur — Réessayer',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.error,
-        ),
-      ),
-      SyncStatusIdle(lastSyncAt: final lastSyncAt) => Text(
-        pendingCount > 0
-            ? '$pendingCount en attente'
-            : lastSyncAt == null
-            ? 'Jamais synchronisé'
-            // DateFormat locale plutôt qu'une concaténation manuelle.
-            : 'Dernière: ${DateFormat('HH:mm').format(lastSyncAt)}',
-      ),
-    };
-  }
-
   Future<void> _exportCsv() async {
     setState(() => _exporting = true);
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Préparation de l\'export...'),
-        duration: Duration(seconds: 30),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-
     try {
       final dir = await getTemporaryDirectory();
       final filename =
@@ -336,8 +311,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       await sink.close();
 
-      messenger.hideCurrentSnackBar();
-
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path, mimeType: 'text/csv')],
@@ -345,15 +318,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       );
     } catch (e) {
-      messenger.hideCurrentSnackBar();
       if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text('Erreur export: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        _showMessage('Export impossible : ${errorToFrench(e)}', isError: true);
       }
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -368,320 +334,5 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       PaymentMethod.wave => 'Wave',
       PaymentMethod.mixed => 'Mixte',
     };
-  }
-
-  Future<void> _handleManualSync() async {
-    setState(() => _syncing = true);
-    final messenger = ScaffoldMessenger.of(context);
-    final orchestrator = ref.read(syncOrchestratorProvider.notifier);
-
-    messenger.showSnackBar(
-      const SnackBar(
-        content: Text('Sauvegarde en cours...'),
-        duration: Duration(seconds: 60),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-
-    try {
-      await orchestrator.syncNow();
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Tout est sauvegardé'),
-          duration: Duration(seconds: 2),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Erreur de sauvegarde — réessayez'),
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _syncing = false);
-    }
-  }
-}
-
-/// Padding de contenu commun à toutes les lignes de paramètres (défini une
-/// seule fois).
-const EdgeInsets _kTilePadding = EdgeInsets.symmetric(
-  horizontal: AppSpacing.md,
-  vertical: AppSpacing.sm,
-);
-
-/// Ligne de paramètre réutilisable.
-///
-/// [isNavigation] affiche un chevron (vraie navigation uniquement, jamais sur
-/// les actions).
-/// [busy] remplace l'élément de fin par un indicateur de chargement et ignore
-/// les taps.
-class _SettingsTile extends StatelessWidget {
-  /// Crée un [_SettingsTile].
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.subtitle,
-    this.isNavigation = false,
-    this.busy = false,
-    this.badgeCount = 0,
-    this.trailingWidget,
-  });
-
-  /// Icône de début.
-  final IconData icon;
-
-  /// Titre de la ligne.
-  final String title;
-
-  /// Widget de sous-titre optionnel.
-  final Widget? subtitle;
-
-  /// Callback au tap. Null désactive la ligne.
-  final VoidCallback? onTap;
-
-  /// Affiche ou non un chevron de navigation en fin de ligne.
-  final bool isNavigation;
-
-  /// Indique si une action asynchrone est en cours.
-  final bool busy;
-
-  /// Pastille de compteur sur l'icône de début — 0 masque la pastille.
-  final int badgeCount;
-
-  /// Widget de fin optionnel — remplace la logique intégrée chevron/indicateur.
-  final Widget? trailingWidget;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
-    // ✨ badge M3 sur l'icône pour signaler des éléments en attente
-    final Widget leading = badgeCount > 0
-        ? Badge(
-            label: Text('$badgeCount'),
-            child: Icon(icon, color: cs.onSurfaceVariant),
-          )
-        : Icon(icon, color: cs.onSurfaceVariant);
-
-    final Widget? trailing =
-        trailingWidget ??
-        (busy
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : isNavigation
-            ? Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: cs.onSurfaceVariant,
-              )
-            : null);
-
-    return ListTile(
-      leading: leading,
-      title: Text(title),
-      subtitle: subtitle,
-      trailing: trailing,
-      contentPadding: _kTilePadding,
-      onTap: onTap,
-    );
-  }
-}
-
-/// En-tête mettant en avant l'identité de la boutique — monogramme, nom et
-/// adresse.
-///
-/// Le seul élément signature de cette page : tout le reste est une ligne de
-/// paramètre générique, mais ceci est la boutique *de ce commerçant*. Un tap
-/// ouvre le même écran d'édition de la boutique que l'ancienne ligne «
-/// Informations boutique ».
-class _StoreIdentityHeader extends StatelessWidget {
-  /// Crée un [_StoreIdentityHeader].
-  const _StoreIdentityHeader({required this.storeAsync, required this.onTap});
-
-  /// Config boutique courante — chargement/erreur/données reflètent
-  /// [storeConfigProvider].
-  final AsyncValue<Store?> storeAsync;
-
-  /// Ouvre la page d'édition de la boutique.
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
-    return storeAsync.when(
-      loading: () => _row(
-        cs: cs,
-        avatar: Icon(
-          Icons.storefront_outlined,
-          color: cs.onSurfaceVariant,
-          size: 28,
-        ),
-        title: const Text('Chargement...'),
-        onTap: null,
-      ),
-      error: (_, _) => _row(
-        cs: cs,
-        avatar: Icon(Icons.error_outline, color: cs.error, size: 28),
-        title: Text(
-          'Erreur de chargement',
-          style: textTheme.titleMedium?.copyWith(color: cs.error),
-        ),
-        subtitle: const Text('Touchez pour réessayer'),
-        onTap: onTap,
-      ),
-      data: (store) {
-        if (store == null) {
-          return _row(
-            cs: cs,
-            avatar: Icon(
-              Icons.storefront_outlined,
-              color: cs.onPrimaryContainer,
-              size: 28,
-            ),
-            title: const Text('Configurer ma boutique'),
-            subtitle: const Text('Ajoutez le nom et l\'adresse du commerce'),
-            onTap: onTap,
-          );
-        }
-
-        final address = store.address?.trim();
-        return _row(
-          cs: cs,
-          avatar: Text(
-            _initials(store.name),
-            style: textTheme.titleMedium?.copyWith(
-              color: cs.onPrimaryContainer,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          title: Text(
-            store.name,
-            style: textTheme.titleMedium,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            address == null || address.isEmpty
-                ? 'Ajouter une adresse'
-                : address,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          onTap: onTap,
-        );
-      },
-    );
-  }
-
-  Widget _row({
-    required ColorScheme cs,
-    required Widget avatar,
-    required Widget title,
-    required VoidCallback? onTap,
-    Widget? subtitle,
-  }) {
-    return AppCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: avatar,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                title,
-                if (subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  DefaultTextStyle.merge(
-                    style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                    child: subtitle,
-                  ),
-                ],
-              ],
-            ),
-          ),
-          if (onTap != null)
-            Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
-        ],
-      ),
-    );
-  }
-
-  /// Premières lettres des deux premiers mots (au plus) de [name], en
-  /// majuscules.
-  static String _initials(String name) {
-    final words = name
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((w) => w.isNotEmpty)
-        .toList();
-    if (words.isEmpty) return '?';
-    if (words.length == 1) {
-      return words.first
-          .substring(0, words.first.length >= 2 ? 2 : 1)
-          .toUpperCase();
-    }
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-}
-
-/// Widget privé de section de paramètres.
-class _SettingsSection extends StatelessWidget {
-  /// Crée une [_SettingsSection].
-  const _SettingsSection({required this.title, required this.children});
-
-  /// Titre de la section.
-  final String title;
-
-  /// Widgets du contenu de la section.
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    // ✨ un seul appel Theme.of(context) — évite la double lookup
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.md,
-          ),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: cs.primary,
-              letterSpacing: 0.8,
-            ),
-          ),
-        ),
-        AppCard(padding: 0, child: Column(children: children)),
-      ],
-    );
   }
 }

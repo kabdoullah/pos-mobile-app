@@ -16,6 +16,7 @@ class _FakePrinter implements PrinterRepository {
   bool connected = false;
   bool failSend = false;
   int printed = 0;
+  int testPages = 0;
 
   @override
   Future<bool> connect(String mac) async => connected = true;
@@ -43,6 +44,9 @@ class _FakePrinter implements PrinterRepository {
     }
     printed++;
   }
+
+  @override
+  Future<void> printTestPage({required Store store}) async => testPages++;
 }
 
 class _ConfiguredStore extends StoreConfig {
@@ -116,4 +120,45 @@ void main() {
     expect(bt.connected, isFalse);
     expect(container.read(printerProvider), isA<PrinterDisconnected>());
   });
+
+  test('ticket de test : reconnexion à l’imprimante enregistrée puis lien '
+      'libéré', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      'printer_mac': 'AA:BB:CC',
+      'printer_name': 'PT-210',
+    });
+
+    await container.read(printerProvider.notifier).printTest();
+
+    expect(bt.testPages, 1);
+    expect(bt.printed, 0, reason: 'aucune vente simulée');
+    expect(bt.connected, isFalse);
+  });
+
+  test(
+    'oublier : efface l’imprimante, la prochaine impression la redemande',
+    () async {
+      FlutterSecureStorage.setMockInitialValues({
+        'printer_mac': 'AA:BB:CC',
+        'printer_name': 'PT-210',
+      });
+      final notifier = container.read(printerProvider.notifier);
+
+      await notifier.forget();
+
+      final state = container.read(printerProvider);
+      expect(state, isA<PrinterDisconnected>());
+      expect((state as PrinterDisconnected).savedMac, isNull);
+      await expectLater(
+        notifier.print(sale: _sale),
+        throwsA(
+          isA<PrintException>().having(
+            (e) => e.reason,
+            'reason',
+            PrintFailureReason.noPrinterConfigured,
+          ),
+        ),
+      );
+    },
+  );
 }

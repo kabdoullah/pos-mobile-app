@@ -112,7 +112,12 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
             ? null
             : _nccController.text.trim(),
         isSubjectToVat: _isSubjectToVat,
-        receiptFooterText: null,
+        // Le pied de reçu se règle dans Paramètres → Reçus : on conserve
+        // celui déjà configuré au lieu de l'effacer.
+        receiptFooterText: ref
+            .read(storeConfigProvider)
+            .value
+            ?.receiptFooterText,
       );
 
       await ref.read(storeConfigProvider.notifier).save(store);

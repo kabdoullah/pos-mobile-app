@@ -33,29 +33,7 @@ class ReceiptFormatter {
     final bytes = <int>[];
 
     // --- EN-TÊTE ---
-    bytes.addAll(
-      generator.text(
-        store.name,
-        styles: const PosStyles(bold: true, align: PosAlign.center),
-      ),
-    );
-    if (store.ncc != null && store.ncc!.isNotEmpty) {
-      bytes.addAll(
-        generator.text(
-          'NCC: ${store.ncc}',
-          styles: const PosStyles(align: PosAlign.center),
-        ),
-      );
-    }
-    if (store.address != null && store.address!.isNotEmpty) {
-      bytes.addAll(
-        generator.text(
-          store.address!,
-          styles: const PosStyles(align: PosAlign.center),
-        ),
-      );
-    }
-    bytes.addAll(generator.text(_separator));
+    bytes.addAll(_header(generator, store));
 
     // --- DATE / INFOS DU REÇU ---
     final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
@@ -121,6 +99,68 @@ class ReceiptFormatter {
     bytes.addAll(generator.text(_separator));
 
     // --- PIED DE PAGE ---
+    bytes.addAll(_footer(generator, store));
+    bytes.addAll(generator.cut());
+
+    _log.d('Receipt formatted: ${bytes.length} bytes');
+    return bytes;
+  }
+
+  /// Construit les octets ESC/POS d'un ticket de test : en-tête, mention
+  /// « Test d'impression », date et pied de page — sans numéro de reçu.
+  static Future<List<int>> formatTestPage({required Store store}) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm58, profile);
+    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
+    return [
+      ..._header(generator, store),
+      ...generator.text(
+        "TEST D'IMPRESSION",
+        styles: const PosStyles(bold: true, align: PosAlign.center),
+      ),
+      ...generator.text(
+        dateFormatter.format(DateTime.now()),
+        styles: const PosStyles(align: PosAlign.center),
+      ),
+      ...generator.text("L'imprimante fonctionne."),
+      ...generator.text(_separator),
+      ..._footer(generator, store),
+      ...generator.cut(),
+    ];
+  }
+
+  /// En-tête commun : nom de la boutique, NCC, adresse, séparateur.
+  static List<int> _header(Generator generator, Store store) {
+    final bytes = <int>[];
+    bytes.addAll(
+      generator.text(
+        store.name,
+        styles: const PosStyles(bold: true, align: PosAlign.center),
+      ),
+    );
+    if (store.ncc != null && store.ncc!.isNotEmpty) {
+      bytes.addAll(
+        generator.text(
+          'NCC: ${store.ncc}',
+          styles: const PosStyles(align: PosAlign.center),
+        ),
+      );
+    }
+    if (store.address != null && store.address!.isNotEmpty) {
+      bytes.addAll(
+        generator.text(
+          store.address!,
+          styles: const PosStyles(align: PosAlign.center),
+        ),
+      );
+    }
+    bytes.addAll(generator.text(_separator));
+    return bytes;
+  }
+
+  /// Pied de page commun : texte personnalisé puis remerciement.
+  static List<int> _footer(Generator generator, Store store) {
+    final bytes = <int>[];
     if (store.receiptFooterText != null &&
         store.receiptFooterText!.isNotEmpty) {
       bytes.addAll(
@@ -136,9 +176,6 @@ class ReceiptFormatter {
         styles: const PosStyles(align: PosAlign.center),
       ),
     );
-    bytes.addAll(generator.cut());
-
-    _log.d('Receipt formatted: ${bytes.length} bytes');
     return bytes;
   }
 

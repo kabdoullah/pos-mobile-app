@@ -6,7 +6,9 @@ import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 import '../../../../core/responsive/responsive.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
+import '../../domain/repositories/printer_repository.dart';
 import '../providers/printer_provider.dart';
 
 /// Page d'appairage et de connexion à une imprimante thermique Bluetooth.
@@ -29,6 +31,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
   bool _isLoading = false;
   // ✨ track quel MAC est en cours de connexion — évite le spinner global sur tous les devices
   String? _connectingMac;
+  bool _testing = false;
 
   @override
   void initState() {
@@ -118,21 +121,61 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     } else if (newState is PrinterError) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erreur: ${newState.message}'),
+          content: const Text(
+            'Connexion impossible. Vérifiez que l’imprimante est allumée et '
+            'à proximité.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
   }
 
+  Future<void> _printTest() async {
+    setState(() => _testing = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final cs = Theme.of(context).colorScheme;
+    try {
+      await ref.read(printerProvider.notifier).printTest();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Ticket de test imprimé')),
+      );
+    } on PrintException {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Impression impossible. Vérifiez que l’imprimante est allumée, '
+            'à proximité et chargée en papier.',
+          ),
+          backgroundColor: cs.error,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _testing = false);
+    }
+  }
+
+  Future<void> _forget(String name) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Oublier $name ?',
+      message:
+          'Vous devrez choisir à nouveau une imprimante pour imprimer vos '
+          'reçus.',
+      confirmLabel: 'Oublier',
+      isDangerous: true,
+    );
+    if (!confirmed || !mounted) return;
+    await ref.read(printerProvider.notifier).forget();
+  }
+
   // Correctif n°2 : snackbar + retour au lieu du dialogue d'impression test
   // cassé
   void _onConnectSuccess() {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Imprimante connectée avec succès'),
-        backgroundColor: Theme.of(context).colorScheme.secondary,
-        duration: const Duration(seconds: 2),
+      const SnackBar(
+        content: Text('Imprimante connectée'),
+        duration: Duration(seconds: 2),
       ),
     );
     Navigator.of(context).pop();
@@ -143,6 +186,11 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     // ✨ extraits une fois — pas de double lookup Theme.of(context) dans itemBuilder
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final savedName = switch (ref.watch(printerProvider)) {
+      PrinterConnected(:final name) => name,
+      PrinterDisconnected(:final savedName) => savedName,
+      _ => null,
+    };
 
     return AppScaffold(
       title: 'Configurer l\'imprimante',
@@ -161,6 +209,15 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (savedName != null) ...[
+              _SavedPrinterCard(
+                name: savedName,
+                isTesting: _testing,
+                onTest: _printTest,
+                onForget: () => _forget(savedName),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             if (_checkingPermission) ...[
               const Center(child: AppLoadingIndicator()),
               const SizedBox(height: AppSpacing.lg),
@@ -255,6 +312,87 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
                 },
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Imprimante enregistrée : nom, ticket de test et oubli.
+class _SavedPrinterCard extends StatelessWidget {
+  const _SavedPrinterCard({
+    required this.name,
+    required this.isTesting,
+    required this.onTest,
+    required this.onForget,
+  });
+
+  final String name;
+  final bool isTesting;
+  final VoidCallback onTest;
+  final VoidCallback onForget;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Imprimante enregistrée',
+              style: AppTypography.labelMedium.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: [
+                Icon(Icons.print_outlined, color: cs.primary),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    onPressed: isTesting ? null : onTest,
+                    icon: isTesting
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.receipt_outlined),
+                    label: const Text('Tester'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: TextButton.icon(
+                    onPressed: isTesting ? null : onForget,
+                    icon: const Icon(Icons.link_off),
+                    label: const Text('Oublier'),
+                    style: TextButton.styleFrom(foregroundColor: cs.error),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

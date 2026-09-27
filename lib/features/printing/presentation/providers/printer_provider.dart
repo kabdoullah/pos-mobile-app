@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../auth/domain/entities/store.dart';
 import '../../domain/repositories/printer_repository.dart';
 import '../../providers/printing_di_providers.dart';
 import '../../../auth/providers/store_provider.dart';
@@ -145,7 +146,31 @@ class Printer extends _$Printer {
   ///
   /// Lève [PrintException] si aucune imprimante n'est configurée ou si l'envoi
   /// échoue.
-  Future<void> print({required Sale sale, List<CartItem>? items}) async {
+  Future<void> print({required Sale sale, List<CartItem>? items}) => _printWith(
+    (service, store) =>
+        service.printReceipt(store: store, sale: sale, items: items),
+  );
+
+  /// Imprime un ticket de test sur l'imprimante enregistrée.
+  ///
+  /// Lève [PrintException] comme [print].
+  Future<void> printTest() =>
+      _printWith((service, store) => service.printTestPage(store: store));
+
+  /// Oublie l'imprimante enregistrée : coupe le lien et efface l'adresse MAC.
+  /// La prochaine impression demandera de choisir une imprimante.
+  Future<void> forget() async {
+    await ref.read(printerRepositoryProvider).disconnect();
+    await _storage.delete(key: _PrinterKeys.mac);
+    await _storage.delete(key: _PrinterKeys.name);
+    state = const PrinterDisconnected();
+  }
+
+  /// Reconnecte l'imprimante enregistrée si besoin, exécute [job], puis libère
+  /// le lien Bluetooth (même en échec).
+  Future<void> _printWith(
+    Future<void> Function(PrinterRepository service, Store store) job,
+  ) async {
     final store = await ref.read(storeConfigProvider.future);
     if (store == null) {
       throw const PrintException(
@@ -174,7 +199,7 @@ class Printer extends _$Printer {
     }
 
     try {
-      await service.printReceipt(store: store, sale: sale, items: items);
+      await job(service, store);
     } finally {
       // Libère le lien BT immédiatement après impression (même en échec).
       await service.disconnect();

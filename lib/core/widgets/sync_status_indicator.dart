@@ -82,9 +82,11 @@ class SyncStatusIndicator extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            'Sauvegarde en ligne...',
-            style: AppTypography.bodySmall.copyWith(color: cs.primary),
+          Expanded(
+            child: Text(
+              'Sauvegarde en ligne...',
+              style: AppTypography.bodySmall.copyWith(color: cs.primary),
+            ),
           ),
         ],
       ),
@@ -131,9 +133,11 @@ class SyncStatusIndicator extends ConsumerWidget {
         children: [
           Icon(Icons.cloud_upload_outlined, color: cs.tertiary, size: 18),
           const SizedBox(width: AppSpacing.sm),
-          Text(
-            label,
-            style: AppTypography.bodySmall.copyWith(color: cs.onSurface),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.bodySmall.copyWith(color: cs.onSurface),
+            ),
           ),
         ],
       ),
@@ -154,9 +158,11 @@ class SyncStatusIndicator extends ConsumerWidget {
         children: [
           Icon(Icons.check_circle, color: cs.secondary, size: 16),
           const SizedBox(width: AppSpacing.xs),
-          Text(
-            'À jour',
-            style: AppTypography.captionText.copyWith(color: cs.secondary),
+          Expanded(
+            child: Text(
+              'À jour',
+              style: AppTypography.captionText.copyWith(color: cs.secondary),
+            ),
           ),
         ],
       ),

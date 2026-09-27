@@ -65,6 +65,23 @@ class PrinterService implements PrinterRepository {
     required Sale sale,
     List<CartItem>? items,
   }) async {
+    await _send(
+      await ReceiptFormatter.format(store: store, sale: sale, items: items),
+    );
+    _log.i('Receipt printed successfully');
+  }
+
+  @override
+  Future<void> printTestPage({required Store store}) async {
+    await _send(await ReceiptFormatter.formatTestPage(store: store));
+    _log.i('Test page printed successfully');
+  }
+
+  /// Envoie des octets ESC/POS à l'imprimante connectée.
+  ///
+  /// Lève [PrintException] si l'imprimante n'est pas connectée ou si l'envoi
+  /// échoue.
+  Future<void> _send(List<int> bytes) async {
     final connected = await isConnected;
     if (!connected) {
       throw const PrintException(
@@ -72,11 +89,6 @@ class PrinterService implements PrinterRepository {
         details: 'Printer not connected',
       );
     }
-    final bytes = await ReceiptFormatter.format(
-      store: store,
-      sale: sale,
-      items: items,
-    );
     final result = await PrintBluetoothThermal.writeBytes(bytes);
     if (!result) {
       throw const PrintException(
@@ -84,6 +96,5 @@ class PrinterService implements PrinterRepository {
         details: 'Failed to send data to printer',
       );
     }
-    _log.i('Receipt printed successfully');
   }
 }
