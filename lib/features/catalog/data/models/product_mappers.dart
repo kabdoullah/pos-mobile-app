@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as drift;
 
 import '../../../../core/network/api_models/product_dto.dart';
 import '../../../../database/app_database.dart' as drift_db;
+import '../../domain/entities/category.dart' as domain_category;
 import '../../domain/entities/product.dart' as domain;
 
 /// Convertit ProductDto (API) → domain.Product (domaine).
@@ -15,6 +16,8 @@ extension ProductDtoToDomain on ProductDto {
     barcode: barcode,
     currentStock: currentStock,
     minStock: minStock,
+    categoryId: categoryId,
+    imageVersion: imageVersion,
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
   );
@@ -54,9 +57,18 @@ extension DriftProductToDomain on drift_db.Product {
     barcode: barcode,
     currentStock: currentStock,
     minStock: minStock,
+    categoryId: categoryId,
+    imageVersion: imageVersion,
     updatedAt: updatedAt,
     deletedAt: deletedAt,
   );
+}
+
+/// Convertit une ligne Category drift → entité du domaine.
+extension DriftCategoryToDomain on drift_db.Category {
+  /// Convertit la ligne drift en [domain_category.Category].
+  domain_category.Category toDomain() =>
+      domain_category.Category(id: id, name: name);
 }
 
 /// Convertit domain.Product → ProductCreateDto (requête API).

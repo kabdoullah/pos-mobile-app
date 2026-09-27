@@ -30,6 +30,12 @@ sealed class Product with _$Product {
 
     /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
     int? minStock,
+
+    /// Catégorie (null = sans catégorie).
+    String? categoryId,
+
+    /// Version (SHA-256) de l'image serveur ; null = pas d'image.
+    String? imageVersion,
     required DateTime updatedAt,
     DateTime? deletedAt,
   }) = _Product;

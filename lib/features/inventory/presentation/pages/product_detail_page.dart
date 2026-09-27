@@ -7,6 +7,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/providers/category_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_movement_tile.dart';
@@ -58,15 +59,19 @@ class ProductDetailPage extends ConsumerWidget {
   }
 }
 
-class _ProductDetail extends StatelessWidget {
+class _ProductDetail extends ConsumerWidget {
   const _ProductDetail({required this.product});
 
   final Product product;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final isTracked = product.currentStock != null;
+    final categoryName = (ref.watch(categoriesProvider).value ?? const [])
+        .where((c) => c.id == product.categoryId)
+        .firstOrNull
+        ?.name;
     final editRoute = Routes.productEdit.replaceFirst(':id', product.id);
 
     return AppScaffold(
@@ -96,6 +101,7 @@ class _ProductDetail extends StatelessWidget {
                     label: "Seuil d'alerte",
                     value: product.minStock?.toString() ?? 'Aucun',
                   ),
+                  _InfoRow(label: 'Catégorie', value: categoryName ?? 'Aucune'),
                   _InfoRow(
                     label: 'Code-barres',
                     value: product.barcode ?? 'Aucun',

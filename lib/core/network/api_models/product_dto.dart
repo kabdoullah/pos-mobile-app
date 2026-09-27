@@ -17,6 +17,8 @@ sealed class ProductDto with _$ProductDto {
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
+    @JsonKey(name: 'category_id') String? categoryId,
+    @JsonKey(name: 'image_version') String? imageVersion,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
     @JsonKey(name: 'deleted_at') String? deletedAt,

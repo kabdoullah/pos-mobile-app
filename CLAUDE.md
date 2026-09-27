@@ -53,7 +53,7 @@ Two provider locations:
 
 **Global structure:**
 - `lib/core/` — `AppConfig`, theme (Cacao & Or palette), GoRouter, Dio/Retrofit network, secure storage, sync logic
-- `lib/database/` — drift schema (Products, Sales, SyncQueue tables)
+- `lib/database/` — drift schema (Products, Categories, Sales, SaleItems, SyncQueue, SyncMetadata tables)
 - `test/` — flat test files, no directory mirroring lib/
 
 ## Features status
@@ -99,7 +99,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Secure storage:** JWT and PBKDF2-hashed PIN in `flutter_secure_storage`. PIN never sent to backend. 5 attempts → 5-minute lockout.
 
-**Sync:** Sales append-only via `SyncQueue` (UUID v4 client-side, idempotent). Catalog: `dirty=true` flag, push full state. Pull on app start + connectivity restored.
+**Sync:** Sales append-only via `SyncQueue` (UUID v4 client-side, idempotent). Catalog and categories (ADR-0008): `dirty=true` flag, push full state — push order is sales → categories → products (a product is held while its category is not yet accepted by the server). Pull on app start + connectivity restored; it merges a locally-created category into a server one with the same name, and stores pulled sale items.
 
 **Theme:** "Cacao & Or" — primary brun cacao `#92400E`, secondary or `#CA8A04`. `textOnSecondary` is dark (never white on gold — fails WCAG AA). Use `AppSemanticColors` extension for dark-mode and stock-status colors.
 

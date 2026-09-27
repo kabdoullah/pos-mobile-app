@@ -23,6 +23,12 @@ class Products extends Table {
   /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
   IntColumn get minStock => integer().nullable()();
 
+  /// Catégorie du produit (null = sans catégorie), voir [Categories].
+  TextColumn get categoryId => text().nullable()();
+
+  /// Version (SHA-256) de l'image serveur ; null = pas d'image (ADR-0008).
+  TextColumn get imageVersion => text().nullable()();
+
   /// Marqué pour synchronisation.
   BoolColumn get dirty => boolean().withDefault(const Constant(false))();
 
@@ -30,6 +36,28 @@ class Products extends Table {
   DateTimeColumn get updatedAt => dateTime()();
 
   /// Soft delete.
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Table des catégories de produits (ADR-0008) — synchronisées par état comme
+/// le catalogue (flag [dirty], dernier écrit gagne).
+class Categories extends Table {
+  /// UUID v4 généré côté client.
+  TextColumn get id => text()();
+
+  /// Nom (unique par boutique, casse ignorée, parmi les non supprimées).
+  TextColumn get name => text().withLength(min: 1, max: 60)();
+
+  /// Marquée pour synchronisation.
+  BoolColumn get dirty => boolean().withDefault(const Constant(false))();
+
+  /// Dernière modification.
+  DateTimeColumn get updatedAt => dateTime()();
+
+  /// Suppression logique.
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
   @override
@@ -133,7 +161,9 @@ class SyncQueue extends Table {
 }
 
 /// Base de données drift de l'application.
-@DriftDatabase(tables: [Products, Sales, SaleItems, SyncQueue, SyncMetadata])
+@DriftDatabase(
+  tables: [Products, Categories, Sales, SaleItems, SyncQueue, SyncMetadata],
+)
 class AppDatabase extends _$AppDatabase {
   /// Constructeur.
   AppDatabase() : super(_openConnection());
@@ -143,7 +173,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +217,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         // v4 → v5 : ajoute le seuil de réapprovisionnement aux produits.
         await m.addColumn(products, products.minStock);
+      }
+      if (from < 6) {
+        // v5 → v6 (ADR-0008) : catégories, catégorie et version d'image des
+        // produits. Aucune donnée existante n'est modifiée.
+        await m.createTable(categories);
+        await m.addColumn(products, products.categoryId);
+        await m.addColumn(products, products.imageVersion);
       }
     },
   );

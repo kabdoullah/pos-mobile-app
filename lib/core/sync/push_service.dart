@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:logger/logger.dart';
 
+import '../../core/network/api_models/category_dto.dart';
 import '../../core/network/api_models/product_dto.dart';
 import '../utils/barcode_utils.dart';
 import '../../core/network/api_models/sale_dto.dart';
@@ -139,12 +140,120 @@ class PushService {
         return;
       }
 
+      // Catégories pas encore acceptées par le serveur (en file, ou en attente
+      // de fusion après un conflit de nom) : un produit qui y fait référence
+      // serait refusé (422) et marqué en échec définitif. On le garde en
+      // attente jusqu'au cycle où sa catégorie est connue du serveur.
+      final pendingCategoryIds = {
+        for (final e in await _queueRepository.getEntriesByType('category'))
+          e.entityId,
+        for (final c in await (_db.select(
+          _db.categories,
+        )..where((c) => c.dirty.equals(true))).get())
+          c.id,
+      };
+
       for (final entry in entries) {
+        final categoryId = _payloadCategoryId(entry);
+        if (categoryId != null && pendingCategoryIds.contains(categoryId)) {
+          _logger?.d(
+            'Product ${entry.entityId} waits for category $categoryId',
+          );
+          continue;
+        }
         await _pushProductChange(entry);
       }
     } catch (e, st) {
       _logger?.e('Push pending products failed', error: e, stackTrace: st);
     }
+  }
+
+  static String? _payloadCategoryId(SyncQueueData entry) {
+    try {
+      final payload = jsonDecode(entry.payload) as Map<String, dynamic>;
+      return payload['category_id'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Envoie les changements de catégories en attente (ADR-0008). À appeler
+  /// avant [pushPendingProductChanges].
+  Future<void> pushPendingCategoryChanges() async {
+    try {
+      final entries = await _queueRepository.getEntriesByType('category');
+      for (final entry in entries) {
+        await _pushCategoryChange(entry);
+      }
+    } catch (e, st) {
+      _logger?.e('Push pending categories failed', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _pushCategoryChange(SyncQueueData entry) async {
+    await _queueRepository.markSyncing(entry.id);
+    try {
+      final item = CategorySyncItemDto.fromJson(
+        jsonDecode(entry.payload) as Map<String, dynamic>,
+      );
+      final response = await _remoteDataSource.pushCategory(item);
+      await _handleCategoryResponse(entry, response);
+    } catch (e) {
+      // 409 : Dio lève une exception, la réponse porte l'état serveur.
+      if (e is DioException && e.response?.statusCode == 409) {
+        final data = e.response?.data;
+        final response = data is Map<String, dynamic>
+            ? CategorySyncResponseDto.fromJson(data)
+            : const CategorySyncResponseDto(status: 'conflict');
+        await _handleCategoryResponse(entry, response);
+        return;
+      }
+      if (e is DioException &&
+          e.response?.statusCode != null &&
+          e.response!.statusCode! >= 400 &&
+          e.response!.statusCode! < 500) {
+        await _queueRepository.markFailed(
+          entry.id,
+          'Server rejected: ${e.response!.statusCode} ${e.response?.data}',
+        );
+        return;
+      }
+      await _queueRepository.incrementRetry(entry.id);
+      _logger?.i('Category ${entry.entityId} push failed (will retry): $e');
+    }
+  }
+
+  Future<void> _handleCategoryResponse(
+    SyncQueueData entry,
+    CategorySyncResponseDto response,
+  ) async {
+    final serverState = response.serverState;
+    if (response.status == 'conflict' && serverState != null) {
+      // Le serveur a un état plus récent : il l'emporte.
+      await _db
+          .into(_db.categories)
+          .insertOnConflictUpdate(
+            CategoriesCompanion(
+              id: drift.Value(serverState.id),
+              name: drift.Value(serverState.name),
+              dirty: const drift.Value(false),
+              updatedAt: drift.Value(DateTime.parse(serverState.updatedAt)),
+              deletedAt: drift.Value(
+                serverState.deletedAt != null
+                    ? DateTime.parse(serverState.deletedAt!)
+                    : null,
+              ),
+            ),
+          );
+    } else if (response.status != 'conflict') {
+      await (_db.update(_db.categories)
+            ..where((c) => c.id.equals(entry.entityId)))
+          .write(const CategoriesCompanion(dirty: drift.Value(false)));
+    }
+    // Conflit sans état serveur = nom déjà pris par une autre catégorie : la
+    // catégorie locale reste marquée « dirty » et sera fusionnée avec celle du
+    // serveur au prochain pull (voir PullService).
+    await _queueRepository.markSynced(entry.id);
   }
 
   /// Envoie le changement d'un seul produit.
@@ -182,6 +291,7 @@ class PushService {
           unitPrice: product.unitPrice,
           currentStock: product.currentStock,
           minStock: product.minStock,
+          categoryId: product.categoryId,
           clientUpdatedAt: product.updatedAt.toUtc().toIso8601String(),
           deleted: product.deletedAt != null,
         );
@@ -371,6 +481,8 @@ class PushService {
             unitPrice: drift.Value(serverState.unitPrice),
             currentStock: drift.Value(serverState.currentStock),
             minStock: drift.Value(serverState.minStock ?? current?.minStock),
+            categoryId: drift.Value(serverState.categoryId),
+            imageVersion: drift.Value(serverState.imageVersion),
             dirty: const drift.Value(false), // Mark clean after sync
             updatedAt: drift.Value(DateTime.parse(serverState.updatedAt)),
             deletedAt: drift.Value(deletedAt),

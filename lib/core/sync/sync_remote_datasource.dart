@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
+import '../../../../core/network/api_models/category_dto.dart';
 import '../../../../core/network/api_models/sync_changes_dto.dart';
 import '../../../../core/network/api_models/sync_responses_dto.dart';
 
@@ -28,6 +29,15 @@ abstract class SyncRemoteDataSource {
   @POST('/api/v1/sync/sales')
   Future<SalesSyncBatchResponseDto> pushSales(
     @Body() SalesSyncBatchRequestDto batch,
+  );
+
+  /// Envoie l'état d'une catégorie (synchro par état, ADR-0008). À appeler
+  /// avant les produits : un produit dont la catégorie est inconnue du serveur
+  /// est refusé.
+  /// Endpoint : PUT /api/v1/sync/categories
+  @PUT('/api/v1/sync/categories')
+  Future<CategorySyncResponseDto> pushCategory(
+    @Body() CategorySyncItemDto category,
   );
 
   /// Envoie le changement d'un seul produit au serveur (synchro par état).

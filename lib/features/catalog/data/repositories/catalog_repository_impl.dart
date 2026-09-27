@@ -9,7 +9,9 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/network/api_models/sync_changes_dto.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../core/utils/barcode_utils.dart';
-import '../../../../database/app_database.dart' hide Product;
+import '../../../../core/network/api_models/category_dto.dart';
+import '../../../../database/app_database.dart' hide Category, Product;
+import '../../domain/entities/category.dart';
 import '../../domain/entities/product.dart' as product_domain;
 import '../../domain/entities/product_import_result.dart';
 import '../../domain/entities/product_page.dart';
@@ -89,6 +91,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     String? barcode,
     int? currentStock,
     int? minStock,
+    String? categoryId,
   }) async {
     final normalizedBarcode = normalizeBarcode(barcode);
     final id = const Uuid().v4();
@@ -100,6 +103,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       barcode: normalizedBarcode,
       currentStock: currentStock,
       minStock: minStock,
+      categoryId: categoryId,
       updatedAt: now,
       deletedAt: null,
     );
@@ -121,25 +125,13 @@ class CatalogRepositoryImpl implements CatalogRepository {
             minStock: minStock != null
                 ? drift.Value(minStock)
                 : const drift.Value.absent(),
+            categoryId: drift.Value(categoryId),
             dirty: const drift.Value(true), // Marquer pour la synchro
             updatedAt: drift.Value(now),
           ),
         );
 
-    // Mise en file pour la synchronisation
-    await syncQueue.enqueueProductChange(
-      productId: id,
-      productPayload: ProductSyncItemDto(
-        id: id,
-        name: name,
-        barcode: normalizedBarcode,
-        unitPrice: unitPrice,
-        currentStock: currentStock,
-        minStock: minStock,
-        clientUpdatedAt: now.toUtc().toIso8601String(),
-      ).toJson(),
-    );
-
+    await _enqueueProduct(id);
     return product;
   }
 
@@ -186,19 +178,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
       ),
     );
 
-    // Mise en file pour la synchronisation
-    await syncQueue.enqueueProductChange(
-      productId: id,
-      productPayload: ProductSyncItemDto(
-        id: id,
-        name: updatedName,
-        barcode: updatedBarcode,
-        unitPrice: updatedPrice,
-        currentStock: updatedStock,
-        minStock: updatedMinStock,
-        clientUpdatedAt: now.toUtc().toIso8601String(),
-      ).toJson(),
-    );
+    await _enqueueProduct(id);
 
     return product_domain.Product(
       id: id,
@@ -207,6 +187,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
       barcode: updatedBarcode,
       currentStock: updatedStock,
       minStock: updatedMinStock,
+      categoryId: current.categoryId,
+      imageVersion: current.imageVersion,
       updatedAt: now,
       deletedAt: null,
     );
@@ -226,23 +208,152 @@ class CatalogRepositoryImpl implements CatalogRepository {
       ProductsCompanion(
         dirty: const drift.Value(true),
         deletedAt: drift.Value(now),
+        // Horodatage de la suppression : c'est lui qu'arbitre le serveur.
+        updatedAt: drift.Value(now),
       ),
     );
 
-    // Mise en file pour la synchronisation
+    await _enqueueProduct(id);
+  }
+
+  /// Met en file l'état complet du produit tel qu'il est dans drift (source
+  /// unique du payload envoyé au serveur).
+  Future<void> _enqueueProduct(String id) async {
+    final row = await (db.select(
+      db.products,
+    )..where((p) => p.id.equals(id))).getSingle();
     await syncQueue.enqueueProductChange(
       productId: id,
       productPayload: ProductSyncItemDto(
         id: id,
-        name: current.name,
-        barcode: current.barcode,
-        unitPrice: current.unitPrice,
-        currentStock: current.currentStock,
-        minStock: current.minStock,
-        clientUpdatedAt: now.toUtc().toIso8601String(),
-        deleted: true,
+        name: row.name,
+        barcode: row.barcode,
+        unitPrice: row.unitPrice,
+        currentStock: row.currentStock,
+        minStock: row.minStock,
+        categoryId: row.categoryId,
+        clientUpdatedAt: row.updatedAt.toUtc().toIso8601String(),
+        deleted: row.deletedAt != null,
       ).toJson(),
     );
+  }
+
+  @override
+  Future<void> setProductCategory(String productId, String? categoryId) async {
+    await (db.update(db.products)..where((p) => p.id.equals(productId))).write(
+      ProductsCompanion(
+        categoryId: drift.Value(categoryId),
+        dirty: const drift.Value(true),
+        updatedAt: drift.Value(DateTime.now()),
+      ),
+    );
+    await _enqueueProduct(productId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Catégories (ADR-0008)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Stream<List<Category>> watchCategories() {
+    return (db.select(db.categories)
+          ..where((c) => c.deletedAt.isNull())
+          ..orderBy([(c) => drift.OrderingTerm.asc(c.name.lower())]))
+        .watch()
+        .map((rows) => rows.map((row) => row.toDomain()).toList());
+  }
+
+  /// Vérifie qu'aucune autre catégorie active ne porte déjà [name].
+  Future<void> _ensureCategoryNameAvailable(String name, {String? exceptId}) {
+    final query = db.select(db.categories)
+      ..where((c) => c.deletedAt.isNull())
+      ..where((c) => c.name.lower().equals(name.toLowerCase()));
+    if (exceptId != null) query.where((c) => c.id.equals(exceptId).not());
+    return query.get().then((rows) {
+      if (rows.isNotEmpty) throw CategoryNameTakenException(name);
+    });
+  }
+
+  Future<void> _enqueueCategory(String id) async {
+    final row = await (db.select(
+      db.categories,
+    )..where((c) => c.id.equals(id))).getSingle();
+    await syncQueue.enqueueCategoryChange(
+      categoryId: id,
+      categoryPayload: CategorySyncItemDto(
+        id: id,
+        name: row.name,
+        clientUpdatedAt: row.updatedAt.toUtc().toIso8601String(),
+        deleted: row.deletedAt != null,
+      ).toJson(),
+    );
+  }
+
+  @override
+  Future<Category> createCategory(String name) async {
+    final trimmed = name.trim();
+    await _ensureCategoryNameAvailable(trimmed);
+    final id = const Uuid().v4();
+    await db
+        .into(db.categories)
+        .insert(
+          CategoriesCompanion(
+            id: drift.Value(id),
+            name: drift.Value(trimmed),
+            dirty: const drift.Value(true),
+            updatedAt: drift.Value(DateTime.now()),
+          ),
+        );
+    await _enqueueCategory(id);
+    return Category(id: id, name: trimmed);
+  }
+
+  @override
+  Future<void> renameCategory(String id, String name) async {
+    final trimmed = name.trim();
+    await _ensureCategoryNameAvailable(trimmed, exceptId: id);
+    await (db.update(db.categories)..where((c) => c.id.equals(id))).write(
+      CategoriesCompanion(
+        name: drift.Value(trimmed),
+        dirty: const drift.Value(true),
+        updatedAt: drift.Value(DateTime.now()),
+      ),
+    );
+    await _enqueueCategory(id);
+  }
+
+  @override
+  Future<void> deleteCategory(String id) async {
+    final now = DateTime.now();
+    await db.transaction(() async {
+      await (db.update(db.categories)..where((c) => c.id.equals(id))).write(
+        CategoriesCompanion(
+          deletedAt: drift.Value(now),
+          dirty: const drift.Value(true),
+          updatedAt: drift.Value(now),
+        ),
+      );
+      // Ses produits passent « sans catégorie » et sont renvoyés ainsi : un
+      // envoi en attente qui porterait encore cette catégorie serait refusé
+      // si elle n'a jamais atteint le serveur.
+      final products = await (db.select(
+        db.products,
+      )..where((p) => p.categoryId.equals(id))).get();
+      for (final product in products) {
+        await (db.update(
+          db.products,
+        )..where((p) => p.id.equals(product.id))).write(
+          ProductsCompanion(
+            categoryId: const drift.Value(null),
+            dirty: const drift.Value(true),
+            updatedAt: drift.Value(now),
+          ),
+        );
+        await syncQueue.supersedePendingEntries('product', product.id);
+        await _enqueueProduct(product.id);
+      }
+      await _enqueueCategory(id);
+    });
   }
 
   @override

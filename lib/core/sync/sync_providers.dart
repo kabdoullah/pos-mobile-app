@@ -23,6 +23,7 @@ PullService pullService(Ref ref) {
   return PullService(
     remoteDataSource: ref.read(syncRemoteDataSourceProvider),
     db: ref.read(databaseProvider),
+    queueRepository: ref.read(syncQueueRepositoryProvider),
     logger: Logger(),
   );
 }

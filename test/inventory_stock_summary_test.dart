@@ -82,6 +82,34 @@ void main() {
       );
     });
 
+    test('filtre par catégorie, combiné aux autres filtres', () {
+      final categorized = [
+        product('Coca', stock: 3, min: 10).copyWith(categoryId: 'boissons'),
+        product('Eau', stock: 50, min: 5).copyWith(categoryId: 'boissons'),
+        product('Riz', stock: 1, min: 5).copyWith(categoryId: 'epicerie'),
+      ];
+      expect(
+        names(
+          filterStockProducts(
+            categorized,
+            filter: StockFilter.all,
+            categoryId: 'boissons',
+          ),
+        ),
+        ['Coca', 'Eau'],
+      );
+      expect(
+        names(
+          filterStockProducts(
+            categorized,
+            filter: StockFilter.lowStock,
+            categoryId: 'boissons',
+          ),
+        ),
+        ['Coca'],
+      );
+    });
+
     test('recherche par nom (casse ignorée) ou code-barres', () {
       expect(
         names(

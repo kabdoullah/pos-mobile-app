@@ -16,7 +16,9 @@ mixin _$Product {
 
  String get id; String get name;/// FCFA en Decimal.
  Decimal get unitPrice; String? get barcode; int? get currentStock;/// Seuil de réapprovisionnement (null = pas d'alerte configurée).
- int? get minStock; DateTime get updatedAt; DateTime? get deletedAt;
+ int? get minStock;/// Catégorie (null = sans catégorie).
+ String? get categoryId;/// Version (SHA-256) de l'image serveur ; null = pas d'image.
+ String? get imageVersion; DateTime get updatedAt; DateTime? get deletedAt;
 /// Create a copy of Product
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,16 +29,16 @@ $ProductCopyWith<Product> get copyWith => _$ProductCopyWithImpl<Product>(this as
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Product&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Product&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.imageVersion, imageVersion) || other.imageVersion == imageVersion)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,unitPrice,barcode,currentStock,minStock,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,name,unitPrice,barcode,currentStock,minStock,categoryId,imageVersion,updatedAt,deletedAt);
 
 @override
 String toString() {
-  return 'Product(id: $id, name: $name, unitPrice: $unitPrice, barcode: $barcode, currentStock: $currentStock, minStock: $minStock, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'Product(id: $id, name: $name, unitPrice: $unitPrice, barcode: $barcode, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, imageVersion: $imageVersion, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 
@@ -47,7 +49,7 @@ abstract mixin class $ProductCopyWith<$Res>  {
   factory $ProductCopyWith(Product value, $Res Function(Product) _then) = _$ProductCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, Decimal unitPrice, String? barcode, int? currentStock, int? minStock, DateTime updatedAt, DateTime? deletedAt
+ String id, String name, Decimal unitPrice, String? barcode, int? currentStock, int? minStock, String? categoryId, String? imageVersion, DateTime updatedAt, DateTime? deletedAt
 });
 
 
@@ -64,7 +66,7 @@ class _$ProductCopyWithImpl<$Res>
 
 /// Create a copy of Product
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? unitPrice = null,Object? barcode = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? updatedAt = null,Object? deletedAt = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? unitPrice = null,Object? barcode = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? imageVersion = freezed,Object? updatedAt = null,Object? deletedAt = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -72,7 +74,9 @@ as String,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: 
 as Decimal,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
 as String?,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
-as int?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,imageVersion: freezed == imageVersion ? _self.imageVersion : imageVersion // ignore: cast_nullable_to_non_nullable
+as String?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));
@@ -156,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  DateTime updatedAt,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  String? categoryId,  String? imageVersion,  DateTime updatedAt,  DateTime? deletedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Product() when $default != null:
-return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.categoryId,_that.imageVersion,_that.updatedAt,_that.deletedAt);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  DateTime updatedAt,  DateTime? deletedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  String? categoryId,  String? imageVersion,  DateTime updatedAt,  DateTime? deletedAt)  $default,) {final _that = this;
 switch (_that) {
 case _Product():
-return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.updatedAt,_that.deletedAt);}
+return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.categoryId,_that.imageVersion,_that.updatedAt,_that.deletedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +198,10 @@ return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  DateTime updatedAt,  DateTime? deletedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  Decimal unitPrice,  String? barcode,  int? currentStock,  int? minStock,  String? categoryId,  String? imageVersion,  DateTime updatedAt,  DateTime? deletedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _Product() when $default != null:
-return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.updatedAt,_that.deletedAt);case _:
+return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentStock,_that.minStock,_that.categoryId,_that.imageVersion,_that.updatedAt,_that.deletedAt);case _:
   return null;
 
 }
@@ -209,7 +213,7 @@ return $default(_that.id,_that.name,_that.unitPrice,_that.barcode,_that.currentS
 
 
 class _Product extends Product {
-  const _Product({required this.id, required this.name, required this.unitPrice, this.barcode, this.currentStock, this.minStock, required this.updatedAt, this.deletedAt}): super._();
+  const _Product({required this.id, required this.name, required this.unitPrice, this.barcode, this.currentStock, this.minStock, this.categoryId, this.imageVersion, required this.updatedAt, this.deletedAt}): super._();
   
 
 @override final  String id;
@@ -220,6 +224,10 @@ class _Product extends Product {
 @override final  int? currentStock;
 /// Seuil de réapprovisionnement (null = pas d'alerte configurée).
 @override final  int? minStock;
+/// Catégorie (null = sans catégorie).
+@override final  String? categoryId;
+/// Version (SHA-256) de l'image serveur ; null = pas d'image.
+@override final  String? imageVersion;
 @override final  DateTime updatedAt;
 @override final  DateTime? deletedAt;
 
@@ -233,16 +241,16 @@ _$ProductCopyWith<_Product> get copyWith => __$ProductCopyWithImpl<_Product>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Product&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Product&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.imageVersion, imageVersion) || other.imageVersion == imageVersion)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.deletedAt, deletedAt) || other.deletedAt == deletedAt));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,unitPrice,barcode,currentStock,minStock,updatedAt,deletedAt);
+int get hashCode => Object.hash(runtimeType,id,name,unitPrice,barcode,currentStock,minStock,categoryId,imageVersion,updatedAt,deletedAt);
 
 @override
 String toString() {
-  return 'Product(id: $id, name: $name, unitPrice: $unitPrice, barcode: $barcode, currentStock: $currentStock, minStock: $minStock, updatedAt: $updatedAt, deletedAt: $deletedAt)';
+  return 'Product(id: $id, name: $name, unitPrice: $unitPrice, barcode: $barcode, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, imageVersion: $imageVersion, updatedAt: $updatedAt, deletedAt: $deletedAt)';
 }
 
 
@@ -253,7 +261,7 @@ abstract mixin class _$ProductCopyWith<$Res> implements $ProductCopyWith<$Res> {
   factory _$ProductCopyWith(_Product value, $Res Function(_Product) _then) = __$ProductCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, Decimal unitPrice, String? barcode, int? currentStock, int? minStock, DateTime updatedAt, DateTime? deletedAt
+ String id, String name, Decimal unitPrice, String? barcode, int? currentStock, int? minStock, String? categoryId, String? imageVersion, DateTime updatedAt, DateTime? deletedAt
 });
 
 
@@ -270,7 +278,7 @@ class __$ProductCopyWithImpl<$Res>
 
 /// Create a copy of Product
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? unitPrice = null,Object? barcode = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? updatedAt = null,Object? deletedAt = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? unitPrice = null,Object? barcode = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? imageVersion = freezed,Object? updatedAt = null,Object? deletedAt = freezed,}) {
   return _then(_Product(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -278,7 +286,9 @@ as String,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: 
 as Decimal,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
 as String?,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
-as int?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
+as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,imageVersion: freezed == imageVersion ? _self.imageVersion : imageVersion // ignore: cast_nullable_to_non_nullable
+as String?,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as DateTime,deletedAt: freezed == deletedAt ? _self.deletedAt : deletedAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,
   ));

@@ -8,6 +8,11 @@ part of 'sync_changes_dto.dart';
 
 _SyncChangesDto _$SyncChangesDtoFromJson(Map<String, dynamic> json) =>
     _SyncChangesDto(
+      categories:
+          (json['categories'] as List<dynamic>?)
+              ?.map((e) => CategoryDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <CategoryDto>[],
       products: (json['products'] as List<dynamic>)
           .map((e) => ProductDto.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -21,6 +26,7 @@ _SyncChangesDto _$SyncChangesDtoFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$SyncChangesDtoToJson(_SyncChangesDto instance) =>
     <String, dynamic>{
+      'categories': instance.categories,
       'products': instance.products,
       'sales': instance.sales,
       'next_cursor': instance.nextCursor,
@@ -47,6 +53,7 @@ _ProductSyncItemDto _$ProductSyncItemDtoFromJson(Map<String, dynamic> json) =>
       unitPrice: json['unit_price'] as String,
       currentStock: (json['current_stock'] as num?)?.toInt(),
       minStock: (json['min_stock'] as num?)?.toInt(),
+      categoryId: json['category_id'] as String?,
       clientUpdatedAt: json['client_updated_at'] as String,
       deleted: json['deleted'] as bool? ?? false,
     );
@@ -59,6 +66,7 @@ Map<String, dynamic> _$ProductSyncItemDtoToJson(_ProductSyncItemDto instance) =>
       'unit_price': instance.unitPrice,
       'current_stock': instance.currentStock,
       'min_stock': instance.minStock,
+      'category_id': instance.categoryId,
       'client_updated_at': instance.clientUpdatedAt,
       'deleted': instance.deleted,
     };

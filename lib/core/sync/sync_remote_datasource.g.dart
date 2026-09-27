@@ -85,6 +85,35 @@ class _SyncRemoteDataSource implements SyncRemoteDataSource {
   }
 
   @override
+  Future<CategorySyncResponseDto> pushCategory(
+    CategorySyncItemDto category,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = category;
+    final _options = _setStreamType<CategorySyncResponseDto>(
+      Options(method: 'PUT', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/v1/sync/categories',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late CategorySyncResponseDto _value;
+    try {
+      _value = CategorySyncResponseDto.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<ProductSyncResponseDto> pushProduct(ProductSyncItemDto product) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

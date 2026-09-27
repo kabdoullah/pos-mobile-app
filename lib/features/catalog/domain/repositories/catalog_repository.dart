@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import '../entities/category.dart';
 import '../entities/product.dart';
 import '../entities/product_import_result.dart';
 import '../entities/product_page.dart';
@@ -23,7 +24,23 @@ abstract class CatalogRepository {
     String? barcode,
     int? currentStock,
     int? minStock,
+    String? categoryId,
   });
+
+  /// Change (ou retire, avec null) la catégorie d'un produit.
+  Future<void> setProductCategory(String productId, String? categoryId);
+
+  /// Diffuse les catégories actives, par nom (ADR-0008).
+  Stream<List<Category>> watchCategories();
+
+  /// Crée une catégorie. [CategoryNameTakenException] si le nom est pris.
+  Future<Category> createCategory(String name);
+
+  /// Renomme une catégorie. [CategoryNameTakenException] si le nom est pris.
+  Future<void> renameCategory(String id, String name);
+
+  /// Supprime une catégorie ; ses produits deviennent « sans catégorie ».
+  Future<void> deleteCategory(String id);
 
   /// Met à jour un produit existant.
   Future<Product> updateProduct({

@@ -22,6 +22,7 @@ void main() {
   const fullScreenPaths = [
     '/catalog/abc',
     Routes.stockMovements,
+    Routes.categories,
     Routes.saleDetail,
     Routes.productNew,
     Routes.productImport,
@@ -59,6 +60,7 @@ void main() {
     for (final (path, expected) in [
       (Routes.productNew, Routes.productNew),
       (Routes.productImport, Routes.productImport),
+      (Routes.categories, Routes.categories),
       ('/catalog/abc', Routes.productDetail),
     ]) {
       final match = router.configuration.findMatch(Uri.parse(path));

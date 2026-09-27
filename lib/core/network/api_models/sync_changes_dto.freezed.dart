@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SyncChangesDto {
 
- List<ProductDto> get products; List<SaleDto> get sales;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
+// Absent sur un serveur antérieur à l'ADR-0008.
+ List<CategoryDto> get categories; List<ProductDto> get products; List<SaleDto> get sales;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +29,16 @@ $SyncChangesDtoCopyWith<SyncChangesDto> get copyWith => _$SyncChangesDtoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SyncChangesDto&&const DeepCollectionEquality().equals(other.products, products)&&const DeepCollectionEquality().equals(other.sales, sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SyncChangesDto&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.products, products)&&const DeepCollectionEquality().equals(other.sales, sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(products),const DeepCollectionEquality().hash(sales),nextCursor,hasMore,serverTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(products),const DeepCollectionEquality().hash(sales),nextCursor,hasMore,serverTime);
 
 @override
 String toString() {
-  return 'SyncChangesDto(products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
+  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
 }
 
 
@@ -48,7 +49,7 @@ abstract mixin class $SyncChangesDtoCopyWith<$Res>  {
   factory $SyncChangesDtoCopyWith(SyncChangesDto value, $Res Function(SyncChangesDto) _then) = _$SyncChangesDtoCopyWithImpl;
 @useResult
 $Res call({
- List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
+ List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
 });
 
 
@@ -65,9 +66,10 @@ class _$SyncChangesDtoCopyWithImpl<$Res>
 
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
   return _then(_self.copyWith(
-products: null == products ? _self.products : products // ignore: cast_nullable_to_non_nullable
+categories: null == categories ? _self.categories : categories // ignore: cast_nullable_to_non_nullable
+as List<CategoryDto>,products: null == products ? _self.products : products // ignore: cast_nullable_to_non_nullable
 as List<ProductDto>,sales: null == sales ? _self.sales : sales // ignore: cast_nullable_to_non_nullable
 as List<SaleDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
@@ -154,10 +156,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SyncChangesDto() when $default != null:
-return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
+return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
   return orElse();
 
 }
@@ -175,10 +177,10 @@ return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)  $default,) {final _that = this;
 switch (_that) {
 case _SyncChangesDto():
-return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);}
+return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -192,10 +194,10 @@ return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,) {final _that = this;
 switch (_that) {
 case _SyncChangesDto() when $default != null:
-return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
+return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
   return null;
 
 }
@@ -207,8 +209,17 @@ return $default(_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.
 @JsonSerializable()
 
 class _SyncChangesDto implements SyncChangesDto {
-  const _SyncChangesDto({required final  List<ProductDto> products, required final  List<SaleDto> sales, @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _products = products,_sales = sales;
+  const _SyncChangesDto({final  List<CategoryDto> categories = const <CategoryDto>[], required final  List<ProductDto> products, required final  List<SaleDto> sales, @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _categories = categories,_products = products,_sales = sales;
   factory _SyncChangesDto.fromJson(Map<String, dynamic> json) => _$SyncChangesDtoFromJson(json);
+
+// Absent sur un serveur antérieur à l'ADR-0008.
+ final  List<CategoryDto> _categories;
+// Absent sur un serveur antérieur à l'ADR-0008.
+@override@JsonKey() List<CategoryDto> get categories {
+  if (_categories is EqualUnmodifiableListView) return _categories;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_categories);
+}
 
  final  List<ProductDto> _products;
 @override List<ProductDto> get products {
@@ -241,16 +252,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SyncChangesDto&&const DeepCollectionEquality().equals(other._products, _products)&&const DeepCollectionEquality().equals(other._sales, _sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SyncChangesDto&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._products, _products)&&const DeepCollectionEquality().equals(other._sales, _sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_products),const DeepCollectionEquality().hash(_sales),nextCursor,hasMore,serverTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_products),const DeepCollectionEquality().hash(_sales),nextCursor,hasMore,serverTime);
 
 @override
 String toString() {
-  return 'SyncChangesDto(products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
+  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
 }
 
 
@@ -261,7 +272,7 @@ abstract mixin class _$SyncChangesDtoCopyWith<$Res> implements $SyncChangesDtoCo
   factory _$SyncChangesDtoCopyWith(_SyncChangesDto value, $Res Function(_SyncChangesDto) _then) = __$SyncChangesDtoCopyWithImpl;
 @override @useResult
 $Res call({
- List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
+ List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
 });
 
 
@@ -278,9 +289,10 @@ class __$SyncChangesDtoCopyWithImpl<$Res>
 
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
   return _then(_SyncChangesDto(
-products: null == products ? _self._products : products // ignore: cast_nullable_to_non_nullable
+categories: null == categories ? _self._categories : categories // ignore: cast_nullable_to_non_nullable
+as List<CategoryDto>,products: null == products ? _self._products : products // ignore: cast_nullable_to_non_nullable
 as List<ProductDto>,sales: null == sales ? _self._sales : sales // ignore: cast_nullable_to_non_nullable
 as List<SaleDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
@@ -559,7 +571,8 @@ as List<ProductSyncItemDto>,
 /// @nodoc
 mixin _$ProductSyncItemDto {
 
- String get id; String get name; String? get barcode;@JsonKey(name: 'unit_price') String get unitPrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;@JsonKey(name: 'client_updated_at') String get clientUpdatedAt; bool get deleted;
+ String get id; String get name; String? get barcode;@JsonKey(name: 'unit_price') String get unitPrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
+@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'client_updated_at') String get clientUpdatedAt; bool get deleted;
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -572,16 +585,16 @@ $ProductSyncItemDtoCopyWith<ProductSyncItemDto> get copyWith => _$ProductSyncIte
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,clientUpdatedAt,deleted);
+int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
 
 @override
 String toString() {
-  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
+  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
 }
 
 
@@ -592,7 +605,7 @@ abstract mixin class $ProductSyncItemDtoCopyWith<$Res>  {
   factory $ProductSyncItemDtoCopyWith(ProductSyncItemDto value, $Res Function(ProductSyncItemDto) _then) = _$ProductSyncItemDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
+ String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
 });
 
 
@@ -609,7 +622,7 @@ class _$ProductSyncItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -617,7 +630,8 @@ as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_
 as String?,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
 as String,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
-as int?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
+as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
 as String,deleted: null == deleted ? _self.deleted : deleted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -701,10 +715,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto() when $default != null:
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.clientUpdatedAt,_that.deleted);case _:
+return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
   return orElse();
 
 }
@@ -722,10 +736,10 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)  $default,) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto():
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.clientUpdatedAt,_that.deleted);}
+return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -739,10 +753,10 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto() when $default != null:
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.clientUpdatedAt,_that.deleted);case _:
+return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
   return null;
 
 }
@@ -754,7 +768,7 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 @JsonSerializable()
 
 class _ProductSyncItemDto implements ProductSyncItemDto {
-  const _ProductSyncItemDto({required this.id, required this.name, this.barcode, @JsonKey(name: 'unit_price') required this.unitPrice, @JsonKey(name: 'current_stock') this.currentStock, @JsonKey(name: 'min_stock') this.minStock, @JsonKey(name: 'client_updated_at') required this.clientUpdatedAt, this.deleted = false});
+  const _ProductSyncItemDto({required this.id, required this.name, this.barcode, @JsonKey(name: 'unit_price') required this.unitPrice, @JsonKey(name: 'current_stock') this.currentStock, @JsonKey(name: 'min_stock') this.minStock, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'client_updated_at') required this.clientUpdatedAt, this.deleted = false});
   factory _ProductSyncItemDto.fromJson(Map<String, dynamic> json) => _$ProductSyncItemDtoFromJson(json);
 
 @override final  String id;
@@ -763,6 +777,8 @@ class _ProductSyncItemDto implements ProductSyncItemDto {
 @override@JsonKey(name: 'unit_price') final  String unitPrice;
 @override@JsonKey(name: 'current_stock') final  int? currentStock;
 @override@JsonKey(name: 'min_stock') final  int? minStock;
+// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
+@override@JsonKey(name: 'category_id') final  String? categoryId;
 @override@JsonKey(name: 'client_updated_at') final  String clientUpdatedAt;
 @override@JsonKey() final  bool deleted;
 
@@ -779,16 +795,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,clientUpdatedAt,deleted);
+int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
 
 @override
 String toString() {
-  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
+  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
 }
 
 
@@ -799,7 +815,7 @@ abstract mixin class _$ProductSyncItemDtoCopyWith<$Res> implements $ProductSyncI
   factory _$ProductSyncItemDtoCopyWith(_ProductSyncItemDto value, $Res Function(_ProductSyncItemDto) _then) = __$ProductSyncItemDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
+ String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
 });
 
 
@@ -816,7 +832,7 @@ class __$ProductSyncItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
   return _then(_ProductSyncItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -824,7 +840,8 @@ as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_
 as String?,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
 as String,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
-as int?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
+as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
+as String?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
 as String,deleted: null == deleted ? _self.deleted : deleted // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

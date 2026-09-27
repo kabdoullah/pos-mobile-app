@@ -9,6 +9,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/providers/category_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_product_tile.dart';
@@ -28,6 +29,7 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
   final _searchController = TextEditingController();
   StockFilter _filter = StockFilter.all;
   String _query = '';
+  String? _categoryId;
 
   @override
   void dispose() {
@@ -75,6 +77,14 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
           tooltip: "Plus d'options",
           itemBuilder: (context) => [
             PopupMenuItem(
+              onTap: () => context.push(Routes.categories),
+              child: const ListTile(
+                leading: Icon(Icons.label_outline),
+                title: Text('Catégories'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
               onTap: () => context.push(Routes.productImport),
               child: const ListTile(
                 leading: Icon(Icons.upload_file_outlined),
@@ -113,6 +123,8 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
             products: products,
             filter: _filter,
             query: _query,
+            categoryId: _categoryId,
+            onCategoryChanged: (id) => setState(() => _categoryId = id),
             searchController: _searchController,
             onQueryChanged: _setQuery,
             onFilterChanged: (filter) => setState(() => _filter = filter),
@@ -130,6 +142,8 @@ class _StockList extends ConsumerWidget {
     required this.products,
     required this.filter,
     required this.query,
+    required this.categoryId,
+    required this.onCategoryChanged,
     required this.searchController,
     required this.onQueryChanged,
     required this.onFilterChanged,
@@ -140,6 +154,8 @@ class _StockList extends ConsumerWidget {
   final List<Product> products;
   final StockFilter filter;
   final String query;
+  final String? categoryId;
+  final ValueChanged<String?> onCategoryChanged;
   final TextEditingController searchController;
   final ValueChanged<String> onQueryChanged;
   final ValueChanged<StockFilter> onFilterChanged;
@@ -150,7 +166,17 @@ class _StockList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final summary = ref.watch(stockSummaryProvider).value;
-    final visible = filterStockProducts(products, filter: filter, query: query);
+    final categories = ref.watch(categoriesProvider).value ?? const [];
+    // Catégorie supprimée entre-temps : le filtre retombe sur « Toutes ».
+    final activeCategory = categories.any((c) => c.id == categoryId)
+        ? categoryId
+        : null;
+    final visible = filterStockProducts(
+      products,
+      filter: filter,
+      query: query,
+      categoryId: activeCategory,
+    );
 
     return CustomScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -199,6 +225,32 @@ class _StockList extends ConsumerWidget {
                     ),
                 ],
               ),
+              if (categories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xs),
+                // Catégories : défilement horizontal, une ligne quel que soit
+                // leur nombre.
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      FilterChip(
+                        label: const Text('Toutes catégories'),
+                        selected: activeCategory == null,
+                        onSelected: (_) => onCategoryChanged(null),
+                      ),
+                      for (final category in categories) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        FilterChip(
+                          label: Text(category.name),
+                          selected: activeCategory == category.id,
+                          onSelected: (selected) =>
+                              onCategoryChanged(selected ? category.id : null),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -7,7 +7,9 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/catalog/domain/entities/category.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
+import 'package:mobile/features/catalog/presentation/pages/categories_page.dart';
 import 'package:mobile/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:mobile/features/catalog/providers/catalog_di_providers.dart';
 import 'package:mobile/features/inventory/domain/entities/stock_movement.dart';
@@ -62,6 +64,13 @@ Future<void> pump(
   when(
     catalogRepo.watchProducts,
   ).thenAnswer((_) => Stream.value(catalog ?? products));
+  when(catalogRepo.watchCategories).thenAnswer(
+    (_) => Stream.value(const [
+      Category(id: 'c1', name: 'Boissons fraîches et jus de fruits'),
+      Category(id: 'c2', name: 'Alimentation'),
+      Category(id: 'c3', name: 'Hygiène et entretien'),
+    ]),
+  );
   final inventoryRepo = _MockInventory();
   final call = when(
     () => inventoryRepo.getMovements(
@@ -126,6 +135,22 @@ void main() {
         scrollable: _list,
       );
       expect(find.text('Coca-Cola 33cl'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('page Catégories, thème $name', (tester) async {
+      await pump(tester, const CategoriesPage(), theme: theme);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Boissons fraîches et jus de fruits'), findsOneWidget);
+    });
+
+    testWidgets('filtre par catégorie dans Stock, thème $name', (tester) async {
+      await pump(tester, const StockOverviewPage(), theme: theme);
+      await tester.scrollUntilVisible(
+        find.text('Toutes catégories'),
+        200,
+        scrollable: _list,
+      );
       expect(tester.takeException(), isNull);
     });
 

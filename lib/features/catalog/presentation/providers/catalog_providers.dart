@@ -107,6 +107,7 @@ class CatalogList extends _$CatalogList {
     String? barcode,
     int? currentStock,
     int? minStock,
+    String? categoryId,
   }) async {
     final repo = ref.read(catalogRepositoryProvider);
     await repo.createProduct(
@@ -115,6 +116,7 @@ class CatalogList extends _$CatalogList {
       barcode: barcode,
       currentStock: currentStock,
       minStock: minStock,
+      categoryId: categoryId,
     );
     // Rafraîchit la liste après la création
     await refresh();

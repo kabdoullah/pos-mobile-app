@@ -44,7 +44,8 @@ Stream<Product?> stockProduct(Ref ref, String id) {
       .map((products) => products.where((p) => p.id == id).firstOrNull);
 }
 
-/// Filtre et recherche (nom ou code-barres, insensible à la casse).
+/// Filtre, catégorie optionnelle et recherche (nom ou code-barres, insensible
+/// à la casse).
 ///
 /// Les vues « à réapprovisionner » sont triées par stock croissant pour faire
 /// remonter les ruptures ; « tous » garde l'ordre alphabétique.
@@ -52,6 +53,7 @@ List<Product> filterStockProducts(
   List<Product> products, {
   required StockFilter filter,
   String query = '',
+  String? categoryId,
 }) {
   final q = query.trim().toLowerCase();
   final result = products.where((product) {
@@ -63,6 +65,7 @@ List<Product> filterStockProducts(
       StockFilter.outOfStock => level == StockLevel.outOfStock,
     };
     if (!matchesFilter) return false;
+    if (categoryId != null && product.categoryId != categoryId) return false;
     if (q.isEmpty) return true;
     return product.name.toLowerCase().contains(q) ||
         (product.barcode?.toLowerCase().contains(q) ?? false);

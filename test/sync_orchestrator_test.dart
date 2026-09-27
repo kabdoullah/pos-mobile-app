@@ -45,6 +45,9 @@ void main() {
         () => mockPushService.pushPendingSales(),
       ).thenAnswer((_) async => {});
       when(
+        () => mockPushService.pushPendingCategoryChanges(),
+      ).thenAnswer((_) async => {});
+      when(
         () => mockPushService.pushPendingProductChanges(),
       ).thenAnswer((_) async => {});
       when(
@@ -104,12 +107,17 @@ void main() {
     );
 
     test(
-      'syncNow calls push before pull (push sales, products, then pull)',
+      'syncNow calls push before pull (sales, categories, products, then pull)',
       () async {
         final callOrder = <String>[];
 
         when(() => mockPushService.pushPendingSales()).thenAnswer((_) async {
           callOrder.add('pushSales');
+        });
+        when(() => mockPushService.pushPendingCategoryChanges()).thenAnswer((
+          _,
+        ) async {
+          callOrder.add('pushCategories');
         });
         when(() => mockPushService.pushPendingProductChanges()).thenAnswer((
           _,
@@ -128,7 +136,12 @@ void main() {
         final container = await makeContainer();
         await container.read(syncOrchestratorProvider.notifier).syncNow();
 
-        expect(callOrder, equals(['pushSales', 'pushProducts', 'pull']));
+        // Catégories avant produits : le serveur refuse un produit dont la
+        // catégorie lui est inconnue.
+        expect(
+          callOrder,
+          equals(['pushSales', 'pushCategories', 'pushProducts', 'pull']),
+        );
       },
     );
 
@@ -175,6 +188,9 @@ void main() {
       when(
         errorMockPushService.pushPendingSales,
       ).thenThrow(Exception('Network error'));
+      when(
+        errorMockPushService.pushPendingCategoryChanges,
+      ).thenAnswer((_) async => {});
       when(
         errorMockPushService.pushPendingProductChanges,
       ).thenAnswer((_) async => {});

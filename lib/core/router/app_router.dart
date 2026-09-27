@@ -12,6 +12,7 @@ import '../../features/auth/presentation/pages/phone_login_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/catalog/presentation/pages/categories_page.dart';
 import '../../features/catalog/presentation/pages/product_form_page.dart';
 import '../../features/catalog/presentation/pages/product_import_page.dart';
 import '../../features/catalog/presentation/pages/barcode_scanner_page.dart';
@@ -75,6 +76,9 @@ abstract class Routes {
 
   /// Création d'un produit.
   static const String productNew = '/catalog/new';
+
+  /// Gestion des catégories (ouverte depuis l'onglet Stock).
+  static const String categories = '/catalog/categories';
 
   /// Fiche produit (paramètre de chemin :id).
   static const String productDetail = '/catalog/:id';
@@ -290,8 +294,12 @@ GoRouter appRouter(Ref ref) {
         path: Routes.bluetoothSetup,
         builder: (context, state) => const BluetoothSetupPage(),
       ),
-      // Déclarée après /catalog/new et /catalog/import : sinon « new » et
-      // « import » seraient pris pour un :id.
+      GoRoute(
+        path: Routes.categories,
+        builder: (context, state) => const CategoriesPage(),
+      ),
+      // Déclarée après /catalog/new, /catalog/import et /catalog/categories :
+      // sinon ces segments seraient pris pour un :id.
       GoRoute(
         path: Routes.productDetail,
         builder: (context, state) =>

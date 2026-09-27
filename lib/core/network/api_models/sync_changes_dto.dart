@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'category_dto.dart';
 import 'product_dto.dart';
 import 'sale_dto.dart';
 
@@ -11,6 +12,8 @@ part 'sync_changes_dto.g.dart';
 sealed class SyncChangesDto with _$SyncChangesDto {
   /// Crée un [SyncChangesDto].
   const factory SyncChangesDto({
+    // Absent sur un serveur antérieur à l'ADR-0008.
+    @Default(<CategoryDto>[]) List<CategoryDto> categories,
     required List<ProductDto> products,
     required List<SaleDto> sales,
     @JsonKey(name: 'next_cursor') String? nextCursor,
@@ -44,6 +47,8 @@ sealed class ProductSyncItemDto with _$ProductSyncItemDto {
     @JsonKey(name: 'unit_price') required String unitPrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
+    // Toujours envoyé (null = sans catégorie) : l'état local fait foi.
+    @JsonKey(name: 'category_id') String? categoryId,
     @JsonKey(name: 'client_updated_at') required String clientUpdatedAt,
     @Default(false) bool deleted,
   }) = _ProductSyncItemDto;

@@ -62,6 +62,24 @@ class SyncQueueRepository {
     return result;
   }
 
+  /// Ajoute un changement de catégorie à la file de synchro (ADR-0008).
+  Future<int> enqueueCategoryChange({
+    required String categoryId,
+    required Map<String, dynamic> categoryPayload,
+  }) {
+    return _db
+        .into(_db.syncQueue)
+        .insert(
+          SyncQueueCompanion(
+            entityType: const drift.Value('category'),
+            entityId: drift.Value(categoryId),
+            payload: drift.Value(jsonEncode(categoryPayload)),
+            status: const drift.Value('pending'),
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
+  }
+
   /// Récupère les entrées en attente ou en échec, dans la limite indiquée.
   Future<List<SyncQueueData>> getPendingEntries({
     int limit = 50,
@@ -197,6 +215,16 @@ class SyncQueueRepository {
           ),
         );
     return rowsAffected > 0;
+  }
+
+  /// Retire de l'envoi les entrées en attente/en échec d'une entité, rendues
+  /// obsolètes par un état plus récent (ex. fusion de catégories au pull).
+  Future<int> supersedePendingEntries(String entityType, String entityId) {
+    return (_db.update(_db.syncQueue)
+          ..where((t) => t.entityType.equals(entityType))
+          ..where((t) => t.entityId.equals(entityId))
+          ..where((t) => t.status.isIn(['pending', 'failed'])))
+        .write(const SyncQueueCompanion(status: drift.Value('synced')));
   }
 
   /// Récupère toutes les entrées en attente/en échec d'un type d'entité.

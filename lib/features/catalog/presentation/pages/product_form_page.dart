@@ -11,6 +11,8 @@ import '../../../../core/router/app_router.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/catalog_providers.dart';
+import '../providers/category_providers.dart';
+import '../widgets/category_picker.dart';
 
 /// Page de création ou de modification d'un produit.
 class ProductFormPage extends ConsumerStatefulWidget {
@@ -42,6 +44,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _minStockError;
   bool _isLoading = false;
   bool _prefilled = false;
+  String? _categoryId;
+  String? _initialCategoryId;
 
   @override
   void initState() {
@@ -144,6 +148,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               barcode: barcode.isEmpty ? null : barcode,
               currentStock: stock,
               minStock: minStock,
+              categoryId: _categoryId,
             );
       } else {
         // Mode édition
@@ -157,6 +162,11 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               currentStock: stock,
               minStock: minStock,
             );
+        if (_categoryId != _initialCategoryId) {
+          await ref
+              .read(categoryEditorProvider.notifier)
+              .setProductCategory(widget.productId!, _categoryId);
+        }
       }
 
       if (mounted) {
@@ -235,6 +245,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
           if (product.minStock != null) {
             _minStockController.text = product.minStock!.toString();
           }
+          _categoryId = product.categoryId;
+          _initialCategoryId = product.categoryId;
         }
       });
     }
@@ -296,6 +308,11 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   keyboardType: TextInputType.number,
                   errorText: _priceError,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              CategoryPicker(
+                value: _categoryId,
+                onChanged: (id) => setState(() => _categoryId = id),
               ),
               const SizedBox(height: AppSpacing.lg),
               _AnimatedFormField(

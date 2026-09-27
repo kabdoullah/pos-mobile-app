@@ -1,8 +1,10 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:logger/logger.dart';
 
+import '../../core/network/api_models/sync_changes_dto.dart';
 import '../../database/app_database.dart';
 import '../utils/barcode_utils.dart';
+import 'sync_queue_repository.dart';
 import 'sync_remote_datasource.dart';
 
 /// Service qui récupère les changements du serveur et les écrit dans la base
@@ -12,13 +14,16 @@ class PullService {
   const PullService({
     required SyncRemoteDataSource remoteDataSource,
     required AppDatabase db,
+    required SyncQueueRepository queueRepository,
     Logger? logger,
   }) : _remoteDataSource = remoteDataSource,
        _db = db,
+       _queueRepository = queueRepository,
        _logger = logger;
 
   final SyncRemoteDataSource _remoteDataSource;
   final AppDatabase _db;
+  final SyncQueueRepository _queueRepository;
   final Logger? _logger;
 
   static const int _defaultLimit = 100;
@@ -57,6 +62,29 @@ class PullService {
 
         serverTime = response.serverTime;
 
+        // Catégories d'abord : un produit n'arrive jamais avant sa catégorie.
+        if (response.categories.isNotEmpty) {
+          await _db.batch((batch) {
+            for (final dto in response.categories) {
+              batch.insert(
+                _db.categories,
+                CategoriesCompanion(
+                  id: drift.Value(dto.id),
+                  name: drift.Value(dto.name),
+                  dirty: const drift.Value(false),
+                  updatedAt: drift.Value(DateTime.parse(dto.updatedAt)),
+                  deletedAt: drift.Value(
+                    dto.deletedAt != null
+                        ? DateTime.parse(dto.deletedAt!)
+                        : null,
+                  ),
+                ),
+                mode: drift.InsertMode.insertOrReplace,
+              );
+            }
+          });
+        }
+
         // Upsert des produits (idempotent) — une seule transaction par lot.
         if (response.products.isNotEmpty) {
           // min_stock n'est pas encore connu du backend : il ne revient jamais
@@ -89,6 +117,8 @@ class PullService {
                   minStock: drift.Value(
                     productDto.minStock ?? existingMinStocks[productDto.id],
                   ),
+                  categoryId: drift.Value(productDto.categoryId),
+                  imageVersion: drift.Value(productDto.imageVersion),
                   dirty: const drift.Value(false),
                   updatedAt: drift.Value(DateTime.parse(productDto.updatedAt)),
                   deletedAt: drift.Value(deletedAt),
@@ -116,6 +146,24 @@ class PullService {
                 ),
                 mode: drift.InsertMode.insertOrReplace,
               );
+              // Lignes de la vente : le détail et la réimpression fonctionnent
+              // aussi pour une vente faite sur un autre appareil.
+              for (final item in saleDto.items) {
+                batch.insert(
+                  _db.saleItems,
+                  SaleItemsCompanion(
+                    id: drift.Value(item.id),
+                    saleId: drift.Value(saleDto.id),
+                    // Produit supprimé côté serveur : pas d'id, le nom suffit.
+                    productId: drift.Value(item.productId ?? ''),
+                    productName: drift.Value(item.productNameAtSale),
+                    unitPrice: drift.Value(item.unitPriceAtSale),
+                    quantity: drift.Value(item.quantity),
+                    lineTotal: drift.Value(item.lineTotal),
+                  ),
+                  mode: drift.InsertMode.insertOrIgnore,
+                );
+              }
             }
           });
         }
@@ -124,6 +172,8 @@ class PullService {
         hasMore = response.hasMore;
         cursor = response.nextCursor;
       }
+
+      await _mergeDuplicateCategories();
 
       // Met à jour les métadonnées seulement si la récupération s'est terminée
       // avec succès.
@@ -137,6 +187,67 @@ class PullService {
     } catch (e, st) {
       _logger?.e('Pull failed', error: e, stackTrace: st);
       return false;
+    }
+  }
+
+  /// Fusionne une catégorie créée localement (encore « dirty ») avec une
+  /// catégorie serveur de même nom, casse ignorée — cas de deux téléphones
+  /// hors ligne qui créent chacun « Boissons ». Le serveur a refusé la copie
+  /// locale (nom déjà pris) : ses produits passent sur la catégorie serveur et
+  /// sont renvoyés, puis la copie locale est supprimée.
+  Future<void> _mergeDuplicateCategories() async {
+    final active = await (_db.select(
+      _db.categories,
+    )..where((c) => c.deletedAt.isNull())).get();
+    final byName = <String, List<Category>>{};
+    for (final category in active) {
+      byName.putIfAbsent(category.name.toLowerCase(), () => []).add(category);
+    }
+
+    for (final group in byName.values) {
+      final server = group.where((c) => !c.dirty).toList();
+      final locals = group.where((c) => c.dirty).toList();
+      if (server.isEmpty || locals.isEmpty) continue;
+      final target = server.first;
+
+      for (final local in locals) {
+        final products = await (_db.select(
+          _db.products,
+        )..where((p) => p.categoryId.equals(local.id))).get();
+        final now = DateTime.now();
+        for (final product in products) {
+          await (_db.update(
+            _db.products,
+          )..where((p) => p.id.equals(product.id))).write(
+            ProductsCompanion(
+              categoryId: drift.Value(target.id),
+              dirty: const drift.Value(true),
+              updatedAt: drift.Value(now),
+            ),
+          );
+          // Les envois en attente de ce produit portent l'ancienne catégorie.
+          await _queueRepository.supersedePendingEntries('product', product.id);
+          await _queueRepository.enqueueProductChange(
+            productId: product.id,
+            productPayload: ProductSyncItemDto(
+              id: product.id,
+              name: product.name,
+              barcode: product.barcode,
+              unitPrice: product.unitPrice,
+              currentStock: product.currentStock,
+              minStock: product.minStock,
+              categoryId: target.id,
+              clientUpdatedAt: now.toUtc().toIso8601String(),
+              deleted: product.deletedAt != null,
+            ).toJson(),
+          );
+        }
+        await _queueRepository.supersedePendingEntries('category', local.id);
+        await (_db.delete(
+          _db.categories,
+        )..where((c) => c.id.equals(local.id))).go();
+        _logger?.i('Category ${local.id} merged into ${target.id}');
+      }
     }
   }
 }
