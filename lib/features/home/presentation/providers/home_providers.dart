@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
+import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
@@ -47,12 +49,25 @@ Stream<List<Sale>> recentSales(Ref ref) {
       .map((sales) => sales.take(_recentSalesLimit).toList());
 }
 
-/// Diffuse le nombre de produits en rupture ou sous leur seuil de
-/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
+/// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
+/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 @riverpod
-Stream<int> lowStockCount(Ref ref) {
-  return ref
-      .watch(catalogRepositoryProvider)
-      .watchLowStockProducts()
-      .map((products) => products.length);
+Stream<List<Product>> homeLowStock(Ref ref) {
+  return ref.watch(catalogRepositoryProvider).watchLowStockProducts();
+}
+
+/// Panier moyen du jour, arrondi au franc ; `null` sans vente.
+Decimal? averageBasket(DailyStats stats) {
+  if (stats.saleCount == 0) return null;
+  return Decimal.fromBigInt(
+    (stats.totalAmount / Decimal.fromInt(stats.saleCount)).round(),
+  );
+}
+
+/// Part des espèces dans l'encaissé du jour, en pourcentage entier (0–100) ;
+/// `null` si rien n'a été encaissé.
+int? cashSharePercent(DailyStats stats) {
+  final collected = stats.cashTotal + stats.mobileMoneyTotal;
+  if (collected == Decimal.zero) return null;
+  return (stats.cashTotal * Decimal.fromInt(100) / collected).round().toInt();
 }

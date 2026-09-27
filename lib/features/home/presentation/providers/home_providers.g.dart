@@ -152,43 +152,49 @@ final class RecentSalesProvider
 
 String _$recentSalesHash() => r'873d362435a91ec85a763315a8a91ba61d9da61d';
 
-/// Diffuse le nombre de produits en rupture ou sous leur seuil de
-/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
+/// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
+/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 
-@ProviderFor(lowStockCount)
-final lowStockCountProvider = LowStockCountProvider._();
+@ProviderFor(homeLowStock)
+final homeLowStockProvider = HomeLowStockProvider._();
 
-/// Diffuse le nombre de produits en rupture ou sous leur seuil de
-/// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
+/// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
+/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 
-final class LowStockCountProvider
-    extends $FunctionalProvider<AsyncValue<int>, int, Stream<int>>
-    with $FutureModifier<int>, $StreamProvider<int> {
-  /// Diffuse le nombre de produits en rupture ou sous leur seuil de
-  /// réapprovisionnement — alimente le bandeau stock bas de l'accueil.
-  LowStockCountProvider._()
+final class HomeLowStockProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Product>>,
+          List<Product>,
+          Stream<List<Product>>
+        >
+    with $FutureModifier<List<Product>>, $StreamProvider<List<Product>> {
+  /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
+  /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
+  HomeLowStockProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'lowStockCountProvider',
+        name: r'homeLowStockProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$lowStockCountHash();
+  String debugGetCreateSourceHash() => _$homeLowStockHash();
 
   @$internal
   @override
-  $StreamProviderElement<int> $createElement($ProviderPointer pointer) =>
-      $StreamProviderElement(pointer);
+  $StreamProviderElement<List<Product>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
 
   @override
-  Stream<int> create(Ref ref) {
-    return lowStockCount(ref);
+  Stream<List<Product>> create(Ref ref) {
+    return homeLowStock(ref);
   }
 }
 
-String _$lowStockCountHash() => r'6ec9fe52279937a1a97d19bfbc55c91d761ddb6d';
+String _$homeLowStockHash() => r'1db951c11e8a82bf9e60705f2cd256bc42f231d1';

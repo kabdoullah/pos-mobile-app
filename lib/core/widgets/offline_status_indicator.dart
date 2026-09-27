@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
-import '../../../../core/providers/connectivity_provider.dart';
-import '../../../../core/sync/sync_orchestrator.dart';
-import '../../../../core/sync/sync_providers.dart';
+import '../../app/theme/app_spacing.dart';
+import '../../app/theme/app_typography.dart';
+import '../providers/connectivity_provider.dart';
+import '../sync/sync_orchestrator.dart';
+import '../sync/sync_providers.dart';
 
-/// Pastille compacte d'état réseau/synchro pour l'en-tête de la caisse.
+/// Pastille compacte d'état réseau/synchro pour les en-têtes (caisse,
+/// accueil).
 ///
 /// Purement informative : la vente reste possible dans tous les états.
 class OfflineStatusIndicator extends ConsumerWidget {

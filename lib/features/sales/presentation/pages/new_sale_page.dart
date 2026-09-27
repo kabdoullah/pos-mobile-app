@@ -23,7 +23,6 @@ import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/sales_providers.dart';
 import '../providers/scan_provider.dart';
-import '../widgets/offline_status_indicator.dart';
 import '../widgets/product_search_results.dart';
 import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_cart.dart';
