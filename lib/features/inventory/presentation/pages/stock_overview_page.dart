@@ -1,34 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/responsive/responsive.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../app/theme/illustrations.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/providers/catalog_providers.dart';
-import '../../../catalog/presentation/widgets/stock_status.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
+import '../widgets/stock_product_tile.dart';
+import '../widgets/stock_summary_header.dart';
 
-/// Filtre appliqué à la liste des produits de l'onglet Stock.
-enum _StockFilter {
-  /// Seulement les produits en rupture ou sous leur seuil de
-  /// réapprovisionnement.
-  lowStock,
-
-  /// Tout le catalogue.
-  all,
-}
-
-/// Vue d'ensemble du stock : fait remonter les produits qui demandent attention
-/// (rupture / stock bas) avec un ajustement en un tap, au lieu de l'enfouir
-/// dans le formulaire produit ou dans l'historique de chaque produit.
+/// Onglet Stock : point d'entrée de la gestion des produits et de
+/// l'inventaire — synthèse, recherche/scan, filtres et liste des produits.
 class StockOverviewPage extends ConsumerStatefulWidget {
-  /// Crée une [StockOverviewPage].
+  /// Crée l'onglet Stock.
   const StockOverviewPage({super.key});
 
   @override
@@ -36,190 +25,263 @@ class StockOverviewPage extends ConsumerStatefulWidget {
 }
 
 class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
-  _StockFilter _filter = _StockFilter.lowStock;
+  final _searchController = TextEditingController();
+  StockFilter _filter = StockFilter.all;
+  String _query = '';
 
-  Future<void> _openAdjustmentSheet(String productId) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => StockAdjustmentSheet(productId: productId),
-    );
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _setQuery(String query) => setState(() => _query = query);
+
+  void _openProduct(Product product) => unawaited(
+    context.push(Routes.productDetail.replaceFirst(':id', product.id)),
+  );
+
+  /// Scanne un code-barres : ouvre directement le produit s'il est unique,
+  /// sinon filtre la liste sur ce code.
+  Future<void> _scan() async {
+    final code = await context.push<String>(Routes.barcodeScanner);
+    if (code == null || !mounted) return;
+    final products = ref.read(stockProductsProvider).value ?? const [];
+    final matches = products.where((p) => p.barcode == code).toList();
+    if (matches.length == 1) {
+      _openProduct(matches.single);
+      return;
+    }
+    _searchController.text = code;
+    setState(() {
+      _query = code;
+      _filter = StockFilter.all;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final hPad = responsiveValue(
-      context,
-      small: AppSpacing.md,
-      medium: AppSpacing.lg,
-    );
-    final isLowStockFilter = _filter == _StockFilter.lowStock;
-    final productsAsync = isLowStockFilter
-        ? ref.watch(lowStockProductsProvider)
-        : ref.watch(catalogListProvider);
+    final productsAsync = ref.watch(stockProductsProvider);
 
     return AppScaffold(
       title: 'Stock',
       actions: [
         IconButton(
-          tooltip: 'Produits',
-          icon: const Icon(Icons.shopping_bag_outlined),
-          onPressed: () => context.push(Routes.catalog),
+          tooltip: 'Mouvements de stock',
+          icon: const Icon(Icons.swap_vert),
+          onPressed: () => context.push(Routes.stockMovements),
+        ),
+        PopupMenuButton<void>(
+          tooltip: "Plus d'options",
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              onTap: () => context.push(Routes.productImport),
+              child: const ListTile(
+                leading: Icon(Icons.upload_file_outlined),
+                title: Text('Importer des produits'),
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ],
         ),
       ],
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(hPad),
-            child: SegmentedButton<_StockFilter>(
-              segments: const [
-                ButtonSegment(
-                  value: _StockFilter.lowStock,
-                  label: Text('Stock bas'),
-                  icon: Icon(Icons.warning_amber_rounded, size: 18),
-                ),
-                ButtonSegment(
-                  value: _StockFilter.all,
-                  label: Text('Tout'),
-                  icon: Icon(Icons.inventory_2_outlined, size: 18),
-                ),
-              ],
-              selected: {_filter},
-              onSelectionChanged: (values) =>
-                  setState(() => _filter = values.first),
-            ),
-          ),
-          Expanded(
-            child: productsAsync.when(
-              loading: () => const AppLoadingScreen(),
-              error: (error, stack) => LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: EmptyStateIllustrated(
-                      illustration: Illustrations.errorState,
-                      title: 'Erreur',
-                      message: 'Impossible de charger le stock',
-                      actionLabel: 'Réessayer',
-                      onAction: () => ref.invalidate(
-                        isLowStockFilter
-                            ? lowStockProductsProvider
-                            : catalogListProvider,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              data: (products) {
-                if (products.isEmpty) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) => SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      child: SizedBox(
-                        height: constraints.maxHeight,
-                        child: isLowStockFilter
-                            ? const EmptyStateIllustrated(
-                                illustration: Illustrations.successState,
-                                title: 'Tout est sous contrôle',
-                                message:
-                                    'Aucun produit en rupture ou sous son'
-                                    ' seuil de réapprovisionnement.',
-                              )
-                            : const EmptyStateIllustrated(
-                                illustration: Illustrations.emptyCatalog,
-                                title: 'Aucun produit',
-                                message:
-                                    'Ajoutez des produits depuis le'
-                                    ' catalogue pour suivre leur stock ici.',
-                              ),
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: hPad,
-                    vertical: AppSpacing.sm,
-                  ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _StockRow(
-                      product: product,
-                      onAdjust: () => _openAdjustmentSheet(product.id),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push(Routes.productNew),
+        icon: const Icon(Icons.add),
+        label: const Text('Produit'),
+      ),
+      body: productsAsync.when(
+        loading: () => const _LoadingList(),
+        error: (_, _) => EmptyState(
+          icon: Icons.error_outline,
+          title: 'Impossible de charger les produits',
+          message: 'Réessayez dans un instant.',
+          actionLabel: 'Réessayer',
+          onAction: () => ref.invalidate(stockProductsProvider),
+        ),
+        data: (products) {
+          if (products.isEmpty) {
+            return EmptyState(
+              icon: Icons.inventory_2_outlined,
+              title: 'Aucun produit',
+              message: 'Ajoutez votre premier produit.',
+              actionLabel: 'Ajouter un produit',
+              onAction: () => context.push(Routes.productNew),
+            );
+          }
+          return _StockList(
+            products: products,
+            filter: _filter,
+            query: _query,
+            searchController: _searchController,
+            onQueryChanged: _setQuery,
+            onFilterChanged: (filter) => setState(() => _filter = filter),
+            onScan: _scan,
+            onOpen: _openProduct,
+          );
+        },
       ),
     );
   }
 }
 
-/// Une ligne produit : nom, état du stock et action d'ajustement en un tap.
-/// Un tap sur la ligne (hors du bouton d'ajustement) ouvre l'historique complet
-/// des mouvements de ce produit.
-class _StockRow extends StatelessWidget {
-  const _StockRow({required this.product, required this.onAdjust});
+class _StockList extends ConsumerWidget {
+  const _StockList({
+    required this.products,
+    required this.filter,
+    required this.query,
+    required this.searchController,
+    required this.onQueryChanged,
+    required this.onFilterChanged,
+    required this.onScan,
+    required this.onOpen,
+  });
 
-  final Product product;
-  final VoidCallback onAdjust;
+  final List<Product> products;
+  final StockFilter filter;
+  final String query;
+  final TextEditingController searchController;
+  final ValueChanged<String> onQueryChanged;
+  final ValueChanged<StockFilter> onFilterChanged;
+  final VoidCallback onScan;
+  final ValueChanged<Product> onOpen;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final summary = ref.watch(stockSummaryProvider).value;
+    final visible = filterStockProducts(products, filter: filter, query: query);
+
+    return CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
+          sliver: SliverList.list(
+            children: [
+              if (summary != null)
+                StockSummaryHeader(
+                  summary: summary,
+                  filter: filter,
+                  onFilter: onFilterChanged,
+                ),
+              const SizedBox(height: AppSpacing.md),
+              SearchBar(
+                controller: searchController,
+                onChanged: onQueryChanged,
+                hintText: 'Rechercher un produit…',
+                elevation: const WidgetStatePropertyAll(0),
+                backgroundColor: WidgetStatePropertyAll(
+                  cs.surfaceContainerHigh,
+                ),
+                leading: Icon(Icons.search, color: cs.onSurfaceVariant),
+                trailing: [
+                  if (query.isNotEmpty)
+                    IconButton(
+                      tooltip: 'Effacer',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        searchController.clear();
+                        onQueryChanged('');
+                      },
+                    ),
+                  IconButton(
+                    tooltip: 'Scanner un code-barres',
+                    icon: const Icon(Icons.qr_code_scanner),
+                    onPressed: onScan,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  for (final (value, label) in const [
+                    (StockFilter.all, 'Tous'),
+                    (StockFilter.lowStock, 'Stock faible'),
+                    (StockFilter.outOfStock, 'Ruptures'),
+                  ])
+                    ChoiceChip(
+                      label: Text(label),
+                      selected: filter == value,
+                      onSelected: (_) => onFilterChanged(value),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (visible.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                query.isNotEmpty
+                    ? 'Aucun produit ne correspond à « $query ».'
+                    : switch (filter) {
+                        StockFilter.lowStock =>
+                          'Aucun produit à réapprovisionner.',
+                        StockFilter.outOfStock => 'Aucune rupture de stock.',
+                        StockFilter.all => 'Aucun produit.',
+                      },
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+          )
+        else
+          SliverList.separated(
+            itemCount: visible.length,
+            separatorBuilder: (_, _) => Divider(
+              height: 1,
+              indent: AppSpacing.md,
+              endIndent: AppSpacing.md,
+              color: cs.outlineVariant,
+            ),
+            itemBuilder: (context, index) {
+              final product = visible[index];
+              return StockProductTile(
+                key: ValueKey(product.id),
+                product: product,
+                onTap: () => onOpen(product),
+                onAdjust: product.currentStock == null
+                    ? null
+                    : () => showStockAdjustmentSheet(context, product.id),
+              );
+            },
+          ),
+        // Place pour le bouton flottant.
+        const SliverToBoxAdapter(child: SizedBox(height: 88)),
+      ],
+    );
+  }
+}
+
+class _LoadingList extends StatelessWidget {
+  const _LoadingList();
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final status = stockStatus(cs, product);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: AppCard(
-        onTap: () => context.push(
-          Routes.productStockHistory.replaceFirst(':id', product.id),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: AppTypography.titleMedium,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (status != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      status.label,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: status.color,
-                        fontWeight: status.emphasize ? FontWeight.w600 : null,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            IconButton(
-              onPressed: onAdjust,
-              icon: const Icon(Icons.add_circle_outline),
-              tooltip: 'Ajuster le stock',
-              style: IconButton.styleFrom(
-                backgroundColor: cs.primaryContainer,
-                foregroundColor: cs.onPrimaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      physics: const NeverScrollableScrollPhysics(),
+      children: const [
+        SkeletonBox(height: 160, radius: AppSpacing.radiusLg),
+        SizedBox(height: AppSpacing.md),
+        SkeletonBox(height: 56),
+        SizedBox(height: AppSpacing.md),
+        SkeletonBox(height: 64),
+        SizedBox(height: AppSpacing.sm),
+        SkeletonBox(height: 64),
+      ],
     );
   }
 }

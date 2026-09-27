@@ -20,7 +20,8 @@ void main() {
   // depuis une page déjà au-dessus de la shell reconstruit la shell et le Navigator plante (clés de page
   // dupliquées).
   const fullScreenPaths = [
-    Routes.catalog,
+    '/catalog/abc',
+    Routes.stockMovements,
     Routes.saleDetail,
     Routes.productNew,
     Routes.productImport,
@@ -45,6 +46,23 @@ void main() {
         isEmpty,
         reason: '$path ne doit pas être déclarée dans une branche de la shell',
       );
+    }
+  });
+
+  test('/catalog/new et /catalog/import ne sont pas pris pour une fiche', () {
+    final container = ProviderContainer(
+      overrides: [authProvider.overrideWith(_AuthenticatedAuth.new)],
+    );
+    addTearDown(container.dispose);
+    final router = container.read(appRouterProvider);
+
+    for (final (path, expected) in [
+      (Routes.productNew, Routes.productNew),
+      (Routes.productImport, Routes.productImport),
+      ('/catalog/abc', Routes.productDetail),
+    ]) {
+      final match = router.configuration.findMatch(Uri.parse(path));
+      expect(match.last.route.path, expected, reason: path);
     }
   });
 

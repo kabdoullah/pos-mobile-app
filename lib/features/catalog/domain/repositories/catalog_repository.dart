@@ -44,6 +44,10 @@ abstract class CatalogRepository {
   /// Cherche un produit par code-barres. Retourne null s'il est introuvable.
   Future<Product?> getByBarcode(String barcode);
 
+  /// Diffuse tous les produits non supprimés, triés par nom — réémet à chaque
+  /// changement du catalogue local.
+  Stream<List<Product>> watchProducts();
+
   /// Diffuse les produits en rupture (stock = 0) ou sous leur seuil de
   /// réapprovisionnement, triés par stock croissant (ruptures d'abord) — réémet
   /// à chaque changement du catalogue local.

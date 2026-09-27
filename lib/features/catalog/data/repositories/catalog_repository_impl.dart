@@ -277,6 +277,15 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
   // Reprend Product.stockLevel (outOfStock | low) en SQL pour filtrer en local.
   @override
+  Stream<List<product_domain.Product>> watchProducts() {
+    return (db.select(db.products)
+          ..where((p) => p.deletedAt.isNull())
+          ..orderBy([(p) => drift.OrderingTerm.asc(p.name)]))
+        .watch()
+        .map((rows) => rows.map((row) => row.toDomain()).toList());
+  }
+
+  @override
   Stream<List<product_domain.Product>> watchLowStockProducts() {
     return (db.select(db.products)
           ..where(

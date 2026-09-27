@@ -9,6 +9,16 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/inventory_providers.dart';
 
+/// Ouvre la feuille d'ajustement de stock d'un produit.
+Future<void> showStockAdjustmentSheet(BuildContext context, String productId) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => StockAdjustmentSheet(productId: productId),
+  );
+}
+
 /// Bottom sheet pour enregistrer un ajustement de stock manuel (réception,
 /// casse, correction d'inventaire) sur un produit donné.
 class StockAdjustmentSheet extends ConsumerStatefulWidget {

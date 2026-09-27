@@ -61,9 +61,9 @@ Two provider locations:
 | Feature | Status |
 |---|---|
 | `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, token refresh, store setup |
-| `catalog` | Implemented — product listing, barcode scanning, local sync |
+| `catalog` | Implemented — product form/import, barcode scanning, local sync (the product list lives in the Stock tab, `inventory`) |
 | `sales` | Implemented — cart, payment, receipt printing, sale history |
-| `inventory` | Implemented — Stock tab, low-stock list, manual adjustments, per-product movement history. **Online-only**: movements are server-authoritative (no drift table); only `Products.currentStock` is refreshed locally |
+| `inventory` | Implemented — Stock tab (summary, product list, filters), product detail page, manual adjustments, movement history per product or for all products. **Online-only**: movements are server-authoritative (no drift table); only `Products.currentStock` is refreshed locally |
 | `printing` | Implemented — Bluetooth thermal printer (ESC/POS via `print_bluetooth_thermal`) |
 | `sync` | Implemented in `core/sync/` (not a feature folder) — offline event queue, catalog dirty-flag sync, connectivity awareness |
 | `home` | Implemented — dashboard shell (presentation only) |

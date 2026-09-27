@@ -8,16 +8,16 @@ part of 'inventory_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Diffuse les produits en rupture ou sous leur seuil de réapprovisionnement —
-/// alimente le filtre « Stock bas » de l'onglet Stock.
+/// Diffuse tous les produits du catalogue local (onglet Stock, détail
+/// produit, noms dans l'historique des mouvements).
 
-@ProviderFor(lowStockProducts)
-final lowStockProductsProvider = LowStockProductsProvider._();
+@ProviderFor(stockProducts)
+final stockProductsProvider = StockProductsProvider._();
 
-/// Diffuse les produits en rupture ou sous leur seuil de réapprovisionnement —
-/// alimente le filtre « Stock bas » de l'onglet Stock.
+/// Diffuse tous les produits du catalogue local (onglet Stock, détail
+/// produit, noms dans l'historique des mouvements).
 
-final class LowStockProductsProvider
+final class StockProductsProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<Product>>,
@@ -25,21 +25,21 @@ final class LowStockProductsProvider
           Stream<List<Product>>
         >
     with $FutureModifier<List<Product>>, $StreamProvider<List<Product>> {
-  /// Diffuse les produits en rupture ou sous leur seuil de réapprovisionnement —
-  /// alimente le filtre « Stock bas » de l'onglet Stock.
-  LowStockProductsProvider._()
+  /// Diffuse tous les produits du catalogue local (onglet Stock, détail
+  /// produit, noms dans l'historique des mouvements).
+  StockProductsProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'lowStockProductsProvider',
+        name: r'stockProductsProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$lowStockProductsHash();
+  String debugGetCreateSourceHash() => _$stockProductsHash();
 
   @$internal
   @override
@@ -49,24 +49,163 @@ final class LowStockProductsProvider
 
   @override
   Stream<List<Product>> create(Ref ref) {
-    return lowStockProducts(ref);
+    return stockProducts(ref);
   }
 }
 
-String _$lowStockProductsHash() => r'ed6906d8407f6cb382e73d75bcced4589f18bace';
+String _$stockProductsHash() => r'9161682866611f467b2a59beb5f9dfa41a801f3f';
 
-/// Gère l'historique paginé des mouvements de stock d'un produit.
+/// Synthèse de l'en-tête de l'onglet Stock, recalculée à chaque changement.
+
+@ProviderFor(stockSummary)
+final stockSummaryProvider = StockSummaryProvider._();
+
+/// Synthèse de l'en-tête de l'onglet Stock, recalculée à chaque changement.
+
+final class StockSummaryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<StockSummary>,
+          AsyncValue<StockSummary>,
+          AsyncValue<StockSummary>
+        >
+    with $Provider<AsyncValue<StockSummary>> {
+  /// Synthèse de l'en-tête de l'onglet Stock, recalculée à chaque changement.
+  StockSummaryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'stockSummaryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$stockSummaryHash();
+
+  @$internal
+  @override
+  $ProviderElement<AsyncValue<StockSummary>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  AsyncValue<StockSummary> create(Ref ref) {
+    return stockSummary(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AsyncValue<StockSummary> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AsyncValue<StockSummary>>(value),
+    );
+  }
+}
+
+String _$stockSummaryHash() => r'1a248804acaf0b7efeda18f513c0fc8f283ff13f';
+
+/// Diffuse un produit par id (`null` s'il est supprimé) — le détail se met à
+/// jour après un ajustement ou une synchro.
+
+@ProviderFor(stockProduct)
+final stockProductProvider = StockProductFamily._();
+
+/// Diffuse un produit par id (`null` s'il est supprimé) — le détail se met à
+/// jour après un ajustement ou une synchro.
+
+final class StockProductProvider
+    extends
+        $FunctionalProvider<AsyncValue<Product?>, Product?, Stream<Product?>>
+    with $FutureModifier<Product?>, $StreamProvider<Product?> {
+  /// Diffuse un produit par id (`null` s'il est supprimé) — le détail se met à
+  /// jour après un ajustement ou une synchro.
+  StockProductProvider._({
+    required StockProductFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'stockProductProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$stockProductHash();
+
+  @override
+  String toString() {
+    return r'stockProductProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Product?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<Product?> create(Ref ref) {
+    final argument = this.argument as String;
+    return stockProduct(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is StockProductProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$stockProductHash() => r'9a2cec2d875d66fba1244c4f935b26141063aeac';
+
+/// Diffuse un produit par id (`null` s'il est supprimé) — le détail se met à
+/// jour après un ajustement ou une synchro.
+
+final class StockProductFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Product?>, String> {
+  StockProductFamily._()
+    : super(
+        retry: null,
+        name: r'stockProductProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Diffuse un produit par id (`null` s'il est supprimé) — le détail se met à
+  /// jour après un ajustement ou une synchro.
+
+  StockProductProvider call(String id) =>
+      StockProductProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'stockProductProvider';
+}
+
+/// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+/// les produits ([productId] `null`). Données serveur uniquement (en ligne).
 
 @ProviderFor(StockHistory)
 final stockHistoryProvider = StockHistoryFamily._();
 
-/// Gère l'historique paginé des mouvements de stock d'un produit.
+/// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+/// les produits ([productId] `null`). Données serveur uniquement (en ligne).
 final class StockHistoryProvider
     extends $AsyncNotifierProvider<StockHistory, List<StockMovement>> {
-  /// Gère l'historique paginé des mouvements de stock d'un produit.
+  /// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+  /// les produits ([productId] `null`). Données serveur uniquement (en ligne).
   StockHistoryProvider._({
     required StockHistoryFamily super.from,
-    required String super.argument,
+    required String? super.argument,
   }) : super(
          retry: null,
          name: r'stockHistoryProvider',
@@ -100,9 +239,10 @@ final class StockHistoryProvider
   }
 }
 
-String _$stockHistoryHash() => r'27f9cccdc58c7e5867ce05b9ba6024b3bd62cfed';
+String _$stockHistoryHash() => r'3ee5f3bb0ffd1651dc46ba13bb98b60048e4bd48';
 
-/// Gère l'historique paginé des mouvements de stock d'un produit.
+/// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+/// les produits ([productId] `null`). Données serveur uniquement (en ligne).
 
 final class StockHistoryFamily extends $Family
     with
@@ -111,7 +251,7 @@ final class StockHistoryFamily extends $Family
           AsyncValue<List<StockMovement>>,
           List<StockMovement>,
           FutureOr<List<StockMovement>>,
-          String
+          String?
         > {
   StockHistoryFamily._()
     : super(
@@ -122,22 +262,24 @@ final class StockHistoryFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Gère l'historique paginé des mouvements de stock d'un produit.
+  /// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+  /// les produits ([productId] `null`). Données serveur uniquement (en ligne).
 
-  StockHistoryProvider call(String productId) =>
+  StockHistoryProvider call(String? productId) =>
       StockHistoryProvider._(argument: productId, from: this);
 
   @override
   String toString() => r'stockHistoryProvider';
 }
 
-/// Gère l'historique paginé des mouvements de stock d'un produit.
+/// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
+/// les produits ([productId] `null`). Données serveur uniquement (en ligne).
 
 abstract class _$StockHistory extends $AsyncNotifier<List<StockMovement>> {
-  late final _$args = ref.$arg as String;
-  String get productId => _$args;
+  late final _$args = ref.$arg as String?;
+  String? get productId => _$args;
 
-  FutureOr<List<StockMovement>> build(String productId);
+  FutureOr<List<StockMovement>> build(String? productId);
   @$mustCallSuper
   @override
   void runBuild() {
@@ -215,7 +357,7 @@ final class StockAdjustmentProvider
   }
 }
 
-String _$stockAdjustmentHash() => r'ab3018cafcfb786e586d4f190272a7f87debbc21';
+String _$stockAdjustmentHash() => r'526cd030ab4e05c50061845c1e51a7e2ae0b0f89';
 
 /// Enregistre les ajustements de stock manuels, puis marque comme périmées
 /// toutes les vues du stock du produit (historique, fiche produit, liste du

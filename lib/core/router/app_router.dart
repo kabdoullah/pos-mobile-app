@@ -12,11 +12,11 @@ import '../../features/auth/presentation/pages/phone_login_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
-import '../../features/catalog/presentation/pages/catalog_page.dart';
 import '../../features/catalog/presentation/pages/product_form_page.dart';
 import '../../features/catalog/presentation/pages/product_import_page.dart';
 import '../../features/catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/inventory/presentation/pages/product_detail_page.dart';
 import '../../features/inventory/presentation/pages/stock_history_page.dart';
 import '../../features/inventory/presentation/pages/stock_overview_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
@@ -62,9 +62,6 @@ abstract class Routes {
   /// Écran d'accueil / tableau de bord.
   static const String home = '/home';
 
-  /// Liste des produits — ouverte depuis l'onglet Stock (plein écran).
-  static const String catalog = '/catalog';
-
   /// Vue d'ensemble du stock (produits à réapprovisionner, ajustement rapide).
   static const String inventory = '/stock';
 
@@ -78,6 +75,12 @@ abstract class Routes {
 
   /// Création d'un produit.
   static const String productNew = '/catalog/new';
+
+  /// Fiche produit (paramètre de chemin :id).
+  static const String productDetail = '/catalog/:id';
+
+  /// Mouvements de stock de tous les produits.
+  static const String stockMovements = '/stock/movements';
 
   /// Modification d'un produit (paramètre de chemin :id).
   static const String productEdit = '/catalog/:id/edit';
@@ -264,7 +267,10 @@ GoRouter appRouter(Ref ref) {
       // restent ceux d'origine (/catalog/new…), seule la déclaration change.
       GoRoute(
         path: Routes.productNew,
-        builder: (context, state) => const ProductFormPage(),
+        // extra : code-barres scanné en caisse, pré-rempli dans le formulaire.
+        builder: (context, state) => ProductFormPage(
+          initialBarcode: state.extra is String ? state.extra! as String : null,
+        ),
       ),
       GoRoute(
         path: Routes.productImport,
@@ -284,9 +290,16 @@ GoRouter appRouter(Ref ref) {
         path: Routes.bluetoothSetup,
         builder: (context, state) => const BluetoothSetupPage(),
       ),
+      // Déclarée après /catalog/new et /catalog/import : sinon « new » et
+      // « import » seraient pris pour un :id.
       GoRoute(
-        path: Routes.catalog,
-        builder: (context, state) => const CatalogPage(),
+        path: Routes.productDetail,
+        builder: (context, state) =>
+            ProductDetailPage(productId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Routes.stockMovements,
+        builder: (context, state) => const StockHistoryPage(),
       ),
       GoRoute(
         path: Routes.saleDetail,

@@ -2,89 +2,88 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
-import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
-import '../../../../app/theme/illustrations.dart';
 import '../../../../core/widgets/index.dart';
-import '../../domain/entities/stock_movement.dart';
+import '../../../catalog/domain/entities/product.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
+import '../widgets/stock_movement_tile.dart';
 
-/// Affiche l'historique des mouvements de stock d'un produit (journal d'audit)
-/// avec pagination, et un point d'entrée pour enregistrer un ajustement manuel.
+/// Historique paginé des mouvements de stock (journal d'audit), d'un produit
+/// ou de tous les produits ([productId] `null`).
+///
+/// Données serveur uniquement : hors ligne, la page l'explique et propose de
+/// réessayer (la règle online-only des mouvements est conservée).
 class StockHistoryPage extends ConsumerWidget {
-  /// Crée une [StockHistoryPage].
-  const StockHistoryPage({required this.productId, super.key});
+  /// Crée l'historique ; [productId] `null` = tous les produits.
+  const StockHistoryPage({this.productId, super.key});
 
-  /// Produit auquel appartient cet historique.
-  final String productId;
-
-  Future<void> _openAdjustmentSheet(BuildContext context) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => StockAdjustmentSheet(productId: productId),
-    );
-  }
+  /// Produit filtré, ou `null` pour tous les produits.
+  final String? productId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final productId = this.productId;
     final historyState = ref.watch(stockHistoryProvider(productId));
-    final cs = Theme.of(context).colorScheme;
+    final notifier = ref.read(stockHistoryProvider(productId).notifier);
+    // Vue globale : les mouvements ne portent que l'id du produit, on affiche
+    // son nom depuis le catalogue local.
+    final names = productId == null
+        ? <String, String>{
+            for (final p
+                in ref.watch(stockProductsProvider).value ?? const <Product>[])
+              p.id: p.name,
+          }
+        : const <String, String>{};
 
     return AppScaffold(
-      title: 'Historique du stock',
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAdjustmentSheet(context),
-        tooltip: 'Ajuster le stock',
-        child: const Icon(Icons.add),
-      ),
+      title: productId == null ? 'Mouvements de stock' : 'Historique du stock',
+      floatingActionButton: productId == null
+          ? null
+          : FloatingActionButton(
+              onPressed: () => showStockAdjustmentSheet(context, productId),
+              tooltip: 'Ajuster le stock',
+              child: const Icon(Icons.tune),
+            ),
       body: RefreshIndicator(
-        onRefresh: () =>
-            ref.read(stockHistoryProvider(productId).notifier).refresh(),
-        color: cs.primary,
-        backgroundColor: cs.primaryContainer,
-        strokeWidth: 3,
+        onRefresh: notifier.refresh,
         child: historyState.when(
-          loading: () => const AppLoadingScreen(),
-          error: (error, stack) => LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: SizedBox(
-                height: constraints.maxHeight,
-                child: EmptyStateIllustrated(
-                  illustration: Illustrations.errorState,
-                  title: 'Erreur',
-                  message: 'Impossible de charger l\'historique du stock',
-                  actionLabel: 'Réessayer',
-                  onAction: () => ref
-                      .read(stockHistoryProvider(productId).notifier)
-                      .refresh(),
-                ),
-              ),
+          loading: () => ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: const [
+              SkeletonBox(height: 56),
+              SizedBox(height: AppSpacing.sm),
+              SkeletonBox(height: 56),
+              SizedBox(height: AppSpacing.sm),
+              SkeletonBox(height: 56),
+            ],
+          ),
+          error: (_, _) => _FullHeight(
+            child: EmptyState(
+              icon: Icons.cloud_off_outlined,
+              title: 'Impossible de charger les mouvements',
+              message:
+                  'Vérifiez votre connexion puis réessayez. Le stock affiché '
+                  'reste disponible hors ligne.',
+              actionLabel: 'Réessayer',
+              onAction: notifier.refresh,
             ),
           ),
           data: (movements) {
             if (movements.isEmpty) {
-              return LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: SizedBox(
-                    height: constraints.maxHeight,
-                    child: EmptyStateIllustrated(
-                      illustration: Illustrations.emptySales,
-                      title: 'Aucun mouvement',
-                      message:
-                          'Les ventes et ajustements de ce produit'
-                          ' apparaîtront ici',
-                      actionLabel: 'Ajuster le stock',
-                      onAction: () => _openAdjustmentSheet(context),
-                    ),
-                  ),
+              return _FullHeight(
+                child: EmptyState(
+                  icon: Icons.swap_vert,
+                  title: 'Aucun mouvement',
+                  message: productId == null
+                      ? 'Les ventes et ajustements apparaîtront ici.'
+                      : 'Les ventes et ajustements de ce produit '
+                            'apparaîtront ici.',
+                  actionLabel: productId == null ? null : 'Ajuster le stock',
+                  onAction: productId == null
+                      ? null
+                      : () => showStockAdjustmentSheet(context, productId),
                 ),
               );
             }
@@ -95,24 +94,30 @@ class StockHistoryPage extends ConsumerWidget {
                   final px = notification.metrics.pixels;
                   final max = notification.metrics.maxScrollExtent;
                   if (max > 0 && px >= max - 300) {
-                    unawaited(
-                      ref
-                          .read(stockHistoryProvider(productId).notifier)
-                          .loadMore(),
-                    );
+                    unawaited(notifier.loadMore());
                   }
                 }
                 return false;
               },
-              child: ListView.builder(
+              child: ListView.separated(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.xxl,
                 ),
                 itemCount: movements.length,
-                itemBuilder: (context, index) =>
-                    _StockMovementTile(movement: movements[index]),
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final movement = movements[index];
+                  return StockMovementTile(
+                    movement: movement,
+                    productName: productId == null
+                        ? names[movement.productId] ?? 'Produit supprimé'
+                        : null,
+                  );
+                },
               ),
             );
           },
@@ -122,91 +127,19 @@ class StockHistoryPage extends ConsumerWidget {
   }
 }
 
-class _StockMovementTile extends StatelessWidget {
-  const _StockMovementTile({required this.movement});
+/// Garde l'état vide/erreur scrollable pour que « tirer pour rafraîchir »
+/// fonctionne.
+class _FullHeight extends StatelessWidget {
+  const _FullHeight({required this.child});
 
-  final StockMovement movement;
-
-  static String _reasonLabel(StockMovementReason reason) => switch (reason) {
-    StockMovementReason.sale => 'Vente',
-    StockMovementReason.manualAdjustment => 'Ajustement manuel',
-    StockMovementReason.catalogUpdate => 'Mise à jour catalogue',
-  };
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
-    final delta = movement.quantityDelta;
-    final isPositive = (delta ?? 0) >= 0;
-    final color = isPositive ? semantic.success : cs.error;
-    final deltaLabel = delta == null
-        ? '—'
-        : (isPositive ? '+$delta' : '$delta');
-    final dateFormat = DateFormat('dd MMM yyyy à HH:mm', 'fr_FR');
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: AppCard(
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(isPositive ? Icons.add : Icons.remove, color: color),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _reasonLabel(movement.reason),
-                    style: AppTypography.titleMedium,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dateFormat.format(movement.createdAt),
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  if (movement.note != null && movement.note!.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      movement.note!,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  deltaLabel,
-                  style: AppTypography.titleMedium.copyWith(color: color),
-                ),
-                if (movement.resultingStock != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Stock: ${movement.resultingStock}',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ],
-        ),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(height: constraints.maxHeight, child: child),
       ),
     );
   }
