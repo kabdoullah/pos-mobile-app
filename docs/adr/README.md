@@ -23,6 +23,7 @@ Pourquoi écrire des ADRs :
 | [0004](0004-auth-email-pin.md) | Authentification email + mot de passe + PIN local | Accepté | 2026-04-29 |
 | [0005](0005-stack-flutter-fastapi.md) | Stack Flutter + FastAPI + PostgreSQL 100% open source | Accepté | 2026-04-29 |
 | [0008](0008-categories-images-recus.md) | Catégories produit, images (produit + logo) et reçus enrichis | Accepté | 2026-09-27 |
+| [0009](0009-prix-achat-remises-marge.md) | Prix d'achat, réductions et marge, instantané dans les ventes | Accepté | 2026-09-27 |
 
 ## Comment écrire un nouvel ADR
 

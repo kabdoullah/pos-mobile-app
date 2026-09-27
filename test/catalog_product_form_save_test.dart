@@ -25,7 +25,8 @@ void main() {
       when(
         () => catalog.createProduct(
           name: any(named: 'name'),
-          unitPrice: any(named: 'unitPrice'),
+          sellingPrice: any(named: 'sellingPrice'),
+          purchasePrice: any(named: 'purchasePrice'),
           barcode: any(named: 'barcode'),
           currentStock: any(named: 'currentStock'),
           minStock: any(named: 'minStock'),
@@ -37,7 +38,7 @@ void main() {
         return Product(
           id: 'p1',
           name: 'Coca',
-          unitPrice: Decimal.fromInt(500),
+          sellingPrice: Decimal.fromInt(500),
           updatedAt: DateTime(2026),
         );
       });
@@ -74,7 +75,8 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).at(0), 'Coca');
-      await tester.enterText(find.byType(TextField).at(1), '500');
+      // Champ 1 : prix d'achat (optionnel), champ 2 : prix de vente.
+      await tester.enterText(find.byType(TextField).at(2), '500');
       final save = find.text('Enregistrer');
       await tester.ensureVisible(save);
       await tester.pumpAndSettle();

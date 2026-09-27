@@ -106,6 +106,57 @@ final class DailySummaryProvider
 
 String _$dailySummaryHash() => r'6ae9c0c466860e62c16e2e937e07c97bc371d7cb';
 
+/// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
+///
+/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+
+@ProviderFor(todayMarginSummary)
+final todayMarginSummaryProvider = TodayMarginSummaryProvider._();
+
+/// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
+///
+/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+
+final class TodayMarginSummaryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<MarginSummary>,
+          MarginSummary,
+          Stream<MarginSummary>
+        >
+    with $FutureModifier<MarginSummary>, $StreamProvider<MarginSummary> {
+  /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
+  ///
+  /// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+  TodayMarginSummaryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'todayMarginSummaryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$todayMarginSummaryHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<MarginSummary> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<MarginSummary> create(Ref ref) {
+    return todayMarginSummary(ref);
+  }
+}
+
+String _$todayMarginSummaryHash() =>
+    r'd78c80db9ed3d54371eab8ada6b3ed5924486e44';
+
 /// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
 /// ancienne — pour la mini-liste « activité récente » de l'accueil.
 

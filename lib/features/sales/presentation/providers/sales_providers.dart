@@ -12,7 +12,8 @@ import 'cart_provider.dart';
 
 part 'sales_providers.g.dart';
 
-/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+/// Enregistre le panier courant (lignes et remise globale) comme vente
+/// (appelle CreateSaleUseCase).
 @riverpod
 Future<sale_entity.Sale> submitSale(
   Ref ref, {
@@ -27,6 +28,7 @@ Future<sale_entity.Sale> submitSale(
 
   final sale = await useCase(
     items: cartState.items,
+    discount: cartState.discount,
     totalAmount: totalAmount,
     vatAmount: vatAmount,
     paymentMethod: paymentMethod,

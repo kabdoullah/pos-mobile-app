@@ -59,7 +59,7 @@ final class ProductEditorProvider
   }
 }
 
-String _$productEditorHash() => r'5281f0c80917243ad514367a7517de1f11b6f974';
+String _$productEditorHash() => r'443fa25ab64e338a74c7c8fd6c7b98bfe45c2f04';
 
 /// Écritures sur les produits (création, modification, suppression).
 ///

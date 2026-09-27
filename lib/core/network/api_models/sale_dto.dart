@@ -38,6 +38,12 @@ sealed class SaleItemDto with _$SaleItemDto {
     @JsonKey(name: 'unit_price_at_sale') required String unitPriceAtSale,
     required int quantity,
     @JsonKey(name: 'line_total') required String lineTotal,
+    // Champs ADR-0009 : absents d'une vente antérieure → pas de réduction,
+    // prix d'achat inconnu.
+    @JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,
+    @JsonKey(name: 'discount_type') String? discountType,
+    @JsonKey(name: 'discount_value') String? discountValue,
+    @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
   }) = _SaleItemDto;
 
   factory SaleItemDto.fromJson(Map<String, dynamic> json) =>
@@ -59,6 +65,10 @@ sealed class SaleDto with _$SaleDto {
     @JsonKey(name: 'mobile_money_amount') String? mobileMoneyAmount,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'synced_at') required String syncedAt,
+    // Remise globale (ADR-0009) ; absente d'une vente antérieure.
+    @JsonKey(name: 'discount_type') String? discountType,
+    @JsonKey(name: 'discount_value') String? discountValue,
+    @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
     required List<SaleItemDto> items,
   }) = _SaleDto;
 
@@ -76,6 +86,10 @@ sealed class SaleItemCreateDto with _$SaleItemCreateDto {
     @JsonKey(name: 'unit_price_at_sale') required String unitPriceAtSale,
     required int quantity,
     @JsonKey(name: 'line_total') required String lineTotal,
+    @JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,
+    @JsonKey(name: 'discount_type') String? discountType,
+    @JsonKey(name: 'discount_value') String? discountValue,
+    @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
   }) = _SaleItemCreateDto;
 
   factory SaleItemCreateDto.fromJson(Map<String, dynamic> json) =>
@@ -95,6 +109,9 @@ sealed class SaleCreateDto with _$SaleCreateDto {
     @JsonKey(name: 'cash_amount') String? cashAmount,
     @JsonKey(name: 'mobile_money_amount') String? mobileMoneyAmount,
     @JsonKey(name: 'created_at') required String createdAt,
+    @JsonKey(name: 'discount_type') String? discountType,
+    @JsonKey(name: 'discount_value') String? discountValue,
+    @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
   }) = _SaleCreateDto;
 
   factory SaleCreateDto.fromJson(Map<String, dynamic> json) =>

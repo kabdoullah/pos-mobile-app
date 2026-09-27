@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 
 import '../entities/cart_item.dart';
+import '../entities/discount.dart';
 import '../entities/sale.dart';
 import '../repositories/sales_repository.dart';
 
@@ -33,6 +34,7 @@ class CreateSaleUseCase {
   /// - les totaux de paiement correspondent au total de la vente (surtout pour
   ///   les paiements mixtes)
   /// - aucun montant n'est négatif
+  /// - chaque réduction (ligne et remise globale [discount]) est valide
   ///
   /// Génère un UUID côté client pour une synchro idempotente.
   /// Enregistre la vente et ses articles de façon atomique via le repository.
@@ -41,6 +43,7 @@ class CreateSaleUseCase {
     required Decimal totalAmount,
     required Decimal vatAmount,
     required PaymentMethod paymentMethod,
+    Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
   }) async {
@@ -67,11 +70,25 @@ class CreateSaleUseCase {
       }
     }
 
+    // Validation : réductions de ligne (jamais de total de ligne négatif)
+    for (final item in items) {
+      final error = item.discount?.validate(item.grossTotal);
+      if (error != null) {
+        throw CreateSaleException('${item.productName} : $error');
+      }
+    }
+
     // Recalcule le total depuis les articles, par sécurité
-    final calculatedTotal = items.fold<Decimal>(
+    final subtotal = items.fold<Decimal>(
       Decimal.zero,
       (sum, item) => sum + item.lineTotal,
     );
+    final discountError = discount?.validate(subtotal);
+    if (discountError != null) {
+      throw CreateSaleException('Remise : $discountError');
+    }
+    final calculatedTotal =
+        subtotal - (discount?.amountOn(subtotal) ?? Decimal.zero);
     if (calculatedTotal != totalAmount) {
       throw CreateSaleException(
         'Total panier ($calculatedTotal) ne correspond pas au montant fourni ($totalAmount)',
@@ -98,6 +115,7 @@ class CreateSaleUseCase {
       totalAmount: totalAmount,
       vatAmount: vatAmount,
       paymentMethod: paymentMethod,
+      discount: discount,
       cashAmount: cashAmount,
       mobileMoneyAmount: mobileMoneyAmount,
     );

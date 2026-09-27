@@ -8,6 +8,7 @@ import 'package:mobile/features/sales/presentation/pages/date_range_filter_sheet
 import 'package:mobile/features/sales/presentation/providers/sales_providers.dart';
 
 Sale sale(int receipt, String total) => Sale(
+  discountAmount: Decimal.zero,
   id: 's$receipt',
   receiptNumber: receipt,
   totalAmount: Decimal.parse(total),

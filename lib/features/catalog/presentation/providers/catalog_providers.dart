@@ -19,7 +19,8 @@ class ProductEditor extends _$ProductEditor {
   /// Crée un produit.
   Future<void> create({
     required String name,
-    required String unitPrice,
+    required String sellingPrice,
+    String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,
@@ -29,7 +30,8 @@ class ProductEditor extends _$ProductEditor {
         .read(catalogRepositoryProvider)
         .createProduct(
           name: name,
-          unitPrice: unitPrice,
+          sellingPrice: sellingPrice,
+          purchasePrice: purchasePrice,
           barcode: barcode,
           currentStock: currentStock,
           minStock: minStock,
@@ -41,7 +43,10 @@ class ProductEditor extends _$ProductEditor {
   Future<void> update({
     required String id,
     String? name,
-    String? unitPrice,
+    String? sellingPrice,
+
+    /// Toujours appliqué : `null` = prix d'achat non renseigné.
+    required String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,
@@ -51,7 +56,8 @@ class ProductEditor extends _$ProductEditor {
         .updateProduct(
           id: id,
           name: name,
-          unitPrice: unitPrice,
+          sellingPrice: sellingPrice,
+          purchasePrice: purchasePrice,
           barcode: barcode,
           currentStock: currentStock,
           minStock: minStock,

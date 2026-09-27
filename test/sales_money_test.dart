@@ -31,6 +31,7 @@ void main() {
 
     test('Sale.totalAmount is Decimal', () {
       final sale = Sale(
+        discountAmount: Decimal.zero,
         id: 'sale-1',
         receiptNumber: 1,
         totalAmount: Decimal.parse('2469.12'),
@@ -45,6 +46,7 @@ void main() {
 
     test('Sale.vatAmount is Decimal', () {
       final sale = Sale(
+        discountAmount: Decimal.zero,
         id: 'sale-1',
         receiptNumber: 1,
         totalAmount: Decimal.parse('100.00'),
@@ -81,6 +83,7 @@ void main() {
 
     test('Large FCFA amounts (250k+) preserve precision', () {
       final sale = Sale(
+        discountAmount: Decimal.zero,
         id: 'sale-1',
         receiptNumber: 1,
         totalAmount: Decimal.parse('250000.00'),

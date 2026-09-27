@@ -32,6 +32,7 @@ Sale makeSale({
   PaymentMethod paymentMethod = PaymentMethod.cash,
 }) {
   return Sale(
+    discountAmount: Decimal.zero,
     id: id,
     receiptNumber: receiptNumber,
     totalAmount: totalAmount ?? Decimal.parse('100'),

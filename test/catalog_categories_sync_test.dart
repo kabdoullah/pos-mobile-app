@@ -46,7 +46,7 @@ void main() {
       const ProductSyncItemDto(
         id: 'x',
         name: 'x',
-        unitPrice: '0',
+        sellingPrice: '0',
         clientUpdatedAt: _now,
       ),
     );
@@ -109,7 +109,7 @@ void main() {
       final category = await catalog.createCategory('Boissons');
       await catalog.createProduct(
         name: 'Coca',
-        unitPrice: '500',
+        sellingPrice: '500',
         categoryId: category.id,
       );
       final payloads = await pendingPayloads('product');
@@ -122,7 +122,7 @@ void main() {
         final category = await catalog.createCategory('Boissons');
         final product = await catalog.createProduct(
           name: 'Coca',
-          unitPrice: '500',
+          sellingPrice: '500',
           categoryId: category.id,
         );
 
@@ -147,7 +147,7 @@ void main() {
         final category = await catalog.createCategory('Boissons');
         await catalog.createProduct(
           name: 'Coca',
-          unitPrice: '500',
+          sellingPrice: '500',
           categoryId: category.id,
         );
         when(() => remote.pushProduct(any())).thenAnswer(
@@ -196,7 +196,7 @@ void main() {
         final local = await catalog.createCategory('Boissons');
         final product = await catalog.createProduct(
           name: 'Coca',
-          unitPrice: '500',
+          sellingPrice: '500',
           categoryId: local.id,
         );
         // Le serveur refuse la catégorie locale : une autre porte ce nom.
@@ -236,7 +236,7 @@ void main() {
               id: 'p1',
               storeId: 's',
               name: 'Coca',
-              unitPrice: '500',
+              sellingPrice: '500',
               categoryId: 'c1',
               imageVersion: 'abc',
               createdAt: _now,

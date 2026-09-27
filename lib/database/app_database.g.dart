@@ -41,16 +41,27 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _unitPriceMeta = const VerificationMeta(
-    'unitPrice',
+  static const VerificationMeta _sellingPriceMeta = const VerificationMeta(
+    'sellingPrice',
   );
   @override
-  late final GeneratedColumn<String> unitPrice = GeneratedColumn<String>(
-    'unit_price',
+  late final GeneratedColumn<String> sellingPrice = GeneratedColumn<String>(
+    'selling_price',
     aliasedName,
     false,
     type: DriftSqlType.string,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _purchasePriceMeta = const VerificationMeta(
+    'purchasePrice',
+  );
+  @override
+  late final GeneratedColumn<String> purchasePrice = GeneratedColumn<String>(
+    'purchase_price',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _currentStockMeta = const VerificationMeta(
     'currentStock',
@@ -136,7 +147,8 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
     id,
     name,
     barcode,
-    unitPrice,
+    sellingPrice,
+    purchasePrice,
     currentStock,
     minStock,
     categoryId,
@@ -176,13 +188,25 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         barcode.isAcceptableOrUnknown(data['barcode']!, _barcodeMeta),
       );
     }
-    if (data.containsKey('unit_price')) {
+    if (data.containsKey('selling_price')) {
       context.handle(
-        _unitPriceMeta,
-        unitPrice.isAcceptableOrUnknown(data['unit_price']!, _unitPriceMeta),
+        _sellingPriceMeta,
+        sellingPrice.isAcceptableOrUnknown(
+          data['selling_price']!,
+          _sellingPriceMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_unitPriceMeta);
+      context.missing(_sellingPriceMeta);
+    }
+    if (data.containsKey('purchase_price')) {
+      context.handle(
+        _purchasePriceMeta,
+        purchasePrice.isAcceptableOrUnknown(
+          data['purchase_price']!,
+          _purchasePriceMeta,
+        ),
+      );
     }
     if (data.containsKey('current_stock')) {
       context.handle(
@@ -255,10 +279,14 @@ class $ProductsTable extends Products with TableInfo<$ProductsTable, Product> {
         DriftSqlType.string,
         data['${effectivePrefix}barcode'],
       ),
-      unitPrice: attachedDatabase.typeMapping.read(
+      sellingPrice: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}unit_price'],
+        data['${effectivePrefix}selling_price'],
       )!,
+      purchasePrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_price'],
+      ),
       currentStock: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_stock'],
@@ -306,8 +334,12 @@ class Product extends DataClass implements Insertable<Product> {
   /// Code-barres optionnel.
   final String? barcode;
 
-  /// Prix unitaire en FCFA, stocké en string pour préserver la précision.
-  final String unitPrice;
+  /// Prix de vente en FCFA, stocké en string pour préserver la précision.
+  /// Colonne `unit_price` renommée en v7 (ADR-0009).
+  final String sellingPrice;
+
+  /// Prix d'achat en FCFA (null = non renseigné, ADR-0009).
+  final String? purchasePrice;
 
   /// Stock actuel (null = stock non géré).
   final int? currentStock;
@@ -333,7 +365,8 @@ class Product extends DataClass implements Insertable<Product> {
     required this.id,
     required this.name,
     this.barcode,
-    required this.unitPrice,
+    required this.sellingPrice,
+    this.purchasePrice,
     this.currentStock,
     this.minStock,
     this.categoryId,
@@ -350,7 +383,10 @@ class Product extends DataClass implements Insertable<Product> {
     if (!nullToAbsent || barcode != null) {
       map['barcode'] = Variable<String>(barcode);
     }
-    map['unit_price'] = Variable<String>(unitPrice);
+    map['selling_price'] = Variable<String>(sellingPrice);
+    if (!nullToAbsent || purchasePrice != null) {
+      map['purchase_price'] = Variable<String>(purchasePrice);
+    }
     if (!nullToAbsent || currentStock != null) {
       map['current_stock'] = Variable<int>(currentStock);
     }
@@ -378,7 +414,10 @@ class Product extends DataClass implements Insertable<Product> {
       barcode: barcode == null && nullToAbsent
           ? const Value.absent()
           : Value(barcode),
-      unitPrice: Value(unitPrice),
+      sellingPrice: Value(sellingPrice),
+      purchasePrice: purchasePrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purchasePrice),
       currentStock: currentStock == null && nullToAbsent
           ? const Value.absent()
           : Value(currentStock),
@@ -408,7 +447,8 @@ class Product extends DataClass implements Insertable<Product> {
       id: serializer.fromJson<String>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       barcode: serializer.fromJson<String?>(json['barcode']),
-      unitPrice: serializer.fromJson<String>(json['unitPrice']),
+      sellingPrice: serializer.fromJson<String>(json['sellingPrice']),
+      purchasePrice: serializer.fromJson<String?>(json['purchasePrice']),
       currentStock: serializer.fromJson<int?>(json['currentStock']),
       minStock: serializer.fromJson<int?>(json['minStock']),
       categoryId: serializer.fromJson<String?>(json['categoryId']),
@@ -425,7 +465,8 @@ class Product extends DataClass implements Insertable<Product> {
       'id': serializer.toJson<String>(id),
       'name': serializer.toJson<String>(name),
       'barcode': serializer.toJson<String?>(barcode),
-      'unitPrice': serializer.toJson<String>(unitPrice),
+      'sellingPrice': serializer.toJson<String>(sellingPrice),
+      'purchasePrice': serializer.toJson<String?>(purchasePrice),
       'currentStock': serializer.toJson<int?>(currentStock),
       'minStock': serializer.toJson<int?>(minStock),
       'categoryId': serializer.toJson<String?>(categoryId),
@@ -440,7 +481,8 @@ class Product extends DataClass implements Insertable<Product> {
     String? id,
     String? name,
     Value<String?> barcode = const Value.absent(),
-    String? unitPrice,
+    String? sellingPrice,
+    Value<String?> purchasePrice = const Value.absent(),
     Value<int?> currentStock = const Value.absent(),
     Value<int?> minStock = const Value.absent(),
     Value<String?> categoryId = const Value.absent(),
@@ -452,7 +494,10 @@ class Product extends DataClass implements Insertable<Product> {
     id: id ?? this.id,
     name: name ?? this.name,
     barcode: barcode.present ? barcode.value : this.barcode,
-    unitPrice: unitPrice ?? this.unitPrice,
+    sellingPrice: sellingPrice ?? this.sellingPrice,
+    purchasePrice: purchasePrice.present
+        ? purchasePrice.value
+        : this.purchasePrice,
     currentStock: currentStock.present ? currentStock.value : this.currentStock,
     minStock: minStock.present ? minStock.value : this.minStock,
     categoryId: categoryId.present ? categoryId.value : this.categoryId,
@@ -466,7 +511,12 @@ class Product extends DataClass implements Insertable<Product> {
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
       barcode: data.barcode.present ? data.barcode.value : this.barcode,
-      unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
+      sellingPrice: data.sellingPrice.present
+          ? data.sellingPrice.value
+          : this.sellingPrice,
+      purchasePrice: data.purchasePrice.present
+          ? data.purchasePrice.value
+          : this.purchasePrice,
       currentStock: data.currentStock.present
           ? data.currentStock.value
           : this.currentStock,
@@ -489,7 +539,8 @@ class Product extends DataClass implements Insertable<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('barcode: $barcode, ')
-          ..write('unitPrice: $unitPrice, ')
+          ..write('sellingPrice: $sellingPrice, ')
+          ..write('purchasePrice: $purchasePrice, ')
           ..write('currentStock: $currentStock, ')
           ..write('minStock: $minStock, ')
           ..write('categoryId: $categoryId, ')
@@ -506,7 +557,8 @@ class Product extends DataClass implements Insertable<Product> {
     id,
     name,
     barcode,
-    unitPrice,
+    sellingPrice,
+    purchasePrice,
     currentStock,
     minStock,
     categoryId,
@@ -522,7 +574,8 @@ class Product extends DataClass implements Insertable<Product> {
           other.id == this.id &&
           other.name == this.name &&
           other.barcode == this.barcode &&
-          other.unitPrice == this.unitPrice &&
+          other.sellingPrice == this.sellingPrice &&
+          other.purchasePrice == this.purchasePrice &&
           other.currentStock == this.currentStock &&
           other.minStock == this.minStock &&
           other.categoryId == this.categoryId &&
@@ -536,7 +589,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
   final Value<String> id;
   final Value<String> name;
   final Value<String?> barcode;
-  final Value<String> unitPrice;
+  final Value<String> sellingPrice;
+  final Value<String?> purchasePrice;
   final Value<int?> currentStock;
   final Value<int?> minStock;
   final Value<String?> categoryId;
@@ -549,7 +603,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.barcode = const Value.absent(),
-    this.unitPrice = const Value.absent(),
+    this.sellingPrice = const Value.absent(),
+    this.purchasePrice = const Value.absent(),
     this.currentStock = const Value.absent(),
     this.minStock = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -563,7 +618,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     required String id,
     required String name,
     this.barcode = const Value.absent(),
-    required String unitPrice,
+    required String sellingPrice,
+    this.purchasePrice = const Value.absent(),
     this.currentStock = const Value.absent(),
     this.minStock = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -574,13 +630,14 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        name = Value(name),
-       unitPrice = Value(unitPrice),
+       sellingPrice = Value(sellingPrice),
        updatedAt = Value(updatedAt);
   static Insertable<Product> custom({
     Expression<String>? id,
     Expression<String>? name,
     Expression<String>? barcode,
-    Expression<String>? unitPrice,
+    Expression<String>? sellingPrice,
+    Expression<String>? purchasePrice,
     Expression<int>? currentStock,
     Expression<int>? minStock,
     Expression<String>? categoryId,
@@ -594,7 +651,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (barcode != null) 'barcode': barcode,
-      if (unitPrice != null) 'unit_price': unitPrice,
+      if (sellingPrice != null) 'selling_price': sellingPrice,
+      if (purchasePrice != null) 'purchase_price': purchasePrice,
       if (currentStock != null) 'current_stock': currentStock,
       if (minStock != null) 'min_stock': minStock,
       if (categoryId != null) 'category_id': categoryId,
@@ -610,7 +668,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     Value<String>? id,
     Value<String>? name,
     Value<String?>? barcode,
-    Value<String>? unitPrice,
+    Value<String>? sellingPrice,
+    Value<String?>? purchasePrice,
     Value<int?>? currentStock,
     Value<int?>? minStock,
     Value<String?>? categoryId,
@@ -624,7 +683,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
       id: id ?? this.id,
       name: name ?? this.name,
       barcode: barcode ?? this.barcode,
-      unitPrice: unitPrice ?? this.unitPrice,
+      sellingPrice: sellingPrice ?? this.sellingPrice,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
       currentStock: currentStock ?? this.currentStock,
       minStock: minStock ?? this.minStock,
       categoryId: categoryId ?? this.categoryId,
@@ -648,8 +708,11 @@ class ProductsCompanion extends UpdateCompanion<Product> {
     if (barcode.present) {
       map['barcode'] = Variable<String>(barcode.value);
     }
-    if (unitPrice.present) {
-      map['unit_price'] = Variable<String>(unitPrice.value);
+    if (sellingPrice.present) {
+      map['selling_price'] = Variable<String>(sellingPrice.value);
+    }
+    if (purchasePrice.present) {
+      map['purchase_price'] = Variable<String>(purchasePrice.value);
     }
     if (currentStock.present) {
       map['current_stock'] = Variable<int>(currentStock.value);
@@ -684,7 +747,8 @@ class ProductsCompanion extends UpdateCompanion<Product> {
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('barcode: $barcode, ')
-          ..write('unitPrice: $unitPrice, ')
+          ..write('sellingPrice: $sellingPrice, ')
+          ..write('purchasePrice: $purchasePrice, ')
           ..write('currentStock: $currentStock, ')
           ..write('minStock: $minStock, ')
           ..write('categoryId: $categoryId, ')
@@ -1123,6 +1187,40 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _discountTypeMeta = const VerificationMeta(
+    'discountType',
+  );
+  @override
+  late final GeneratedColumn<String> discountType = GeneratedColumn<String>(
+    'discount_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountValueMeta = const VerificationMeta(
+    'discountValue',
+  );
+  @override
+  late final GeneratedColumn<String> discountValue = GeneratedColumn<String>(
+    'discount_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountAmountMeta = const VerificationMeta(
+    'discountAmount',
+  );
+  @override
+  late final GeneratedColumn<String> discountAmount = GeneratedColumn<String>(
+    'discount_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0'),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1141,6 +1239,9 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     totalAmount,
     vatAmount,
     paymentMethod,
+    discountType,
+    discountValue,
+    discountAmount,
     createdAt,
   ];
   @override
@@ -1201,6 +1302,33 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     } else if (isInserting) {
       context.missing(_paymentMethodMeta);
     }
+    if (data.containsKey('discount_type')) {
+      context.handle(
+        _discountTypeMeta,
+        discountType.isAcceptableOrUnknown(
+          data['discount_type']!,
+          _discountTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_value')) {
+      context.handle(
+        _discountValueMeta,
+        discountValue.isAcceptableOrUnknown(
+          data['discount_value']!,
+          _discountValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_amount')) {
+      context.handle(
+        _discountAmountMeta,
+        discountAmount.isAcceptableOrUnknown(
+          data['discount_amount']!,
+          _discountAmountMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1238,6 +1366,18 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         DriftSqlType.string,
         data['${effectivePrefix}payment_method'],
       )!,
+      discountType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_type'],
+      ),
+      discountValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_value'],
+      ),
+      discountAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_amount'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1267,6 +1407,15 @@ class Sale extends DataClass implements Insertable<Sale> {
   /// Mode de paiement.
   final String paymentMethod;
 
+  /// Type de remise globale (`amount` / `percentage`), null = aucune.
+  final String? discountType;
+
+  /// Valeur saisie de la remise globale (FCFA ou %).
+  final String? discountValue;
+
+  /// Montant de la remise globale en FCFA ; `total_amount` l'a déjà déduit.
+  final String discountAmount;
+
   /// Date de création.
   final DateTime createdAt;
   const Sale({
@@ -1275,6 +1424,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     required this.totalAmount,
     required this.vatAmount,
     required this.paymentMethod,
+    this.discountType,
+    this.discountValue,
+    required this.discountAmount,
     required this.createdAt,
   });
   @override
@@ -1285,6 +1437,13 @@ class Sale extends DataClass implements Insertable<Sale> {
     map['total_amount'] = Variable<String>(totalAmount);
     map['vat_amount'] = Variable<String>(vatAmount);
     map['payment_method'] = Variable<String>(paymentMethod);
+    if (!nullToAbsent || discountType != null) {
+      map['discount_type'] = Variable<String>(discountType);
+    }
+    if (!nullToAbsent || discountValue != null) {
+      map['discount_value'] = Variable<String>(discountValue);
+    }
+    map['discount_amount'] = Variable<String>(discountAmount);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1296,6 +1455,13 @@ class Sale extends DataClass implements Insertable<Sale> {
       totalAmount: Value(totalAmount),
       vatAmount: Value(vatAmount),
       paymentMethod: Value(paymentMethod),
+      discountType: discountType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountType),
+      discountValue: discountValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountValue),
+      discountAmount: Value(discountAmount),
       createdAt: Value(createdAt),
     );
   }
@@ -1311,6 +1477,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       totalAmount: serializer.fromJson<String>(json['totalAmount']),
       vatAmount: serializer.fromJson<String>(json['vatAmount']),
       paymentMethod: serializer.fromJson<String>(json['paymentMethod']),
+      discountType: serializer.fromJson<String?>(json['discountType']),
+      discountValue: serializer.fromJson<String?>(json['discountValue']),
+      discountAmount: serializer.fromJson<String>(json['discountAmount']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1323,6 +1492,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       'totalAmount': serializer.toJson<String>(totalAmount),
       'vatAmount': serializer.toJson<String>(vatAmount),
       'paymentMethod': serializer.toJson<String>(paymentMethod),
+      'discountType': serializer.toJson<String?>(discountType),
+      'discountValue': serializer.toJson<String?>(discountValue),
+      'discountAmount': serializer.toJson<String>(discountAmount),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1333,6 +1505,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     String? totalAmount,
     String? vatAmount,
     String? paymentMethod,
+    Value<String?> discountType = const Value.absent(),
+    Value<String?> discountValue = const Value.absent(),
+    String? discountAmount,
     DateTime? createdAt,
   }) => Sale(
     id: id ?? this.id,
@@ -1340,6 +1515,11 @@ class Sale extends DataClass implements Insertable<Sale> {
     totalAmount: totalAmount ?? this.totalAmount,
     vatAmount: vatAmount ?? this.vatAmount,
     paymentMethod: paymentMethod ?? this.paymentMethod,
+    discountType: discountType.present ? discountType.value : this.discountType,
+    discountValue: discountValue.present
+        ? discountValue.value
+        : this.discountValue,
+    discountAmount: discountAmount ?? this.discountAmount,
     createdAt: createdAt ?? this.createdAt,
   );
   Sale copyWithCompanion(SalesCompanion data) {
@@ -1355,6 +1535,15 @@ class Sale extends DataClass implements Insertable<Sale> {
       paymentMethod: data.paymentMethod.present
           ? data.paymentMethod.value
           : this.paymentMethod,
+      discountType: data.discountType.present
+          ? data.discountType.value
+          : this.discountType,
+      discountValue: data.discountValue.present
+          ? data.discountValue.value
+          : this.discountValue,
+      discountAmount: data.discountAmount.present
+          ? data.discountAmount.value
+          : this.discountAmount,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1367,6 +1556,9 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('totalAmount: $totalAmount, ')
           ..write('vatAmount: $vatAmount, ')
           ..write('paymentMethod: $paymentMethod, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('discountAmount: $discountAmount, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1379,6 +1571,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     totalAmount,
     vatAmount,
     paymentMethod,
+    discountType,
+    discountValue,
+    discountAmount,
     createdAt,
   );
   @override
@@ -1390,6 +1585,9 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.totalAmount == this.totalAmount &&
           other.vatAmount == this.vatAmount &&
           other.paymentMethod == this.paymentMethod &&
+          other.discountType == this.discountType &&
+          other.discountValue == this.discountValue &&
+          other.discountAmount == this.discountAmount &&
           other.createdAt == this.createdAt);
 }
 
@@ -1399,6 +1597,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<String> totalAmount;
   final Value<String> vatAmount;
   final Value<String> paymentMethod;
+  final Value<String?> discountType;
+  final Value<String?> discountValue;
+  final Value<String> discountAmount;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const SalesCompanion({
@@ -1407,6 +1608,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.totalAmount = const Value.absent(),
     this.vatAmount = const Value.absent(),
     this.paymentMethod = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.discountAmount = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1416,6 +1620,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     required String totalAmount,
     required String vatAmount,
     required String paymentMethod,
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.discountAmount = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1430,6 +1637,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<String>? totalAmount,
     Expression<String>? vatAmount,
     Expression<String>? paymentMethod,
+    Expression<String>? discountType,
+    Expression<String>? discountValue,
+    Expression<String>? discountAmount,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1439,6 +1649,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (totalAmount != null) 'total_amount': totalAmount,
       if (vatAmount != null) 'vat_amount': vatAmount,
       if (paymentMethod != null) 'payment_method': paymentMethod,
+      if (discountType != null) 'discount_type': discountType,
+      if (discountValue != null) 'discount_value': discountValue,
+      if (discountAmount != null) 'discount_amount': discountAmount,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1450,6 +1663,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Value<String>? totalAmount,
     Value<String>? vatAmount,
     Value<String>? paymentMethod,
+    Value<String?>? discountType,
+    Value<String?>? discountValue,
+    Value<String>? discountAmount,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1459,6 +1675,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       totalAmount: totalAmount ?? this.totalAmount,
       vatAmount: vatAmount ?? this.vatAmount,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
+      discountAmount: discountAmount ?? this.discountAmount,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1482,6 +1701,15 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (paymentMethod.present) {
       map['payment_method'] = Variable<String>(paymentMethod.value);
     }
+    if (discountType.present) {
+      map['discount_type'] = Variable<String>(discountType.value);
+    }
+    if (discountValue.present) {
+      map['discount_value'] = Variable<String>(discountValue.value);
+    }
+    if (discountAmount.present) {
+      map['discount_amount'] = Variable<String>(discountAmount.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1499,6 +1727,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('totalAmount: $totalAmount, ')
           ..write('vatAmount: $vatAmount, ')
           ..write('paymentMethod: $paymentMethod, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('discountAmount: $discountAmount, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1585,6 +1816,52 @@ class $SaleItemsTable extends SaleItems
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _purchaseUnitPriceMeta = const VerificationMeta(
+    'purchaseUnitPrice',
+  );
+  @override
+  late final GeneratedColumn<String> purchaseUnitPrice =
+      GeneratedColumn<String>(
+        'purchase_unit_price',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _discountTypeMeta = const VerificationMeta(
+    'discountType',
+  );
+  @override
+  late final GeneratedColumn<String> discountType = GeneratedColumn<String>(
+    'discount_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountValueMeta = const VerificationMeta(
+    'discountValue',
+  );
+  @override
+  late final GeneratedColumn<String> discountValue = GeneratedColumn<String>(
+    'discount_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discountAmountMeta = const VerificationMeta(
+    'discountAmount',
+  );
+  @override
+  late final GeneratedColumn<String> discountAmount = GeneratedColumn<String>(
+    'discount_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1594,6 +1871,10 @@ class $SaleItemsTable extends SaleItems
     unitPrice,
     quantity,
     lineTotal,
+    purchaseUnitPrice,
+    discountType,
+    discountValue,
+    discountAmount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1663,6 +1944,42 @@ class $SaleItemsTable extends SaleItems
     } else if (isInserting) {
       context.missing(_lineTotalMeta);
     }
+    if (data.containsKey('purchase_unit_price')) {
+      context.handle(
+        _purchaseUnitPriceMeta,
+        purchaseUnitPrice.isAcceptableOrUnknown(
+          data['purchase_unit_price']!,
+          _purchaseUnitPriceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_type')) {
+      context.handle(
+        _discountTypeMeta,
+        discountType.isAcceptableOrUnknown(
+          data['discount_type']!,
+          _discountTypeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_value')) {
+      context.handle(
+        _discountValueMeta,
+        discountValue.isAcceptableOrUnknown(
+          data['discount_value']!,
+          _discountValueMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discount_amount')) {
+      context.handle(
+        _discountAmountMeta,
+        discountAmount.isAcceptableOrUnknown(
+          data['discount_amount']!,
+          _discountAmountMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1700,6 +2017,22 @@ class $SaleItemsTable extends SaleItems
         DriftSqlType.string,
         data['${effectivePrefix}line_total'],
       )!,
+      purchaseUnitPrice: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}purchase_unit_price'],
+      ),
+      discountType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_type'],
+      ),
+      discountValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_value'],
+      ),
+      discountAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discount_amount'],
+      )!,
     );
   }
 
@@ -1722,14 +2055,26 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
   /// Nom du produit au moment de la vente.
   final String productName;
 
-  /// Prix unitaire en FCFA, stocké en string.
+  /// Prix de vente unitaire au moment de la vente, en FCFA (string).
   final String unitPrice;
 
   /// Quantité.
   final int quantity;
 
-  /// Total ligne en FCFA, stocké en string.
+  /// Total net de la ligne (brut − réduction) en FCFA, stocké en string.
   final String lineTotal;
+
+  /// Prix d'achat unitaire au moment de la vente (null = inconnu).
+  final String? purchaseUnitPrice;
+
+  /// Type de réduction de la ligne (`amount` / `percentage`), null = aucune.
+  final String? discountType;
+
+  /// Valeur saisie de la réduction (FCFA ou %).
+  final String? discountValue;
+
+  /// Montant de la réduction de la ligne en FCFA.
+  final String discountAmount;
   const SaleItem({
     required this.id,
     required this.saleId,
@@ -1738,6 +2083,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     required this.unitPrice,
     required this.quantity,
     required this.lineTotal,
+    this.purchaseUnitPrice,
+    this.discountType,
+    this.discountValue,
+    required this.discountAmount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1749,6 +2098,16 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     map['unit_price'] = Variable<String>(unitPrice);
     map['quantity'] = Variable<int>(quantity);
     map['line_total'] = Variable<String>(lineTotal);
+    if (!nullToAbsent || purchaseUnitPrice != null) {
+      map['purchase_unit_price'] = Variable<String>(purchaseUnitPrice);
+    }
+    if (!nullToAbsent || discountType != null) {
+      map['discount_type'] = Variable<String>(discountType);
+    }
+    if (!nullToAbsent || discountValue != null) {
+      map['discount_value'] = Variable<String>(discountValue);
+    }
+    map['discount_amount'] = Variable<String>(discountAmount);
     return map;
   }
 
@@ -1761,6 +2120,16 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       unitPrice: Value(unitPrice),
       quantity: Value(quantity),
       lineTotal: Value(lineTotal),
+      purchaseUnitPrice: purchaseUnitPrice == null && nullToAbsent
+          ? const Value.absent()
+          : Value(purchaseUnitPrice),
+      discountType: discountType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountType),
+      discountValue: discountValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discountValue),
+      discountAmount: Value(discountAmount),
     );
   }
 
@@ -1777,6 +2146,12 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       unitPrice: serializer.fromJson<String>(json['unitPrice']),
       quantity: serializer.fromJson<int>(json['quantity']),
       lineTotal: serializer.fromJson<String>(json['lineTotal']),
+      purchaseUnitPrice: serializer.fromJson<String?>(
+        json['purchaseUnitPrice'],
+      ),
+      discountType: serializer.fromJson<String?>(json['discountType']),
+      discountValue: serializer.fromJson<String?>(json['discountValue']),
+      discountAmount: serializer.fromJson<String>(json['discountAmount']),
     );
   }
   @override
@@ -1790,6 +2165,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       'unitPrice': serializer.toJson<String>(unitPrice),
       'quantity': serializer.toJson<int>(quantity),
       'lineTotal': serializer.toJson<String>(lineTotal),
+      'purchaseUnitPrice': serializer.toJson<String?>(purchaseUnitPrice),
+      'discountType': serializer.toJson<String?>(discountType),
+      'discountValue': serializer.toJson<String?>(discountValue),
+      'discountAmount': serializer.toJson<String>(discountAmount),
     };
   }
 
@@ -1801,6 +2180,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     String? unitPrice,
     int? quantity,
     String? lineTotal,
+    Value<String?> purchaseUnitPrice = const Value.absent(),
+    Value<String?> discountType = const Value.absent(),
+    Value<String?> discountValue = const Value.absent(),
+    String? discountAmount,
   }) => SaleItem(
     id: id ?? this.id,
     saleId: saleId ?? this.saleId,
@@ -1809,6 +2192,14 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     unitPrice: unitPrice ?? this.unitPrice,
     quantity: quantity ?? this.quantity,
     lineTotal: lineTotal ?? this.lineTotal,
+    purchaseUnitPrice: purchaseUnitPrice.present
+        ? purchaseUnitPrice.value
+        : this.purchaseUnitPrice,
+    discountType: discountType.present ? discountType.value : this.discountType,
+    discountValue: discountValue.present
+        ? discountValue.value
+        : this.discountValue,
+    discountAmount: discountAmount ?? this.discountAmount,
   );
   SaleItem copyWithCompanion(SaleItemsCompanion data) {
     return SaleItem(
@@ -1821,6 +2212,18 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
       unitPrice: data.unitPrice.present ? data.unitPrice.value : this.unitPrice,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       lineTotal: data.lineTotal.present ? data.lineTotal.value : this.lineTotal,
+      purchaseUnitPrice: data.purchaseUnitPrice.present
+          ? data.purchaseUnitPrice.value
+          : this.purchaseUnitPrice,
+      discountType: data.discountType.present
+          ? data.discountType.value
+          : this.discountType,
+      discountValue: data.discountValue.present
+          ? data.discountValue.value
+          : this.discountValue,
+      discountAmount: data.discountAmount.present
+          ? data.discountAmount.value
+          : this.discountAmount,
     );
   }
 
@@ -1833,7 +2236,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           ..write('productName: $productName, ')
           ..write('unitPrice: $unitPrice, ')
           ..write('quantity: $quantity, ')
-          ..write('lineTotal: $lineTotal')
+          ..write('lineTotal: $lineTotal, ')
+          ..write('purchaseUnitPrice: $purchaseUnitPrice, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('discountAmount: $discountAmount')
           ..write(')'))
         .toString();
   }
@@ -1847,6 +2254,10 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
     unitPrice,
     quantity,
     lineTotal,
+    purchaseUnitPrice,
+    discountType,
+    discountValue,
+    discountAmount,
   );
   @override
   bool operator ==(Object other) =>
@@ -1858,7 +2269,11 @@ class SaleItem extends DataClass implements Insertable<SaleItem> {
           other.productName == this.productName &&
           other.unitPrice == this.unitPrice &&
           other.quantity == this.quantity &&
-          other.lineTotal == this.lineTotal);
+          other.lineTotal == this.lineTotal &&
+          other.purchaseUnitPrice == this.purchaseUnitPrice &&
+          other.discountType == this.discountType &&
+          other.discountValue == this.discountValue &&
+          other.discountAmount == this.discountAmount);
 }
 
 class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
@@ -1869,6 +2284,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
   final Value<String> unitPrice;
   final Value<int> quantity;
   final Value<String> lineTotal;
+  final Value<String?> purchaseUnitPrice;
+  final Value<String?> discountType;
+  final Value<String?> discountValue;
+  final Value<String> discountAmount;
   final Value<int> rowid;
   const SaleItemsCompanion({
     this.id = const Value.absent(),
@@ -1878,6 +2297,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     this.unitPrice = const Value.absent(),
     this.quantity = const Value.absent(),
     this.lineTotal = const Value.absent(),
+    this.purchaseUnitPrice = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.discountAmount = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SaleItemsCompanion.insert({
@@ -1888,6 +2311,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     required String unitPrice,
     required int quantity,
     required String lineTotal,
+    this.purchaseUnitPrice = const Value.absent(),
+    this.discountType = const Value.absent(),
+    this.discountValue = const Value.absent(),
+    this.discountAmount = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        saleId = Value(saleId),
@@ -1904,6 +2331,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Expression<String>? unitPrice,
     Expression<int>? quantity,
     Expression<String>? lineTotal,
+    Expression<String>? purchaseUnitPrice,
+    Expression<String>? discountType,
+    Expression<String>? discountValue,
+    Expression<String>? discountAmount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1914,6 +2345,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       if (unitPrice != null) 'unit_price': unitPrice,
       if (quantity != null) 'quantity': quantity,
       if (lineTotal != null) 'line_total': lineTotal,
+      if (purchaseUnitPrice != null) 'purchase_unit_price': purchaseUnitPrice,
+      if (discountType != null) 'discount_type': discountType,
+      if (discountValue != null) 'discount_value': discountValue,
+      if (discountAmount != null) 'discount_amount': discountAmount,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1926,6 +2361,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     Value<String>? unitPrice,
     Value<int>? quantity,
     Value<String>? lineTotal,
+    Value<String?>? purchaseUnitPrice,
+    Value<String?>? discountType,
+    Value<String?>? discountValue,
+    Value<String>? discountAmount,
     Value<int>? rowid,
   }) {
     return SaleItemsCompanion(
@@ -1936,6 +2375,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
       unitPrice: unitPrice ?? this.unitPrice,
       quantity: quantity ?? this.quantity,
       lineTotal: lineTotal ?? this.lineTotal,
+      purchaseUnitPrice: purchaseUnitPrice ?? this.purchaseUnitPrice,
+      discountType: discountType ?? this.discountType,
+      discountValue: discountValue ?? this.discountValue,
+      discountAmount: discountAmount ?? this.discountAmount,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1964,6 +2407,18 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
     if (lineTotal.present) {
       map['line_total'] = Variable<String>(lineTotal.value);
     }
+    if (purchaseUnitPrice.present) {
+      map['purchase_unit_price'] = Variable<String>(purchaseUnitPrice.value);
+    }
+    if (discountType.present) {
+      map['discount_type'] = Variable<String>(discountType.value);
+    }
+    if (discountValue.present) {
+      map['discount_value'] = Variable<String>(discountValue.value);
+    }
+    if (discountAmount.present) {
+      map['discount_amount'] = Variable<String>(discountAmount.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1980,6 +2435,10 @@ class SaleItemsCompanion extends UpdateCompanion<SaleItem> {
           ..write('unitPrice: $unitPrice, ')
           ..write('quantity: $quantity, ')
           ..write('lineTotal: $lineTotal, ')
+          ..write('purchaseUnitPrice: $purchaseUnitPrice, ')
+          ..write('discountType: $discountType, ')
+          ..write('discountValue: $discountValue, ')
+          ..write('discountAmount: $discountAmount, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2858,7 +3317,8 @@ typedef $$ProductsTableCreateCompanionBuilder =
       required String id,
       required String name,
       Value<String?> barcode,
-      required String unitPrice,
+      required String sellingPrice,
+      Value<String?> purchasePrice,
       Value<int?> currentStock,
       Value<int?> minStock,
       Value<String?> categoryId,
@@ -2873,7 +3333,8 @@ typedef $$ProductsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> name,
       Value<String?> barcode,
-      Value<String> unitPrice,
+      Value<String> sellingPrice,
+      Value<String?> purchasePrice,
       Value<int?> currentStock,
       Value<int?> minStock,
       Value<String?> categoryId,
@@ -2908,8 +3369,13 @@ class $$ProductsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get unitPrice => $composableBuilder(
-    column: $table.unitPrice,
+  ColumnFilters<String> get sellingPrice => $composableBuilder(
+    column: $table.sellingPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get purchasePrice => $composableBuilder(
+    column: $table.purchasePrice,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2973,8 +3439,13 @@ class $$ProductsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get unitPrice => $composableBuilder(
-    column: $table.unitPrice,
+  ColumnOrderings<String> get sellingPrice => $composableBuilder(
+    column: $table.sellingPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get purchasePrice => $composableBuilder(
+    column: $table.purchasePrice,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -3032,8 +3503,15 @@ class $$ProductsTableAnnotationComposer
   GeneratedColumn<String> get barcode =>
       $composableBuilder(column: $table.barcode, builder: (column) => column);
 
-  GeneratedColumn<String> get unitPrice =>
-      $composableBuilder(column: $table.unitPrice, builder: (column) => column);
+  GeneratedColumn<String> get sellingPrice => $composableBuilder(
+    column: $table.sellingPrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get purchasePrice => $composableBuilder(
+    column: $table.purchasePrice,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get currentStock => $composableBuilder(
     column: $table.currentStock,
@@ -3094,7 +3572,8 @@ class $$ProductsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String?> barcode = const Value.absent(),
-                Value<String> unitPrice = const Value.absent(),
+                Value<String> sellingPrice = const Value.absent(),
+                Value<String?> purchasePrice = const Value.absent(),
                 Value<int?> currentStock = const Value.absent(),
                 Value<int?> minStock = const Value.absent(),
                 Value<String?> categoryId = const Value.absent(),
@@ -3107,7 +3586,8 @@ class $$ProductsTableTableManager
                 id: id,
                 name: name,
                 barcode: barcode,
-                unitPrice: unitPrice,
+                sellingPrice: sellingPrice,
+                purchasePrice: purchasePrice,
                 currentStock: currentStock,
                 minStock: minStock,
                 categoryId: categoryId,
@@ -3122,7 +3602,8 @@ class $$ProductsTableTableManager
                 required String id,
                 required String name,
                 Value<String?> barcode = const Value.absent(),
-                required String unitPrice,
+                required String sellingPrice,
+                Value<String?> purchasePrice = const Value.absent(),
                 Value<int?> currentStock = const Value.absent(),
                 Value<int?> minStock = const Value.absent(),
                 Value<String?> categoryId = const Value.absent(),
@@ -3135,7 +3616,8 @@ class $$ProductsTableTableManager
                 id: id,
                 name: name,
                 barcode: barcode,
-                unitPrice: unitPrice,
+                sellingPrice: sellingPrice,
+                purchasePrice: purchasePrice,
                 currentStock: currentStock,
                 minStock: minStock,
                 categoryId: categoryId,
@@ -3368,6 +3850,9 @@ typedef $$SalesTableCreateCompanionBuilder =
       required String totalAmount,
       required String vatAmount,
       required String paymentMethod,
+      Value<String?> discountType,
+      Value<String?> discountValue,
+      Value<String> discountAmount,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -3378,6 +3863,9 @@ typedef $$SalesTableUpdateCompanionBuilder =
       Value<String> totalAmount,
       Value<String> vatAmount,
       Value<String> paymentMethod,
+      Value<String?> discountType,
+      Value<String?> discountValue,
+      Value<String> discountAmount,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -3412,6 +3900,21 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
 
   ColumnFilters<String> get paymentMethod => $composableBuilder(
     column: $table.paymentMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3455,6 +3958,21 @@ class $$SalesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3488,6 +4006,21 @@ class $$SalesTableAnnotationComposer
 
   GeneratedColumn<String> get paymentMethod => $composableBuilder(
     column: $table.paymentMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
     builder: (column) => column,
   );
 
@@ -3528,6 +4061,9 @@ class $$SalesTableTableManager
                 Value<String> totalAmount = const Value.absent(),
                 Value<String> vatAmount = const Value.absent(),
                 Value<String> paymentMethod = const Value.absent(),
+                Value<String?> discountType = const Value.absent(),
+                Value<String?> discountValue = const Value.absent(),
+                Value<String> discountAmount = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion(
@@ -3536,6 +4072,9 @@ class $$SalesTableTableManager
                 totalAmount: totalAmount,
                 vatAmount: vatAmount,
                 paymentMethod: paymentMethod,
+                discountType: discountType,
+                discountValue: discountValue,
+                discountAmount: discountAmount,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -3546,6 +4085,9 @@ class $$SalesTableTableManager
                 required String totalAmount,
                 required String vatAmount,
                 required String paymentMethod,
+                Value<String?> discountType = const Value.absent(),
+                Value<String?> discountValue = const Value.absent(),
+                Value<String> discountAmount = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion.insert(
@@ -3554,6 +4096,9 @@ class $$SalesTableTableManager
                 totalAmount: totalAmount,
                 vatAmount: vatAmount,
                 paymentMethod: paymentMethod,
+                discountType: discountType,
+                discountValue: discountValue,
+                discountAmount: discountAmount,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -3588,6 +4133,10 @@ typedef $$SaleItemsTableCreateCompanionBuilder =
       required String unitPrice,
       required int quantity,
       required String lineTotal,
+      Value<String?> purchaseUnitPrice,
+      Value<String?> discountType,
+      Value<String?> discountValue,
+      Value<String> discountAmount,
       Value<int> rowid,
     });
 typedef $$SaleItemsTableUpdateCompanionBuilder =
@@ -3599,6 +4148,10 @@ typedef $$SaleItemsTableUpdateCompanionBuilder =
       Value<String> unitPrice,
       Value<int> quantity,
       Value<String> lineTotal,
+      Value<String?> purchaseUnitPrice,
+      Value<String?> discountType,
+      Value<String?> discountValue,
+      Value<String> discountAmount,
       Value<int> rowid,
     });
 
@@ -3643,6 +4196,26 @@ class $$SaleItemsTableFilterComposer
 
   ColumnFilters<String> get lineTotal => $composableBuilder(
     column: $table.lineTotal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get purchaseUnitPrice => $composableBuilder(
+    column: $table.purchaseUnitPrice,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3690,6 +4263,26 @@ class $$SaleItemsTableOrderingComposer
     column: $table.lineTotal,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get purchaseUnitPrice => $composableBuilder(
+    column: $table.purchaseUnitPrice,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SaleItemsTableAnnotationComposer
@@ -3723,6 +4316,26 @@ class $$SaleItemsTableAnnotationComposer
 
   GeneratedColumn<String> get lineTotal =>
       $composableBuilder(column: $table.lineTotal, builder: (column) => column);
+
+  GeneratedColumn<String> get purchaseUnitPrice => $composableBuilder(
+    column: $table.purchaseUnitPrice,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountType => $composableBuilder(
+    column: $table.discountType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountValue => $composableBuilder(
+    column: $table.discountValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discountAmount => $composableBuilder(
+    column: $table.discountAmount,
+    builder: (column) => column,
+  );
 }
 
 class $$SaleItemsTableTableManager
@@ -3760,6 +4373,10 @@ class $$SaleItemsTableTableManager
                 Value<String> unitPrice = const Value.absent(),
                 Value<int> quantity = const Value.absent(),
                 Value<String> lineTotal = const Value.absent(),
+                Value<String?> purchaseUnitPrice = const Value.absent(),
+                Value<String?> discountType = const Value.absent(),
+                Value<String?> discountValue = const Value.absent(),
+                Value<String> discountAmount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleItemsCompanion(
                 id: id,
@@ -3769,6 +4386,10 @@ class $$SaleItemsTableTableManager
                 unitPrice: unitPrice,
                 quantity: quantity,
                 lineTotal: lineTotal,
+                purchaseUnitPrice: purchaseUnitPrice,
+                discountType: discountType,
+                discountValue: discountValue,
+                discountAmount: discountAmount,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3780,6 +4401,10 @@ class $$SaleItemsTableTableManager
                 required String unitPrice,
                 required int quantity,
                 required String lineTotal,
+                Value<String?> purchaseUnitPrice = const Value.absent(),
+                Value<String?> discountType = const Value.absent(),
+                Value<String?> discountValue = const Value.absent(),
+                Value<String> discountAmount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleItemsCompanion.insert(
                 id: id,
@@ -3789,6 +4414,10 @@ class $$SaleItemsTableTableManager
                 unitPrice: unitPrice,
                 quantity: quantity,
                 lineTotal: lineTotal,
+                purchaseUnitPrice: purchaseUnitPrice,
+                discountType: discountType,
+                discountValue: discountValue,
+                discountAmount: discountAmount,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

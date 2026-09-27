@@ -7,7 +7,8 @@ import '../../domain/entities/cart_item.dart';
 import 'quantity_stepper.dart';
 
 /// Ligne compacte du panier : nom et total de ligne, prix unitaire et
-/// quantité. Glisser vers la gauche supprime la ligne.
+/// quantité, réduction éventuelle. Glisser vers la gauche supprime la ligne.
+/// Jamais de prix d'achat : l'écran est visible du client.
 class CartItemTile extends StatelessWidget {
   /// Crée une ligne de panier.
   const CartItemTile({
@@ -90,6 +91,29 @@ class CartItemTile extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (item.discount != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.local_offer_outlined,
+                          size: 14,
+                          color: cs.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            '${formatAmount(item.grossTotal)} · '
+                            'Réduction −${formatFcfa(item.discountAmount)}',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: cs.primary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 Row(
                   children: [
                     Expanded(

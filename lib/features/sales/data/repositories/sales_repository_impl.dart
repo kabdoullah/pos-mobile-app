@@ -8,6 +8,8 @@ import 'package:uuid/uuid.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../database/app_database.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/discount.dart';
+import '../../domain/entities/margin_summary.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
 import '../../domain/repositories/sales_repository.dart';
 import '../models/sale_mappers.dart';
@@ -41,14 +43,19 @@ class SalesRepositoryImpl implements SalesRepository {
     required Decimal totalAmount,
     required Decimal vatAmount,
     required sale_entity.PaymentMethod paymentMethod,
+    Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
   }) async {
     const uuid = Uuid();
     final saleId = uuid.v4();
     final now = DateTime.now().toUtc();
+    final subtotal = items.fold(Decimal.zero, (sum, i) => sum + i.lineTotal);
+    final discountAmount = discount?.amountOn(subtotal) ?? Decimal.zero;
 
-    // Construit le payload de synchro avec les articles (avant la transaction)
+    // Construit le payload de synchro avec les articles (avant la
+    // transaction). Il porte l'instantané complet des prix (ADR-0009) : le
+    // serveur ne relit jamais le produit pour reconstituer la vente.
     final itemPayloads = items
         .map(
           (item) => {
@@ -57,6 +64,12 @@ class SalesRepositoryImpl implements SalesRepository {
             'unit_price_at_sale': item.unitPrice.toString(),
             'quantity': item.quantity,
             'line_total': item.lineTotal.toString(),
+            'purchase_price_at_sale': item.purchaseUnitPrice?.toString(),
+            'discount_type': item.discount == null
+                ? null
+                : discountTypeToString(item.discount!.type),
+            'discount_value': item.discount?.value.toString(),
+            'discount_amount': item.discountAmount.toString(),
           },
         )
         .toList();
@@ -71,6 +84,11 @@ class SalesRepositoryImpl implements SalesRepository {
       if (mobileMoneyAmount != null)
         'mobile_money_amount': mobileMoneyAmount.toString(),
       'created_at': now.toIso8601String(),
+      'discount_type': discount == null
+          ? null
+          : discountTypeToString(discount.type),
+      'discount_value': discount?.value.toString(),
+      'discount_amount': discountAmount.toString(),
     };
 
     // Transaction : insertion atomique de la vente + articles + entrée de file
@@ -86,6 +104,11 @@ class SalesRepositoryImpl implements SalesRepository {
               vatAmount: drift.Value(vatAmount.toString()),
               paymentMethod: drift.Value(_paymentMethodToString(paymentMethod)),
               createdAt: drift.Value(now),
+              discountType: drift.Value(
+                discount == null ? null : discountTypeToString(discount.type),
+              ),
+              discountValue: drift.Value(discount?.value.toString()),
+              discountAmount: drift.Value(discountAmount.toString()),
             ),
           );
 
@@ -103,6 +126,16 @@ class SalesRepositoryImpl implements SalesRepository {
                 unitPrice: drift.Value(item.unitPrice.toString()),
                 quantity: drift.Value(item.quantity),
                 lineTotal: drift.Value(item.lineTotal.toString()),
+                purchaseUnitPrice: drift.Value(
+                  item.purchaseUnitPrice?.toString(),
+                ),
+                discountType: drift.Value(
+                  item.discount == null
+                      ? null
+                      : discountTypeToString(item.discount!.type),
+                ),
+                discountValue: drift.Value(item.discount?.value.toString()),
+                discountAmount: drift.Value(item.discountAmount.toString()),
               ),
             );
       }
@@ -134,6 +167,8 @@ class SalesRepositoryImpl implements SalesRepository {
       vatAmount: vatAmount,
       paymentMethod: paymentMethod,
       createdAt: now,
+      discount: discount,
+      discountAmount: discountAmount,
     );
   }
 
@@ -291,6 +326,44 @@ class SalesRepositoryImpl implements SalesRepository {
             mobileMoneyTotal: fromInt(row.read<int>('mobile_total')),
           );
         });
+  }
+
+  @override
+  Stream<MarginSummary> watchMarginSummary(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
+
+    final query =
+        db.select(db.sales).join([
+          drift.leftOuterJoin(
+            db.saleItems,
+            db.saleItems.saleId.equalsExp(db.sales.id),
+          ),
+        ])..where(
+          db.sales.createdAt.isBiggerOrEqualValue(rangeStart) &
+              db.sales.createdAt.isSmallerThanValue(rangeEnd),
+        );
+
+    return query.watch().map((rows) {
+      final sales = <String, ({sale_entity.Sale sale, List<CartItem> items})>{};
+      for (final row in rows) {
+        final saleRow = row.readTable(db.sales);
+        final entry = sales.putIfAbsent(
+          saleRow.id,
+          () => (sale: saleRow.toDomain(), items: <CartItem>[]),
+        );
+        final itemRow = row.readTableOrNull(db.saleItems);
+        if (itemRow != null) entry.items.add(itemRow.toCartItem());
+      }
+      return MarginSummary.fromSales(sales.values);
+    });
   }
 
   @override

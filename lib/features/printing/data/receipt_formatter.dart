@@ -81,6 +81,21 @@ class ReceiptFormatter {
     bytes.addAll(_text(generator, _separator));
 
     // --- TOTAUX ---
+    // Remise globale (ADR-0009) : sous-total des lignes puis remise.
+    if (sale.discountAmount > Decimal.zero) {
+      bytes.addAll(
+        _text(
+          generator,
+          _padLine('Sous-total', _formatFcfa(sale.subtotalAmount)),
+        ),
+      );
+      bytes.addAll(
+        _text(
+          generator,
+          _padLine('Remise', '-${_formatFcfa(sale.discountAmount)}'),
+        ),
+      );
+    }
     if (sale.vatAmount != Decimal.zero) {
       final htAmount = sale.totalAmount - sale.vatAmount;
       bytes.addAll(
@@ -284,17 +299,25 @@ class ReceiptFormatter {
     PosStyles styles = const PosStyles(),
   }) => generator.text(printable(text), styles: styles);
 
-  /// Article sur deux lignes : nom du produit en ligne 1, qté × prix unitaire =
-  /// total en ligne 2.
+  /// Article : nom du produit en ligne 1, qté × prix unitaire = total brut en
+  /// ligne 2, puis la réduction éventuelle en ligne 3. Jamais le prix d'achat.
   static List<int> _formatLineItem(Generator gen, CartItem item) {
     final name = item.productName.length > _lineWidth
         ? '${item.productName.substring(0, _lineWidth - 3)}...'
         : item.productName;
     final detail = _padLine(
       '  ${item.quantity} x ${_formatFcfa(item.unitPrice)}',
-      _formatFcfa(item.lineTotal),
+      _formatFcfa(item.grossTotal),
     );
-    return [..._text(gen, name), ..._text(gen, detail)];
+    return [
+      ..._text(gen, name),
+      ..._text(gen, detail),
+      if (item.discountAmount > Decimal.zero)
+        ..._text(
+          gen,
+          _padLine('  Réduction', '-${_formatFcfa(item.discountAmount)}'),
+        ),
+    ];
   }
 
   /// Texte aligné à gauche et à droite, complété à [_lineWidth] caractères.

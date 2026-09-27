@@ -43,7 +43,7 @@ final class CartProvider extends $NotifierProvider<Cart, CartState> {
   }
 }
 
-String _$cartHash() => r'15c817539f4855b75c708621572d50fb74e33786';
+String _$cartHash() => r'e31ed57962d5a3c56cfe61848de6ba4812c2849a';
 
 /// CartNotifier gère l'état du panier.
 

@@ -14,8 +14,12 @@ class Products extends Table {
   /// Code-barres optionnel.
   TextColumn get barcode => text().nullable()();
 
-  /// Prix unitaire en FCFA, stocké en string pour préserver la précision.
-  TextColumn get unitPrice => text()();
+  /// Prix de vente en FCFA, stocké en string pour préserver la précision.
+  /// Colonne `unit_price` renommée en v7 (ADR-0009).
+  TextColumn get sellingPrice => text()();
+
+  /// Prix d'achat en FCFA (null = non renseigné, ADR-0009).
+  TextColumn get purchasePrice => text().nullable()();
 
   /// Stock actuel (null = stock non géré).
   IntColumn get currentStock => integer().nullable()();
@@ -81,6 +85,15 @@ class Sales extends Table {
   /// Mode de paiement.
   TextColumn get paymentMethod => text()();
 
+  /// Type de remise globale (`amount` / `percentage`), null = aucune.
+  TextColumn get discountType => text().nullable()();
+
+  /// Valeur saisie de la remise globale (FCFA ou %).
+  TextColumn get discountValue => text().nullable()();
+
+  /// Montant de la remise globale en FCFA ; `total_amount` l'a déjà déduit.
+  TextColumn get discountAmount => text().withDefault(const Constant('0'))();
+
   /// Date de création.
   DateTimeColumn get createdAt => dateTime()();
 
@@ -102,14 +115,26 @@ class SaleItems extends Table {
   /// Nom du produit au moment de la vente.
   TextColumn get productName => text()();
 
-  /// Prix unitaire en FCFA, stocké en string.
+  /// Prix de vente unitaire au moment de la vente, en FCFA (string).
   TextColumn get unitPrice => text()();
 
   /// Quantité.
   IntColumn get quantity => integer()();
 
-  /// Total ligne en FCFA, stocké en string.
+  /// Total net de la ligne (brut − réduction) en FCFA, stocké en string.
   TextColumn get lineTotal => text()();
+
+  /// Prix d'achat unitaire au moment de la vente (null = inconnu).
+  TextColumn get purchaseUnitPrice => text().nullable()();
+
+  /// Type de réduction de la ligne (`amount` / `percentage`), null = aucune.
+  TextColumn get discountType => text().nullable()();
+
+  /// Valeur saisie de la réduction (FCFA ou %).
+  TextColumn get discountValue => text().nullable()();
+
+  /// Montant de la réduction de la ligne en FCFA.
+  TextColumn get discountAmount => text().withDefault(const Constant('0'))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -173,7 +198,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -224,6 +249,21 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(categories);
         await m.addColumn(products, products.categoryId);
         await m.addColumn(products, products.imageVersion);
+      }
+      if (from < 7) {
+        // v6 → v7 (ADR-0009) : prix de vente renommé, prix d'achat, réductions
+        // et prix d'achat historique. Aucune donnée supprimée : les produits
+        // existants ont un prix d'achat inconnu (NULL), les ventes existantes
+        // une réduction nulle.
+        await m.renameColumn(products, 'unit_price', products.sellingPrice);
+        await m.addColumn(products, products.purchasePrice);
+        await m.addColumn(sales, sales.discountType);
+        await m.addColumn(sales, sales.discountValue);
+        await m.addColumn(sales, sales.discountAmount);
+        await m.addColumn(saleItems, saleItems.purchaseUnitPrice);
+        await m.addColumn(saleItems, saleItems.discountType);
+        await m.addColumn(saleItems, saleItems.discountValue);
+        await m.addColumn(saleItems, saleItems.discountAmount);
       }
     },
   );

@@ -14,7 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Sale {
 
- String get id; int get receiptNumber; Decimal get totalAmount; Decimal get vatAmount; PaymentMethod get paymentMethod; DateTime get createdAt;
+ String get id; int get receiptNumber;/// Total encaissé, remise globale déduite.
+ Decimal get totalAmount; Decimal get vatAmount; PaymentMethod get paymentMethod; DateTime get createdAt;/// Remise globale sur la vente (null = aucune), distincte des réductions
+/// de ligne (ADR-0009).
+ Discount? get discount;/// Montant de la remise globale tel qu'enregistré à la vente.
+ Decimal get discountAmount;
 /// Create a copy of Sale
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +29,16 @@ $SaleCopyWith<Sale> get copyWith => _$SaleCopyWithImpl<Sale>(this as Sale, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Sale&&(identical(other.id, id) || other.id == id)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.vatAmount, vatAmount) || other.vatAmount == vatAmount)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Sale&&(identical(other.id, id) || other.id == id)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.vatAmount, vatAmount) || other.vatAmount == vatAmount)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.discount, discount) || other.discount == discount)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,receiptNumber,totalAmount,vatAmount,paymentMethod,createdAt);
+int get hashCode => Object.hash(runtimeType,id,receiptNumber,totalAmount,vatAmount,paymentMethod,createdAt,discount,discountAmount);
 
 @override
 String toString() {
-  return 'Sale(id: $id, receiptNumber: $receiptNumber, totalAmount: $totalAmount, vatAmount: $vatAmount, paymentMethod: $paymentMethod, createdAt: $createdAt)';
+  return 'Sale(id: $id, receiptNumber: $receiptNumber, totalAmount: $totalAmount, vatAmount: $vatAmount, paymentMethod: $paymentMethod, createdAt: $createdAt, discount: $discount, discountAmount: $discountAmount)';
 }
 
 
@@ -45,11 +49,11 @@ abstract mixin class $SaleCopyWith<$Res>  {
   factory $SaleCopyWith(Sale value, $Res Function(Sale) _then) = _$SaleCopyWithImpl;
 @useResult
 $Res call({
- String id, int receiptNumber, Decimal totalAmount, Decimal vatAmount, PaymentMethod paymentMethod, DateTime createdAt
+ String id, int receiptNumber, Decimal totalAmount, Decimal vatAmount, PaymentMethod paymentMethod, DateTime createdAt, Discount? discount, Decimal discountAmount
 });
 
 
-
+$DiscountCopyWith<$Res>? get discount;
 
 }
 /// @nodoc
@@ -62,7 +66,7 @@ class _$SaleCopyWithImpl<$Res>
 
 /// Create a copy of Sale
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? receiptNumber = null,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? receiptNumber = null,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? createdAt = null,Object? discount = freezed,Object? discountAmount = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,receiptNumber: null == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
@@ -70,10 +74,24 @@ as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ign
 as Decimal,vatAmount: null == vatAmount ? _self.vatAmount : vatAmount // ignore: cast_nullable_to_non_nullable
 as Decimal,paymentMethod: null == paymentMethod ? _self.paymentMethod : paymentMethod // ignore: cast_nullable_to_non_nullable
 as PaymentMethod,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,discount: freezed == discount ? _self.discount : discount // ignore: cast_nullable_to_non_nullable
+as Discount?,discountAmount: null == discountAmount ? _self.discountAmount : discountAmount // ignore: cast_nullable_to_non_nullable
+as Decimal,
   ));
 }
+/// Create a copy of Sale
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DiscountCopyWith<$Res>? get discount {
+    if (_self.discount == null) {
+    return null;
+  }
 
+  return $DiscountCopyWith<$Res>(_self.discount!, (value) {
+    return _then(_self.copyWith(discount: value));
+  });
+}
 }
 
 
@@ -152,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt,  Discount? discount,  Decimal discountAmount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Sale() when $default != null:
-return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt);case _:
+return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt,_that.discount,_that.discountAmount);case _:
   return orElse();
 
 }
@@ -173,10 +191,10 @@ return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt,  Discount? discount,  Decimal discountAmount)  $default,) {final _that = this;
 switch (_that) {
 case _Sale():
-return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt);}
+return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt,_that.discount,_that.discountAmount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -190,10 +208,10 @@ return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  int receiptNumber,  Decimal totalAmount,  Decimal vatAmount,  PaymentMethod paymentMethod,  DateTime createdAt,  Discount? discount,  Decimal discountAmount)?  $default,) {final _that = this;
 switch (_that) {
 case _Sale() when $default != null:
-return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt);case _:
+return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_that.paymentMethod,_that.createdAt,_that.discount,_that.discountAmount);case _:
   return null;
 
 }
@@ -204,16 +222,22 @@ return $default(_that.id,_that.receiptNumber,_that.totalAmount,_that.vatAmount,_
 /// @nodoc
 
 
-class _Sale implements Sale {
-  const _Sale({required this.id, required this.receiptNumber, required this.totalAmount, required this.vatAmount, required this.paymentMethod, required this.createdAt});
+class _Sale extends Sale {
+  const _Sale({required this.id, required this.receiptNumber, required this.totalAmount, required this.vatAmount, required this.paymentMethod, required this.createdAt, this.discount, required this.discountAmount}): super._();
   
 
 @override final  String id;
 @override final  int receiptNumber;
+/// Total encaissé, remise globale déduite.
 @override final  Decimal totalAmount;
 @override final  Decimal vatAmount;
 @override final  PaymentMethod paymentMethod;
 @override final  DateTime createdAt;
+/// Remise globale sur la vente (null = aucune), distincte des réductions
+/// de ligne (ADR-0009).
+@override final  Discount? discount;
+/// Montant de la remise globale tel qu'enregistré à la vente.
+@override final  Decimal discountAmount;
 
 /// Create a copy of Sale
 /// with the given fields replaced by the non-null parameter values.
@@ -225,16 +249,16 @@ _$SaleCopyWith<_Sale> get copyWith => __$SaleCopyWithImpl<_Sale>(this, _$identit
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Sale&&(identical(other.id, id) || other.id == id)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.vatAmount, vatAmount) || other.vatAmount == vatAmount)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Sale&&(identical(other.id, id) || other.id == id)&&(identical(other.receiptNumber, receiptNumber) || other.receiptNumber == receiptNumber)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&(identical(other.vatAmount, vatAmount) || other.vatAmount == vatAmount)&&(identical(other.paymentMethod, paymentMethod) || other.paymentMethod == paymentMethod)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.discount, discount) || other.discount == discount)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,receiptNumber,totalAmount,vatAmount,paymentMethod,createdAt);
+int get hashCode => Object.hash(runtimeType,id,receiptNumber,totalAmount,vatAmount,paymentMethod,createdAt,discount,discountAmount);
 
 @override
 String toString() {
-  return 'Sale(id: $id, receiptNumber: $receiptNumber, totalAmount: $totalAmount, vatAmount: $vatAmount, paymentMethod: $paymentMethod, createdAt: $createdAt)';
+  return 'Sale(id: $id, receiptNumber: $receiptNumber, totalAmount: $totalAmount, vatAmount: $vatAmount, paymentMethod: $paymentMethod, createdAt: $createdAt, discount: $discount, discountAmount: $discountAmount)';
 }
 
 
@@ -245,11 +269,11 @@ abstract mixin class _$SaleCopyWith<$Res> implements $SaleCopyWith<$Res> {
   factory _$SaleCopyWith(_Sale value, $Res Function(_Sale) _then) = __$SaleCopyWithImpl;
 @override @useResult
 $Res call({
- String id, int receiptNumber, Decimal totalAmount, Decimal vatAmount, PaymentMethod paymentMethod, DateTime createdAt
+ String id, int receiptNumber, Decimal totalAmount, Decimal vatAmount, PaymentMethod paymentMethod, DateTime createdAt, Discount? discount, Decimal discountAmount
 });
 
 
-
+@override $DiscountCopyWith<$Res>? get discount;
 
 }
 /// @nodoc
@@ -262,7 +286,7 @@ class __$SaleCopyWithImpl<$Res>
 
 /// Create a copy of Sale
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? receiptNumber = null,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? receiptNumber = null,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? createdAt = null,Object? discount = freezed,Object? discountAmount = null,}) {
   return _then(_Sale(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,receiptNumber: null == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
@@ -270,11 +294,25 @@ as int,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ign
 as Decimal,vatAmount: null == vatAmount ? _self.vatAmount : vatAmount // ignore: cast_nullable_to_non_nullable
 as Decimal,paymentMethod: null == paymentMethod ? _self.paymentMethod : paymentMethod // ignore: cast_nullable_to_non_nullable
 as PaymentMethod,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
-as DateTime,
+as DateTime,discount: freezed == discount ? _self.discount : discount // ignore: cast_nullable_to_non_nullable
+as Discount?,discountAmount: null == discountAmount ? _self.discountAmount : discountAmount // ignore: cast_nullable_to_non_nullable
+as Decimal,
   ));
 }
 
+/// Create a copy of Sale
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$DiscountCopyWith<$Res>? get discount {
+    if (_self.discount == null) {
+    return null;
+  }
 
+  return $DiscountCopyWith<$Res>(_self.discount!, (value) {
+    return _then(_self.copyWith(discount: value));
+  });
+}
 }
 
 // dart format on

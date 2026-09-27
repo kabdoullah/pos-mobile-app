@@ -14,6 +14,10 @@ _SaleItemDto _$SaleItemDtoFromJson(Map<String, dynamic> json) => _SaleItemDto(
   unitPriceAtSale: json['unit_price_at_sale'] as String,
   quantity: (json['quantity'] as num).toInt(),
   lineTotal: json['line_total'] as String,
+  purchasePriceAtSale: json['purchase_price_at_sale'] as String?,
+  discountType: json['discount_type'] as String?,
+  discountValue: json['discount_value'] as String?,
+  discountAmount: json['discount_amount'] as String? ?? '0',
 );
 
 Map<String, dynamic> _$SaleItemDtoToJson(_SaleItemDto instance) =>
@@ -25,6 +29,10 @@ Map<String, dynamic> _$SaleItemDtoToJson(_SaleItemDto instance) =>
       'unit_price_at_sale': instance.unitPriceAtSale,
       'quantity': instance.quantity,
       'line_total': instance.lineTotal,
+      'purchase_price_at_sale': instance.purchasePriceAtSale,
+      'discount_type': instance.discountType,
+      'discount_value': instance.discountValue,
+      'discount_amount': instance.discountAmount,
     };
 
 _SaleDto _$SaleDtoFromJson(Map<String, dynamic> json) => _SaleDto(
@@ -38,6 +46,9 @@ _SaleDto _$SaleDtoFromJson(Map<String, dynamic> json) => _SaleDto(
   mobileMoneyAmount: json['mobile_money_amount'] as String?,
   createdAt: json['created_at'] as String,
   syncedAt: json['synced_at'] as String,
+  discountType: json['discount_type'] as String?,
+  discountValue: json['discount_value'] as String?,
+  discountAmount: json['discount_amount'] as String? ?? '0',
   items: (json['items'] as List<dynamic>)
       .map((e) => SaleItemDto.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -54,6 +65,9 @@ Map<String, dynamic> _$SaleDtoToJson(_SaleDto instance) => <String, dynamic>{
   'mobile_money_amount': instance.mobileMoneyAmount,
   'created_at': instance.createdAt,
   'synced_at': instance.syncedAt,
+  'discount_type': instance.discountType,
+  'discount_value': instance.discountValue,
+  'discount_amount': instance.discountAmount,
   'items': instance.items,
 };
 
@@ -64,6 +78,10 @@ _SaleItemCreateDto _$SaleItemCreateDtoFromJson(Map<String, dynamic> json) =>
       unitPriceAtSale: json['unit_price_at_sale'] as String,
       quantity: (json['quantity'] as num).toInt(),
       lineTotal: json['line_total'] as String,
+      purchasePriceAtSale: json['purchase_price_at_sale'] as String?,
+      discountType: json['discount_type'] as String?,
+      discountValue: json['discount_value'] as String?,
+      discountAmount: json['discount_amount'] as String? ?? '0',
     );
 
 Map<String, dynamic> _$SaleItemCreateDtoToJson(_SaleItemCreateDto instance) =>
@@ -73,6 +91,10 @@ Map<String, dynamic> _$SaleItemCreateDtoToJson(_SaleItemCreateDto instance) =>
       'unit_price_at_sale': instance.unitPriceAtSale,
       'quantity': instance.quantity,
       'line_total': instance.lineTotal,
+      'purchase_price_at_sale': instance.purchasePriceAtSale,
+      'discount_type': instance.discountType,
+      'discount_value': instance.discountValue,
+      'discount_amount': instance.discountAmount,
     };
 
 _SaleCreateDto _$SaleCreateDtoFromJson(Map<String, dynamic> json) =>
@@ -90,6 +112,9 @@ _SaleCreateDto _$SaleCreateDtoFromJson(Map<String, dynamic> json) =>
       cashAmount: json['cash_amount'] as String?,
       mobileMoneyAmount: json['mobile_money_amount'] as String?,
       createdAt: json['created_at'] as String,
+      discountType: json['discount_type'] as String?,
+      discountValue: json['discount_value'] as String?,
+      discountAmount: json['discount_amount'] as String? ?? '0',
     );
 
 Map<String, dynamic> _$SaleCreateDtoToJson(_SaleCreateDto instance) =>
@@ -102,6 +127,9 @@ Map<String, dynamic> _$SaleCreateDtoToJson(_SaleCreateDto instance) =>
       'cash_amount': instance.cashAmount,
       'mobile_money_amount': instance.mobileMoneyAmount,
       'created_at': instance.createdAt,
+      'discount_type': instance.discountType,
+      'discount_value': instance.discountValue,
+      'discount_amount': instance.discountAmount,
     };
 
 const _$PaymentMethodDtoEnumMap = {

@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
+import '../../../sales/domain/entities/margin_summary.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
 import '../../../sales/providers/sales_di_providers.dart';
@@ -36,6 +37,15 @@ Stream<DailyStats> dailySummary(Ref ref) {
   // chaque jour.
   ref.watch(todayProvider);
   return ref.watch(salesRepositoryProvider).watchTodayStats();
+}
+
+/// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
+///
+/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+@riverpod
+Stream<MarginSummary> todayMarginSummary(Ref ref) {
+  final today = ref.watch(todayProvider);
+  return ref.watch(salesRepositoryProvider).watchMarginSummary(today, today);
 }
 
 /// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus

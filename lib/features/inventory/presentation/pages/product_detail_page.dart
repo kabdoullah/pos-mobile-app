@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
@@ -78,6 +80,12 @@ class _ProductDetail extends ConsumerWidget {
         .firstOrNull
         ?.name;
     final editRoute = Routes.productEdit.replaceFirst(':id', product.id);
+    final margin = product.unitMargin;
+    final marginColor = margin == null
+        ? null
+        : margin < Decimal.zero
+        ? cs.error
+        : Theme.of(context).extension<AppSemanticColors>()!.success;
 
     return AppScaffold(
       title: product.name,
@@ -88,7 +96,7 @@ class _ProductDetail extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Text(product.name, style: AppTypography.titleLarge),
           const SizedBox(height: AppSpacing.xs),
-          AmountDisplay(amount: product.unitPrice, size: AmountSize.large),
+          AmountDisplay(amount: product.sellingPrice, size: AmountSize.large),
           const SizedBox(height: AppSpacing.md),
           DecoratedBox(
             decoration: BoxDecoration(
@@ -128,6 +136,40 @@ class _ProductDetail extends ConsumerWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
+          // Prix et marge : informations internes au commerçant (ADR-0009).
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                children: [
+                  _InfoRow(
+                    label: "Prix d'achat",
+                    value: product.purchasePrice == null
+                        ? 'Non renseigné'
+                        : formatFcfa(product.purchasePrice!),
+                  ),
+                  _InfoRow(
+                    label: 'Prix de vente',
+                    value: formatFcfa(product.sellingPrice),
+                  ),
+                  _InfoRow(
+                    label: 'Marge',
+                    value: margin == null
+                        ? '—'
+                        : margin > Decimal.zero
+                        ? '+${formatFcfa(margin)}'
+                        : formatFcfa(margin),
+                    valueColor: marginColor,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (isTracked) ...[
             PrimaryButton(
               label: 'Ajuster le stock',
@@ -155,11 +197,17 @@ class _ProductDetail extends ConsumerWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value, this.trailing});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.trailing,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
   final Widget? trailing;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -181,7 +229,7 @@ class _InfoRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTypography.titleMedium,
+              style: AppTypography.titleMedium.copyWith(color: valueColor),
             ),
           ),
           if (trailing != null) ...[

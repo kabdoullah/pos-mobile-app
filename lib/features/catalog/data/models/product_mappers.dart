@@ -6,13 +6,18 @@ import '../../../../database/app_database.dart' as drift_db;
 import '../../domain/entities/category.dart' as domain_category;
 import '../../domain/entities/product.dart' as domain;
 
+/// Montant optionnel (API ou drift) → Decimal ; échoue si malformé.
+Decimal? _parseOptional(String? value) =>
+    value == null ? null : Decimal.parse(value);
+
 /// Convertit ProductDto (API) → domain.Product (domaine).
 extension ProductDtoToDomain on ProductDto {
   /// Convertit le DTO de l'API en entité du domaine.
   domain.Product toDomain() => domain.Product(
     id: id,
     name: name,
-    unitPrice: Decimal.parse(unitPrice),
+    sellingPrice: Decimal.parse(sellingPrice),
+    purchasePrice: _parseOptional(purchasePrice),
     barcode: barcode,
     currentStock: currentStock,
     minStock: minStock,
@@ -32,7 +37,8 @@ extension DomainProductToDrift on domain.Product {
     barcode: barcode != null
         ? drift.Value(barcode)
         : const drift.Value.absent(),
-    unitPrice: drift.Value(unitPrice.toString()),
+    sellingPrice: drift.Value(sellingPrice.toString()),
+    purchasePrice: drift.Value(purchasePrice?.toString()),
     currentStock: currentStock != null
         ? drift.Value(currentStock)
         : const drift.Value.absent(),
@@ -53,7 +59,8 @@ extension DriftProductToDomain on drift_db.Product {
   domain.Product toDomain() => domain.Product(
     id: id,
     name: name,
-    unitPrice: Decimal.parse(unitPrice),
+    sellingPrice: Decimal.parse(sellingPrice),
+    purchasePrice: _parseOptional(purchasePrice),
     barcode: barcode,
     currentStock: currentStock,
     minStock: minStock,
@@ -77,7 +84,8 @@ extension DomainProductCreateDtoMapper on domain.Product {
   ProductCreateDto toCreateDto() => ProductCreateDto(
     name: name,
     barcode: barcode,
-    unitPrice: unitPrice.toString(),
+    sellingPrice: sellingPrice.toString(),
+    purchasePrice: purchasePrice?.toString(),
     currentStock: currentStock,
     minStock: minStock,
   );
@@ -89,7 +97,8 @@ extension DomainProductUpdateDtoMapper on domain.Product {
   ProductUpdateDto toUpdateDto() => ProductUpdateDto(
     name: name,
     barcode: barcode,
-    unitPrice: unitPrice.toString(),
+    sellingPrice: sellingPrice.toString(),
+    purchasePrice: purchasePrice?.toString(),
     currentStock: currentStock,
     minStock: minStock,
   );

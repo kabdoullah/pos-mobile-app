@@ -571,7 +571,8 @@ as List<ProductSyncItemDto>,
 /// @nodoc
 mixin _$ProductSyncItemDto {
 
- String get id; String get name; String? get barcode;@JsonKey(name: 'unit_price') String get unitPrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
+ String get id; String get name; String? get barcode;@JsonKey(name: 'selling_price') String get sellingPrice;// Toujours envoyé (null = non renseigné) : l'état local fait foi.
+@JsonKey(name: 'purchase_price') String? get purchasePrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
 @JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'client_updated_at') String get clientUpdatedAt; bool get deleted;
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
@@ -585,16 +586,16 @@ $ProductSyncItemDtoCopyWith<ProductSyncItemDto> get copyWith => _$ProductSyncIte
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.sellingPrice, sellingPrice) || other.sellingPrice == sellingPrice)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
+int get hashCode => Object.hash(runtimeType,id,name,barcode,sellingPrice,purchasePrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
 
 @override
 String toString() {
-  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
+  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, sellingPrice: $sellingPrice, purchasePrice: $purchasePrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
 }
 
 
@@ -605,7 +606,7 @@ abstract mixin class $ProductSyncItemDtoCopyWith<$Res>  {
   factory $ProductSyncItemDtoCopyWith(ProductSyncItemDto value, $Res Function(ProductSyncItemDto) _then) = _$ProductSyncItemDtoCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
+ String id, String name, String? barcode,@JsonKey(name: 'selling_price') String sellingPrice,@JsonKey(name: 'purchase_price') String? purchasePrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
 });
 
 
@@ -622,13 +623,14 @@ class _$ProductSyncItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? sellingPrice = null,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
-as String?,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
-as String,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
+as String?,sellingPrice: null == sellingPrice ? _self.sellingPrice : sellingPrice // ignore: cast_nullable_to_non_nullable
+as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as String?,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
 as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
@@ -715,10 +717,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'selling_price')  String sellingPrice, @JsonKey(name: 'purchase_price')  String? purchasePrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto() when $default != null:
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
+return $default(_that.id,_that.name,_that.barcode,_that.sellingPrice,_that.purchasePrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
   return orElse();
 
 }
@@ -736,10 +738,10 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  String? barcode, @JsonKey(name: 'selling_price')  String sellingPrice, @JsonKey(name: 'purchase_price')  String? purchasePrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)  $default,) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto():
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);}
+return $default(_that.id,_that.name,_that.barcode,_that.sellingPrice,_that.purchasePrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -753,10 +755,10 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? barcode, @JsonKey(name: 'unit_price')  String unitPrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  String? barcode, @JsonKey(name: 'selling_price')  String sellingPrice, @JsonKey(name: 'purchase_price')  String? purchasePrice, @JsonKey(name: 'current_stock')  int? currentStock, @JsonKey(name: 'min_stock')  int? minStock, @JsonKey(name: 'category_id')  String? categoryId, @JsonKey(name: 'client_updated_at')  String clientUpdatedAt,  bool deleted)?  $default,) {final _that = this;
 switch (_that) {
 case _ProductSyncItemDto() when $default != null:
-return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
+return $default(_that.id,_that.name,_that.barcode,_that.sellingPrice,_that.purchasePrice,_that.currentStock,_that.minStock,_that.categoryId,_that.clientUpdatedAt,_that.deleted);case _:
   return null;
 
 }
@@ -768,13 +770,15 @@ return $default(_that.id,_that.name,_that.barcode,_that.unitPrice,_that.currentS
 @JsonSerializable()
 
 class _ProductSyncItemDto implements ProductSyncItemDto {
-  const _ProductSyncItemDto({required this.id, required this.name, this.barcode, @JsonKey(name: 'unit_price') required this.unitPrice, @JsonKey(name: 'current_stock') this.currentStock, @JsonKey(name: 'min_stock') this.minStock, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'client_updated_at') required this.clientUpdatedAt, this.deleted = false});
+  const _ProductSyncItemDto({required this.id, required this.name, this.barcode, @JsonKey(name: 'selling_price') required this.sellingPrice, @JsonKey(name: 'purchase_price') this.purchasePrice, @JsonKey(name: 'current_stock') this.currentStock, @JsonKey(name: 'min_stock') this.minStock, @JsonKey(name: 'category_id') this.categoryId, @JsonKey(name: 'client_updated_at') required this.clientUpdatedAt, this.deleted = false});
   factory _ProductSyncItemDto.fromJson(Map<String, dynamic> json) => _$ProductSyncItemDtoFromJson(json);
 
 @override final  String id;
 @override final  String name;
 @override final  String? barcode;
-@override@JsonKey(name: 'unit_price') final  String unitPrice;
+@override@JsonKey(name: 'selling_price') final  String sellingPrice;
+// Toujours envoyé (null = non renseigné) : l'état local fait foi.
+@override@JsonKey(name: 'purchase_price') final  String? purchasePrice;
 @override@JsonKey(name: 'current_stock') final  int? currentStock;
 @override@JsonKey(name: 'min_stock') final  int? minStock;
 // Toujours envoyé (null = sans catégorie) : l'état local fait foi.
@@ -795,16 +799,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProductSyncItemDto&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.barcode, barcode) || other.barcode == barcode)&&(identical(other.sellingPrice, sellingPrice) || other.sellingPrice == sellingPrice)&&(identical(other.purchasePrice, purchasePrice) || other.purchasePrice == purchasePrice)&&(identical(other.currentStock, currentStock) || other.currentStock == currentStock)&&(identical(other.minStock, minStock) || other.minStock == minStock)&&(identical(other.categoryId, categoryId) || other.categoryId == categoryId)&&(identical(other.clientUpdatedAt, clientUpdatedAt) || other.clientUpdatedAt == clientUpdatedAt)&&(identical(other.deleted, deleted) || other.deleted == deleted));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,name,barcode,unitPrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
+int get hashCode => Object.hash(runtimeType,id,name,barcode,sellingPrice,purchasePrice,currentStock,minStock,categoryId,clientUpdatedAt,deleted);
 
 @override
 String toString() {
-  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, unitPrice: $unitPrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
+  return 'ProductSyncItemDto(id: $id, name: $name, barcode: $barcode, sellingPrice: $sellingPrice, purchasePrice: $purchasePrice, currentStock: $currentStock, minStock: $minStock, categoryId: $categoryId, clientUpdatedAt: $clientUpdatedAt, deleted: $deleted)';
 }
 
 
@@ -815,7 +819,7 @@ abstract mixin class _$ProductSyncItemDtoCopyWith<$Res> implements $ProductSyncI
   factory _$ProductSyncItemDtoCopyWith(_ProductSyncItemDto value, $Res Function(_ProductSyncItemDto) _then) = __$ProductSyncItemDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, String? barcode,@JsonKey(name: 'unit_price') String unitPrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
+ String id, String name, String? barcode,@JsonKey(name: 'selling_price') String sellingPrice,@JsonKey(name: 'purchase_price') String? purchasePrice,@JsonKey(name: 'current_stock') int? currentStock,@JsonKey(name: 'min_stock') int? minStock,@JsonKey(name: 'category_id') String? categoryId,@JsonKey(name: 'client_updated_at') String clientUpdatedAt, bool deleted
 });
 
 
@@ -832,13 +836,14 @@ class __$ProductSyncItemDtoCopyWithImpl<$Res>
 
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? unitPrice = null,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? sellingPrice = null,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
   return _then(_ProductSyncItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
-as String?,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
-as String,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
+as String?,sellingPrice: null == sellingPrice ? _self.sellingPrice : sellingPrice // ignore: cast_nullable_to_non_nullable
+as String,purchasePrice: freezed == purchasePrice ? _self.purchasePrice : purchasePrice // ignore: cast_nullable_to_non_nullable
+as String?,currentStock: freezed == currentStock ? _self.currentStock : currentStock // ignore: cast_nullable_to_non_nullable
 as int?,minStock: freezed == minStock ? _self.minStock : minStock // ignore: cast_nullable_to_non_nullable
 as int?,categoryId: freezed == categoryId ? _self.categoryId : categoryId // ignore: cast_nullable_to_non_nullable
 as String?,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable

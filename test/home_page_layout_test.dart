@@ -33,13 +33,14 @@ class _Store extends StoreConfig {
 Product product(String name, int stock, {int? min}) => Product(
   id: name,
   name: name,
-  unitPrice: Decimal.fromInt(500),
+  sellingPrice: Decimal.fromInt(500),
   currentStock: stock,
   minStock: min,
   updatedAt: DateTime(2026),
 );
 
 Sale sale(int receipt, String total) => Sale(
+  discountAmount: Decimal.zero,
   id: 'sale-$receipt',
   receiptNumber: receipt,
   totalAmount: Decimal.parse(total),

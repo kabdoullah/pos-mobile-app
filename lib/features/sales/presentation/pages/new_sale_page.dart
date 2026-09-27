@@ -18,11 +18,13 @@ import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/discount.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/sales_providers.dart';
 import '../providers/scan_provider.dart';
+import '../widgets/discount_sheet.dart';
 import '../widgets/product_search_results.dart';
 import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_cart.dart';
@@ -249,22 +251,26 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       _showStockExceeded(product);
       return;
     }
-    final quantity = await _withCameraPaused(
+    final result = await _withCameraPaused(
       () => showQuantitySheet(
         context,
         productName: product.name,
-        unitPrice: product.unitPrice,
+        unitPrice: product.sellingPrice,
         stock: stock,
         maxQuantity: remaining,
         confirmLabel: 'Ajouter',
       ),
     );
-    if (quantity != null && mounted) _addProduct(product, quantity: quantity);
+    if (result case QuantityChosen(:final quantity) when mounted) {
+      _addProduct(product, quantity: quantity);
+    }
   }
 
+  /// Ligne du panier : quantité, puis réduction si demandée — la caméra
+  /// reste en pause pendant les deux feuilles.
   Future<void> _editCartItem(CartItem item) async {
-    final quantity = await _withCameraPaused(
-      () => showQuantitySheet(
+    await _withCameraPaused(() async {
+      final result = await showQuantitySheet(
         context,
         productName: item.productName,
         unitPrice: item.unitPrice,
@@ -272,11 +278,61 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
         initialQuantity: item.quantity,
         maxQuantity: item.availableStock,
         confirmLabel: 'Mettre à jour',
+        offerDiscount: true,
+        discount: item.discount,
+      );
+      if (!mounted) return null;
+      switch (result) {
+        case QuantityChosen(:final quantity):
+          ref
+              .read(cartProvider.notifier)
+              .updateQuantity(item.productId, quantity);
+        case DiscountRequested():
+          await _editItemDiscount(item);
+        case null:
+          break;
+      }
+      return null;
+    });
+  }
+
+  Future<void> _editItemDiscount(CartItem item) async {
+    final result = await showDiscountSheet(
+      context,
+      title: 'Réduction · ${item.productName}',
+      gross: item.grossTotal,
+      initial: item.discount,
+    );
+    if (result == null || !mounted) return;
+    ref
+        .read(cartProvider.notifier)
+        .setItemDiscount(item.productId, result.discount);
+    _showDiscountToast(result.discount);
+  }
+
+  /// Remise globale sur le sous-total du panier.
+  Future<void> _editCartDiscount() async {
+    final cart = ref.read(cartProvider);
+    final result = await _withCameraPaused(
+      () => showDiscountSheet(
+        context,
+        title: 'Remise sur la vente',
+        gross: cart.subtotal,
+        initial: cart.discount,
       ),
     );
-    if (quantity != null) {
-      ref.read(cartProvider.notifier).updateQuantity(item.productId, quantity);
-    }
+    if (result == null || !mounted) return;
+    ref.read(cartProvider.notifier).setDiscount(result.discount);
+    _showDiscountToast(result.discount);
+  }
+
+  void _showDiscountToast(Discount? discount) {
+    _showToast(
+      SaleToastData(
+        message: discount == null ? 'Réduction retirée' : 'Réduction appliquée',
+        kind: SaleToastKind.success,
+      ),
+    );
   }
 
   Future<void> _clearCart() async {
@@ -483,6 +539,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                   clipBehavior: Clip.none,
                   child: SaleCheckoutPanel(
                     onSubmit: _submit,
+                    onEditDiscount: _editCartDiscount,
                     isSubmitting: _isSubmitting,
                   ),
                 ),

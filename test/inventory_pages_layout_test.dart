@@ -35,7 +35,7 @@ class _MockInventory extends Mock implements InventoryRepository {}
 Product product(String id, String name, {int? stock, int? min}) => Product(
   id: id,
   name: name,
-  unitPrice: Decimal.parse('125000'),
+  sellingPrice: Decimal.parse('125000'),
   currentStock: stock,
   minStock: min,
   barcode: '5449000000996',
@@ -181,6 +181,14 @@ void main() {
         theme: theme,
         movementsOffline: true,
       );
+      // La section des mouvements est sous le bloc prix : elle ne se
+      // construit (et ne charge) qu'une fois atteinte.
+      await tester.scrollUntilVisible(
+        find.text('Derniers mouvements'),
+        200,
+        scrollable: _list,
+      );
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Réessayer'),
         200,

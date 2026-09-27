@@ -60,8 +60,8 @@ class StockProductTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     stock == null
-                        ? formatFcfa(product.unitPrice)
-                        : '${formatFcfa(product.unitPrice)} · Stock : $stock',
+                        ? formatFcfa(product.sellingPrice)
+                        : '${formatFcfa(product.sellingPrice)} · Stock : $stock',
                     style: AppTypography.bodySmall.copyWith(
                       color: cs.onSurfaceVariant,
                     ),

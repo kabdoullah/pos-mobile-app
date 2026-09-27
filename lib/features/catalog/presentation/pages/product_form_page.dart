@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/theme/app_colors.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
@@ -34,12 +36,14 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     with TickerProviderStateMixin {
   late TextEditingController _nameController;
   late TextEditingController _priceController;
+  late TextEditingController _purchasePriceController;
   late TextEditingController _barcodeController;
   late TextEditingController _stockController;
   late TextEditingController _minStockController;
   late AnimationController _formAnimationController;
   String? _nameError;
   String? _priceError;
+  String? _purchasePriceError;
   String? _stockError;
   String? _minStockError;
   bool _isLoading = false;
@@ -52,6 +56,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     super.initState();
     _nameController = TextEditingController();
     _priceController = TextEditingController();
+    _purchasePriceController = TextEditingController();
     _barcodeController = TextEditingController(
       text: widget.initialBarcode ?? '',
     );
@@ -69,6 +74,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   void dispose() {
     _nameController.dispose();
     _priceController.dispose();
+    _purchasePriceController.dispose();
     _barcodeController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
@@ -86,6 +92,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   bool _validate() {
     String? nameError;
     String? priceError;
+    String? purchasePriceError;
     String? stockError;
     String? minStockError;
 
@@ -93,10 +100,19 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       nameError = 'Le nom est obligatoire';
     }
 
+    final sellingPrice = Decimal.tryParse(_priceController.text.trim());
     if (_priceController.text.trim().isEmpty) {
-      priceError = 'Le prix est obligatoire';
-    } else if (Decimal.tryParse(_priceController.text.trim()) == null) {
+      priceError = 'Le prix de vente est obligatoire';
+    } else if (sellingPrice == null || sellingPrice < Decimal.zero) {
       priceError = 'Entrez un montant valide';
+    }
+
+    // Prix d'achat optionnel ; vendre à perte reste permis (ADR-0009).
+    final purchaseText = _purchasePriceController.text.trim();
+    final purchasePrice = Decimal.tryParse(purchaseText);
+    if (purchaseText.isNotEmpty &&
+        (purchasePrice == null || purchasePrice < Decimal.zero)) {
+      purchasePriceError = 'Entrez un montant valide';
     }
 
     final stockText = _stockController.text.trim();
@@ -112,12 +128,14 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     setState(() {
       _nameError = nameError;
       _priceError = priceError;
+      _purchasePriceError = purchasePriceError;
       _stockError = stockError;
       _minStockError = minStockError;
     });
 
     return nameError == null &&
         priceError == null &&
+        purchasePriceError == null &&
         stockError == null &&
         minStockError == null;
   }
@@ -130,6 +148,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     try {
       final name = _nameController.text.trim();
       final price = _priceController.text.trim();
+      final purchaseText = _purchasePriceController.text.trim();
+      final purchasePrice = purchaseText.isEmpty ? null : purchaseText;
       final barcode = _barcodeController.text.trim();
       final stock = _stockController.text.trim().isEmpty
           ? null
@@ -144,7 +164,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
             .read(productEditorProvider.notifier)
             .create(
               name: name,
-              unitPrice: price,
+              sellingPrice: price,
+              purchasePrice: purchasePrice,
               barcode: barcode.isEmpty ? null : barcode,
               currentStock: stock,
               minStock: minStock,
@@ -157,7 +178,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
             .update(
               id: widget.productId!,
               name: name,
-              unitPrice: price,
+              sellingPrice: price,
+              purchasePrice: purchasePrice,
               barcode: barcode.isEmpty ? null : barcode,
               currentStock: stock,
               minStock: minStock,
@@ -233,7 +255,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
         if (product != null) {
           _prefilled = true;
           _nameController.text = product.name;
-          _priceController.text = product.unitPrice.toString();
+          _priceController.text = product.sellingPrice.toString();
+          _purchasePriceController.text =
+              product.purchasePrice?.toString() ?? '';
           if (product.barcode != null) {
             _barcodeController.text = product.barcode!;
           }
@@ -299,13 +323,40 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               _AnimatedFormField(
                 animation: _formAnimationController,
                 delay: 0.1,
-                child: AppTextField(
-                  label: 'Prix unitaire (FCFA)',
-                  hint: '0',
-                  controller: _priceController,
-                  keyboardType: TextInputType.number,
-                  errorText: _priceError,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: AppTextField(
+                        label: "Prix d'achat (FCFA)",
+                        hint: 'Optionnel',
+                        controller: _purchasePriceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        errorText: _purchasePriceError,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: AppTextField(
+                        label: 'Prix de vente (FCFA)',
+                        hint: '0',
+                        controller: _priceController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        errorText: _priceError,
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              _EstimatedMargin(
+                sellingText: _priceController.text,
+                purchaseText: _purchasePriceController.text,
               ),
               const SizedBox(height: AppSpacing.lg),
               CategoryPicker(
@@ -402,6 +453,51 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Marge estimée, recalculée à chaque frappe ; masquée tant que l'un des deux
+/// prix est vide ou invalide. Donnée interne au commerçant.
+class _EstimatedMargin extends StatelessWidget {
+  const _EstimatedMargin({
+    required this.sellingText,
+    required this.purchaseText,
+  });
+
+  final String sellingText;
+  final String purchaseText;
+
+  @override
+  Widget build(BuildContext context) {
+    final selling = Decimal.tryParse(sellingText.trim());
+    final purchase = Decimal.tryParse(purchaseText.trim());
+    if (selling == null || purchase == null) return const SizedBox.shrink();
+
+    final margin = selling - purchase;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final cs = Theme.of(context).colorScheme;
+    final isLoss = margin < Decimal.zero;
+    final color = isLoss ? cs.error : semantic.success;
+    final sign = margin > Decimal.zero ? '+' : '';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        children: [
+          Text(
+            'Marge estimée',
+            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const Spacer(),
+          Text(
+            isLoss
+                ? '${formatFcfa(margin)} · vente à perte'
+                : '$sign${formatFcfa(margin)}',
+            style: AppTypography.labelMedium.copyWith(color: color),
+          ),
+        ],
       ),
     );
   }

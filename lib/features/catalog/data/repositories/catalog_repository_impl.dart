@@ -92,7 +92,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
   @override
   Future<product_domain.Product> createProduct({
     required String name,
-    required String unitPrice,
+    required String sellingPrice,
+    String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,
@@ -104,7 +105,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final product = product_domain.Product(
       id: id,
       name: name,
-      unitPrice: Decimal.parse(unitPrice),
+      sellingPrice: Decimal.parse(sellingPrice),
+      purchasePrice: purchasePrice == null
+          ? null
+          : Decimal.parse(purchasePrice),
       barcode: normalizedBarcode,
       currentStock: currentStock,
       minStock: minStock,
@@ -123,7 +127,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
             barcode: normalizedBarcode != null
                 ? drift.Value(normalizedBarcode)
                 : const drift.Value.absent(),
-            unitPrice: drift.Value(unitPrice),
+            sellingPrice: drift.Value(sellingPrice),
+            purchasePrice: drift.Value(purchasePrice),
             currentStock: currentStock != null
                 ? drift.Value(currentStock)
                 : const drift.Value.absent(),
@@ -144,7 +149,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
   Future<product_domain.Product> updateProduct({
     required String id,
     String? name,
-    String? unitPrice,
+    String? sellingPrice,
+    required String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,
@@ -159,7 +165,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
 
     final now = DateTime.now();
     final updatedName = name ?? current.name;
-    final updatedPrice = unitPrice ?? current.unitPrice;
+    final updatedPrice = sellingPrice ?? current.sellingPrice;
     final updatedBarcode = barcode != null
         ? normalizeBarcode(barcode)
         : current.barcode;
@@ -171,7 +177,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
       ProductsCompanion(
         name: drift.Value(updatedName),
         barcode: drift.Value(updatedBarcode),
-        unitPrice: drift.Value(updatedPrice),
+        sellingPrice: drift.Value(updatedPrice),
+        purchasePrice: drift.Value(purchasePrice),
         currentStock: updatedStock != null
             ? drift.Value(updatedStock)
             : const drift.Value.absent(),
@@ -188,7 +195,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
     return product_domain.Product(
       id: id,
       name: updatedName,
-      unitPrice: Decimal.parse(updatedPrice),
+      sellingPrice: Decimal.parse(updatedPrice),
+      purchasePrice: purchasePrice == null
+          ? null
+          : Decimal.parse(purchasePrice),
       barcode: updatedBarcode,
       currentStock: updatedStock,
       minStock: updatedMinStock,
@@ -233,7 +243,8 @@ class CatalogRepositoryImpl implements CatalogRepository {
         id: id,
         name: row.name,
         barcode: row.barcode,
-        unitPrice: row.unitPrice,
+        sellingPrice: row.sellingPrice,
+        purchasePrice: row.purchasePrice,
         currentStock: row.currentStock,
         minStock: row.minStock,
         categoryId: row.categoryId,

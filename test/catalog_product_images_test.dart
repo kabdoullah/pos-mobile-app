@@ -105,7 +105,7 @@ void main() {
             ProductsCompanion(
               id: const drift.Value('p1'),
               name: const drift.Value('Coca'),
-              unitPrice: const drift.Value('500'),
+              sellingPrice: const drift.Value('500'),
               updatedAt: drift.Value(DateTime(2026)),
             ),
           );
@@ -145,7 +145,7 @@ void main() {
             'id': 'p1',
             'store_id': 's',
             'name': 'Coca',
-            'unit_price': '500.00',
+            'selling_price': '500.00',
             'image_version': 'sha-v3',
             'created_at': '2026-01-01T00:00:00Z',
             'updated_at': '2026-01-01T00:00:00Z',
@@ -204,6 +204,7 @@ void main() {
 
   group('logo sur le ticket', () {
     final sale = Sale(
+      discountAmount: Decimal.zero,
       id: 's1',
       receiptNumber: 1,
       totalAmount: Decimal.fromInt(500),

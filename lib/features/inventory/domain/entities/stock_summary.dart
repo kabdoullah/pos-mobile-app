@@ -24,7 +24,7 @@ class StockSummary {
     for (final product in products) {
       final stock = product.currentStock;
       if (stock != null && stock > 0) {
-        value += product.unitPrice * Decimal.fromInt(stock);
+        value += product.sellingPrice * Decimal.fromInt(stock);
       }
       switch (product.stockLevel) {
         case StockLevel.low:

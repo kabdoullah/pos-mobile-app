@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../domain/entities/margin_summary.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
@@ -84,6 +86,17 @@ class SaleDetailPage extends ConsumerWidget {
                   else
                     for (final item in items) _TicketLine(item: item),
                   const _TicketDivider(),
+                  if (sale.discountAmount > Decimal.zero) ...[
+                    _InfoRow(
+                      label: 'Sous-total',
+                      value: formatFcfa(sale.subtotalAmount),
+                    ),
+                    _InfoRow(
+                      label: 'Remise',
+                      value: '−${formatFcfa(sale.discountAmount)}',
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                  ],
                   Row(
                     children: [
                       const Expanded(
@@ -114,6 +127,11 @@ class SaleDetailPage extends ConsumerWidget {
               ),
             ),
           ),
+          if (items != null &&
+              items.any((item) => item.purchaseUnitPrice != null)) ...[
+            const SizedBox(height: AppSpacing.md),
+            _InternalMargin(sale: sale, items: items),
+          ],
           const SizedBox(height: AppSpacing.lg),
           PrimaryButton(
             label: 'Imprimer',
@@ -282,12 +300,84 @@ class _TicketLine extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                formatAmount(item.lineTotal),
+                formatAmount(item.grossTotal),
                 style: AppTypography.bodyLarge,
               ),
             ],
           ),
+          if (item.discountAmount > Decimal.zero)
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Réduction',
+                    style: AppTypography.bodySmall.copyWith(color: cs.primary),
+                  ),
+                ),
+                Text(
+                  '−${formatAmount(item.discountAmount)}',
+                  style: AppTypography.bodySmall.copyWith(color: cs.primary),
+                ),
+              ],
+            ),
         ],
+      ),
+    );
+  }
+}
+
+/// Prix d'achat et marge de la vente, repliés par défaut : donnée interne au
+/// commerçant, jamais imprimée ni montrée au client (ADR-0009). Valeurs figées
+/// à la vente, jamais relues depuis le produit actuel.
+class _InternalMargin extends StatelessWidget {
+  const _InternalMargin({required this.sale, required this.items});
+
+  final Sale sale;
+  final List<CartItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final summary = MarginSummary.fromSales([(sale: sale, items: items)]);
+    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.outlineVariant),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: Theme(
+        // Pas de séparateurs ajoutés par ExpansionTile.
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          leading: const Icon(Icons.lock_outline),
+          title: const Text('Infos internes'),
+          subtitle: Text('Non visibles par le client', style: muted),
+          childrenPadding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            0,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          children: [
+            for (final item in items)
+              _InfoRow(
+                label: item.productName,
+                value: item.purchaseUnitPrice == null
+                    ? "Prix d'achat inconnu"
+                    : 'Achat ${formatAmount(item.purchaseUnitPrice!)} · '
+                          'Marge ${formatFcfa(item.margin!)}',
+              ),
+            const Divider(),
+            _InfoRow(label: "Coût d'achat", value: formatFcfa(summary.cost)),
+            _InfoRow(label: 'Marge brute', value: formatFcfa(summary.margin)),
+            if (summary.hasUnknownCost)
+              Text(
+                "Articles sans prix d'achat exclus de la marge.",
+                style: muted,
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/printing/data/receipt_formatter.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
+import 'package:mobile/features/sales/domain/entities/discount.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
 
 String _text(List<int> bytes) => latin1.decode(bytes, allowInvalid: true);
@@ -16,6 +17,7 @@ void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
 
   final sale = Sale(
+    discountAmount: Decimal.zero,
     id: 's1',
     receiptNumber: 12,
     totalAmount: Decimal.fromInt(1500),
@@ -78,6 +80,47 @@ void main() {
       expect(text, contains('1 500'));
     },
   );
+
+  test('réductions : brut, réduction de ligne, remise globale ; jamais le '
+      "prix d'achat", () async {
+    final text = _text(
+      await ReceiptFormatter.format(
+        store: const Store(name: 'Boutique Awa', isSubjectToVat: false),
+        sale: Sale(
+          id: 's2',
+          receiptNumber: 13,
+          totalAmount: Decimal.fromInt(3000),
+          vatAmount: Decimal.zero,
+          paymentMethod: PaymentMethod.cash,
+          createdAt: DateTime(2026, 9, 27, 10),
+          discount: Discount(
+            type: DiscountType.amount,
+            value: Decimal.fromInt(500),
+          ),
+          discountAmount: Decimal.fromInt(500),
+        ),
+        items: [
+          CartItem(
+            productId: 'p1',
+            productName: 'Coca-Cola',
+            unitPrice: Decimal.fromInt(2000),
+            quantity: 2,
+            purchaseUnitPrice: Decimal.fromInt(1234),
+            discount: Discount(
+              type: DiscountType.amount,
+              value: Decimal.fromInt(500),
+            ),
+          ),
+        ],
+      ),
+    );
+    expect(text, contains(RegExp(r'  2 x 2 000 +4 000')));
+    expect(text, contains(RegExp(r'  Réduction +-500')));
+    expect(text, contains(RegExp(r'Sous-total +3 500')));
+    expect(text, contains(RegExp(r'Remise +-500')));
+    expect(text, contains(RegExp(r'TOTAL +3 000')));
+    expect(text, isNot(contains('1 234')));
+  });
 
   test('printable : Latin-1 conservé, le reste remplacé', () {
     expect(

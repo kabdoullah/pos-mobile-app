@@ -5,7 +5,7 @@ import 'package:mobile/features/catalog/domain/entities/product.dart';
 Product _product({int? stock, int? minStock}) => Product(
   id: 'p1',
   name: 'Riz',
-  unitPrice: Decimal.fromInt(500),
+  sellingPrice: Decimal.fromInt(500),
   currentStock: stock,
   minStock: minStock,
   updatedAt: DateTime(2026),

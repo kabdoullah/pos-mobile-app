@@ -14,7 +14,7 @@ Product product(
 }) => Product(
   id: name,
   name: name,
-  unitPrice: Decimal.parse(price),
+  sellingPrice: Decimal.parse(price),
   currentStock: stock,
   minStock: min,
   barcode: barcode,

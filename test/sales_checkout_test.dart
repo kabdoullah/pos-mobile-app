@@ -12,7 +12,7 @@ Decimal d(String v) => Decimal.parse(v);
 Product product({int? stock}) => Product(
   id: 'p1',
   name: 'Coca-Cola',
-  unitPrice: d('2500'),
+  sellingPrice: d('2500'),
   currentStock: stock,
   updatedAt: DateTime(2026),
 );

@@ -20,7 +20,8 @@ abstract class CatalogRepository {
   /// Crée un nouveau produit.
   Future<Product> createProduct({
     required String name,
-    required String unitPrice,
+    required String sellingPrice,
+    String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,
@@ -57,7 +58,10 @@ abstract class CatalogRepository {
   Future<Product> updateProduct({
     required String id,
     String? name,
-    String? unitPrice,
+    String? sellingPrice,
+
+    /// Toujours appliqué : `null` = prix d'achat non renseigné.
+    required String? purchasePrice,
     String? barcode,
     int? currentStock,
     int? minStock,

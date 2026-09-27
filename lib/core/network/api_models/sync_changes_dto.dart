@@ -44,7 +44,9 @@ sealed class ProductSyncItemDto with _$ProductSyncItemDto {
     required String id,
     required String name,
     String? barcode,
-    @JsonKey(name: 'unit_price') required String unitPrice,
+    @JsonKey(name: 'selling_price') required String sellingPrice,
+    // Toujours envoyé (null = non renseigné) : l'état local fait foi.
+    @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
     // Toujours envoyé (null = sans catégorie) : l'état local fait foi.

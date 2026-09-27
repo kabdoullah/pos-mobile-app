@@ -8,12 +8,14 @@ part of 'sales_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+/// Enregistre le panier courant (lignes et remise globale) comme vente
+/// (appelle CreateSaleUseCase).
 
 @ProviderFor(submitSale)
 final submitSaleProvider = SubmitSaleFamily._();
 
-/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+/// Enregistre le panier courant (lignes et remise globale) comme vente
+/// (appelle CreateSaleUseCase).
 
 final class SubmitSaleProvider
     extends
@@ -23,7 +25,8 @@ final class SubmitSaleProvider
           FutureOr<sale_entity.Sale>
         >
     with $FutureModifier<sale_entity.Sale>, $FutureProvider<sale_entity.Sale> {
-  /// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+  /// Enregistre le panier courant (lignes et remise globale) comme vente
+  /// (appelle CreateSaleUseCase).
   SubmitSaleProvider._({
     required SubmitSaleFamily super.from,
     required ({
@@ -90,9 +93,10 @@ final class SubmitSaleProvider
   }
 }
 
-String _$submitSaleHash() => r'12a4191801dde3f60aa4934cc19f48d2cfd5646e';
+String _$submitSaleHash() => r'233091f9689c49a6ef30ae28d92bcc7ee9cab86f';
 
-/// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+/// Enregistre le panier courant (lignes et remise globale) comme vente
+/// (appelle CreateSaleUseCase).
 
 final class SubmitSaleFamily extends $Family
     with
@@ -115,7 +119,8 @@ final class SubmitSaleFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Enregistre le panier courant comme vente (appelle CreateSaleUseCase).
+  /// Enregistre le panier courant (lignes et remise globale) comme vente
+  /// (appelle CreateSaleUseCase).
 
   SubmitSaleProvider call({
     required Decimal totalAmount,

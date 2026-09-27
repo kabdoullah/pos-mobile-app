@@ -36,7 +36,7 @@ void main() {
           ProductsCompanion.insert(
             id: 'p1',
             name: 'Café',
-            unitPrice: '1500',
+            sellingPrice: '1500',
             updatedAt: DateTime.now(),
           ),
         );

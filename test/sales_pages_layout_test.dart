@@ -24,6 +24,7 @@ class _NoAuth extends Auth {
 class _MockSales extends Mock implements SalesRepository {}
 
 Sale sale(int receipt, String total, PaymentMethod method) => Sale(
+  discountAmount: Decimal.zero,
   id: 's$receipt',
   receiptNumber: receipt,
   totalAmount: Decimal.parse(total),

@@ -67,6 +67,7 @@ class _ConfiguredStore extends StoreConfig {
 }
 
 final _sale = Sale(
+  discountAmount: Decimal.zero,
   id: 's1',
   receiptNumber: 1,
   totalAmount: Decimal.fromInt(1500),

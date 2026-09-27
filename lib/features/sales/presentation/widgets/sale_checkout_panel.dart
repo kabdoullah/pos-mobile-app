@@ -17,12 +17,16 @@ class SaleCheckoutPanel extends ConsumerWidget {
   /// Crée le panneau d'encaissement.
   const SaleCheckoutPanel({
     required this.onSubmit,
+    required this.onEditDiscount,
     required this.isSubmitting,
     super.key,
   });
 
   /// Enregistre la vente.
   final VoidCallback onSubmit;
+
+  /// Ouvre la saisie de la remise globale.
+  final VoidCallback onEditDiscount;
 
   /// Enregistrement en cours.
   final bool isSubmitting;
@@ -65,6 +69,18 @@ class SaleCheckoutPanel extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (cart.discount != null) ...[
+                _SummaryRow(
+                  label: 'Sous-total',
+                  value: formatFcfa(cart.subtotal),
+                ),
+                _SummaryRow(
+                  label: 'Remise',
+                  value: '−${formatFcfa(cart.discountAmount)}',
+                  onTap: onEditDiscount,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -74,6 +90,15 @@ class SaleCheckoutPanel extends ConsumerWidget {
                       color: cs.onSurfaceVariant,
                     ),
                   ),
+                  if (!cart.isEmpty && cart.discount == null)
+                    TextButton.icon(
+                      onPressed: onEditDiscount,
+                      icon: const Icon(Icons.local_offer_outlined, size: 18),
+                      label: const Text('Remise'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
                   const Spacer(),
                   Text(
                     'Total ',
@@ -130,6 +155,40 @@ class SaleCheckoutPanel extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ligne sous-total / remise au-dessus du total ; [onTap] rend la ligne
+/// modifiable.
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({required this.label, required this.value, this.onTap});
+
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final style = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          children: [
+            Text(label, style: style),
+            if (onTap != null) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Icon(Icons.edit_outlined, size: 14, color: cs.onSurfaceVariant),
+            ],
+            const Spacer(),
+            Text(value, style: style),
+          ],
         ),
       ),
     );

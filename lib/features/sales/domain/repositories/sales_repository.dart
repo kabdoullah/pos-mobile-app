@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:decimal/decimal.dart';
 
 import '../entities/cart_item.dart';
+import '../entities/discount.dart';
+import '../entities/margin_summary.dart';
 import '../entities/sale.dart';
 
 /// Totaux agrégés d'une journée — calculés en SQL.
@@ -15,12 +17,16 @@ typedef DailyStats = ({
 
 /// Repository abstrait pour les opérations de vente.
 abstract class SalesRepository {
-  /// Crée et enregistre une nouvelle vente avec ses articles.
+  /// Crée et enregistre une nouvelle vente avec ses articles, en figeant les
+  /// prix, réductions et prix d'achat de chaque ligne (ADR-0009).
+  ///
+  /// [discount] : remise globale, appliquée au sous-total des lignes.
   Future<Sale> createSale({
     required List<CartItem> items,
     required Decimal totalAmount,
     required Decimal vatAmount,
     required PaymentMethod paymentMethod,
+    Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
   });
@@ -53,6 +59,13 @@ abstract class SalesRepository {
   /// Observe toutes les ventes créées dans [startDate, endDate] inclus — réémet
   /// à chaque changement.
   Stream<List<Sale>> watchSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Observe chiffre d'affaires, coût d'achat et marge des ventes créées dans
+  /// [startDate, endDate] inclus (fuseau local) — valeurs figées à la vente.
+  Stream<MarginSummary> watchMarginSummary(
     DateTime startDate,
     DateTime endDate,
   );

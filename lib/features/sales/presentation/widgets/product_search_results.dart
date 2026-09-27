@@ -73,7 +73,7 @@ class ProductSearchResults extends ConsumerWidget {
               ),
               subtitle: Text(
                 [
-                  formatFcfa(product.unitPrice),
+                  formatFcfa(product.sellingPrice),
                   if (stock != null) outOfStock ? 'Rupture' : 'Stock : $stock',
                 ].join(' · '),
                 style: AppTypography.bodySmall.copyWith(

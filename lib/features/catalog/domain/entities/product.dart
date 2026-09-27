@@ -23,8 +23,12 @@ sealed class Product with _$Product {
     required String id,
     required String name,
 
-    /// FCFA en Decimal.
-    required Decimal unitPrice,
+    /// Prix de vente normal facturé au client (FCFA).
+    required Decimal sellingPrice,
+
+    /// Prix d'achat (coût d'acquisition, FCFA) ; null = non renseigné.
+    /// Donnée interne au commerçant, jamais montrée au client (ADR-0009).
+    Decimal? purchasePrice,
     String? barcode,
     int? currentStock,
 
@@ -41,6 +45,13 @@ sealed class Product with _$Product {
   }) = _Product;
 
   const Product._();
+
+  /// Marge unitaire (prix de vente − prix d'achat), négative en cas de vente
+  /// à perte ; `null` si le prix d'achat n'est pas renseigné.
+  Decimal? get unitMargin {
+    final cost = purchasePrice;
+    return cost == null ? null : sellingPrice - cost;
+  }
 
   /// Situation du stock par rapport à [minStock] ; `null` si le stock n'est
   /// pas suivi.

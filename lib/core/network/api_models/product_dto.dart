@@ -13,8 +13,11 @@ sealed class ProductDto with _$ProductDto {
     required String name,
     String? barcode,
 
-    /// Prix en FCFA, reçu sous forme de chaîne depuis l'API.
-    @JsonKey(name: 'unit_price') required String unitPrice,
+    /// Prix de vente en FCFA, reçu sous forme de chaîne depuis l'API.
+    @JsonKey(name: 'selling_price') required String sellingPrice,
+
+    /// Prix d'achat en FCFA (null = non renseigné).
+    @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
     @JsonKey(name: 'category_id') String? categoryId,
@@ -36,8 +39,11 @@ sealed class ProductCreateDto with _$ProductCreateDto {
     required String name,
     String? barcode,
 
-    /// Prix en FCFA.
-    @JsonKey(name: 'unit_price') required String unitPrice,
+    /// Prix de vente en FCFA.
+    @JsonKey(name: 'selling_price') required String sellingPrice,
+
+    /// Prix d'achat en FCFA (null = non renseigné).
+    @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
   }) = _ProductCreateDto;
@@ -53,7 +59,8 @@ sealed class ProductUpdateDto with _$ProductUpdateDto {
   const factory ProductUpdateDto({
     String? name,
     String? barcode,
-    @JsonKey(name: 'unit_price') String? unitPrice,
+    @JsonKey(name: 'selling_price') String? sellingPrice,
+    @JsonKey(name: 'purchase_price') String? purchasePrice,
     @JsonKey(name: 'current_stock') int? currentStock,
     @JsonKey(name: 'min_stock') int? minStock,
   }) = _ProductUpdateDto;

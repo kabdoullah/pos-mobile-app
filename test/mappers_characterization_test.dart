@@ -115,7 +115,7 @@ void main() {
             storeId: 'store-1',
             name: 'Test Product',
             barcode: null,
-            unitPrice: price,
+            sellingPrice: price,
             currentStock: 10,
             createdAt: '2025-01-01T00:00:00Z',
             updatedAt: '2025-01-01T00:00:00Z',
@@ -125,7 +125,7 @@ void main() {
           final domain = dto.toDomain();
 
           expect(
-            domain.unitPrice,
+            domain.sellingPrice,
             Decimal.parse(price),
             reason: 'Price $price should be preserved as Decimal',
           );
@@ -138,14 +138,14 @@ void main() {
           final domain = domain_product.Product(
             id: 'prod-1',
             name: 'Test Product',
-            unitPrice: Decimal.parse('1234567.89'),
+            sellingPrice: Decimal.parse('1234567.89'),
             barcode: 'BAR-123',
             currentStock: 50,
             updatedAt: DateTime(2025, 1, 1),
             deletedAt: null,
           );
 
-          expect(domain.toDriftCompanion().unitPrice.value, '1234567.89');
+          expect(domain.toDriftCompanion().sellingPrice.value, '1234567.89');
         },
       );
 
@@ -157,7 +157,7 @@ void main() {
             storeId: 'store-1',
             name: 'Test Product',
             barcode: 'BAR-001',
-            unitPrice: '1234567.89',
+            sellingPrice: '1234567.89',
             currentStock: 25,
             createdAt: '2025-01-01T00:00:00Z',
             updatedAt: '2025-01-01T12:00:00Z',
@@ -167,7 +167,7 @@ void main() {
           final domain = dto.toDomain();
           final companion = domain.toDriftCompanion();
 
-          expect(companion.unitPrice.value, '1234567.89');
+          expect(companion.sellingPrice.value, '1234567.89');
           expect(companion.name.value, 'Test Product');
           expect(companion.barcode.value, 'BAR-001');
           expect(companion.currentStock.value, 25);
@@ -180,7 +180,7 @@ void main() {
           storeId: 'store-1',
           name: 'Minimal Product',
           barcode: null,
-          unitPrice: '100.00',
+          sellingPrice: '100.00',
           currentStock: null,
           createdAt: '2025-01-01T00:00:00Z',
           updatedAt: '2025-01-01T00:00:00Z',
@@ -197,7 +197,7 @@ void main() {
         final domain = domain_product.Product(
           id: 'prod-1',
           name: 'New Product',
-          unitPrice: Decimal.parse('1234567.89'),
+          sellingPrice: Decimal.parse('1234567.89'),
           barcode: 'BAR-NEW',
           currentStock: 100,
           updatedAt: DateTime(2025, 1, 1),
@@ -206,7 +206,7 @@ void main() {
 
         final dto = domain.toCreateDto();
 
-        expect(dto.unitPrice, '1234567.89');
+        expect(dto.sellingPrice, '1234567.89');
         expect(dto.name, 'New Product');
         expect(dto.barcode, 'BAR-NEW');
       });
@@ -215,7 +215,7 @@ void main() {
         final domain = domain_product.Product(
           id: 'prod-1',
           name: 'Updated Product',
-          unitPrice: Decimal.parse('999.99'),
+          sellingPrice: Decimal.parse('999.99'),
           barcode: null,
           currentStock: 50,
           updatedAt: DateTime(2025, 1, 1),
@@ -224,7 +224,7 @@ void main() {
 
         final dto = domain.toUpdateDto();
 
-        expect(dto.unitPrice, '999.99');
+        expect(dto.sellingPrice, '999.99');
         expect(dto.name, 'Updated Product');
       });
     });
@@ -303,6 +303,7 @@ void main() {
 
       test('DomainSaleToDrift: preserves monetary amounts', () {
         final domain = domain_sale.Sale(
+          discountAmount: Decimal.zero,
           id: 'sale-1',
           receiptNumber: 1,
           totalAmount: Decimal.parse('1234567.89'),
@@ -328,6 +329,7 @@ void main() {
 
         for (final (domainEnum, expectedString) in enumTests) {
           final domain = domain_sale.Sale(
+            discountAmount: Decimal.zero,
             id: 'sale-1',
             receiptNumber: 1,
             totalAmount: Decimal.parse('100.00'),
@@ -373,6 +375,7 @@ void main() {
 
       test('DomainSaleCreateDtoMapper: monetary precision in request', () {
         final domain = domain_sale.Sale(
+          discountAmount: Decimal.zero,
           id: 'sale-1',
           receiptNumber: 1,
           totalAmount: Decimal.parse('1234567.89'),
@@ -433,6 +436,7 @@ void main() {
 
         for (final method in allMethods) {
           final domain = domain_sale.Sale(
+            discountAmount: Decimal.zero,
             id: 'test-id',
             receiptNumber: 0,
             totalAmount: Decimal.parse('0.00'),
