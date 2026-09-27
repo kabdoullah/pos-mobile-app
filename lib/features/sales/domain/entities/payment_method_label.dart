@@ -1,4 +1,4 @@
-import '../domain/entities/sale.dart';
+import 'sale.dart';
 
 /// Libellé affiché d'un moyen de paiement.
 extension PaymentMethodLabel on PaymentMethod {

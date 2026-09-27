@@ -14,7 +14,7 @@ import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart';
-import '../payment_method_label.dart';
+import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
 
@@ -100,7 +100,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
     } on PrintException catch (e) {
       feedback = e.reason == PrintFailureReason.noPrinterConfigured
           ? const _NoPrinter()
-          : _PrintFailed(e.details);
+          : _PrintFailed(e.userMessage);
     } catch (e) {
       feedback = _PrintFailed(errorToFrench(e));
     }
@@ -370,10 +370,7 @@ class _ActionFeedback extends StatelessWidget {
             ),
           ],
         ),
-        _PrintFailed(:final message) => Text(
-          'Impression impossible : $message',
-          style: error,
-        ),
+        _PrintFailed(:final message) => Text(message, style: error),
       },
       if (pdfError != null)
         Text(pdfError!, style: error)

@@ -9,7 +9,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/router/main_shell.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
-import '../payment_method_label.dart';
+import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
 
@@ -98,27 +98,11 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                SearchBar(
+                AppSearchBar(
                   controller: _searchController,
                   onChanged: (value) => setState(() => _query = value),
                   hintText: 'Rechercher un n° de reçu',
                   keyboardType: TextInputType.number,
-                  elevation: const WidgetStatePropertyAll(0),
-                  backgroundColor: WidgetStatePropertyAll(
-                    cs.surfaceContainerHigh,
-                  ),
-                  leading: Icon(Icons.search, color: cs.onSurfaceVariant),
-                  trailing: [
-                    if (_query.isNotEmpty)
-                      IconButton(
-                        tooltip: 'Effacer',
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                      ),
-                  ],
                 ),
               ],
             ),

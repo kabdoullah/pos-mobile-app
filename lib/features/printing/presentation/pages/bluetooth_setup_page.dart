@@ -91,7 +91,10 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
+            content: const Text(
+              'Impossible de lister les imprimantes. Vérifiez que le '
+              'Bluetooth est activé.',
+            ),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -140,15 +143,9 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Ticket de test imprimé')),
       );
-    } on PrintException {
+    } on PrintException catch (e) {
       messenger.showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Impression impossible. Vérifiez que l’imprimante est allumée, '
-            'à proximité et chargée en papier.',
-          ),
-          backgroundColor: cs.error,
-        ),
+        SnackBar(content: Text(e.userMessage), backgroundColor: cs.error),
       );
     } finally {
       if (mounted) setState(() => _testing = false);

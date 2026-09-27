@@ -13,7 +13,7 @@ import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
-import '../payment_method_label.dart';
+import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
 
@@ -167,10 +167,8 @@ class SaleDetailPage extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Reçu imprimé avec succès'),
-            duration: Duration(
-              seconds: 2,
-            ), // ✨ AppColors.secondary (#CA8A04)+blanc=3.4:1 fail WCAG — theme neutre
+            content: Text('Reçu imprimé'),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -189,7 +187,7 @@ class SaleDetailPage extends ConsumerWidget {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur d\'impression: ${e.details}'),
+              content: Text(e.userMessage),
               backgroundColor: Theme.of(
                 context,
               ).colorScheme.error, // ✨ cs.error — compatible mode sombre

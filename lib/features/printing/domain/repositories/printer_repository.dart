@@ -31,6 +31,19 @@ class PrintException implements Exception {
   String toString() => 'PrintException(${reason.name}): $details';
 }
 
+/// Message à afficher à l'utilisateur ([PrintException.details] reste
+/// technique, pour les logs).
+extension PrintExceptionMessage on PrintException {
+  /// Explication en français, avec l'action à faire.
+  String get userMessage => switch (reason) {
+    PrintFailureReason.noPrinterConfigured => 'Aucune imprimante configurée.',
+    PrintFailureReason.connectionFailed =>
+      'Imprimante injoignable. Vérifiez qu’elle est allumée et à proximité.',
+    PrintFailureReason.sendFailed =>
+      'Impression interrompue. Vérifiez le papier et réessayez.',
+  };
+}
+
 /// Repository pour les opérations d'imprimante Bluetooth.
 ///
 /// Abstrait les interactions matérielles et la gestion de la connexion.

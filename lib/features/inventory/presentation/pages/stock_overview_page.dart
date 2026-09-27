@@ -171,25 +171,11 @@ class _StockList extends ConsumerWidget {
                   onFilter: onFilterChanged,
                 ),
               const SizedBox(height: AppSpacing.md),
-              SearchBar(
+              AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
                 hintText: 'Rechercher un produit…',
-                elevation: const WidgetStatePropertyAll(0),
-                backgroundColor: WidgetStatePropertyAll(
-                  cs.surfaceContainerHigh,
-                ),
-                leading: Icon(Icons.search, color: cs.onSurfaceVariant),
-                trailing: [
-                  if (query.isNotEmpty)
-                    IconButton(
-                      tooltip: 'Effacer',
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        searchController.clear();
-                        onQueryChanged('');
-                      },
-                    ),
+                actions: [
                   IconButton(
                     tooltip: 'Scanner un code-barres',
                     icon: const Icon(Icons.qr_code_scanner),

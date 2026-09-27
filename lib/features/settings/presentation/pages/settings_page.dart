@@ -21,7 +21,7 @@ import '../../../auth/presentation/pages/store_setup_page.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
-import '../../../sales/domain/entities/sale.dart';
+import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 import '../widgets/receipt_settings_sheet.dart';
 import '../widgets/settings_section.dart';
@@ -300,7 +300,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               sale.receiptNumber,
               sale.totalAmount,
               sale.vatAmount,
-              _paymentMethodLabel(sale.paymentMethod),
+              sale.paymentMethod.label,
             ].join(','),
           );
         }
@@ -324,15 +324,5 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
-  }
-
-  static String _paymentMethodLabel(PaymentMethod method) {
-    return switch (method) {
-      PaymentMethod.cash => 'Espèces',
-      PaymentMethod.orangeMoney => 'Orange Money',
-      PaymentMethod.mtn => 'MTN',
-      PaymentMethod.wave => 'Wave',
-      PaymentMethod.mixed => 'Mixte',
-    };
   }
 }

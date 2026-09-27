@@ -54,7 +54,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     _stockController = TextEditingController();
     _minStockController = TextEditingController();
     _formAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 600),
+      // Entrée courte : le formulaire doit être utilisable tout de suite.
+      duration: const Duration(milliseconds: 250),
       vsync: this,
     );
     unawaited(_formAnimationController.forward());
