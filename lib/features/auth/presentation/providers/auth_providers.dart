@@ -213,7 +213,8 @@ class Auth extends _$Auth {
   /// En cas de succès : récupère l'utilisateur courant depuis le token →
   /// `Authenticated`.
   /// En cas de PIN erroné : lève « PIN incorrect ».
-  /// À la 4e tentative échouée : blocage automatique local pendant 5 minutes.
+  /// Après [AppConfig.maxPinAttempts] échecs : blocage local pendant
+  /// [AppConfig.pinLockoutMinutes] minutes.
   Future<void> verifyPin(String pin) async {
     _logger.i('[Auth.verifyPin] Attempt with PIN length=${pin.length}');
     state = const AsyncLoading<AuthStatus>();
