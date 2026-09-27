@@ -16,6 +16,7 @@ class _RecordingStore extends StoreConfig {
     name: 'Boutique Awa',
     isSubjectToVat: false,
     receiptFooterText: 'Ouvert 7j/7',
+    logoVersion: 'logo-v1',
   );
 
   @override
@@ -46,5 +47,33 @@ void main() {
 
     expect(_RecordingStore.saved, isNotNull);
     expect(_RecordingStore.saved!.receiptFooterText, 'Ouvert 7j/7');
+  });
+
+  testWidgets('le téléphone est enregistré en E.164, le logo conservé', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [storeConfigProvider.overrideWith(_RecordingStore.new)],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const StoreSetupPage(isEditMode: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Le libellé est affiché au-dessus du champ ; l'indication, dedans.
+    final phoneField = find.widgetWithText(TextField, '07 00 00 00 00');
+    await tester.ensureVisible(phoneField);
+    await tester.enterText(phoneField, '0701020304');
+    final button = find.text('Enregistrer ma boutique');
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    expect(_RecordingStore.saved!.phone, '+2250701020304');
+    expect(_RecordingStore.saved!.logoVersion, 'logo-v1');
   });
 }

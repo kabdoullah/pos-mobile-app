@@ -7,6 +7,8 @@ import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/store_repository_impl.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/store_repository.dart';
+import '../data/repositories/profile_repository_impl.dart';
+import '../domain/repositories/profile_repository.dart';
 
 part 'auth_di_providers.g.dart';
 
@@ -37,5 +39,13 @@ AuthRepository authRepository(Ref ref) {
 StoreRepository storeRepository(Ref ref) {
   return StoreRepositoryImpl(
     remoteDataSource: ref.read(storesRemoteDataSourceProvider),
+  );
+}
+
+/// Fournit le repository du profil (nom du vendeur, cache + `/users/me`).
+@riverpod
+ProfileRepository profileRepository(Ref ref) {
+  return ProfileRepositoryImpl(
+    remoteDataSource: ref.read(authRemoteDataSourceProvider),
   );
 }

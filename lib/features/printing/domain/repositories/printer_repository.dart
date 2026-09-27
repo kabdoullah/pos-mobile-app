@@ -70,6 +70,7 @@ abstract interface class PrinterRepository {
     required Store store,
     required Sale sale,
     List<CartItem>? items,
+    String? sellerName,
   });
 
   /// Imprime un ticket de test (en-tête de la boutique, date, pied de page) —

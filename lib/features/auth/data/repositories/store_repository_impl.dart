@@ -12,6 +12,8 @@ abstract class _StoreKeys {
   static const String ncc = 'store_ncc';
   static const String isSubjectToVat = 'store_vat';
   static const String footerText = 'store_footer';
+  static const String phone = 'store_phone';
+  static const String logoVersion = 'store_logo_version';
 
   static const List<String> all = [
     name,
@@ -19,6 +21,8 @@ abstract class _StoreKeys {
     ncc,
     isSubjectToVat,
     footerText,
+    phone,
+    logoVersion,
   ];
 }
 
@@ -47,6 +51,8 @@ class StoreRepositoryImpl implements StoreRepository {
         isSubjectToVat:
             await _storage.read(key: _StoreKeys.isSubjectToVat) == 'true',
         receiptFooterText: await _storage.read(key: _StoreKeys.footerText),
+        phone: await _storage.read(key: _StoreKeys.phone),
+        logoVersion: await _storage.read(key: _StoreKeys.logoVersion),
       );
     }
 
@@ -87,5 +93,7 @@ class StoreRepositoryImpl implements StoreRepository {
       key: _StoreKeys.footerText,
       value: store.receiptFooterText,
     );
+    await _storage.write(key: _StoreKeys.phone, value: store.phone);
+    await _storage.write(key: _StoreKeys.logoVersion, value: store.logoVersion);
   }
 }

@@ -11,6 +11,7 @@ import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/domain/entities/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/auth/providers/seller_profile_provider.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/settings/presentation/pages/settings_page.dart';
 import 'package:mobile/features/settings/presentation/widgets/receipt_settings_sheet.dart';
@@ -19,6 +20,11 @@ class _Authenticated extends Auth {
   @override
   Future<AuthStatus> build() async =>
       const AuthAuthenticated(User(id: 'u1', phoneNumber: '+2250700000000'));
+}
+
+class _Seller extends SellerProfile {
+  @override
+  Future<String?> build() async => 'Awa Koné';
 }
 
 /// Synchro figée (pas de timers ni d'appels réseau).
@@ -55,6 +61,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
       overrides: [
         authProvider.overrideWith(_Authenticated.new),
         storeConfigProvider.overrideWith(_Store.new),
+        sellerProfileProvider.overrideWith(_Seller.new),
         syncOrchestratorProvider.overrideWith(_IdleSync.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(3)),
@@ -78,7 +85,10 @@ void main() {
       expect(find.text('COMMERCE'), findsOneWidget);
       expect(find.text('3 ventes en attente'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Se déconnecter'), 200);
-      expect(find.text('+225 07 00 00 00 00'), findsOneWidget);
+      expect(
+        find.text('+225 07 00 00 00 00 · Vendeur : Awa Koné'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
 
       // Déconnexion avec ventes en attente : avertissement explicite.

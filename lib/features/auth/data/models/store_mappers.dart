@@ -10,6 +10,8 @@ extension StoreDtoToDomain on StoreDto {
     ncc: ncc,
     isSubjectToVat: vatSubject,
     receiptFooterText: receiptFooterText,
+    phone: phone,
+    logoVersion: logoVersion,
   );
 }
 
@@ -22,6 +24,7 @@ extension StoreUpdateDtoMapper on Store {
     ncc: ncc,
     vatSubject: isSubjectToVat,
     receiptFooterText: receiptFooterText,
+    phone: phone,
   );
 }
 
@@ -34,5 +37,6 @@ extension StoreCreateDtoMapper on Store {
     ncc: ncc,
     vatSubject: isSubjectToVat,
     receiptFooterText: receiptFooterText,
+    phone: phone,
   );
 }

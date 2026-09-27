@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
+import 'package:mobile/features/auth/providers/seller_profile_provider.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/printing/domain/repositories/printer_repository.dart';
 import 'package:mobile/features/printing/presentation/providers/printer_provider.dart';
@@ -17,6 +18,7 @@ class _FakePrinter implements PrinterRepository {
   bool failSend = false;
   int printed = 0;
   int testPages = 0;
+  String? lastSellerName;
 
   @override
   Future<bool> connect(String mac) async => connected = true;
@@ -35,7 +37,9 @@ class _FakePrinter implements PrinterRepository {
     required Store store,
     required Sale sale,
     List<CartItem>? items,
+    String? sellerName,
   }) async {
+    lastSellerName = sellerName;
     if (failSend) {
       throw const PrintException(
         reason: PrintFailureReason.sendFailed,
@@ -47,6 +51,11 @@ class _FakePrinter implements PrinterRepository {
 
   @override
   Future<void> printTestPage({required Store store}) async => testPages++;
+}
+
+class _Seller extends SellerProfile {
+  @override
+  Future<String?> build() async => 'Awa';
 }
 
 class _ConfiguredStore extends StoreConfig {
@@ -75,6 +84,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         printerRepositoryProvider.overrideWithValue(bt),
+        sellerProfileProvider.overrideWith(_Seller.new),
         storeConfigProvider.overrideWith(_ConfiguredStore.new),
       ],
     );
@@ -161,4 +171,12 @@ void main() {
       );
     },
   );
+
+  test('le nom du vendeur est transmis à l’impression du reçu', () async {
+    FlutterSecureStorage.setMockInitialValues({'printer_mac': 'AA:BB:CC'});
+
+    await container.read(printerProvider.notifier).print(sale: _sale);
+
+    expect(bt.lastSellerName, 'Awa');
+  });
 }

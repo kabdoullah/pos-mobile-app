@@ -6,6 +6,8 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/domain/entities/store.dart';
+import '../../../../core/utils/phone_formatter.dart';
+import '../../../auth/providers/seller_profile_provider.dart';
 import '../../../auth/providers/store_provider.dart';
 
 /// Longueur maximale du pied de reçu (colonne `receipt_footer_text` côté
@@ -96,7 +98,8 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               const Text('Reçus', style: AppTypography.titleLarge),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                "Le nom, l'adresse et le NCC viennent de « Mon magasin ».",
+                'Nom, adresse, téléphone et NCC viennent de « Mon magasin » ; '
+                'le vendeur, de « Mon compte ».',
                 style: AppTypography.bodySmall.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
@@ -125,6 +128,7 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               _TicketPreview(
                 store: widget.store,
                 footer: _footerController.text.trim(),
+                sellerName: ref.watch(sellerProfileProvider).value,
               ),
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -149,10 +153,15 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
 
 /// Aperçu simplifié du ticket 58 mm (police à chasse fixe, centré).
 class _TicketPreview extends StatelessWidget {
-  const _TicketPreview({required this.store, required this.footer});
+  const _TicketPreview({
+    required this.store,
+    required this.footer,
+    required this.sellerName,
+  });
 
   final Store store;
   final String footer;
+  final String? sellerName;
 
   @override
   Widget build(BuildContext context) {
@@ -164,6 +173,8 @@ class _TicketPreview extends StatelessWidget {
     const separator = '--------------------------------';
     final address = store.address;
     final ncc = store.ncc;
+    final phone = store.phone;
+    final sellerName = this.sellerName;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -183,7 +194,11 @@ class _TicketPreview extends StatelessWidget {
               ),
               if (ncc != null && ncc.isNotEmpty) Text('NCC: $ncc'),
               if (address != null && address.isNotEmpty) Text(address),
+              if (phone != null && phone.isNotEmpty)
+                Text('Tél. ${formatPhoneCiDisplay(phone)}'),
               const Text(separator, maxLines: 1, overflow: TextOverflow.clip),
+              if (sellerName != null && sellerName.isNotEmpty)
+                Text('Vendeur : $sellerName'),
               const Text('… articles et total …'),
               const Text(separator, maxLines: 1, overflow: TextOverflow.clip),
               if (footer.isNotEmpty) Text(footer),

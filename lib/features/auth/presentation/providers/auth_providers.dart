@@ -11,6 +11,7 @@ import '../../../../core/sync/sync_orchestrator.dart';
 import '../../domain/entities/user.dart';
 import '../../../auth/providers/auth_di_providers.dart';
 import '../../providers/store_provider.dart';
+import '../../providers/seller_profile_provider.dart';
 
 part 'auth_providers.g.dart';
 
@@ -353,6 +354,9 @@ class Auth extends _$Auth {
   Future<void> _resetStoreCache() async {
     await ref.read(storeRepositoryProvider).clearLocal();
     ref.invalidate(storeConfigProvider);
+    // Le nom du vendeur appartient au compte : même traitement.
+    await ref.read(profileRepositoryProvider).clearLocal();
+    ref.invalidate(sellerProfileProvider);
   }
 
   /// Efface tout état d'erreur en revenant à Unauthenticated.

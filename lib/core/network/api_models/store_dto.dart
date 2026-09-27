@@ -15,6 +15,8 @@ sealed class StoreDto with _$StoreDto {
     String? ncc,
     @JsonKey(name: 'vat_subject') required bool vatSubject,
     @JsonKey(name: 'receipt_footer_text') String? receiptFooterText,
+    String? phone,
+    @JsonKey(name: 'logo_version') String? logoVersion,
     @JsonKey(name: 'next_receipt_number') required int nextReceiptNumber,
     @JsonKey(name: 'created_at') required String createdAt,
     @JsonKey(name: 'updated_at') required String updatedAt,
@@ -34,6 +36,7 @@ sealed class StoreCreateDto with _$StoreCreateDto {
     String? ncc,
     @JsonKey(name: 'vat_subject') bool? vatSubject,
     @JsonKey(name: 'receipt_footer_text') String? receiptFooterText,
+    String? phone,
   }) = _StoreCreateDto;
 
   factory StoreCreateDto.fromJson(Map<String, dynamic> json) =>
@@ -50,6 +53,7 @@ sealed class StoreUpdateDto with _$StoreUpdateDto {
     String? ncc,
     @JsonKey(name: 'vat_subject') bool? vatSubject,
     @JsonKey(name: 'receipt_footer_text') String? receiptFooterText,
+    String? phone,
   }) = _StoreUpdateDto;
 
   factory StoreUpdateDto.fromJson(Map<String, dynamic> json) =>

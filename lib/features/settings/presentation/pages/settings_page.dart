@@ -23,7 +23,9 @@ import '../../../auth/providers/store_provider.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/providers/sales_di_providers.dart';
+import '../../../auth/providers/seller_profile_provider.dart';
 import '../widgets/receipt_settings_sheet.dart';
+import '../widgets/seller_name_sheet.dart';
 import '../widgets/settings_section.dart';
 
 /// Paramètres, par sections : commerce, caisse, application, compte.
@@ -58,6 +60,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final store = ref.watch(storeConfigProvider).value;
     final auth = ref.watch(authProvider).value;
     final phone = auth is AuthAuthenticated ? auth.user.phoneNumber : null;
+    final sellerName = ref.watch(sellerProfileProvider).value;
     final storeAddress = store?.address;
     final footer = store?.receiptFooterText;
 
@@ -183,7 +186,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 SettingsTile(
                   icon: Icons.person_outline,
                   title: 'Mon compte',
-                  subtitle: Text(formatPhoneCiDisplay(phone)),
+                  subtitle: Text(
+                    [
+                      formatPhoneCiDisplay(phone),
+                      sellerName == null || sellerName.isEmpty
+                          ? 'Nom du vendeur à définir'
+                          : 'Vendeur : $sellerName',
+                    ].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  showChevron: true,
+                  onTap: () => showSellerNameSheet(context, sellerName),
                 ),
               SettingsTile(
                 icon: Icons.logout_outlined,

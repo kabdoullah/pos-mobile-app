@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../auth/domain/entities/store.dart';
 import '../../domain/repositories/printer_repository.dart';
 import '../../providers/printing_di_providers.dart';
+import '../../../auth/providers/seller_profile_provider.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../sales/domain/entities/cart_item.dart';
 import '../../../sales/domain/entities/sale.dart';
@@ -146,10 +147,23 @@ class Printer extends _$Printer {
   ///
   /// Lève [PrintException] si aucune imprimante n'est configurée ou si l'envoi
   /// échoue.
-  Future<void> print({required Sale sale, List<CartItem>? items}) => _printWith(
-    (service, store) =>
-        service.printReceipt(store: store, sale: sale, items: items),
-  );
+  Future<void> print({required Sale sale, List<CartItem>? items}) =>
+      _printWith((service, store) async {
+        // Nom du vendeur depuis le cache local : l'impression reste possible
+        // hors ligne (ligne absente si le nom n'est pas défini ou inconnu).
+        String? sellerName;
+        try {
+          sellerName = await ref.read(sellerProfileProvider.future);
+        } on Exception {
+          sellerName = null;
+        }
+        await service.printReceipt(
+          store: store,
+          sale: sale,
+          items: items,
+          sellerName: sellerName,
+        );
+      });
 
   /// Imprime un ticket de test sur l'imprimante enregistrée.
   ///

@@ -1,3 +1,4 @@
+import '../../../../core/utils/phone_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
@@ -37,6 +38,8 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
   late TextEditingController _nameController;
   late TextEditingController _addressController;
   late TextEditingController _nccController;
+  final _phoneController = TextEditingController();
+  String? _phoneError;
 
   String? _nameError;
   bool _isSubjectToVat = true;
@@ -70,6 +73,16 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     _nameController.text = store.name;
     _addressController.text = store.address ?? '';
     _nccController.text = store.ncc ?? '';
+    final phone = store.phone;
+    // E.164 (+225XXXXXXXXXX) → saisie locale espacée (07 00 00 00 00).
+    if (phone != null && phone.startsWith('+225')) {
+      _phoneController.text = const SpacedPhoneFormatter()
+          .formatEditUpdate(
+            TextEditingValue.empty,
+            TextEditingValue(text: phone.substring(4)),
+          )
+          .text;
+    }
     // Reporte le setState hors de la phase de build (ceci peut s'exécuter
     // pendant le build).
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -82,6 +95,7 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     _nameController.dispose();
     _addressController.dispose();
     _nccController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -93,8 +107,13 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
       _nameError = 'Nom de la boutique requis';
     }
 
+    final phone = _phoneController.text.trim();
+    _phoneError = phone.isEmpty || isValidLocalPhoneCi(phone)
+        ? null
+        : 'Numéro à 10 chiffres, ex. 07 00 00 00 00';
+
     setState(() {});
-    return _nameError == null;
+    return _nameError == null && _phoneError == null;
   }
 
   Future<void> _saveStore() async {
@@ -103,6 +122,9 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     setState(() => _isLoading = true);
 
     try {
+      // Réglages hors de ce formulaire (Paramètres → Reçus) : conservés.
+      final current = ref.read(storeConfigProvider).value;
+      final phone = _phoneController.text.trim();
       final store = Store(
         name: _nameController.text.trim(),
         address: _addressController.text.trim().isEmpty
@@ -112,12 +134,9 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
             ? null
             : _nccController.text.trim(),
         isSubjectToVat: _isSubjectToVat,
-        // Le pied de reçu se règle dans Paramètres → Reçus : on conserve
-        // celui déjà configuré au lieu de l'effacer.
-        receiptFooterText: ref
-            .read(storeConfigProvider)
-            .value
-            ?.receiptFooterText,
+        receiptFooterText: current?.receiptFooterText,
+        logoVersion: current?.logoVersion,
+        phone: phone.isEmpty ? null : toE164Ci(phone),
       );
 
       await ref.read(storeConfigProvider.notifier).save(store);
@@ -285,6 +304,16 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
                       hint: 'Numéro de contribuable',
                       controller: _nccController,
                       prefixIcon: Icons.badge_outlined,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Téléphone (optionnel, imprimé sur les reçus)',
+                      hint: '07 00 00 00 00',
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: const [SpacedPhoneFormatter()],
+                      errorText: _phoneError,
+                      prefixIcon: Icons.phone_outlined,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Padding(

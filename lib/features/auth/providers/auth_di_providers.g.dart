@@ -206,3 +206,55 @@ final class StoreRepositoryProvider
 }
 
 String _$storeRepositoryHash() => r'9ffdd3e9e8c31e0ae8cc92402f76328e934c4ad9';
+
+/// Fournit le repository du profil (nom du vendeur, cache + `/users/me`).
+
+@ProviderFor(profileRepository)
+final profileRepositoryProvider = ProfileRepositoryProvider._();
+
+/// Fournit le repository du profil (nom du vendeur, cache + `/users/me`).
+
+final class ProfileRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ProfileRepository,
+          ProfileRepository,
+          ProfileRepository
+        >
+    with $Provider<ProfileRepository> {
+  /// Fournit le repository du profil (nom du vendeur, cache + `/users/me`).
+  ProfileRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'profileRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$profileRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ProfileRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ProfileRepository create(Ref ref) {
+    return profileRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProfileRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProfileRepository>(value),
+    );
+  }
+}
+
+String _$profileRepositoryHash() => r'7e0a6d0b0e0b42bc5dba113b131435654ceda531';

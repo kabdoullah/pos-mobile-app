@@ -64,9 +64,15 @@ class PrinterService implements PrinterRepository {
     required Store store,
     required Sale sale,
     List<CartItem>? items,
+    String? sellerName,
   }) async {
     await _send(
-      await ReceiptFormatter.format(store: store, sale: sale, items: items),
+      await ReceiptFormatter.format(
+        store: store,
+        sale: sale,
+        items: items,
+        sellerName: sellerName,
+      ),
     );
     _log.i('Receipt printed successfully');
   }

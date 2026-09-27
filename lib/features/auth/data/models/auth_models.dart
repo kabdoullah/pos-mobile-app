@@ -94,3 +94,30 @@ sealed class RefreshRequestDto with _$RefreshRequestDto {
   factory RefreshRequestDto.fromJson(Map<String, dynamic> json) =>
       _$RefreshRequestDtoFromJson(json);
 }
+
+/// Profil de l'utilisateur connecté (GET/PATCH /api/v1/users/me).
+@freezed
+sealed class UserMeDto with _$UserMeDto {
+  /// Crée un [UserMeDto].
+  const factory UserMeDto({
+    required String id,
+    @JsonKey(name: 'phone_number') required String phoneNumber,
+    String? email,
+    @JsonKey(name: 'display_name') String? displayName,
+  }) = _UserMeDto;
+
+  factory UserMeDto.fromJson(Map<String, dynamic> json) =>
+      _$UserMeDtoFromJson(json);
+}
+
+/// Mise à jour du profil ; `display_name` null ou vide = retiré du reçu.
+@freezed
+sealed class UserMeUpdateDto with _$UserMeUpdateDto {
+  /// Crée un [UserMeUpdateDto].
+  const factory UserMeUpdateDto({
+    @JsonKey(name: 'display_name') String? displayName,
+  }) = _UserMeUpdateDto;
+
+  factory UserMeUpdateDto.fromJson(Map<String, dynamic> json) =>
+      _$UserMeUpdateDtoFromJson(json);
+}

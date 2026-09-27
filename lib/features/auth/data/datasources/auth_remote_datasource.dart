@@ -36,4 +36,14 @@ abstract class AuthRemoteDataSource {
   /// Endpoint : POST /api/v1/auth/refresh
   @POST('/api/v1/auth/refresh')
   Future<TokenResponseDto> refresh(@Body() RefreshRequestDto request);
+
+  /// Profil de l'utilisateur connecté (nom affiché sur les reçus).
+  /// Endpoint : GET /api/v1/users/me
+  @GET('/api/v1/users/me')
+  Future<UserMeDto> getMe();
+
+  /// Met à jour le profil.
+  /// Endpoint : PATCH /api/v1/users/me
+  @PATCH('/api/v1/users/me')
+  Future<UserMeDto> updateMe(@Body() UserMeUpdateDto request);
 }

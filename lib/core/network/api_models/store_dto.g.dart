@@ -14,6 +14,8 @@ _StoreDto _$StoreDtoFromJson(Map<String, dynamic> json) => _StoreDto(
   ncc: json['ncc'] as String?,
   vatSubject: json['vat_subject'] as bool,
   receiptFooterText: json['receipt_footer_text'] as String?,
+  phone: json['phone'] as String?,
+  logoVersion: json['logo_version'] as String?,
   nextReceiptNumber: (json['next_receipt_number'] as num).toInt(),
   createdAt: json['created_at'] as String,
   updatedAt: json['updated_at'] as String,
@@ -27,6 +29,8 @@ Map<String, dynamic> _$StoreDtoToJson(_StoreDto instance) => <String, dynamic>{
   'ncc': instance.ncc,
   'vat_subject': instance.vatSubject,
   'receipt_footer_text': instance.receiptFooterText,
+  'phone': instance.phone,
+  'logo_version': instance.logoVersion,
   'next_receipt_number': instance.nextReceiptNumber,
   'created_at': instance.createdAt,
   'updated_at': instance.updatedAt,
@@ -39,6 +43,7 @@ _StoreCreateDto _$StoreCreateDtoFromJson(Map<String, dynamic> json) =>
       ncc: json['ncc'] as String?,
       vatSubject: json['vat_subject'] as bool?,
       receiptFooterText: json['receipt_footer_text'] as String?,
+      phone: json['phone'] as String?,
     );
 
 Map<String, dynamic> _$StoreCreateDtoToJson(_StoreCreateDto instance) =>
@@ -48,6 +53,7 @@ Map<String, dynamic> _$StoreCreateDtoToJson(_StoreCreateDto instance) =>
       'ncc': instance.ncc,
       'vat_subject': instance.vatSubject,
       'receipt_footer_text': instance.receiptFooterText,
+      'phone': instance.phone,
     };
 
 _StoreUpdateDto _$StoreUpdateDtoFromJson(Map<String, dynamic> json) =>
@@ -57,6 +63,7 @@ _StoreUpdateDto _$StoreUpdateDtoFromJson(Map<String, dynamic> json) =>
       ncc: json['ncc'] as String?,
       vatSubject: json['vat_subject'] as bool?,
       receiptFooterText: json['receipt_footer_text'] as String?,
+      phone: json['phone'] as String?,
     );
 
 Map<String, dynamic> _$StoreUpdateDtoToJson(_StoreUpdateDto instance) =>
@@ -66,4 +73,5 @@ Map<String, dynamic> _$StoreUpdateDtoToJson(_StoreUpdateDto instance) =>
       'ncc': instance.ncc,
       'vat_subject': instance.vatSubject,
       'receipt_footer_text': instance.receiptFooterText,
+      'phone': instance.phone,
     };

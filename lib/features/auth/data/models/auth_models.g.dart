@@ -90,3 +90,24 @@ _RefreshRequestDto _$RefreshRequestDtoFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$RefreshRequestDtoToJson(_RefreshRequestDto instance) =>
     <String, dynamic>{'refresh_token': instance.refreshToken};
+
+_UserMeDto _$UserMeDtoFromJson(Map<String, dynamic> json) => _UserMeDto(
+  id: json['id'] as String,
+  phoneNumber: json['phone_number'] as String,
+  email: json['email'] as String?,
+  displayName: json['display_name'] as String?,
+);
+
+Map<String, dynamic> _$UserMeDtoToJson(_UserMeDto instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'phone_number': instance.phoneNumber,
+      'email': instance.email,
+      'display_name': instance.displayName,
+    };
+
+_UserMeUpdateDto _$UserMeUpdateDtoFromJson(Map<String, dynamic> json) =>
+    _UserMeUpdateDto(displayName: json['display_name'] as String?);
+
+Map<String, dynamic> _$UserMeUpdateDtoToJson(_UserMeUpdateDto instance) =>
+    <String, dynamic>{'display_name': instance.displayName};

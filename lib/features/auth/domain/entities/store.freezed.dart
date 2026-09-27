@@ -19,7 +19,9 @@ mixin _$Store {
  String? get address;/// Numéro de Compte Contribuable DGI (optional).
  String? get ncc;/// Indique si la boutique est assujettie à la TVA (par défaut : false).
  bool get isSubjectToVat;/// Texte de pied de reçu personnalisé (optionnel).
- String? get receiptFooterText;
+ String? get receiptFooterText;/// Téléphone de la boutique (E.164), imprimé sur les reçus.
+ String? get phone;/// Version (SHA-256) du logo serveur ; null = pas de logo (ADR-0008).
+ String? get logoVersion;
 /// Create a copy of Store
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +32,16 @@ $StoreCopyWith<Store> get copyWith => _$StoreCopyWithImpl<Store>(this as Store, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Store&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.ncc, ncc) || other.ncc == ncc)&&(identical(other.isSubjectToVat, isSubjectToVat) || other.isSubjectToVat == isSubjectToVat)&&(identical(other.receiptFooterText, receiptFooterText) || other.receiptFooterText == receiptFooterText));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Store&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.ncc, ncc) || other.ncc == ncc)&&(identical(other.isSubjectToVat, isSubjectToVat) || other.isSubjectToVat == isSubjectToVat)&&(identical(other.receiptFooterText, receiptFooterText) || other.receiptFooterText == receiptFooterText)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.logoVersion, logoVersion) || other.logoVersion == logoVersion));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,address,ncc,isSubjectToVat,receiptFooterText);
+int get hashCode => Object.hash(runtimeType,name,address,ncc,isSubjectToVat,receiptFooterText,phone,logoVersion);
 
 @override
 String toString() {
-  return 'Store(name: $name, address: $address, ncc: $ncc, isSubjectToVat: $isSubjectToVat, receiptFooterText: $receiptFooterText)';
+  return 'Store(name: $name, address: $address, ncc: $ncc, isSubjectToVat: $isSubjectToVat, receiptFooterText: $receiptFooterText, phone: $phone, logoVersion: $logoVersion)';
 }
 
 
@@ -50,7 +52,7 @@ abstract mixin class $StoreCopyWith<$Res>  {
   factory $StoreCopyWith(Store value, $Res Function(Store) _then) = _$StoreCopyWithImpl;
 @useResult
 $Res call({
- String name, String? address, String? ncc, bool isSubjectToVat, String? receiptFooterText
+ String name, String? address, String? ncc, bool isSubjectToVat, String? receiptFooterText, String? phone, String? logoVersion
 });
 
 
@@ -67,13 +69,15 @@ class _$StoreCopyWithImpl<$Res>
 
 /// Create a copy of Store
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? isSubjectToVat = null,Object? receiptFooterText = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? isSubjectToVat = null,Object? receiptFooterText = freezed,Object? phone = freezed,Object? logoVersion = freezed,}) {
   return _then(_self.copyWith(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,ncc: freezed == ncc ? _self.ncc : ncc // ignore: cast_nullable_to_non_nullable
 as String?,isSubjectToVat: null == isSubjectToVat ? _self.isSubjectToVat : isSubjectToVat // ignore: cast_nullable_to_non_nullable
 as bool,receiptFooterText: freezed == receiptFooterText ? _self.receiptFooterText : receiptFooterText // ignore: cast_nullable_to_non_nullable
+as String?,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,logoVersion: freezed == logoVersion ? _self.logoVersion : logoVersion // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -156,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText,  String? phone,  String? logoVersion)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Store() when $default != null:
-return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText);case _:
+return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText,_that.phone,_that.logoVersion);case _:
   return orElse();
 
 }
@@ -177,10 +181,10 @@ return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.re
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText,  String? phone,  String? logoVersion)  $default,) {final _that = this;
 switch (_that) {
 case _Store():
-return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText);}
+return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText,_that.phone,_that.logoVersion);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +198,10 @@ return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.re
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String name,  String? address,  String? ncc,  bool isSubjectToVat,  String? receiptFooterText,  String? phone,  String? logoVersion)?  $default,) {final _that = this;
 switch (_that) {
 case _Store() when $default != null:
-return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText);case _:
+return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.receiptFooterText,_that.phone,_that.logoVersion);case _:
   return null;
 
 }
@@ -209,7 +213,7 @@ return $default(_that.name,_that.address,_that.ncc,_that.isSubjectToVat,_that.re
 
 
 class _Store implements Store {
-  const _Store({required this.name, this.address, this.ncc, required this.isSubjectToVat, this.receiptFooterText});
+  const _Store({required this.name, this.address, this.ncc, required this.isSubjectToVat, this.receiptFooterText, this.phone, this.logoVersion});
   
 
 /// Nom de la boutique (obligatoire).
@@ -222,6 +226,10 @@ class _Store implements Store {
 @override final  bool isSubjectToVat;
 /// Texte de pied de reçu personnalisé (optionnel).
 @override final  String? receiptFooterText;
+/// Téléphone de la boutique (E.164), imprimé sur les reçus.
+@override final  String? phone;
+/// Version (SHA-256) du logo serveur ; null = pas de logo (ADR-0008).
+@override final  String? logoVersion;
 
 /// Create a copy of Store
 /// with the given fields replaced by the non-null parameter values.
@@ -233,16 +241,16 @@ _$StoreCopyWith<_Store> get copyWith => __$StoreCopyWithImpl<_Store>(this, _$ide
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Store&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.ncc, ncc) || other.ncc == ncc)&&(identical(other.isSubjectToVat, isSubjectToVat) || other.isSubjectToVat == isSubjectToVat)&&(identical(other.receiptFooterText, receiptFooterText) || other.receiptFooterText == receiptFooterText));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Store&&(identical(other.name, name) || other.name == name)&&(identical(other.address, address) || other.address == address)&&(identical(other.ncc, ncc) || other.ncc == ncc)&&(identical(other.isSubjectToVat, isSubjectToVat) || other.isSubjectToVat == isSubjectToVat)&&(identical(other.receiptFooterText, receiptFooterText) || other.receiptFooterText == receiptFooterText)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.logoVersion, logoVersion) || other.logoVersion == logoVersion));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,name,address,ncc,isSubjectToVat,receiptFooterText);
+int get hashCode => Object.hash(runtimeType,name,address,ncc,isSubjectToVat,receiptFooterText,phone,logoVersion);
 
 @override
 String toString() {
-  return 'Store(name: $name, address: $address, ncc: $ncc, isSubjectToVat: $isSubjectToVat, receiptFooterText: $receiptFooterText)';
+  return 'Store(name: $name, address: $address, ncc: $ncc, isSubjectToVat: $isSubjectToVat, receiptFooterText: $receiptFooterText, phone: $phone, logoVersion: $logoVersion)';
 }
 
 
@@ -253,7 +261,7 @@ abstract mixin class _$StoreCopyWith<$Res> implements $StoreCopyWith<$Res> {
   factory _$StoreCopyWith(_Store value, $Res Function(_Store) _then) = __$StoreCopyWithImpl;
 @override @useResult
 $Res call({
- String name, String? address, String? ncc, bool isSubjectToVat, String? receiptFooterText
+ String name, String? address, String? ncc, bool isSubjectToVat, String? receiptFooterText, String? phone, String? logoVersion
 });
 
 
@@ -270,13 +278,15 @@ class __$StoreCopyWithImpl<$Res>
 
 /// Create a copy of Store
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? isSubjectToVat = null,Object? receiptFooterText = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? isSubjectToVat = null,Object? receiptFooterText = freezed,Object? phone = freezed,Object? logoVersion = freezed,}) {
   return _then(_Store(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,ncc: freezed == ncc ? _self.ncc : ncc // ignore: cast_nullable_to_non_nullable
 as String?,isSubjectToVat: null == isSubjectToVat ? _self.isSubjectToVat : isSubjectToVat // ignore: cast_nullable_to_non_nullable
 as bool,receiptFooterText: freezed == receiptFooterText ? _self.receiptFooterText : receiptFooterText // ignore: cast_nullable_to_non_nullable
+as String?,phone: freezed == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
+as String?,logoVersion: freezed == logoVersion ? _self.logoVersion : logoVersion // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

@@ -1837,4 +1837,527 @@ as String,
 
 }
 
+
+/// @nodoc
+mixin _$UserMeDto {
+
+ String get id;@JsonKey(name: 'phone_number') String get phoneNumber; String? get email;@JsonKey(name: 'display_name') String? get displayName;
+/// Create a copy of UserMeDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UserMeDtoCopyWith<UserMeDto> get copyWith => _$UserMeDtoCopyWithImpl<UserMeDto>(this as UserMeDto, _$identity);
+
+  /// Serializes this UserMeDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName);
+
+@override
+String toString() {
+  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UserMeDtoCopyWith<$Res>  {
+  factory $UserMeDtoCopyWith(UserMeDto value, $Res Function(UserMeDto) _then) = _$UserMeDtoCopyWithImpl;
+@useResult
+$Res call({
+ String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName
+});
+
+
+
+
+}
+/// @nodoc
+class _$UserMeDtoCopyWithImpl<$Res>
+    implements $UserMeDtoCopyWith<$Res> {
+  _$UserMeDtoCopyWithImpl(this._self, this._then);
+
+  final UserMeDto _self;
+  final $Res Function(UserMeDto) _then;
+
+/// Create a copy of UserMeDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,}) {
+  return _then(_self.copyWith(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [UserMeDto].
+extension UserMeDtoPatterns on UserMeDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UserMeDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _UserMeDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UserMeDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _UserMeDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UserMeDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _UserMeDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _UserMeDto() when $default != null:
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)  $default,) {final _that = this;
+switch (_that) {
+case _UserMeDto():
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)?  $default,) {final _that = this;
+switch (_that) {
+case _UserMeDto() when $default != null:
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _UserMeDto implements UserMeDto {
+  const _UserMeDto({required this.id, @JsonKey(name: 'phone_number') required this.phoneNumber, this.email, @JsonKey(name: 'display_name') this.displayName});
+  factory _UserMeDto.fromJson(Map<String, dynamic> json) => _$UserMeDtoFromJson(json);
+
+@override final  String id;
+@override@JsonKey(name: 'phone_number') final  String phoneNumber;
+@override final  String? email;
+@override@JsonKey(name: 'display_name') final  String? displayName;
+
+/// Create a copy of UserMeDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$UserMeDtoCopyWith<_UserMeDto> get copyWith => __$UserMeDtoCopyWithImpl<_UserMeDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UserMeDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName);
+
+@override
+String toString() {
+  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$UserMeDtoCopyWith<$Res> implements $UserMeDtoCopyWith<$Res> {
+  factory _$UserMeDtoCopyWith(_UserMeDto value, $Res Function(_UserMeDto) _then) = __$UserMeDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName
+});
+
+
+
+
+}
+/// @nodoc
+class __$UserMeDtoCopyWithImpl<$Res>
+    implements _$UserMeDtoCopyWith<$Res> {
+  __$UserMeDtoCopyWithImpl(this._self, this._then);
+
+  final _UserMeDto _self;
+  final $Res Function(_UserMeDto) _then;
+
+/// Create a copy of UserMeDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,}) {
+  return _then(_UserMeDto(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
+as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$UserMeUpdateDto {
+
+@JsonKey(name: 'display_name') String? get displayName;
+/// Create a copy of UserMeUpdateDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UserMeUpdateDtoCopyWith<UserMeUpdateDto> get copyWith => _$UserMeUpdateDtoCopyWithImpl<UserMeUpdateDto>(this as UserMeUpdateDto, _$identity);
+
+  /// Serializes this UserMeUpdateDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMeUpdateDto&&(identical(other.displayName, displayName) || other.displayName == displayName));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,displayName);
+
+@override
+String toString() {
+  return 'UserMeUpdateDto(displayName: $displayName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UserMeUpdateDtoCopyWith<$Res>  {
+  factory $UserMeUpdateDtoCopyWith(UserMeUpdateDto value, $Res Function(UserMeUpdateDto) _then) = _$UserMeUpdateDtoCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'display_name') String? displayName
+});
+
+
+
+
+}
+/// @nodoc
+class _$UserMeUpdateDtoCopyWithImpl<$Res>
+    implements $UserMeUpdateDtoCopyWith<$Res> {
+  _$UserMeUpdateDtoCopyWithImpl(this._self, this._then);
+
+  final UserMeUpdateDto _self;
+  final $Res Function(UserMeUpdateDto) _then;
+
+/// Create a copy of UserMeUpdateDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? displayName = freezed,}) {
+  return _then(_self.copyWith(
+displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [UserMeUpdateDto].
+extension UserMeUpdateDtoPatterns on UserMeUpdateDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UserMeUpdateDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _UserMeUpdateDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UserMeUpdateDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _UserMeUpdateDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UserMeUpdateDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _UserMeUpdateDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'display_name')  String? displayName)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _UserMeUpdateDto() when $default != null:
+return $default(_that.displayName);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'display_name')  String? displayName)  $default,) {final _that = this;
+switch (_that) {
+case _UserMeUpdateDto():
+return $default(_that.displayName);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'display_name')  String? displayName)?  $default,) {final _that = this;
+switch (_that) {
+case _UserMeUpdateDto() when $default != null:
+return $default(_that.displayName);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _UserMeUpdateDto implements UserMeUpdateDto {
+  const _UserMeUpdateDto({@JsonKey(name: 'display_name') this.displayName});
+  factory _UserMeUpdateDto.fromJson(Map<String, dynamic> json) => _$UserMeUpdateDtoFromJson(json);
+
+@override@JsonKey(name: 'display_name') final  String? displayName;
+
+/// Create a copy of UserMeUpdateDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$UserMeUpdateDtoCopyWith<_UserMeUpdateDto> get copyWith => __$UserMeUpdateDtoCopyWithImpl<_UserMeUpdateDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UserMeUpdateDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserMeUpdateDto&&(identical(other.displayName, displayName) || other.displayName == displayName));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,displayName);
+
+@override
+String toString() {
+  return 'UserMeUpdateDto(displayName: $displayName)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$UserMeUpdateDtoCopyWith<$Res> implements $UserMeUpdateDtoCopyWith<$Res> {
+  factory _$UserMeUpdateDtoCopyWith(_UserMeUpdateDto value, $Res Function(_UserMeUpdateDto) _then) = __$UserMeUpdateDtoCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'display_name') String? displayName
+});
+
+
+
+
+}
+/// @nodoc
+class __$UserMeUpdateDtoCopyWithImpl<$Res>
+    implements _$UserMeUpdateDtoCopyWith<$Res> {
+  __$UserMeUpdateDtoCopyWithImpl(this._self, this._then);
+
+  final _UserMeUpdateDto _self;
+  final $Res Function(_UserMeUpdateDto) _then;
+
+/// Create a copy of UserMeUpdateDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? displayName = freezed,}) {
+  return _then(_UserMeUpdateDto(
+displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
 // dart format on

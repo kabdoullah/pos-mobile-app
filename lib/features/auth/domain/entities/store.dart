@@ -24,5 +24,11 @@ sealed class Store with _$Store {
 
     /// Texte de pied de reçu personnalisé (optionnel).
     String? receiptFooterText,
+
+    /// Téléphone de la boutique (E.164), imprimé sur les reçus.
+    String? phone,
+
+    /// Version (SHA-256) du logo serveur ; null = pas de logo (ADR-0008).
+    String? logoVersion,
   }) = _Store;
 }
