@@ -81,7 +81,9 @@ Unauthenticated → [phone+password login] → StoreSetupRequired (first reg)
                                           → Authenticated
 ```
 
-`StoreSetupRequired` is only reached right after `register()`; app relaunch goes straight to PIN setup/verify.
+`StoreSetupRequired` is reached after `register()`, and again on relaunch/re-login while the store step is unfinished: `register()` persists a per-user "store setup pending" flag (`SecureTokenStorage`, survives `clearTokens`) that `proceedToPinSetup()` clears. The backend already creates a default "Ma boutique" store at registration, so this cannot be derived from the server. During registration, PIN setup can go back to the store step (`Auth.returnToStoreSetup()`).
+
+The redirect logic is the pure function `authRedirect()` in `app_router.dart` (tested in `test/router_auth_redirect_test.dart`). PIN failures are typed (`WrongPin` / `PinLocked`, `auth/domain/entities/pin_failure.dart`), bad credentials are `InvalidCredentials`, and a session expiry yields `AuthUnauthenticated(sessionExpired: true)` (the PIN is kept).
 
 `AuthStatus` sealed class in `auth_providers.dart`. Router reads `AsyncValue<AuthStatus>` and redirects accordingly. `Routes.emailLogin` maps to `PhoneLoginPage` (name kept for backward compat).
 

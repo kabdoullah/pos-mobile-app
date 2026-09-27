@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/pin_storage.dart';
 import '../../../../core/storage/secure_token_storage.dart';
+import '../../domain/entities/pin_failure.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -52,9 +53,12 @@ class AuthRepositoryImpl implements AuthRepository {
       );
       await tokenStorage.savePhone(phoneNumber);
 
-      final userId = await tokenStorage.getUserId();
+      final userId = await tokenStorage.getUserId() ?? registerRes.userId;
+      // Persisté : si l'app est fermée avant la configuration de la boutique,
+      // le prochain lancement y revient au lieu de passer au PIN.
+      await tokenStorage.saveStoreSetupPending(userId);
       return User(
-        id: userId ?? registerRes.userId,
+        id: userId,
         phoneNumber: phoneNumber,
         email: email,
         storeId: await tokenStorage.getStoreId(),
@@ -100,19 +104,24 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<bool> verifyPin(String pin) async {
+  Future<void> verifyPin(String pin) async {
+    final bool isCorrect;
     try {
-      return await pinStorage.verifyPin(pin);
+      isCorrect = await pinStorage.verifyPin(pin);
     } on PinLockedException catch (e) {
-      throw Exception(e.toString());
+      throw PinLocked(until: e.lockedUntil);
     }
+    if (isCorrect) return;
+
+    // Cet échec a pu déclencher le blocage.
+    final until = await pinStorage.lockedUntil();
+    if (until != null) throw PinLocked(until: until);
+    final attempts = await pinStorage.getPinAttempts();
+    throw WrongPin(remainingAttempts: PinStorage.maxAttempts - attempts);
   }
 
   @override
-  Future<int> getPinAttempts() => pinStorage.getPinAttempts();
-
-  @override
-  Future<void> resetPinAttempts() => pinStorage.resetAttempts();
+  Future<DateTime?> pinLockedUntil() => pinStorage.lockedUntil();
 
   @override
   Future<void> sendPasswordReset(String email) async {
@@ -143,6 +152,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> hasPinSetup() => pinStorage.hasPinConfigured();
+
+  @override
+  Future<bool> isStoreSetupPending() async {
+    final pendingUserId = await tokenStorage.getStoreSetupPendingUserId();
+    if (pendingUserId == null) return false;
+    return pendingUserId == await tokenStorage.getUserId();
+  }
+
+  @override
+  Future<void> completeStoreSetup() => tokenStorage.clearStoreSetupPending();
 
   @override
   Future<void> refreshTokens() async {

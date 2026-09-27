@@ -109,6 +109,50 @@ abstract class Routes {
   static const String bluetoothSetup = '/settings/printer';
 }
 
+/// Routes accessibles sans être connecté.
+const _publicRoutes = {Routes.register, Routes.emailLogin};
+
+/// Routes du parcours d'authentification (quittées une fois authentifié).
+const _authRoutes = {
+  Routes.splash,
+  Routes.register,
+  Routes.emailLogin,
+  Routes.pinSetup,
+  Routes.pinLogin,
+  Routes.storeSetup,
+};
+
+/// Redirection pilotée par l'état d'auth : seule source de la navigation du
+/// parcours d'authentification (les pages ne naviguent pas elles-mêmes).
+///
+/// Retourne la route cible, ou null pour rester sur [location]. Chaque état
+/// non authentifié impose une seule route (ou les routes publiques) : pas de
+/// boucle possible.
+String? authRedirect(AsyncValue<AuthStatus> auth, String? location) {
+  final target = auth.when(
+    loading: () => null,
+    // Erreur d'une action (connexion, PIN…) : on reste sur la page qui
+    // l'affiche.
+    error: (_, _) {
+      if (_publicRoutes.contains(location)) return null;
+      if (location == Routes.pinLogin || location == Routes.pinSetup) {
+        return null;
+      }
+      return Routes.emailLogin;
+    },
+    data: (status) => switch (status) {
+      AuthUnauthenticated() =>
+        _publicRoutes.contains(location) ? null : Routes.emailLogin,
+      AuthStoreSetupRequired() => Routes.storeSetup,
+      AuthPinSetupRequired() => Routes.pinSetup,
+      AuthPinRequired() => Routes.pinLogin,
+      AuthAuthenticated() =>
+        _authRoutes.contains(location) ? Routes.home : null,
+    },
+  );
+  return target != null && target != location ? target : null;
+}
+
 /// Configuration racine du routeur.
 @Riverpod(keepAlive: true)
 GoRouter appRouter(Ref ref) {
@@ -126,43 +170,8 @@ GoRouter appRouter(Ref ref) {
   router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: Routes.splash,
-    redirect: (BuildContext context, GoRouterState state) {
-      final authValue = ref.read(authProvider);
-      final publicRoutes = {Routes.register, Routes.emailLogin};
-      final authRoutes = {
-        Routes.splash,
-        Routes.register,
-        Routes.emailLogin,
-        Routes.pinSetup,
-        Routes.pinLogin,
-        Routes.storeSetup,
-      };
-
-      final targetRoute = authValue.when(
-        loading: () => null,
-        error: (_, _) {
-          final pinRoutes = {Routes.pinLogin, Routes.pinSetup};
-          if (publicRoutes.contains(state.fullPath)) return null;
-          if (pinRoutes.contains(state.fullPath)) return null;
-          return Routes.emailLogin;
-        },
-        data: (status) {
-          return switch (status) {
-            AuthUnauthenticated() =>
-              publicRoutes.contains(state.fullPath) ? null : Routes.emailLogin,
-            AuthStoreSetupRequired() => Routes.storeSetup,
-            AuthPinSetupRequired() => Routes.pinSetup,
-            AuthPinRequired() => Routes.pinLogin,
-            AuthAuthenticated() =>
-              authRoutes.contains(state.fullPath) ? Routes.home : null,
-          };
-        },
-      );
-
-      final shouldRedirect =
-          targetRoute != null && targetRoute != state.fullPath;
-      return shouldRedirect ? targetRoute : null;
-    },
+    redirect: (BuildContext context, GoRouterState state) =>
+        authRedirect(ref.read(authProvider), state.fullPath),
     routes: [
       GoRoute(
         path: Routes.splash,

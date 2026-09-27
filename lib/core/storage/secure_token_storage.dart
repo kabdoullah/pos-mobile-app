@@ -20,6 +20,11 @@ abstract class _TokenStorageKeys {
 
   /// Numéro de téléphone enregistré à la connexion (identifiant principal).
   static const String phoneNumber = 'phone_number';
+
+  /// ID du compte inscrit sur cet appareil dont la boutique reste à
+  /// configurer. Volontairement conservé par [SecureTokenStorage.clearTokens] :
+  /// lié à un compte, il ne vaut que pour lui s'il se reconnecte.
+  static const String storeSetupPendingUserId = 'store_setup_pending_user_id';
 }
 
 /// Implémentation concrète de TokenStorage avec flutter_secure_storage.
@@ -87,6 +92,20 @@ class SecureTokenStorage implements TokenStorage {
   /// Récupère le numéro de téléphone enregistré de l'utilisateur.
   Future<String?> getPhone() =>
       _storage.read(key: _TokenStorageKeys.phoneNumber);
+
+  /// Marque la configuration de la boutique comme en attente pour [userId].
+  Future<void> saveStoreSetupPending(String userId) => _storage.write(
+    key: _TokenStorageKeys.storeSetupPendingUserId,
+    value: userId,
+  );
+
+  /// ID du compte dont la configuration de la boutique est en attente.
+  Future<String?> getStoreSetupPendingUserId() =>
+      _storage.read(key: _TokenStorageKeys.storeSetupPendingUserId);
+
+  /// Efface l'indicateur de configuration de la boutique en attente.
+  Future<void> clearStoreSetupPending() =>
+      _storage.delete(key: _TokenStorageKeys.storeSetupPendingUserId);
 
   /// Extrait user_id (sub) et store_id d'un access token JWT.
   /// Ne vérifie PAS la signature (responsabilité du serveur).

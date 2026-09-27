@@ -3,6 +3,9 @@ import '../entities/user.dart';
 /// Interface du repository auth. Implémenté dans la couche `data`.
 abstract class AuthRepository {
   /// Crée un compte utilisateur. Email optionnel (récupération de compte uniquement).
+  ///
+  /// Marque aussi la configuration de la boutique comme en attente pour ce
+  /// compte (voir [isStoreSetupPending]).
   Future<User> register({
     required String phoneNumber,
     required String password,
@@ -17,14 +20,13 @@ abstract class AuthRepository {
   Future<void> setupPin(String pin);
 
   /// Vérifie le PIN saisi par l'utilisateur.
-  /// Retourne true si correct, false sinon.
-  Future<bool> verifyPin(String pin);
+  ///
+  /// Se termine normalement si le PIN est correct. Lève `WrongPin` (avec les
+  /// tentatives restantes) ou `PinLocked` (avec la fin du blocage) sinon.
+  Future<void> verifyPin(String pin);
 
-  /// Récupère le nombre d'échecs de PIN actuels.
-  Future<int> getPinAttempts();
-
-  /// Réinitialise le compteur d'échecs de PIN après réussite.
-  Future<void> resetPinAttempts();
+  /// Fin du blocage du PIN en cours, ou null si le PIN n'est pas bloqué.
+  Future<DateTime?> pinLockedUntil();
 
   /// Demande un email de réinitialisation de mot de passe.
   Future<void> sendPasswordReset(String email);
@@ -37,6 +39,13 @@ abstract class AuthRepository {
 
   /// True si un PIN est défini sur cet appareil.
   Future<bool> hasPinSetup();
+
+  /// True si le compte connecté s'est inscrit sur cet appareil sans avoir
+  /// encore configuré sa boutique (app fermée pendant cette étape).
+  Future<bool> isStoreSetupPending();
+
+  /// Marque la configuration de la boutique comme terminée.
+  Future<void> completeStoreSetup();
 
   /// Rafraîchit l'access token via le refresh token stocké.
   /// Nécessaire après création de boutique pour obtenir un token avec store_id.

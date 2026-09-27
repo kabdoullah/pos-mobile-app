@@ -220,6 +220,30 @@ void main() {
       expect(salt1, isNot(equals(salt2)));
     });
 
+    test('a correct PIN resets the failure counter', () async {
+      await pinStorage.savePinHash('1234');
+      await pinStorage.verifyPin('0000');
+      await pinStorage.verifyPin('0000');
+      expect(await pinStorage.verifyPin('1234'), isTrue);
+      expect(await pinStorage.getPinAttempts(), 0);
+    });
+
+    test('an expired lockout restores every attempt', () async {
+      final fast = PinStorage(
+        secureStorage: storage,
+        lockoutDuration: const Duration(milliseconds: 10),
+      );
+      await fast.savePinHash('1234');
+      for (var i = 0; i < PinStorage.maxAttempts; i++) {
+        await fast.verifyPin('0000');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(await fast.verifyPin('0000'), isFalse);
+      expect(await fast.getPinAttempts(), 1);
+      expect(await fast.lockedUntil(), isNull);
+    });
+
     test('lockout triggers after max failed attempts', () async {
       await pinStorage.savePinHash('1234');
       for (var i = 0; i < PinStorage.maxAttempts; i++) {

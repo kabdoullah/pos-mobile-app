@@ -15,8 +15,9 @@ part of 'auth_providers.dart';
 /// - `AsyncLoading` : opération en cours (init, connexion, inscription,
 ///   vérification du PIN, etc.)
 /// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
-/// - `AsyncError(exception)` : opération échouée, l'exception est un message
-///   lisible par l'utilisateur (voir [_toUserFacingException])
+/// - `AsyncError(exception)` : opération échouée. L'erreur est un message en
+///   français, ou un type dédié ([InvalidCredentials], [PinFailure]) que
+///   l'écran présente lui-même.
 ///
 /// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
 /// config du PIN dans le secure storage, puis route en conséquence.
@@ -34,8 +35,9 @@ final authProvider = AuthProvider._();
 /// - `AsyncLoading` : opération en cours (init, connexion, inscription,
 ///   vérification du PIN, etc.)
 /// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
-/// - `AsyncError(exception)` : opération échouée, l'exception est un message
-///   lisible par l'utilisateur (voir [_toUserFacingException])
+/// - `AsyncError(exception)` : opération échouée. L'erreur est un message en
+///   français, ou un type dédié ([InvalidCredentials], [PinFailure]) que
+///   l'écran présente lui-même.
 ///
 /// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
 /// config du PIN dans le secure storage, puis route en conséquence.
@@ -50,8 +52,9 @@ final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
   /// - `AsyncLoading` : opération en cours (init, connexion, inscription,
   ///   vérification du PIN, etc.)
   /// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
-  /// - `AsyncError(exception)` : opération échouée, l'exception est un message
-  ///   lisible par l'utilisateur (voir [_toUserFacingException])
+  /// - `AsyncError(exception)` : opération échouée. L'erreur est un message en
+  ///   français, ou un type dédié ([InvalidCredentials], [PinFailure]) que
+  ///   l'écran présente lui-même.
   ///
   /// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
   /// config du PIN dans le secure storage, puis route en conséquence.
@@ -77,7 +80,7 @@ final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
   Auth create() => Auth();
 }
 
-String _$authHash() => r'eb89d042b0299c4fb977c015a0f6f2bb58671bd4';
+String _$authHash() => r'0558f8a819834732a9d37b8e0685916abf078d62';
 
 /// Gère l'état et les actions d'authentification (connexion, inscription,
 /// création/vérification du PIN, déconnexion).
@@ -86,8 +89,9 @@ String _$authHash() => r'eb89d042b0299c4fb977c015a0f6f2bb58671bd4';
 /// - `AsyncLoading` : opération en cours (init, connexion, inscription,
 ///   vérification du PIN, etc.)
 /// - `AsyncData(status)` : opération réussie, l'utilisateur est dans `status`
-/// - `AsyncError(exception)` : opération échouée, l'exception est un message
-///   lisible par l'utilisateur (voir [_toUserFacingException])
+/// - `AsyncError(exception)` : opération échouée. L'erreur est un message en
+///   français, ou un type dédié ([InvalidCredentials], [PinFailure]) que
+///   l'écran présente lui-même.
 ///
 /// Initialisation : au lancement de l'app, `build()` vérifie les tokens et la
 /// config du PIN dans le secure storage, puis route en conséquence.

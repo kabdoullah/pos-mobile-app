@@ -63,15 +63,16 @@ class PinStorage {
   }
 
   /// Vérifie un PIN par rapport au hash enregistré.
-  /// Retourne true s'il est correct. En cas d'échec, incrémente les tentatives
-  /// et déclenche le blocage si le maximum est dépassé.
+  /// Retourne true s'il est correct (le compteur d'échecs repart alors de
+  /// zéro). En cas d'échec, incrémente les tentatives et déclenche le blocage
+  /// dès que [maxAttempts] échecs consécutifs sont atteints (le 5e échec bloque
+  /// avec la valeur par défaut).
   /// Lève [PinLockedException] si le PIN est actuellement bloqué.
   Future<bool> verifyPin(String pin) async {
     // Vérifier d'abord le blocage.
-    final (locked: isLocked, remainingSeconds: remaining) =
-        await _checkLockout();
-    if (isLocked) {
-      throw PinLockedException(remainingSeconds: remaining);
+    final until = await lockedUntil();
+    if (until != null) {
+      throw PinLockedException(lockedUntil: until);
     }
 
     final storedHash = await _storage.read(key: _PinStorageKeys.pinHash);
@@ -90,7 +91,10 @@ class PinStorage {
     final computedHash = _hashPin(pin, storedSalt);
     final isCorrect = _constantTimeEquals(computedHash, storedHash);
 
-    if (!isCorrect) {
+    if (isCorrect) {
+      // Les échecs ne se cumulent pas d'une session à l'autre.
+      if (await getPinAttempts() > 0) await resetAttempts();
+    } else {
       // Incrémente les tentatives.
       final attempts = await getPinAttempts();
       final newAttempts = attempts + 1;
@@ -155,34 +159,22 @@ class PinStorage {
     ]);
   }
 
-  /// Vérifie si le PIN est actuellement bloqué suite à trop de tentatives
-  /// échouées.
-  /// Retourne un tuple (locked, remainingSeconds).
-  Future<({bool locked, int remainingSeconds})> _checkLockout() async {
+  /// Fin du blocage en cours, ou null si le PIN n'est pas bloqué.
+  ///
+  /// Un blocage expiré ou un horodatage mal formé est effacé au passage, avec
+  /// le compteur d'échecs : l'utilisateur retrouve toutes ses tentatives.
+  Future<DateTime?> lockedUntil() async {
     final lockoutStr = await _storage.read(
       key: _PinStorageKeys.pinLockoutUntil,
     );
-    if (lockoutStr == null) {
-      return (locked: false, remainingSeconds: 0);
+    if (lockoutStr == null) return null;
+
+    final until = DateTime.tryParse(lockoutStr);
+    if (until == null || DateTime.now().isAfter(until)) {
+      await resetAttempts();
+      return null;
     }
-
-    try {
-      final lockoutUntil = DateTime.parse(lockoutStr);
-      final now = DateTime.now();
-
-      if (now.isAfter(lockoutUntil)) {
-        // Blocage expiré, on l'efface.
-        await _storage.delete(key: _PinStorageKeys.pinLockoutUntil);
-        return (locked: false, remainingSeconds: 0);
-      }
-
-      final remaining = lockoutUntil.difference(now).inSeconds;
-      return (locked: true, remainingSeconds: remaining);
-    } catch (_) {
-      // Horodatage mal formé, on l'efface.
-      await _storage.delete(key: _PinStorageKeys.pinLockoutUntil);
-      return (locked: false, remainingSeconds: 0);
-    }
+    return until;
   }
 
   /// Hache un PIN avec le sel donné en PBKDF2-HMAC-SHA256.
@@ -266,11 +258,11 @@ class PinStorage {
 /// échouées.
 class PinLockedException implements Exception {
   /// Crée une PinLockedException.
-  PinLockedException({required this.remainingSeconds});
+  PinLockedException({required this.lockedUntil});
 
-  /// Secondes restantes avant la fin du blocage.
-  final int remainingSeconds;
+  /// Fin du blocage.
+  final DateTime lockedUntil;
 
   @override
-  String toString() => 'PIN verrouillé. Réessayez dans $remainingSeconds s.';
+  String toString() => 'PIN verrouillé jusqu\'à $lockedUntil.';
 }
