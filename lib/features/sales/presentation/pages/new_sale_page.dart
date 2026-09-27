@@ -33,9 +33,11 @@ import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
 
-/// Écran de caisse : scan/recherche, panier, paiement et encaissement sur un
-/// seul écran. La confirmation s'affiche en bottom sheet, puis la caisse est
-/// immédiatement prête pour la vente suivante.
+/// Écran de caisse (onglet Vendre) : scan/recherche, panier, paiement et
+/// encaissement sur un seul écran. La confirmation s'affiche en bottom sheet,
+/// puis la caisse est immédiatement prête pour la vente suivante.
+///
+/// La page reste montée quand on change d'onglet : le panier est conservé.
 class NewSalePage extends ConsumerStatefulWidget {
   /// Crée l'écran de caisse.
   const NewSalePage({super.key});
@@ -352,24 +354,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Navigation
-  // ---------------------------------------------------------------------------
-
-  Future<void> _leave() async {
-    if (!ref.read(cartProvider).isEmpty) {
-      final confirmed = await showConfirmDialog(
-        context,
-        title: 'Abandonner la vente ?',
-        message: 'Le panier en cours sera vidé.',
-        confirmLabel: 'Abandonner',
-        isDangerous: true,
-      );
-      if (!confirmed || !mounted) return;
-    }
-    context.canPop() ? context.pop() : context.go(Routes.home);
-  }
-
   @override
   Widget build(BuildContext context) {
     // Garde les contrôleurs auto-dispose en vie tant que la caisse est
@@ -379,6 +363,9 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     final cart = ref.watch(cartProvider);
     final storeName = ref.watch(storeConfigProvider).value?.name;
 
+    // Onglet masqué (IndexedStack de la shell) : TickerMode est désactivé.
+    // La caméra est alors démontée, sinon elle tournerait en arrière-plan.
+    final isTabVisible = TickerMode.valuesOf(context).enabled;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final isSearchFocused = _searchFocus.hasFocus;
     final showCamera =
@@ -386,135 +373,122 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     // Pendant une recherche au clavier, les résultats prennent toute la place.
     final showCheckout = !(keyboardOpen && isSearchFocused);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) unawaited(_leave());
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          titleSpacing: 0,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Nouvelle vente'),
-              if (storeName != null && storeName.isNotEmpty)
-                Text(
-                  storeName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.captionText.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Nouvelle vente'),
+            if (storeName != null && storeName.isNotEmpty)
+              Text(
+                storeName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.captionText.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
-            ],
-          ),
-          actions: [
-            const OfflineStatusIndicator(),
-            IconButton(
-              tooltip: 'Historique des ventes',
-              icon: const Icon(Icons.history),
-              onPressed: () =>
-                  _withCameraPaused(() => context.push(Routes.checkoutHistory)),
-            ),
-            IconButton(
-              tooltip: 'Imprimante',
-              icon: const Icon(Icons.print_outlined),
-              onPressed: () =>
-                  _withCameraPaused(() => context.push(Routes.bluetoothSetup)),
-            ),
+              ),
           ],
         ),
-        body: LayoutBuilder(
-          builder: (context, constraints) => Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: SaleSearchBar(
-                  controller: _searchController,
-                  focusNode: _searchFocus,
-                  onChanged: _onSearchChanged,
-                  isScannerOpen: _isScannerOpen,
-                  onToggleScanner: _toggleScanner,
-                ),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                child: showCamera
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          0,
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                        ),
-                        child: SaleScannerPanel(
-                          controller: _scanner,
-                          isActive: !_isCameraPaused,
-                          isPermissionGranted: _isPermissionGranted,
-                          isCheckingPermission: _isCheckingPermission,
-                          isTorchOn: _isTorchOn,
-                          onDetect: _onBarcodeDetected,
-                          onToggleTorch: _toggleTorch,
-                          onOpenAppSettings: openAppSettings,
-                        ),
-                      )
-                    : const SizedBox(width: double.infinity),
-              ),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: _query.isNotEmpty
-                          ? ProductSearchResults(
-                              query: _query,
-                              onQuickAdd: _addProduct,
-                              onOpen: _openProduct,
-                            )
-                          : SaleCart(
-                              items: cart.items,
-                              onQuantityChanged: ref
-                                  .read(cartProvider.notifier)
-                                  .updateQuantity,
-                              onRemove: ref
-                                  .read(cartProvider.notifier)
-                                  .removeItem,
-                              onItemTap: _editCartItem,
-                              onClear: _clearCart,
-                            ),
-                    ),
-                    Positioned(
-                      top: AppSpacing.xs,
-                      left: AppSpacing.md,
-                      right: AppSpacing.md,
-                      child: SaleToast(data: _toast, onDismiss: _dismissToast),
-                    ),
-                  ],
-                ),
-              ),
-              if (showCheckout)
-                ConstrainedBox(
-                  // Clavier ouvert sur un montant : le panneau défile au lieu
-                  // de déborder.
-                  constraints: BoxConstraints(
-                    maxHeight: constraints.maxHeight * 0.75,
-                  ),
-                  child: SingleChildScrollView(
-                    clipBehavior: Clip.none,
-                    child: SaleCheckoutPanel(
-                      onSubmit: _submit,
-                      isSubmitting: _isSubmitting,
-                    ),
-                  ),
-                ),
-            ],
+        actions: [
+          const OfflineStatusIndicator(),
+          IconButton(
+            tooltip: 'Imprimante',
+            icon: const Icon(Icons.print_outlined),
+            onPressed: () =>
+                _withCameraPaused(() => context.push(Routes.bluetoothSetup)),
           ),
+        ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: SaleSearchBar(
+                controller: _searchController,
+                focusNode: _searchFocus,
+                onChanged: _onSearchChanged,
+                isScannerOpen: _isScannerOpen,
+                onToggleScanner: _toggleScanner,
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              child: showCamera
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
+                      child: SaleScannerPanel(
+                        controller: _scanner,
+                        isActive: !_isCameraPaused && isTabVisible,
+                        isPermissionGranted: _isPermissionGranted,
+                        isCheckingPermission: _isCheckingPermission,
+                        isTorchOn: _isTorchOn,
+                        onDetect: _onBarcodeDetected,
+                        onToggleTorch: _toggleTorch,
+                        onOpenAppSettings: openAppSettings,
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _query.isNotEmpty
+                        ? ProductSearchResults(
+                            query: _query,
+                            onQuickAdd: _addProduct,
+                            onOpen: _openProduct,
+                          )
+                        : SaleCart(
+                            items: cart.items,
+                            onQuantityChanged: ref
+                                .read(cartProvider.notifier)
+                                .updateQuantity,
+                            onRemove: ref
+                                .read(cartProvider.notifier)
+                                .removeItem,
+                            onItemTap: _editCartItem,
+                            onClear: _clearCart,
+                          ),
+                  ),
+                  Positioned(
+                    top: AppSpacing.xs,
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                    child: SaleToast(data: _toast, onDismiss: _dismissToast),
+                  ),
+                ],
+              ),
+            ),
+            if (showCheckout)
+              ConstrainedBox(
+                // Clavier ouvert sur un montant : le panneau défile au lieu
+                // de déborder.
+                constraints: BoxConstraints(
+                  maxHeight: constraints.maxHeight * 0.75,
+                ),
+                child: SingleChildScrollView(
+                  clipBehavior: Clip.none,
+                  child: SaleCheckoutPanel(
+                    onSubmit: _submit,
+                    isSubmitting: _isSubmitting,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );

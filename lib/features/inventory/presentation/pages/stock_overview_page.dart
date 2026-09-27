@@ -61,6 +61,13 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
 
     return AppScaffold(
       title: 'Stock',
+      actions: [
+        IconButton(
+          tooltip: 'Produits',
+          icon: const Icon(Icons.shopping_bag_outlined),
+          onPressed: () => context.push(Routes.catalog),
+        ),
+      ],
       body: Column(
         children: [
           Padding(

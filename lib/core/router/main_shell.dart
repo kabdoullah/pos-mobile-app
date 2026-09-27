@@ -8,13 +8,13 @@ enum ShellBranch {
   /// Accueil (dashboard).
   home,
 
-  /// Catalogue produits.
-  catalog,
+  /// Caisse (vente).
+  sale,
 
   /// Vue d'ensemble du stock.
   inventory,
 
-  /// Historique des ventes.
+  /// Ventes (historique).
   salesHistory,
 
   /// Paramètres.
@@ -56,9 +56,9 @@ class MainShell extends StatelessWidget {
             label: 'Accueil',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_bag_outlined),
-            selectedIcon: Icon(Icons.shopping_bag),
-            label: 'Catalogue',
+            icon: Icon(Icons.point_of_sale_outlined),
+            selectedIcon: Icon(Icons.point_of_sale),
+            label: 'Vendre',
           ),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
@@ -66,9 +66,9 @@ class MainShell extends StatelessWidget {
             label: 'Stock',
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'Historique',
+            icon: Icon(Icons.receipt_long_outlined),
+            selectedIcon: Icon(Icons.receipt_long),
+            label: 'Ventes',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),

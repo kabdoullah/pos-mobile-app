@@ -62,7 +62,7 @@ abstract class Routes {
   /// Écran d'accueil / tableau de bord.
   static const String home = '/home';
 
-  /// Catalogue (liste des produits).
+  /// Liste des produits — ouverte depuis l'onglet Stock (plein écran).
   static const String catalog = '/catalog';
 
   /// Vue d'ensemble du stock (produits à réapprovisionner, ajustement rapide).
@@ -91,12 +91,9 @@ abstract class Routes {
   /// Modale de scan de code-barres.
   static const String barcodeScanner = '/scan';
 
-  /// Caisse : scan, panier, paiement et encaissement sur un seul écran.
+  /// Onglet Vendre : caisse (scan, panier, paiement et encaissement sur un
+  /// seul écran).
   static const String newSale = '/sales/new';
-
-  /// Historique ouvert depuis la caisse : même page que l'onglet, mais hors
-  /// shell pour pouvoir l'empiler au-dessus de la caisse (panier conservé).
-  static const String checkoutHistory = '/sales/recent';
 
   /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
@@ -218,12 +215,13 @@ GoRouter appRouter(Ref ref) {
               ),
             ],
           ),
-          // BRANCHE 2 : CATALOGUE
+          // BRANCHE 2 : VENDRE (caisse). La page reste montée quand on change
+          // d'onglet : le panier est conservé, la caméra se coupe d'elle-même.
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: Routes.catalog,
-                builder: (context, state) => const CatalogPage(),
+                path: Routes.newSale,
+                builder: (context, state) => const NewSalePage(),
               ),
             ],
           ),
@@ -287,13 +285,8 @@ GoRouter appRouter(Ref ref) {
         builder: (context, state) => const BluetoothSetupPage(),
       ),
       GoRoute(
-        path: Routes.checkoutHistory,
-        builder: (context, state) => const SalesHistoryPage(),
-      ),
-      GoRoute(
-        path: Routes.newSale,
-        pageBuilder: (context, state) =>
-            PageTransitions.slideRight(context, state, const NewSalePage()),
+        path: Routes.catalog,
+        builder: (context, state) => const CatalogPage(),
       ),
       GoRoute(
         path: Routes.saleDetail,

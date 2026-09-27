@@ -15,13 +15,12 @@ class _AuthenticatedAuth extends Auth {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // Pages plein écran empilées par-dessus la shell (caisse, détail de vente…).
+  // Pages plein écran empilées par-dessus la shell (détail de vente…).
   // Si l'une d'elles se résout à travers la StatefulShellRoute, un `push`
-  // depuis la caisse reconstruit la shell et le Navigator plante (clés de page
+  // depuis une page déjà au-dessus de la shell reconstruit la shell et le Navigator plante (clés de page
   // dupliquées).
   const fullScreenPaths = [
-    Routes.newSale,
-    Routes.checkoutHistory,
+    Routes.catalog,
     Routes.saleDetail,
     Routes.productNew,
     Routes.productImport,
@@ -58,7 +57,7 @@ void main() {
 
     for (final path in [
       Routes.home,
-      Routes.catalog,
+      Routes.newSale,
       Routes.inventory,
       Routes.salesHistory,
       Routes.settings,

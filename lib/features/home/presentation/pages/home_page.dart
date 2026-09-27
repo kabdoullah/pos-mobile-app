@@ -104,7 +104,9 @@ class HomePage extends ConsumerWidget {
                 width: double.infinity,
                 height: AppSpacing.buttonHeight,
                 child: FilledButton.icon(
-                  onPressed: () => context.push(Routes.newSale),
+                  onPressed: () => StatefulNavigationShell.of(
+                    context,
+                  ).goBranch(ShellBranch.sale.index),
                   icon: const Icon(Icons.point_of_sale, size: 22),
                   label: const Text('NOUVELLE VENTE'),
                   style: FilledButton.styleFrom(
@@ -169,10 +171,8 @@ class _QuickActionsSection extends StatelessWidget {
                 Expanded(
                   child: _QuickActionCard(
                     icon: Icons.shopping_bag_outlined,
-                    label: 'Catalogue',
-                    onTap: () => StatefulNavigationShell.of(
-                      context,
-                    ).goBranch(ShellBranch.catalog.index),
+                    label: 'Produits',
+                    onTap: () => context.push(Routes.catalog),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
