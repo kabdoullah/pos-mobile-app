@@ -98,7 +98,7 @@ abstract class Routes {
   /// Modale de scan de code-barres.
   static const String barcodeScanner = '/scan';
 
-  /// Onglet Vendre : caisse (scan, panier, paiement et encaissement sur un
+  /// Onglet Caisse : caisse (scan, panier, paiement et encaissement sur un
   /// seul écran).
   static const String newSale = '/sales/new';
 

@@ -32,7 +32,7 @@ import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
 
-/// Écran de caisse (onglet Vendre) : scan/recherche, panier, paiement et
+/// Écran de caisse (onglet Caisse) : scan/recherche, panier, paiement et
 /// encaissement sur un seul écran. La confirmation s'affiche en bottom sheet,
 /// puis la caisse est immédiatement prête pour la vente suivante.
 ///

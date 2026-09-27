@@ -19,10 +19,10 @@ class RecentSalesSection extends ConsumerWidget {
     super.key,
   });
 
-  /// Ouvre l'onglet Ventes.
+  /// Ouvre l'onglet Historique.
   final VoidCallback onSeeAll;
 
-  /// Ouvre l'onglet Vendre (état vide).
+  /// Ouvre l'onglet Caisse (état vide).
   final VoidCallback onNewSale;
 
   @override
@@ -38,7 +38,7 @@ class RecentSalesSection extends ConsumerWidget {
           title: 'Dernières ventes',
           actionLabel: sales == null || sales.isEmpty
               ? null
-              : 'Voir les ventes',
+              : 'Voir l’historique',
           onAction: onSeeAll,
         ),
         if (recent.hasError && sales == null)

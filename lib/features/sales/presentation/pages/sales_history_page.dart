@@ -13,10 +13,10 @@ import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
 
-/// Onglet Ventes : historique par période, avec total, recherche par numéro
+/// Onglet Historique : ventes par période, avec total, recherche par numéro
 /// de reçu et accès au détail.
 class SalesHistoryPage extends ConsumerStatefulWidget {
-  /// Crée l'onglet Ventes.
+  /// Crée l'onglet Historique.
   const SalesHistoryPage({super.key});
 
   @override
@@ -63,7 +63,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     final isSingleDay = DateUtils.isSameDay(_range.start, _range.end);
 
     return AppScaffold(
-      title: 'Ventes',
+      title: 'Historique',
       body: Column(
         children: [
           Padding(

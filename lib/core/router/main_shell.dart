@@ -58,7 +58,7 @@ class MainShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.point_of_sale_outlined),
             selectedIcon: Icon(Icons.point_of_sale),
-            label: 'Vendre',
+            label: 'Caisse',
           ),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
@@ -68,7 +68,7 @@ class MainShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
-            label: 'Ventes',
+            label: 'Historique',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
