@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
 import '../../providers/store_provider.dart';
 import '../widgets/pin_numpad.dart';
@@ -131,86 +132,90 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Column(
-              children: [
-                const Spacer(),
-                // Icône de cadenas dans un conteneur aux couleurs de la marque
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          child: FillOrScroll(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              child: Column(
+                children: [
+                  const Spacer(),
+                  // Icône de cadenas dans un conteneur aux couleurs de la marque
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    ),
+                    child: Icon(
+                      Icons.lock_rounded,
+                      size: 36,
+                      color: cs.onPrimaryContainer,
+                    ),
                   ),
-                  child: Icon(
-                    Icons.lock_rounded,
-                    size: 36,
-                    color: cs.onPrimaryContainer,
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    '${_timeGreeting()} $storeName',
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  '${_timeGreeting()} $storeName',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: cs.onSurfaceVariant,
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Entrez votre PIN',
+                    style: AppTypography.titleLarge.copyWith(
+                      color: cs.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Entrez votre PIN',
-                  style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // Points indicateurs — secousse sur un PIN erroné
-                SlideTransition(
-                  position: _shakeAnimation,
-                  child: PinDots(filledCount: _pin.length),
-                ),
-                // Emplacement de l'erreur — hauteur fixe pour éviter un saut de
-                // mise en page
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: systemError != null
-                      ? Padding(
-                          key: ValueKey(systemError),
-                          padding: const EdgeInsets.only(top: AppSpacing.sm),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              systemError,
-                              style: AppTypography.errorText.copyWith(
-                                color: cs.error,
+                  const SizedBox(height: AppSpacing.xl),
+                  // Points indicateurs — secousse sur un PIN erroné
+                  SlideTransition(
+                    position: _shakeAnimation,
+                    child: PinDots(filledCount: _pin.length),
+                  ),
+                  // Emplacement de l'erreur — hauteur fixe pour éviter un saut de
+                  // mise en page
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: systemError != null
+                        ? Padding(
+                            key: ValueKey(systemError),
+                            padding: const EdgeInsets.only(top: AppSpacing.sm),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                systemError,
+                                style: AppTypography.errorText.copyWith(
+                                  color: cs.error,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
-                              textAlign: TextAlign.center,
                             ),
-                          ),
-                        )
-                      : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
-                ),
-                const Spacer(),
-                // Pavé numérique personnalisé — pas de clavier système
-                if (isLoading)
-                  const SizedBox(
-                    height: 290,
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else
-                  PinNumpad(
-                    onDigit: _onDigit,
-                    onBackspace: _onBackspace,
-                    enabled: !isLoading,
+                          )
+                        : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
                   ),
-                const SizedBox(height: AppSpacing.sm),
-                TextButton(
-                  onPressed: _onForgotPin,
-                  child: const Text("J'ai oublié mon PIN"),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+                  const Spacer(),
+                  // Pavé numérique personnalisé — pas de clavier système
+                  if (isLoading)
+                    const SizedBox(
+                      height: 290,
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else
+                    PinNumpad(
+                      onDigit: _onDigit,
+                      onBackspace: _onBackspace,
+                      enabled: !isLoading,
+                    ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextButton(
+                    onPressed: _onForgotPin,
+                    child: const Text("J'ai oublié mon PIN"),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
+              ),
             ),
           ),
         ),

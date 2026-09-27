@@ -6,6 +6,7 @@ import 'package:logger/logger.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/pin_numpad.dart';
 import '../widgets/registration_stepper.dart';
@@ -114,138 +115,142 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(
-            children: [
-              const SizedBox(height: AppSpacing.md),
-              const RegistrationStepper(currentStep: 3),
-              const Spacer(),
-              // Bandeau d'erreur système
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: systemError != null
-                    ? Container(
-                        key: const ValueKey('sys-error'),
-                        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        decoration: BoxDecoration(
-                          color: cs.errorContainer,
-                          borderRadius: BorderRadius.circular(
-                            AppSpacing.radiusSm,
+        child: FillOrScroll(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              children: [
+                const SizedBox(height: AppSpacing.md),
+                const RegistrationStepper(currentStep: 3),
+                const Spacer(),
+                // Bandeau d'erreur système
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: systemError != null
+                      ? Container(
+                          key: const ValueKey('sys-error'),
+                          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm,
+                            vertical: AppSpacing.xs,
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: cs.onErrorContainer,
-                              size: 18,
+                          decoration: BoxDecoration(
+                            color: cs.errorContainer,
+                            borderRadius: BorderRadius.circular(
+                              AppSpacing.radiusSm,
                             ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Expanded(
-                              child: Text(
-                                systemError,
-                                style: AppTypography.bodySmall.copyWith(
-                                  color: cs.onErrorContainer,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: cs.onErrorContainer,
+                                size: 18,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Expanded(
+                                child: Text(
+                                  systemError,
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: cs.onErrorContainer,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              // ✨ AnimatedSwitcher — transition douce entre les étapes create/confirm
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, animation) => ScaleTransition(
-                  scale: animation,
-                  child: FadeTransition(opacity: animation, child: child),
-                ),
-                child: Container(
-                  key: ValueKey(_step),
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  ),
-                  child: Icon(
-                    _step == 0
-                        ? Icons.add_moderator_rounded
-                        : Icons.check_circle_outline_rounded,
-                    size: 36,
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              // ✨ AnimatedSwitcher sur le titre — transition visuelle cohérente
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  _step == 0 ? 'Créez votre PIN' : 'Confirmez votre PIN',
-                  key: ValueKey('title-$_step'),
-                  style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: Text(
-                  _step == 0
-                      ? 'Évitez les codes simples : 0000, 1234…'
-                      : 'Entrez à nouveau votre PIN pour confirmer',
-                  key: ValueKey('subtitle-$_step'),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              // Points indicateurs
-              PinDots(filledCount: _pin.length),
-              // Erreur de champ (PIN trop simple / non concordant)
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 200),
-                child: _error != null
-                    ? Padding(
-                        key: ValueKey(_error),
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            _error!,
-                            style: AppTypography.errorText.copyWith(
-                              color: cs.error,
-                            ),
-                            textAlign: TextAlign.center,
+                            ],
                           ),
-                        ),
-                      )
-                    : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
-              ),
-              const Spacer(),
-              // Pavé numérique personnalisé
-              if (isLoading)
-                const SizedBox(
-                  height: 290,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                PinNumpad(
-                  onDigit: _onDigit,
-                  onBackspace: _onBackspace,
-                  enabled: !isLoading,
+                        )
+                      : const SizedBox.shrink(),
                 ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
+                // ✨ AnimatedSwitcher — transition douce entre les étapes create/confirm
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: FadeTransition(opacity: animation, child: child),
+                  ),
+                  child: Container(
+                    key: ValueKey(_step),
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                    ),
+                    child: Icon(
+                      _step == 0
+                          ? Icons.add_moderator_rounded
+                          : Icons.check_circle_outline_rounded,
+                      size: 36,
+                      color: cs.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // ✨ AnimatedSwitcher sur le titre — transition visuelle cohérente
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(
+                    _step == 0 ? 'Créez votre PIN' : 'Confirmez votre PIN',
+                    key: ValueKey('title-$_step'),
+                    style: AppTypography.titleLarge.copyWith(
+                      color: cs.onSurface,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: Text(
+                    _step == 0
+                        ? 'Évitez les codes simples : 0000, 1234…'
+                        : 'Entrez à nouveau votre PIN pour confirmer',
+                    key: ValueKey('subtitle-$_step'),
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                // Points indicateurs
+                PinDots(filledCount: _pin.length),
+                // Erreur de champ (PIN trop simple / non concordant)
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: _error != null
+                      ? Padding(
+                          key: ValueKey(_error),
+                          padding: const EdgeInsets.only(top: AppSpacing.sm),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(
+                              _error!,
+                              style: AppTypography.errorText.copyWith(
+                                color: cs.error,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
+                ),
+                const Spacer(),
+                // Pavé numérique personnalisé
+                if (isLoading)
+                  const SizedBox(
+                    height: 290,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else
+                  PinNumpad(
+                    onDigit: _onDigit,
+                    onBackspace: _onBackspace,
+                    enabled: !isLoading,
+                  ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+            ),
           ),
         ),
       ),

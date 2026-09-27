@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
-
 /// Widget d'indicateur de chargement cohérent.
 ///
 /// Aux couleurs principales de l'app. Utilisé en ligne ou en plein écran.
@@ -11,10 +9,10 @@ class AppLoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox.square(
+    return SizedBox.square(
       dimension: 40,
       child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        color: Theme.of(context).colorScheme.primary,
         strokeWidth: 4,
       ),
     );

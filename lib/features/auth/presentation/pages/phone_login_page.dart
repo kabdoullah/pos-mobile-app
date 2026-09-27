@@ -298,8 +298,9 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
                         isLoading: isLoading,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text('Pas de compte ? ', style: tt.bodyMedium),
                           TextButton(

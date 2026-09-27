@@ -31,9 +31,14 @@ class SplashPage extends ConsumerWidget {
       );
     }
 
-    // Le splash natif couvre entièrement cet écran. La couleur correspond au
-    // fond pour éviter un flash sur l'unique frame entre remove() et la
-    // redirection du routeur.
-    return const ColoredBox(color: AppColors.background);
+    // Le splash natif couvre entièrement cet écran. La couleur reprend celle du
+    // splash natif (flutter_native_splash.yaml : color / color_dark) pour
+    // éviter un flash sur l'unique frame entre remove() et la redirection.
+    final theme = Theme.of(context);
+    return ColoredBox(
+      color: theme.brightness == Brightness.dark
+          ? theme.colorScheme.surface
+          : AppColors.background,
+    );
   }
 }

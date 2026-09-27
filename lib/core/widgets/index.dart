@@ -5,6 +5,7 @@ export 'app_search_bar.dart';
 export 'app_text_field.dart';
 export 'confirm_dialog.dart';
 export 'empty_state.dart';
+export 'fill_or_scroll.dart';
 export 'loading_indicator.dart';
 export 'offline_status_indicator.dart';
 export 'primary_button.dart';

@@ -198,60 +198,67 @@ class _SlideBuilder extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final color = slide.isAccent ? cs.secondary : cs.primary;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Icône dessinée à la main — une par vraie action de caisse, pas un
-        // pictogramme générique.
-        Container(
-          width: 120,
-          height: 120,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: CustomPaint(
-            size: const Size(60, 60),
-            painter: slide.iconPainter(color),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
+    return Center(
+      // Défile si la diapositive ne tient pas (petit écran, grande police).
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Icône dessinée à la main — une par vraie action de caisse, pas un
+            // pictogramme générique.
+            Container(
+              width: 120,
+              height: 120,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: CustomPaint(
+                size: const Size(60, 60),
+                painter: slide.iconPainter(color),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
 
-        // Surtitre — ces écrans suivent VRAIMENT l'ordre de travail d'un
-        // commerçant, donc le numéro d'étape apporte une vraie information, ce
-        // n'est pas de la décoration.
-        Text(
-          'ÉTAPE $step SUR $totalSteps',
-          style: textTheme.labelSmall?.copyWith(
-            color: color,
-            letterSpacing: 1.2,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
+            // Surtitre — ces écrans suivent VRAIMENT l'ordre de travail d'un
+            // commerçant, donc le numéro d'étape apporte une vraie information, ce
+            // n'est pas de la décoration.
+            Text(
+              'ÉTAPE $step SUR $totalSteps',
+              style: textTheme.labelSmall?.copyWith(
+                color: color,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
 
-        // Titre — le seul endroit où l'onboarding a le droit d'être plus
-        // expressif que les écrans sobres de l'usage quotidien.
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding),
-          child: Text(
-            slide.title,
-            style: textTheme.displayMedium,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
+            // Titre — le seul endroit où l'onboarding a le droit d'être plus
+            // expressif que les écrans sobres de l'usage quotidien.
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: padding),
+              child: Text(
+                slide.title,
+                style: textTheme.displayMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
 
-        // Description
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: padding),
-          child: Text(
-            slide.description,
-            style: textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            textAlign: TextAlign.center,
-          ),
+            // Description
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: padding),
+              child: Text(
+                slide.description,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

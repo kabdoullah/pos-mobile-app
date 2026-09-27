@@ -92,12 +92,17 @@ class SecondaryButton extends StatelessWidget {
                           ),
                           const SizedBox(width: AppSpacing.sm),
                         ],
-                        Text(
-                          label,
-                          style: AppTypography.labelLarge.copyWith(
-                            color: isDisabled ? disabledColor : cs.secondary,
+                        // Libellé trop long : tronqué plutôt qu'un débordement.
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelLarge.copyWith(
+                              color: isDisabled ? disabledColor : cs.secondary,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),

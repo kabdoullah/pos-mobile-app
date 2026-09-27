@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 import 'primary_button.dart';
@@ -45,7 +44,11 @@ class EmptyState extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 96, color: AppColors.primary),
+              Icon(
+                icon,
+                size: 96,
+                color: Theme.of(context).colorScheme.primary,
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 title,

@@ -327,19 +327,21 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Assujetti à la TVA',
-                                  style: AppTypography.labelMedium,
-                                ),
-                                SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  'Votre boutique facture avec TVA',
-                                  style: AppTypography.captionText,
-                                ),
-                              ],
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Assujetti à la TVA',
+                                    style: AppTypography.labelMedium,
+                                  ),
+                                  SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    'Votre boutique facture avec TVA',
+                                    style: AppTypography.captionText,
+                                  ),
+                                ],
+                              ),
                             ),
                             Switch(
                               value: _isSubjectToVat,

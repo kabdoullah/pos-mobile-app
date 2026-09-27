@@ -89,12 +89,17 @@ class PrimaryButton extends StatelessWidget {
                           Icon(icon, color: cs.onPrimary, size: 20),
                           const SizedBox(width: AppSpacing.sm),
                         ],
-                        Text(
-                          label,
-                          style: AppTypography.labelLarge.copyWith(
-                            color: cs.onPrimary,
+                        // Libellé trop long : tronqué plutôt qu'un débordement.
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelLarge.copyWith(
+                              color: cs.onPrimary,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         if (trailingIcon != null) ...[
                           const SizedBox(width: AppSpacing.sm),

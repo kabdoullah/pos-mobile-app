@@ -207,7 +207,9 @@ class _ImportResultCard extends StatelessWidget {
             children: [
               Icon(
                 hasFailures ? Icons.warning_amber_rounded : Icons.check_circle,
-                color: hasFailures ? AppColors.warning : AppColors.success,
+                color: hasFailures
+                    ? Theme.of(context).colorScheme.tertiary
+                    : Theme.of(context).extension<AppSemanticColors>()!.success,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(

@@ -298,8 +298,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         isLoading: isLoading,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Text(
                             'Vous avez un compte ? ',

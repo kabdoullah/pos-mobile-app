@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
@@ -37,7 +36,7 @@ Future<bool> showConfirmDialog(
           child: Text(
             cancelLabel,
             style: AppTypography.labelMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -45,10 +44,13 @@ Future<bool> showConfirmDialog(
           height: 56,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
+              // Couleurs du thème : correctes en clair comme en sombre.
               backgroundColor: isDangerous
-                  ? AppColors.error
-                  : AppColors.primary,
-              foregroundColor: AppColors.textOnPrimary,
+                  ? Theme.of(context).colorScheme.error
+                  : Theme.of(context).colorScheme.primary,
+              foregroundColor: isDangerous
+                  ? Theme.of(context).colorScheme.onError
+                  : Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               ),
