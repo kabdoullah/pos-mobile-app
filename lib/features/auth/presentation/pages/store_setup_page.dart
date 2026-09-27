@@ -1,25 +1,26 @@
-import '../../../../core/utils/phone_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logger/logger.dart';
 
-import '../../../../core/network/error_mapper.dart';
-import '../../../../core/responsive/responsive.dart';
-// ✨ [Design system] import app_colors.dart supprimé — AppColors.textSecondary → cs.onSurfaceVariant
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/network/error_mapper.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
-import '../providers/auth_providers.dart';
-import '../../providers/store_provider.dart';
-import '../widgets/registration_stepper.dart';
 import '../../domain/entities/store.dart';
+import '../../providers/store_provider.dart';
+import '../providers/auth_providers.dart';
+import '../widgets/auth_layout.dart';
+import '../widgets/registration_stepper.dart';
 
 /// Page de création/configuration de la boutique.
 ///
-/// L'utilisateur saisit le nom de la boutique, l'adresse, le NCC (identifiant
-/// fiscal, optionnel) et le statut TVA. Intervient après la première connexion,
-/// avant d'accéder à l'app. Utilisable en mode création (après l'inscription)
-/// ou en mode édition (depuis les paramètres).
+/// Mode création : étape 2 de l'inscription (atteinte via le routeur, y compris
+/// au relancement si l'app a été fermée à cette étape). Mode édition : ouverte
+/// depuis les paramètres, se ferme après l'enregistrement.
+///
+/// Les informations fiscales (NCC, TVA) sont repliées par défaut : la plupart
+/// des petits commerces n'en ont pas besoin pour démarrer.
 class StoreSetupPage extends ConsumerStatefulWidget {
   /// Crée une page de configuration de la boutique.
   const StoreSetupPage({this.isEditMode = false, super.key});
@@ -35,28 +36,22 @@ class StoreSetupPage extends ConsumerStatefulWidget {
 class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
   static final _logger = Logger();
 
-  late TextEditingController _nameController;
-  late TextEditingController _addressController;
-  late TextEditingController _nccController;
+  final _nameController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _nccController = TextEditingController();
   final _phoneController = TextEditingController();
-  String? _phoneError;
 
   String? _nameError;
-  bool _isSubjectToVat = true;
+  String? _phoneError;
+  String? _saveError;
+  bool _isSubjectToVat = false;
+  bool _showFiscal = false;
   bool _isLoading = false;
 
-  /// Passe à true une fois le formulaire en mode édition pré-rempli depuis la
-  /// boutique existante.
-  /// Évite d'écraser les modifications de l'utilisateur si le provider réémet.
+  /// Passe à true une fois le formulaire pré-rempli depuis la boutique
+  /// existante. Évite d'écraser les modifications de l'utilisateur si le
+  /// provider réémet.
   bool _prefilled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-    _addressController = TextEditingController();
-    _nccController = TextEditingController();
-  }
 
   /// Pré-remplit le formulaire depuis la boutique dès que ses données sont
   /// disponibles.
@@ -86,7 +81,11 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
     // Reporte le setState hors de la phase de build (ceci peut s'exécuter
     // pendant le build).
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _isSubjectToVat = store.isSubjectToVat);
+      if (!mounted) return;
+      setState(() {
+        _isSubjectToVat = store.isSubjectToVat;
+        _showFiscal = store.isSubjectToVat || (store.ncc ?? '').isNotEmpty;
+      });
     });
   }
 
@@ -100,300 +99,280 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
   }
 
   bool _validateForm() {
-    _nameError = null;
-    final name = _nameController.text.trim();
-
-    if (name.isEmpty) {
-      _nameError = 'Nom de la boutique requis';
-    }
-
     final phone = _phoneController.text.trim();
-    _phoneError = phone.isEmpty || isValidLocalPhoneCi(phone)
-        ? null
-        : 'Numéro à 10 chiffres, ex. 07 00 00 00 00';
-
-    setState(() {});
+    setState(() {
+      _nameError = _nameController.text.trim().isEmpty
+          ? 'Donnez un nom à votre boutique.'
+          : null;
+      _phoneError = phone.isEmpty || isValidLocalPhoneCi(phone)
+          ? null
+          : 'Numéro à 10 chiffres, ex. 07 00 00 00 00.';
+    });
     return _nameError == null && _phoneError == null;
   }
 
-  Future<void> _saveStore() async {
-    if (!_validateForm()) return;
+  String? _trimmedOrNull(TextEditingController c) {
+    final text = c.text.trim();
+    return text.isEmpty ? null : text;
+  }
 
-    setState(() => _isLoading = true);
+  Future<void> _saveStore() async {
+    if (_isLoading || !_validateForm()) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isLoading = true;
+      _saveError = null;
+    });
 
     try {
       // Réglages hors de ce formulaire (Paramètres → Reçus) : conservés.
       final current = ref.read(storeConfigProvider).value;
-      final phone = _phoneController.text.trim();
+      final phone = _trimmedOrNull(_phoneController);
       final store = Store(
         name: _nameController.text.trim(),
-        address: _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
-        ncc: _nccController.text.trim().isEmpty
-            ? null
-            : _nccController.text.trim(),
+        address: _trimmedOrNull(_addressController),
+        ncc: _trimmedOrNull(_nccController),
         isSubjectToVat: _isSubjectToVat,
         receiptFooterText: current?.receiptFooterText,
         logoVersion: current?.logoVersion,
-        phone: phone.isEmpty ? null : toE164Ci(phone),
+        phone: phone == null ? null : toE164Ci(phone),
       );
 
       await ref.read(storeConfigProvider.notifier).save(store);
-
-      // On abandonne si le widget a été démonté pendant l'enregistrement.
-      if (!mounted) {
-        _logger.w('Widget not mounted after save');
-        return;
-      }
-
-      setState(() => _isLoading = false);
+      if (!mounted) return;
 
       if (widget.isEditMode) {
-        // Le mode édition est ouvert via showModalBottomSheet (Navigator
-        // racine), pas via go_router — on ferme le Navigator Flutter, pas le
-        // routeur.
+        // Le mode édition est poussé par le Navigator Flutter (paramètres),
+        // pas par go_router.
         Navigator.of(context).pop();
       } else {
-        _logger.i('Calling proceedToPinSetup()');
+        // Le routeur passe à l'étape PIN.
         await ref.read(authProvider.notifier).proceedToPinSetup();
-        _logger.i('proceedToPinSetup() completed');
       }
     } catch (e) {
-      if (mounted) {
-        _logger.e('Error saving store configuration - $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              errorToFrench(e),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onError,
-              ),
-            ),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        setState(() => _isLoading = false);
-      }
+      _logger.e('Error saving store configuration - $e');
+      if (mounted) setState(() => _saveError = errorToFrench(e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Mode édition : pré-remplissage depuis la boutique existante, en gérant le
-    // cas où le provider est encore en chargement au premier build (le listen
-    // récupère les valeurs tardives).
-    if (widget.isEditMode && !_prefilled) {
+    // Pré-remplissage : en édition, et au retour depuis l'étape PIN (la
+    // boutique est déjà enregistrée). Pas à la première visite : le serveur
+    // a créé une boutique « Ma boutique » par défaut qu'il faut renommer.
+    final isRevisit =
+        !widget.isEditMode &&
+        switch (ref.watch(authProvider).value) {
+          AuthStoreSetupRequired(:final isRevisit) => isRevisit,
+          _ => false,
+        };
+    if ((widget.isEditMode || isRevisit) && !_prefilled) {
       ref.listen<AsyncValue<Store?>>(storeConfigProvider, (_, next) {
         _prefillFrom(next);
       });
       _prefillFrom(ref.read(storeConfigProvider));
     }
 
-    // ✨ [Qualité] colorScheme centralisé — supprime les Theme.of(context) inline répétés
-    final cs = Theme.of(context).colorScheme;
-    final spacing = responsiveValue(
-      context,
-      small: AppSpacing.md,
-      medium: AppSpacing.lg,
+    final form = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.isEditMode)
+          const AuthHeader(
+            title: 'Modifier ma boutique',
+            subtitle: 'Ces informations apparaissent sur vos reçus.',
+          )
+        else ...[
+          const RegistrationStepper(currentStep: 2),
+          const SizedBox(height: AppSpacing.lg),
+          const AuthHeader(
+            title: 'Configurez votre boutique',
+            subtitle:
+                'Ces informations permettront de personnaliser votre espace '
+                'de gestion et vos reçus.',
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: _saveError != null
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: AuthBanner(
+                    title: 'Enregistrement impossible',
+                    message: _saveError!,
+                  ),
+                )
+              : const SizedBox(width: double.infinity),
+        ),
+        const _SectionTitle('Informations de la boutique'),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Nom de la boutique',
+          hint: 'ex. Boutique Awa',
+          controller: _nameController,
+          errorText: _nameError,
+          prefixIcon: Icons.storefront_outlined,
+          textInputAction: TextInputAction.next,
+          onChanged: (_) {
+            if (_nameError != null) setState(() => _nameError = null);
+          },
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Adresse (facultatif)',
+          hint: 'ex. Marché de Cocody',
+          controller: _addressController,
+          prefixIcon: Icons.location_on_outlined,
+          textInputAction: TextInputAction.next,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Téléphone (facultatif)',
+          hint: '07 00 00 00 00',
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          inputFormatters: const [SpacedPhoneFormatter()],
+          errorText: _phoneError,
+          prefixIcon: Icons.phone_outlined,
+          onChanged: (_) {
+            if (_phoneError != null) setState(() => _phoneError = null);
+          },
+          helper: const _FieldHelp('Imprimé sur vos reçus.'),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        const _SectionTitle('Informations fiscales'),
+        const SizedBox(height: AppSpacing.sm),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          alignment: Alignment.topCenter,
+          child: _showFiscal ? _buildFiscalFields() : _buildFiscalToggle(),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        PrimaryButton(
+          label: widget.isEditMode ? 'Enregistrer ma boutique' : 'Continuer',
+          loadingLabel: 'Enregistrement…',
+          onPressed: _saveStore,
+          isLoading: _isLoading,
+        ),
+      ],
     );
 
-    return Scaffold(
-      // Le mode édition est poussé en dialogue plein écran depuis les
-      // paramètres — on lui donne un moyen de fermer. Le mode création est
-      // atteint via le routeur et n'a pas d'action retour (étape d'onboarding),
-      // il garde donc seulement son en-tête dans le corps.
-      appBar: widget.isEditMode
-          ? AppBar(
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                // ✨ [A11y] tooltip — obligatoire sur tous les IconButton (WCAG 2.4.6)
-                tooltip: 'Fermer',
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            )
-          : null,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (!widget.isEditMode)
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacing,
-                  spacing,
-                  spacing,
-                  AppSpacing.lg,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const RegistrationStepper(currentStep: 2),
-                    const SizedBox(height: AppSpacing.lg),
-                    // ✨ [Design system] explicit cs.onSurface — cohérence avec register_page.dart
-                    Text(
-                      'Votre boutique',
-                      style: AppTypography.titleLarge.copyWith(
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    // ✨ [Design system] cs.onSurfaceVariant remplace
-                    // AppColors.textSecondary — compatible mode sombre
-                    Text(
-                      'Configurez votre point de vente pour vos reçus et rapports.',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  spacing,
-                  spacing,
-                  spacing,
-                  AppSpacing.lg,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ✨ [Design system] explicit cs.onSurface — cohérence inter-pages
-                    Text(
-                      'Modifier ma boutique',
-                      style: AppTypography.titleLarge.copyWith(
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Informations de votre commerce',
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(spacing, 0, spacing, spacing),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppTextField(
-                      label: 'Nom de la boutique',
-                      hint: 'ex: Ma boutique',
-                      controller: _nameController,
-                      errorText: _nameError,
-                      prefixIcon: Icons.storefront_outlined,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Adresse (optionnel)',
-                      hint: 'ex: 123 rue du Commerce',
-                      controller: _addressController,
-                      prefixIcon: Icons.location_on_outlined,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'NCC (optionnel)',
-                      hint: 'Numéro de contribuable',
-                      controller: _nccController,
-                      prefixIcon: Icons.badge_outlined,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Téléphone (optionnel, imprimé sur les reçus)',
-                      hint: '07 00 00 00 00',
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: const [SpacedPhoneFormatter()],
-                      errorText: _phoneError,
-                      prefixIcon: Icons.phone_outlined,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Padding(
-                      padding: const EdgeInsets.only(left: AppSpacing.md),
-                      child: Row(
-                        children: [
-                          // ✨ [A11y] ExcludeSemantics — icône décorative, le texte suffit
-                          ExcludeSemantics(
-                            child: Icon(
-                              Icons.help_outline,
-                              size: 16,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Expanded(
-                            // ✨ [Design system] cs.onSurfaceVariant explicite — visuel subordonné
-                            child: Text(
-                              'Numéro attribué par les autorités fiscales pour la facturation',
-                              style: AppTypography.captionText.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(
-                        color: cs.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusMd,
-                        ),
-                      ),
-                      // ✨ [A11y] MergeSemantics — associe "Assujetti à la TVA" au Switch
-                      //    pour que VoiceOver/TalkBack lise un seul élément cohérent
-                      child: MergeSemantics(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Assujetti à la TVA',
-                                    style: AppTypography.labelMedium,
-                                  ),
-                                  SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'Votre boutique facture avec TVA',
-                                    style: AppTypography.captionText,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Switch(
-                              value: _isSubjectToVat,
-                              onChanged: (value) {
-                                setState(() => _isSubjectToVat = value);
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    PrimaryButton(
-                      label: 'Enregistrer ma boutique',
-                      onPressed: _isLoading ? null : _saveStore,
-                      isLoading: _isLoading,
-                    ),
-                  ],
-                ),
+    if (widget.isEditMode) {
+      return Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Fermer',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: form,
+          ),
+        ),
+      );
+    }
+    return AuthScaffold(child: form);
+  }
+
+  /// État replié : une seule ligne, pour ne pas donner l'impression d'un
+  /// formulaire fiscal.
+  Widget _buildFiscalToggle() {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Facultatif. Utile si votre boutique a un numéro de contribuable '
+          'ou facture la TVA.',
+          style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: () => setState(() => _showFiscal = true),
+            icon: const Icon(Icons.add),
+            label: const Text('Ajouter mes informations fiscales'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFiscalFields() {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppTextField(
+          label: 'NCC (facultatif)',
+          hint: 'Numéro de compte contribuable',
+          controller: _nccController,
+          prefixIcon: Icons.badge_outlined,
+          helper: const _FieldHelp(
+            'Attribué par la DGI, imprimé sur vos reçus.',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Material(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          clipBehavior: Clip.antiAlias,
+          child: SwitchListTile(
+            value: _isSubjectToVat,
+            onChanged: (value) => setState(() => _isSubjectToVat = value),
+            title: Text(
+              'Assujetti à la TVA',
+              style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+            ),
+            subtitle: Text(
+              'Votre boutique facture avec TVA.',
+              style: AppTypography.captionText.copyWith(
+                color: cs.onSurfaceVariant,
               ),
             ),
-          ],
+          ),
         ),
+      ],
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Text(
+        title,
+        style: AppTypography.titleMedium.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
+    );
+  }
+}
+
+class _FieldHelp extends StatelessWidget {
+  const _FieldHelp(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: AppTypography.captionText.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }

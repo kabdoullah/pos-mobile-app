@@ -24,6 +24,10 @@ class AppTextField extends StatefulWidget {
     this.onChanged,
     this.maxLines = 1,
     this.minLines,
+    this.textInputAction,
+    this.onSubmitted,
+    this.autofillHints,
+    this.helper,
     super.key,
   });
 
@@ -63,6 +67,19 @@ class AppTextField extends StatefulWidget {
 
   /// Nombre minimal de lignes pour une saisie multiligne.
   final int? minLines;
+
+  /// Action du bouton de validation du clavier (suivant, terminé…).
+  final TextInputAction? textInputAction;
+
+  /// Callback à la validation depuis le clavier.
+  final ValueChanged<String>? onSubmitted;
+
+  /// Indices de saisie automatique (gestionnaire de mots de passe).
+  final Iterable<String>? autofillHints;
+
+  /// Aide affichée sous le champ quand il n'y a pas d'erreur (règles de
+  /// saisie, confirmation de validité).
+  final Widget? helper;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -114,6 +131,9 @@ class _AppTextFieldState extends State<AppTextField> {
             minLines: widget.minLines,
             inputFormatters: widget.inputFormatters,
             onChanged: widget.onChanged,
+            textInputAction: widget.textInputAction,
+            onSubmitted: widget.onSubmitted,
+            autofillHints: widget.autofillHints,
             style: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,
@@ -171,10 +191,28 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
         if (hasError) ...[
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            widget.errorText!,
-            style: AppTypography.errorText.copyWith(color: cs.error),
+          // Icône + texte : l'erreur ne repose pas que sur la couleur.
+          Semantics(
+            liveRegion: true,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: Icon(Icons.error_outline, size: 16, color: cs.error),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    widget.errorText!,
+                    style: AppTypography.errorText.copyWith(color: cs.error),
+                  ),
+                ),
+              ],
+            ),
           ),
+        ] else if (widget.helper != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          widget.helper!,
         ],
       ],
     );

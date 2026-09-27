@@ -8,16 +8,20 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
+import '../widgets/auth_layout.dart';
 import '../widgets/pin_numpad.dart';
 import '../widgets/registration_stepper.dart';
 
-/// Écran de création du PIN — parcours en deux étapes (création + confirmation)
-/// avec pavé numérique personnalisé.
+/// Écran de création du PIN — saisie puis confirmation, pavé numérique
+/// personnalisé.
 ///
 /// Étape 0 : l'utilisateur saisit un nouveau PIN (les PIN trop simples sont
-/// refusés).
-/// Étape 1 : l'utilisateur confirme le PIN ; s'ils correspondent,
-/// [AuthNotifier.setupPin] est appelé.
+/// refusés). Étape 1 : il le confirme ; s'ils correspondent, [Auth.setupPin]
+/// est appelé et le routeur ouvre l'accueil.
+///
+/// Dans le parcours d'inscription, le retour (flèche ou bouton système) ramène
+/// à l'étape boutique ; ailleurs (connexion sur un nouvel appareil), pas
+/// d'indicateur d'étapes ni de retour.
 class PinSetupPage extends ConsumerStatefulWidget {
   /// Crée une page de création du PIN.
   const PinSetupPage({super.key});
@@ -32,7 +36,16 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
 
   /// 0 = création, 1 = confirmation.
   int _step = 0;
-  String? _error;
+  String? _errorTitle;
+  String? _errorDetail;
+
+  /// Échec de [Auth.setupPin] affiché jusqu'à la saisie suivante (l'erreur
+  /// reste dans authProvider : l'effacer renverrait à la connexion).
+  bool _showSetupError = false;
+
+  /// Parcours d'inscription. Mémorisé : une erreur de [Auth.setupPin] ne doit
+  /// pas faire disparaître l'indicateur d'étapes ni le retour.
+  bool _inRegistration = false;
 
   static final _logger = Logger();
 
@@ -57,200 +70,186 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     return _trivialPins.contains(pin);
   }
 
+  void _setError(String? title, [String? detail]) {
+    _errorTitle = title;
+    _errorDetail = detail;
+  }
+
   void _onDigit(String digit) {
     if (_pin.length >= 4) return;
     setState(() {
       _pin += digit;
-      _error = null;
+      _setError(null);
+      _showSetupError = false;
     });
     if (_pin.length == 4) unawaited(_onPinComplete());
   }
 
   void _onBackspace() {
     if (_pin.isEmpty) return;
-    setState(() {
-      _pin = _pin.substring(0, _pin.length - 1);
-      _error = null;
-    });
+    setState(() => _pin = _pin.substring(0, _pin.length - 1));
   }
 
   Future<void> _onPinComplete() async {
     if (_step == 0) {
-      if (_isTrivialPin(_pin)) {
-        setState(() {
-          _error = 'PIN trop simple (ex : 1234, 0000)';
-          _pin = '';
-        });
-        return;
-      }
       setState(() {
-        _firstPin = _pin;
+        if (_isTrivialPin(_pin)) {
+          _setError(
+            'Choisissez un PIN plus sécurisé.',
+            'Évitez les suites ou répétitions simples (1234, 0000…).',
+          );
+        } else {
+          _firstPin = _pin;
+          _step = 1;
+        }
         _pin = '';
-        _step = 1;
       });
-    } else {
-      if (_pin != _firstPin) {
-        setState(() {
-          _error = 'Les PIN ne correspondent pas';
-          _pin = '';
-        });
-        return;
-      }
-      _logger.i('PIN validation passed, calling setupPin()');
-      try {
-        await ref.read(authProvider.notifier).setupPin(_firstPin);
-        _logger.i('setupPin() completed, router should redirect');
-      } catch (_) {
-        // Erreur affichée via authValue.asError
-      }
+      return;
+    }
+
+    if (_pin != _firstPin) {
+      // On recommence depuis le début : l'erreur peut venir du premier PIN.
+      setState(() {
+        _setError('Les deux PIN ne correspondent pas.', 'Recommencez.');
+        _pin = '';
+        _firstPin = '';
+        _step = 0;
+      });
+      return;
+    }
+
+    _logger.i('PIN validation passed, calling setupPin()');
+    await ref.read(authProvider.notifier).setupPin(_firstPin);
+    // Succès : le routeur ouvre l'accueil. Échec : message via authProvider.
+    if (mounted && ref.read(authProvider).hasError) {
+      setState(() {
+        _pin = '';
+        _showSetupError = true;
+      });
+    }
+  }
+
+  /// Retour : de la confirmation à la saisie, puis de la saisie à l'étape
+  /// boutique (inscription uniquement).
+  void _goBack() {
+    if (_step == 1) {
+      setState(() {
+        _step = 0;
+        _pin = '';
+        _firstPin = '';
+        _setError(null);
+      });
+    } else if (_inRegistration) {
+      ref.read(authProvider.notifier).returnToStoreSetup();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authValue = ref.watch(authProvider);
-    final systemError = authValue.asError?.error.toString();
+    if (authValue.value case AuthPinSetupRequired(
+      canReturnToStoreSetup: true,
+    )) {
+      _inRegistration = true;
+    }
     final isLoading = authValue.isLoading;
+    final systemError = _showSetupError ? authValue.error?.toString() : null;
     final cs = Theme.of(context).colorScheme;
+    final canGoBack = _step == 1 || _inRegistration;
 
-    return Scaffold(
-      body: SafeArea(
+    final (title, detail) = switch ((isLoading, systemError)) {
+      (true, _) => ('Enregistrement du PIN…', null),
+      (_, final String e) => ('Le PIN n\'a pas pu être enregistré.', e),
+      _ => (_errorTitle, _errorDetail),
+    };
+
+    return PopScope(
+      canPop: !canGoBack,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && !isLoading) _goBack();
+      },
+      child: AuthScaffold(
+        scrollable: false,
+        resizeToAvoidBottomInset: false,
         child: FillOrScroll(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Column(
-              children: [
-                const SizedBox(height: AppSpacing.md),
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: AppSpacing.iconButtonSize,
+                child: Row(
+                  children: [
+                    if (canGoBack)
+                      IconButton(
+                        onPressed: isLoading ? null : _goBack,
+                        tooltip: _step == 1
+                            ? 'Modifier le PIN'
+                            : 'Retour à la boutique',
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                  ],
+                ),
+              ),
+              if (_inRegistration) ...[
                 const RegistrationStepper(currentStep: 3),
-                const Spacer(),
-                // Bandeau d'erreur système
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: systemError != null
-                      ? Container(
-                          key: const ValueKey('sys-error'),
-                          margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.errorContainer,
-                            borderRadius: BorderRadius.circular(
-                              AppSpacing.radiusSm,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                color: cs.onErrorContainer,
-                                size: 18,
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Expanded(
-                                child: Text(
-                                  systemError,
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: cs.onErrorContainer,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                // ✨ AnimatedSwitcher — transition douce entre les étapes create/confirm
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) => ScaleTransition(
-                    scale: animation,
-                    child: FadeTransition(opacity: animation, child: child),
-                  ),
-                  child: Container(
-                    key: ValueKey(_step),
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: cs.primaryContainer,
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                    ),
-                    child: Icon(
-                      _step == 0
-                          ? Icons.add_moderator_rounded
-                          : Icons.check_circle_outline_rounded,
-                      size: 36,
-                      color: cs.onPrimaryContainer,
-                    ),
-                  ),
-                ),
                 const SizedBox(height: AppSpacing.md),
-                // ✨ AnimatedSwitcher sur le titre — transition visuelle cohérente
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: Text(
-                    _step == 0 ? 'Créez votre PIN' : 'Confirmez votre PIN',
-                    key: ValueKey('title-$_step'),
-                    style: AppTypography.titleLarge.copyWith(
-                      color: cs.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+              ],
+              const Spacer(),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: AuthHeader(
+                  key: ValueKey(_step),
+                  title: _step == 0
+                      ? 'Sécurisez votre caisse'
+                      : 'Confirmez votre PIN',
+                  subtitle: _step == 0
+                      ? 'Votre PIN vous permettra de déverrouiller rapidement '
+                            'l\'application sur cet appareil.'
+                      : 'Saisissez à nouveau les 4 chiffres.',
+                  centered: true,
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: Text(
-                    _step == 0
-                        ? 'Évitez les codes simples : 0000, 1234…'
-                        : 'Entrez à nouveau votre PIN pour confirmer',
-                    key: ValueKey('subtitle-$_step'),
-                    style: AppTypography.bodyMedium.copyWith(
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                _step == 0 ? 'Créez un PIN à 4 chiffres' : 'Confirmez le PIN',
+                style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              PinDots(filledCount: _pin.length),
+              const SizedBox(height: AppSpacing.sm),
+              PinMessage(title: title, detail: detail, isError: !isLoading),
+              const Spacer(),
+              PinNumpad(
+                onDigit: _onDigit,
+                onBackspace: _onBackspace,
+                enabled: !isLoading,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ExcludeSemantics(
+                    child: Icon(
+                      Icons.lock_outline,
+                      size: 14,
                       color: cs.onSurfaceVariant,
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // Points indicateurs
-                PinDots(filledCount: _pin.length),
-                // Erreur de champ (PIN trop simple / non concordant)
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _error != null
-                      ? Padding(
-                          key: ValueKey(_error),
-                          padding: const EdgeInsets.only(top: AppSpacing.sm),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(
-                              _error!,
-                              style: AppTypography.errorText.copyWith(
-                                color: cs.error,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        )
-                      : const SizedBox(height: AppSpacing.md + AppSpacing.sm),
-                ),
-                const Spacer(),
-                // Pavé numérique personnalisé
-                if (isLoading)
-                  const SizedBox(
-                    height: 290,
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else
-                  PinNumpad(
-                    onDigit: _onDigit,
-                    onBackspace: _onBackspace,
-                    enabled: !isLoading,
+                  const SizedBox(width: AppSpacing.xs),
+                  Flexible(
+                    child: Text(
+                      'Le PIN est enregistré de manière sécurisée sur cet '
+                      'appareil.',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.captionText.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
           ),
         ),
       ),

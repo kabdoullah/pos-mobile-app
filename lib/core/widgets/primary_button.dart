@@ -18,6 +18,7 @@ class PrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.isLoading = false,
+    this.loadingLabel,
     this.icon,
     this.trailingIcon,
     super.key,
@@ -31,6 +32,10 @@ class PrimaryButton extends StatelessWidget {
 
   /// Indique si le bouton est en état de chargement.
   final bool isLoading;
+
+  /// Libellé affiché à côté de l'indicateur pendant le chargement (ex.
+  /// « Connexion… »). Sans libellé, seul l'indicateur est affiché.
+  final String? loadingLabel;
 
   /// Icône de début optionnelle.
   final IconData? icon;
@@ -73,7 +78,33 @@ class PrimaryButton extends StatelessWidget {
                   },
             borderRadius: borderRadius,
             child: Center(
-              child: isLoading
+              child: isLoading && loadingLabel != null
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              cs.onPrimary,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Flexible(
+                          child: Text(
+                            loadingLabel!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.labelLarge.copyWith(
+                              color: cs.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : isLoading
                   ? SizedBox.square(
                       dimension: 24,
                       child: CircularProgressIndicator(

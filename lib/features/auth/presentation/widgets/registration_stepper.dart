@@ -75,11 +75,13 @@ class _StepCircle extends StatelessWidget {
     final isFilled = isPast || isActive;
 
     final bgColor = isFilled ? cs.primary : Colors.transparent;
-    final borderColor = isFilled ? cs.primary : cs.outlineVariant;
-    final contentColor = isFilled ? cs.onPrimary : cs.outlineVariant;
+    // Étapes à venir : contraste suffisant pour rester lisibles (WCAG AA),
+    // outlineVariant étant quasi invisible sur le fond clair.
+    final borderColor = isFilled ? cs.primary : cs.outline;
+    final contentColor = isFilled ? cs.onPrimary : cs.onSurfaceVariant;
 
     // ✨ [Qualité] isPast et isActive → même couleur, factorisé.
-    final labelColor = isFilled ? cs.primary : cs.outlineVariant;
+    final labelColor = isFilled ? cs.primary : cs.onSurfaceVariant;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
