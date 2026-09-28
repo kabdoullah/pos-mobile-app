@@ -1,42 +1,78 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
 import 'cart_provider.dart';
+import 'checkout_provider.dart';
 
 part 'sales_providers.g.dart';
 
-/// Enregistre le panier courant (lignes et remise globale) comme vente
-/// (appelle CreateSaleUseCase).
-@riverpod
-Future<sale_entity.Sale> submitSale(
-  Ref ref, {
-  required Decimal totalAmount,
-  required Decimal vatAmount,
-  required sale_entity.PaymentMethod paymentMethod,
-  Decimal? cashAmount,
-  Decimal? mobileMoneyAmount,
-}) async {
-  final useCase = ref.read(createSaleUseCaseProvider);
-  final cartState = ref.read(cartProvider);
+/// Vente enregistrée, avec ce que l'écran de confirmation affiche : les lignes
+/// (copiées avant le vidage du panier, pour le ticket) et la monnaie à rendre.
+typedef CompletedSale = ({
+  sale_entity.Sale sale,
+  List<CartItem> items,
+  Decimal change,
+});
 
-  final sale = await useCase(
-    items: cartState.items,
-    discount: cartState.discount,
-    totalAmount: totalAmount,
-    vatAmount: vatAmount,
-    paymentMethod: paymentMethod,
-    cashAmount: cashAmount,
-    mobileMoneyAmount: mobileMoneyAmount,
-  );
+/// Encaisse le panier courant avec le brouillon de paiement de la caisse.
+///
+/// `keepAlive` : l'écriture ne doit pas être interrompue par un dispose
+/// pendant l'await (sinon la vente est enregistrée mais le panier n'est pas
+/// vidé, et le commerçant la ressaisit). L'état vaut `true` pendant
+/// l'encaissement.
+@Riverpod(keepAlive: true)
+class SaleSubmission extends _$SaleSubmission {
+  @override
+  bool build() => false;
 
-  return sale;
+  /// Enregistre la vente (appelle CreateSaleUseCase), vide le panier et le
+  /// brouillon de paiement, puis lance une synchro si l'appareil est en
+  /// ligne. Retourne `null` sans rien faire si un encaissement est déjà en
+  /// cours, si le panier est vide ou si le paiement est incomplet ; lève
+  /// l'erreur du use case sinon.
+  Future<CompletedSale?> submit() async {
+    final cart = ref.read(cartProvider);
+    final checkout = ref.read(checkoutProvider);
+    final total = cart.total;
+    if (state || cart.isEmpty || !checkout.canSubmitFor(total)) return null;
+
+    state = true;
+    try {
+      final isMixed = checkout.method == sale_entity.PaymentMethod.mixed;
+      final sale = await ref.read(createSaleUseCaseProvider)(
+        items: cart.items,
+        discount: cart.discount,
+        totalAmount: total,
+        // TVA non appliquée au MVP (pas de taux par produit).
+        vatAmount: Decimal.zero,
+        paymentMethod: checkout.method,
+        cashAmount: isMixed ? checkout.cashReceived : null,
+        mobileMoneyAmount: isMixed ? checkout.mobileMoney : null,
+      );
+
+      ref.read(cartProvider.notifier).clear();
+      ref.read(checkoutProvider.notifier).reset();
+
+      // Synchro immédiate si en ligne : le serveur attribue le numéro de reçu
+      // en quelques secondes au lieu d'attendre le prochain cycle périodique.
+      if (ref.read(isOnlineProvider).value ?? false) {
+        unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
+      }
+      return (sale: sale, items: cart.items, change: checkout.changeFor(total));
+    } finally {
+      state = false;
+    }
+  }
 }
 
 /// Observe les ventes d'une plage de dates (incluse) — réémet à chaque

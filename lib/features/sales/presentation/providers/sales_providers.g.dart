@@ -8,139 +8,82 @@ part of 'sales_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Enregistre le panier courant (lignes et remise globale) comme vente
-/// (appelle CreateSaleUseCase).
+/// Encaisse le panier courant avec le brouillon de paiement de la caisse.
+///
+/// `keepAlive` : l'écriture ne doit pas être interrompue par un dispose
+/// pendant l'await (sinon la vente est enregistrée mais le panier n'est pas
+/// vidé, et le commerçant la ressaisit). L'état vaut `true` pendant
+/// l'encaissement.
 
-@ProviderFor(submitSale)
-final submitSaleProvider = SubmitSaleFamily._();
+@ProviderFor(SaleSubmission)
+final saleSubmissionProvider = SaleSubmissionProvider._();
 
-/// Enregistre le panier courant (lignes et remise globale) comme vente
-/// (appelle CreateSaleUseCase).
-
-final class SubmitSaleProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<sale_entity.Sale>,
-          sale_entity.Sale,
-          FutureOr<sale_entity.Sale>
-        >
-    with $FutureModifier<sale_entity.Sale>, $FutureProvider<sale_entity.Sale> {
-  /// Enregistre le panier courant (lignes et remise globale) comme vente
-  /// (appelle CreateSaleUseCase).
-  SubmitSaleProvider._({
-    required SubmitSaleFamily super.from,
-    required ({
-      Decimal totalAmount,
-      Decimal vatAmount,
-      sale_entity.PaymentMethod paymentMethod,
-      Decimal? cashAmount,
-      Decimal? mobileMoneyAmount,
-    })
-    super.argument,
-  }) : super(
-         retry: null,
-         name: r'submitSaleProvider',
-         isAutoDispose: true,
-         dependencies: null,
-         $allTransitiveDependencies: null,
-       );
+/// Encaisse le panier courant avec le brouillon de paiement de la caisse.
+///
+/// `keepAlive` : l'écriture ne doit pas être interrompue par un dispose
+/// pendant l'await (sinon la vente est enregistrée mais le panier n'est pas
+/// vidé, et le commerçant la ressaisit). L'état vaut `true` pendant
+/// l'encaissement.
+final class SaleSubmissionProvider
+    extends $NotifierProvider<SaleSubmission, bool> {
+  /// Encaisse le panier courant avec le brouillon de paiement de la caisse.
+  ///
+  /// `keepAlive` : l'écriture ne doit pas être interrompue par un dispose
+  /// pendant l'await (sinon la vente est enregistrée mais le panier n'est pas
+  /// vidé, et le commerçant la ressaisit). L'état vaut `true` pendant
+  /// l'encaissement.
+  SaleSubmissionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'saleSubmissionProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
   @override
-  String debugGetCreateSourceHash() => _$submitSaleHash();
-
-  @override
-  String toString() {
-    return r'submitSaleProvider'
-        ''
-        '$argument';
-  }
+  String debugGetCreateSourceHash() => _$saleSubmissionHash();
 
   @$internal
   @override
-  $FutureProviderElement<sale_entity.Sale> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  SaleSubmission create() => SaleSubmission();
 
-  @override
-  FutureOr<sale_entity.Sale> create(Ref ref) {
-    final argument =
-        this.argument
-            as ({
-              Decimal totalAmount,
-              Decimal vatAmount,
-              sale_entity.PaymentMethod paymentMethod,
-              Decimal? cashAmount,
-              Decimal? mobileMoneyAmount,
-            });
-    return submitSale(
-      ref,
-      totalAmount: argument.totalAmount,
-      vatAmount: argument.vatAmount,
-      paymentMethod: argument.paymentMethod,
-      cashAmount: argument.cashAmount,
-      mobileMoneyAmount: argument.mobileMoneyAmount,
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
     );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is SubmitSaleProvider && other.argument == argument;
-  }
-
-  @override
-  int get hashCode {
-    return argument.hashCode;
   }
 }
 
-String _$submitSaleHash() => r'233091f9689c49a6ef30ae28d92bcc7ee9cab86f';
+String _$saleSubmissionHash() => r'645d51bacba8c983f98fc304986c156763cf32d7';
 
-/// Enregistre le panier courant (lignes et remise globale) comme vente
-/// (appelle CreateSaleUseCase).
+/// Encaisse le panier courant avec le brouillon de paiement de la caisse.
+///
+/// `keepAlive` : l'écriture ne doit pas être interrompue par un dispose
+/// pendant l'await (sinon la vente est enregistrée mais le panier n'est pas
+/// vidé, et le commerçant la ressaisit). L'état vaut `true` pendant
+/// l'encaissement.
 
-final class SubmitSaleFamily extends $Family
-    with
-        $FunctionalFamilyOverride<
-          FutureOr<sale_entity.Sale>,
-          ({
-            Decimal totalAmount,
-            Decimal vatAmount,
-            sale_entity.PaymentMethod paymentMethod,
-            Decimal? cashAmount,
-            Decimal? mobileMoneyAmount,
-          })
-        > {
-  SubmitSaleFamily._()
-    : super(
-        retry: null,
-        name: r'submitSaleProvider',
-        dependencies: null,
-        $allTransitiveDependencies: null,
-        isAutoDispose: true,
-      );
-
-  /// Enregistre le panier courant (lignes et remise globale) comme vente
-  /// (appelle CreateSaleUseCase).
-
-  SubmitSaleProvider call({
-    required Decimal totalAmount,
-    required Decimal vatAmount,
-    required sale_entity.PaymentMethod paymentMethod,
-    Decimal? cashAmount,
-    Decimal? mobileMoneyAmount,
-  }) => SubmitSaleProvider._(
-    argument: (
-      totalAmount: totalAmount,
-      vatAmount: vatAmount,
-      paymentMethod: paymentMethod,
-      cashAmount: cashAmount,
-      mobileMoneyAmount: mobileMoneyAmount,
-    ),
-    from: this,
-  );
-
+abstract class _$SaleSubmission extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
   @override
-  String toString() => r'submitSaleProvider';
+  void runBuild() {
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
 }
 
 /// Observe les ventes d'une plage de dates (incluse) — réémet à chaque

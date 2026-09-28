@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
-import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../catalog/domain/entities/category.dart';
@@ -22,7 +19,6 @@ import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
-import '../../domain/entities/sale.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/sales_providers.dart';
@@ -73,8 +69,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
 
   SaleToastData? _toast;
   Timer? _toastTimer;
-
-  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -388,51 +382,20 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   // ---------------------------------------------------------------------------
 
   Future<void> _submit() async {
-    final cart = ref.read(cartProvider);
-    final checkout = ref.read(checkoutProvider);
-    final total = cart.total;
-    if (_isSubmitting || cart.isEmpty || !checkout.canSubmitFor(total)) return;
-
     FocusScope.of(context).unfocus();
-    setState(() => _isSubmitting = true);
-
     try {
-      // Copie des articles AVANT le vidage du panier (impression du ticket).
-      final items = List<CartItem>.of(cart.items);
-      final isMixed = checkout.method == PaymentMethod.mixed;
-      final change = checkout.changeFor(total);
-
-      final sale = await ref.read(
-        submitSaleProvider(
-          totalAmount: total,
-          // TVA non appliquée au MVP (pas de taux par produit).
-          vatAmount: Decimal.zero,
-          paymentMethod: checkout.method,
-          cashAmount: isMixed ? checkout.cashReceived : null,
-          mobileMoneyAmount: isMixed ? checkout.mobileMoney : null,
-        ).future,
-      );
-
-      // Vider ici — submitSaleProvider (auto-dispose) peut être disposé
-      // pendant l'await, rendant ref.mounted false et sautant le vidage.
-      ref.read(cartProvider.notifier).clear();
-      ref.read(checkoutProvider.notifier).reset();
-
-      // Synchro immédiate si en ligne : le serveur attribue le numéro de reçu
-      // en quelques secondes au lieu d'attendre le prochain cycle périodique.
-      if (ref.read(isOnlineProvider).value ?? false) {
-        unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
-      }
+      final completed = await ref
+          .read(saleSubmissionProvider.notifier)
+          .submit();
+      if (completed == null) return;
       unawaited(HapticFeedback.heavyImpact());
-
       if (!mounted) return;
-      setState(() => _isSubmitting = false);
       await _withCameraPaused(
         () => showSaleConfirmationSheet(
           context,
-          sale: sale,
-          items: items,
-          change: change,
+          sale: completed.sale,
+          items: completed.items,
+          change: completed.change,
         ),
       );
     } catch (e) {
@@ -441,8 +404,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
           context,
         ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
       }
-    } finally {
-      if (mounted && _isSubmitting) setState(() => _isSubmitting = false);
     }
   }
 
@@ -453,6 +414,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     ref.watch(scanControllerProvider);
     ref.watch(checkoutProvider);
     final cart = ref.watch(cartProvider);
+    final isSubmitting = ref.watch(saleSubmissionProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
     final storeName = ref.watch(storeConfigProvider).value?.name;
     final categories = ref.watch(categoriesProvider).value ?? const [];
@@ -610,7 +572,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                     onSubmit: _submit,
                     onEditDiscount: _editCartDiscount,
                     onShowCart: _scrollToCart,
-                    isSubmitting: _isSubmitting,
+                    isSubmitting: isSubmitting,
                   ),
                 ),
               ),
