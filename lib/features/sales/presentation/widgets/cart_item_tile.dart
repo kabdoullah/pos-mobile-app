@@ -7,7 +7,8 @@ import '../../domain/entities/cart_item.dart';
 import 'quantity_stepper.dart';
 
 /// Ligne compacte du panier : nom et total de ligne, prix unitaire et
-/// quantité, réduction éventuelle. Glisser vers la gauche supprime la ligne.
+/// quantité, réduction éventuelle. La croix ou un glissement vers la gauche
+/// supprime la ligne.
 /// Jamais de prix d'achat : l'écran est visible du client.
 class CartItemTile extends StatelessWidget {
   /// Crée une ligne de panier.
@@ -25,7 +26,7 @@ class CartItemTile extends StatelessWidget {
   /// Nouvelle quantité demandée (0 retire la ligne).
   final ValueChanged<int> onQuantityChanged;
 
-  /// Supprime la ligne (glissement).
+  /// Supprime la ligne (croix ou glissement).
   final VoidCallback onRemove;
 
   /// Ouvre le choix de quantité détaillé.
@@ -85,9 +86,12 @@ class CartItemTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: AmountDisplay(amount: item.lineTotal),
+                    AmountDisplay(amount: item.lineTotal),
+                    IconButton(
+                      tooltip: 'Retirer ${item.productName}',
+                      icon: const Icon(Icons.close, size: 20),
+                      color: cs.onSurfaceVariant,
+                      onPressed: onRemove,
                     ),
                   ],
                 ),

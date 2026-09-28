@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cart_item.dart';
 import 'cart_item_tile.dart';
 
-/// Panier de la caisse : liste des lignes, ou état vide.
+/// Section « Panier en cours » de la caisse, sous forme de slivers à insérer
+/// sous le catalogue : en-tête avec « Vider », puis lignes du panier, ou
+/// invitation à ajouter un produit.
 class SaleCart extends StatelessWidget {
   /// Crée le panier.
   const SaleCart({
@@ -14,6 +17,7 @@ class SaleCart extends StatelessWidget {
     required this.onRemove,
     required this.onItemTap,
     required this.onClear,
+    this.headerKey,
     super.key,
   });
 
@@ -32,87 +36,110 @@ class SaleCart extends StatelessWidget {
   /// Vide le panier (après confirmation, gérée par la page).
   final VoidCallback onClear;
 
+  /// Clé de l'en-tête, pour que la page puisse y faire défiler.
+  final Key? headerKey;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final units = items.fold(0, (sum, item) => sum + item.quantity);
 
-    if (items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.shopping_basket_outlined,
-                size: 40,
-                color: cs.onSurfaceVariant,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              const Text(
-                'Votre panier est vide',
-                style: AppTypography.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Scannez un produit ou recherchez-le',
-                textAlign: TextAlign.center,
-                style: AppTypography.bodySmall.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ],
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            0,
           ),
-        ),
-      );
-    }
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: AppSpacing.md),
-          child: Row(
-            children: [
-              Text(
-                'Panier',
-                style: AppTypography.labelMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: onClear,
-                icon: const Icon(Icons.delete_sweep_outlined, size: 18),
-                label: const Text('Vider'),
-                style: TextButton.styleFrom(foregroundColor: cs.error),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              indent: AppSpacing.md,
-              endIndent: AppSpacing.md,
-              color: cs.outlineVariant,
+          sliver: SliverToBoxAdapter(
+            child: SectionHeader(
+              key: headerKey,
+              title: 'Panier en cours',
+              count: items.isEmpty ? null : units,
+              actionLabel: items.isEmpty ? null : 'Vider',
+              onAction: onClear,
             ),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return CartItemTile(
-                key: ValueKey(item.productId),
-                item: item,
-                onQuantityChanged: (qty) =>
-                    onQuantityChanged(item.productId, qty),
-                onRemove: () => onRemove(item.productId),
-                onTap: () => onItemTap(item),
-              );
-            },
           ),
         ),
+        if (items.isEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            sliver: SliverToBoxAdapter(child: _EmptyCart(color: cs)),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            sliver: SliverList.separated(
+              itemCount: items.length,
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                indent: AppSpacing.md,
+                endIndent: AppSpacing.md,
+                color: cs.outlineVariant,
+              ),
+              itemBuilder: (context, index) {
+                final item = items[index];
+                return CartItemTile(
+                  key: ValueKey(item.productId),
+                  item: item,
+                  onQuantityChanged: (qty) =>
+                      onQuantityChanged(item.productId, qty),
+                  onRemove: () => onRemove(item.productId),
+                  onTap: () => onItemTap(item),
+                );
+              },
+            ),
+          ),
       ],
+    );
+  }
+}
+
+class _EmptyCart extends StatelessWidget {
+  const _EmptyCart({required this.color});
+
+  final ColorScheme color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: color.outlineVariant),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Icon(Icons.shopping_basket_outlined, color: color.onSurfaceVariant),
+            const SizedBox(width: AppSpacing.md - AppSpacing.xs),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Votre panier est vide',
+                    style: AppTypography.titleMedium,
+                  ),
+                  Text(
+                    'Appuyez sur « Ajouter » ou scannez un produit.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: color.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,18 +8,19 @@ import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
-import 'cash_payment_panel.dart';
-import 'mixed_payment_panel.dart';
-import 'payment_method_selector.dart';
 
-/// Zone fixe en bas de la caisse : total, moyen de paiement et bouton
-/// d'encaissement, toujours accessibles au pouce.
+/// Zone fixe en bas de la caisse : nombre d'articles (accès au panier),
+/// remise, total et bouton d'encaissement, toujours accessibles au pouce.
+///
+/// Le moyen de paiement et les espèces reçues sont dans `SalePaymentSection`,
+/// sous le panier.
 class SaleCheckoutPanel extends ConsumerWidget {
   /// Crée le panneau d'encaissement.
   const SaleCheckoutPanel({
     required this.onSubmit,
     required this.onEditDiscount,
     required this.isSubmitting,
+    required this.onShowCart,
     super.key,
   });
 
@@ -31,15 +33,27 @@ class SaleCheckoutPanel extends ConsumerWidget {
   /// Enregistrement en cours.
   final bool isSubmitting;
 
+  /// Fait défiler la page jusqu'au panier.
+  final VoidCallback onShowCart;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final cart = ref.watch(cartProvider);
     final checkout = ref.watch(checkoutProvider);
-    final notifier = ref.read(checkoutProvider.notifier);
     final total = cart.total;
     final units = cart.unitCount;
     final canSubmit = !cart.isEmpty && checkout.canSubmitFor(total);
+    // Le champ espèces peut être hors écran (plus bas dans le défilement) :
+    // on rappelle ici pourquoi l'encaissement est bloqué.
+    final remaining = checkout.remainingFor(total);
+    final blocker = cart.isEmpty || canSubmit
+        ? null
+        : checkout.method != PaymentMethod.mixed
+        ? checkout.cashErrorFor(total)
+        : remaining > Decimal.zero
+        ? 'Reste à payer : ${formatFcfa(remaining)}'
+        : 'Dépasse le total de ${formatFcfa(-remaining)}';
 
     final ctaLabel = switch (checkout.method) {
       PaymentMethod.cash ||
@@ -84,10 +98,10 @@ class SaleCheckoutPanel extends ConsumerWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    units <= 1 ? '$units article' : '$units articles',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurfaceVariant,
+                  Flexible(
+                    child: _CartCountButton(
+                      units: units,
+                      onPressed: onShowCart,
                     ),
                   ),
                   if (!cart.isEmpty && cart.discount == null)
@@ -125,43 +139,15 @@ class SaleCheckoutPanel extends ConsumerWidget {
                   ),
                 ],
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOutCubic,
-                alignment: Alignment.topCenter,
-                child: cart.isEmpty
-                    ? const SizedBox(width: double.infinity)
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: AppSpacing.sm),
-                          PaymentMethodSelector(
-                            selected: checkout.method,
-                            onSelected: notifier.selectMethod,
-                          ),
-                          ...switch (checkout.method) {
-                            PaymentMethod.cash => [
-                              const SizedBox(height: AppSpacing.md),
-                              CashPaymentPanel(
-                                total: total,
-                                checkout: checkout,
-                                onCashChanged: notifier.setCashReceived,
-                              ),
-                            ],
-                            PaymentMethod.mixed => [
-                              const SizedBox(height: AppSpacing.md),
-                              MixedPaymentPanel(
-                                total: total,
-                                checkout: checkout,
-                                onCashChanged: notifier.setCashReceived,
-                                onMobileMoneyChanged: notifier.setMobileMoney,
-                              ),
-                            ],
-                            _ => const <Widget>[],
-                          },
-                        ],
-                      ),
-              ),
+              if (blocker != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: Text(
+                    blocker,
+                    textAlign: TextAlign.end,
+                    style: AppTypography.bodySmall.copyWith(color: cs.error),
+                  ),
+                ),
               const SizedBox(height: AppSpacing.md),
               PrimaryButton(
                 label: ctaLabel,
@@ -206,6 +192,36 @@ class _SummaryRow extends StatelessWidget {
             Text(value, style: style),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Nombre d'articles ; appuyer fait défiler jusqu'au panier.
+class _CartCountButton extends StatelessWidget {
+  const _CartCountButton({required this.units, required this.onPressed});
+
+  final int units;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final label = units <= 1 ? '$units article' : '$units articles';
+    if (units == 0) {
+      return Text(
+        label,
+        style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+      );
+    }
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.expand_more, size: 18),
+      iconAlignment: IconAlignment.end,
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+      style: TextButton.styleFrom(
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       ),
     );
   }

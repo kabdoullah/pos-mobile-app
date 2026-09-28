@@ -35,10 +35,12 @@ class SaleSearchBar extends StatelessWidget {
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,
-      hintText: 'Rechercher un produit…',
+      hintText: 'Nom ou code-barres',
       actions: [
         IconButton.filledTonal(
-          tooltip: isScannerOpen ? 'Replier le scanner' : 'Scanner',
+          tooltip: isScannerOpen
+              ? 'Replier le scanner'
+              : 'Scanner un code-barres',
           isSelected: isScannerOpen,
           icon: const Icon(Icons.qr_code_scanner),
           onPressed: onToggleScanner,

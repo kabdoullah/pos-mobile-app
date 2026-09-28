@@ -41,26 +41,33 @@ class SectionHeader extends StatelessWidget {
       height: AppSpacing.buttonHeightSm,
       child: Row(
         children: [
-          Flexible(
-            child: Semantics(
-              header: true,
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.titleMedium,
-              ),
+          // Le titre prend toute la place libre (et non la moitié, partagée
+          // avec un Spacer) : il ne se tronque que si l'action l'impose.
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.titleMedium,
+                    ),
+                  ),
+                ),
+                if (count != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Badge(
+                    label: Text('$count'),
+                    backgroundColor: countColor ?? cs.surfaceContainerHighest,
+                    textColor: countColor == null ? cs.onSurfaceVariant : null,
+                  ),
+                ],
+              ],
             ),
           ),
-          if (count != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            Badge(
-              label: Text('$count'),
-              backgroundColor: countColor ?? cs.surfaceContainerHighest,
-              textColor: countColor == null ? cs.onSurfaceVariant : null,
-            ),
-          ],
-          const Spacer(),
           if (actionLabel != null)
             TextButton(onPressed: onAction, child: Text(actionLabel)),
         ],

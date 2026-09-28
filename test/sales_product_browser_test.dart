@@ -11,19 +11,28 @@ import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
 
-Product product(String name, {int? stock, String price = '2000'}) => Product(
+Product product(
+  String name, {
+  int? stock,
+  int? minStock,
+  String price = '2000',
+  String? categoryId,
+}) => Product(
   id: name,
   name: name,
   sellingPrice: Decimal.parse(price),
   purchasePrice: Decimal.parse('1234'),
   currentStock: stock,
+  minStock: minStock,
+  categoryId: categoryId,
   updatedAt: DateTime(2026),
 );
 
 final catalog = [
-  product('Coca-Cola 33cl', stock: 24),
-  product('Fanta', stock: 0, price: '1500'),
+  product('Coca-Cola 33cl', stock: 24, categoryId: 'boissons'),
+  product('Fanta', stock: 0, price: '1500', categoryId: 'boissons'),
   product('Pain', price: '250'),
+  product('Savon', stock: 3, minStock: 5, price: '300'),
 ];
 
 /// Appels reçus par le catalogue.
@@ -39,6 +48,8 @@ Future<Calls> pump(
   AsyncValue<List<Product>> products, {
   ThemeData? theme,
   Size size = const Size(360, 640),
+  String? categoryId,
+  Map<String, int> cartQuantities = const {},
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -50,12 +61,18 @@ Future<Calls> pump(
       child: MaterialApp(
         theme: theme ?? AppTheme.light(),
         home: Scaffold(
-          body: ProductBrowser(
-            products: products,
-            onProductTap: (p) => calls.taps.add(p.id),
-            onQuickAdd: (p) => calls.quickAdds.add(p.id),
-            onRetry: () => calls.retries++,
-            onAddProduct: () => calls.addProduct++,
+          body: CustomScrollView(
+            slivers: [
+              ProductBrowser(
+                products: products,
+                categoryId: categoryId,
+                cartQuantities: cartQuantities,
+                onProductTap: (p) => calls.taps.add(p.id),
+                onQuickAdd: (p) => calls.quickAdds.add(p.id),
+                onRetry: () => calls.retries++,
+                onAddProduct: () => calls.addProduct++,
+              ),
+            ],
           ),
         ),
       ),
@@ -66,8 +83,11 @@ Future<Calls> pump(
   return calls;
 }
 
+/// Colonnes de la grille ; 1 quand le catalogue est affiché en liste.
 int columnCount(WidgetTester tester) {
-  final grid = tester.widget<GridView>(find.byType(GridView));
+  final grids = find.byType(SliverGrid);
+  if (grids.evaluate().isEmpty) return 1;
+  final grid = tester.widget<SliverGrid>(grids);
   return (grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount)
       .crossAxisCount;
 }
@@ -86,8 +106,11 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Coca-Cola 33cl'), findsOneWidget);
       expect(find.text(formatFcfa(Decimal.parse('2000'))), findsOneWidget);
+      expect(find.text('Produits'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
       expect(find.text('Stock : 24'), findsOneWidget);
-      expect(find.text('Rupture de stock'), findsOneWidget);
+      expect(find.text('Faible : 3'), findsOneWidget);
+      expect(find.text('Rupture'), findsOneWidget);
       // Le prix d'achat n'apparaît jamais en caisse.
       expect(find.textContaining('1 234'), findsNothing);
     });
@@ -113,7 +136,7 @@ void main() {
 
   testWidgets('catalogue vide : invite à créer un produit', (tester) async {
     final calls = await pump(tester, const AsyncData(<Product>[]));
-    expect(find.text('Aucun produit'), findsOneWidget);
+    expect(find.text('Aucun produit disponible'), findsOneWidget);
     await tester.tap(find.text('Ajouter un produit'));
     expect(calls.addProduct, 1);
   });
@@ -149,12 +172,16 @@ void main() {
           theme: AppTheme.light(),
           home: Scaffold(
             body: Consumer(
-              builder: (context, ref, _) => ProductBrowser(
-                products: ref.watch(products),
-                onProductTap: (_) {},
-                onQuickAdd: (_) {},
-                onRetry: () {},
-                onAddProduct: () {},
+              builder: (context, ref, _) => CustomScrollView(
+                slivers: [
+                  ProductBrowser(
+                    products: ref.watch(products),
+                    onProductTap: (_) {},
+                    onQuickAdd: (_) {},
+                    onRetry: () {},
+                    onAddProduct: () {},
+                  ),
+                ],
               ),
             ),
           ),
@@ -170,15 +197,34 @@ void main() {
     expect(find.text('Impossible de charger les produits'), findsNothing);
   });
 
-  testWidgets('colonnes adaptées à la largeur', (tester) async {
+  testWidgets('catégorie : seuls ses produits, compteur ajusté', (
+    tester,
+  ) async {
+    await pump(tester, AsyncData(catalog), categoryId: 'boissons');
+    expect(find.text('Coca-Cola 33cl'), findsOneWidget);
+    expect(find.text('Fanta'), findsOneWidget);
+    expect(find.text('Pain'), findsNothing);
+    expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('quantité déjà au panier affichée sur la carte', (tester) async {
+    await pump(
+      tester,
+      AsyncData(catalog),
+      cartQuantities: const {'Coca-Cola 33cl': 2},
+    );
+    expect(find.text('2 au panier'), findsOneWidget);
+  });
+
+  testWidgets('liste sur téléphone, grille sur tablette', (tester) async {
     await pump(tester, AsyncData(catalog));
-    expect(columnCount(tester), 2);
+    expect(columnCount(tester), 1);
 
     await pump(tester, AsyncData(catalog), size: const Size(600, 900));
-    expect(columnCount(tester), 3);
+    expect(columnCount(tester), 1);
 
     await pump(tester, AsyncData(catalog), size: const Size(1024, 768));
-    expect(columnCount(tester), 4);
+    expect(columnCount(tester), 3);
     expect(tester.takeException(), isNull);
   });
 
@@ -186,6 +232,8 @@ void main() {
     tester.platformDispatcher.textScaleFactorTestValue = 1.5;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pump(tester, AsyncData(catalog));
+    expect(tester.takeException(), isNull);
+    await pump(tester, AsyncData(catalog), size: const Size(1024, 768));
     expect(tester.takeException(), isNull);
   });
 }

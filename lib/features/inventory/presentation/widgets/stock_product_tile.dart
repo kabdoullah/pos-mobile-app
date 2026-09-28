@@ -5,7 +5,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
-import 'stock_status_badge.dart';
+import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
 /// Ligne produit de l'onglet Stock : nom, prix, quantité, badge d'état et
 /// accès direct à l'ajustement.

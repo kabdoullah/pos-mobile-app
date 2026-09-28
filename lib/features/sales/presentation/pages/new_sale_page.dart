@@ -16,7 +16,9 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
+import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
@@ -32,21 +34,14 @@ import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_cart.dart';
 import '../widgets/sale_checkout_panel.dart';
 import '../widgets/sale_confirmation_sheet.dart';
+import '../widgets/sale_payment_section.dart';
 import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
 
-/// Vue de la zone principale de la caisse hors recherche.
-enum _SaleView {
-  /// Catalogue parcourable.
-  products,
-
-  /// Lignes du panier.
-  cart,
-}
-
-/// Écran de caisse (onglet Caisse) : scan/recherche, catalogue, panier,
-/// paiement et encaissement sur un seul écran. La confirmation s'affiche en
+/// Écran de caisse (onglet Caisse) : recherche/scan et catégories en haut,
+/// puis un seul défilement catalogue → panier → paiement, et le total avec le
+/// bouton d'encaissement fixés en bas. La confirmation s'affiche en
 /// bottom sheet, puis la caisse est immédiatement prête pour la vente suivante.
 ///
 /// La page reste montée quand on change d'onglet : le panier est conservé.
@@ -61,8 +56,11 @@ class NewSalePage extends ConsumerStatefulWidget {
 class _NewSalePageState extends ConsumerState<NewSalePage> {
   late final MobileScannerController _scanner;
   bool _isPermissionGranted = false;
+  // La permission caméra n'est demandée qu'à la première ouverture du
+  // scanner, replié par défaut pour laisser la place au catalogue.
+  bool _hasRequestedPermission = false;
   bool _isCheckingPermission = true;
-  bool _isScannerOpen = true;
+  bool _isScannerOpen = false;
   bool _isCameraPaused = false;
   bool _isTorchOn = false;
 
@@ -70,7 +68,8 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   final _searchFocus = FocusNode();
   Timer? _searchDebounce;
   String _query = '';
-  _SaleView _view = _SaleView.products;
+  String? _categoryId;
+  final _cartHeaderKey = GlobalKey();
 
   SaleToastData? _toast;
   Timer? _toastTimer;
@@ -91,7 +90,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
     // La caméra se replie pendant la saisie d'une recherche.
     _searchFocus.addListener(() => setState(() {}));
-    unawaited(_checkPermission());
   }
 
   @override
@@ -105,6 +103,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   }
 
   Future<void> _checkPermission() async {
+    _hasRequestedPermission = true;
     final status = await Permission.camera.request();
     if (!mounted) return;
     setState(() {
@@ -122,7 +121,16 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       _isScannerOpen = !_isScannerOpen;
       if (!_isScannerOpen) _isTorchOn = false;
     });
-    if (_isScannerOpen) _searchFocus.unfocus();
+    if (_isScannerOpen) {
+      _searchFocus.unfocus();
+      if (!_hasRequestedPermission) unawaited(_checkPermission());
+    }
+  }
+
+  /// Aucun résultat de recherche : on propose de scanner le code à la place.
+  void _scanInsteadOfSearch() {
+    _clearSearch();
+    if (!_isScannerOpen) _toggleScanner();
   }
 
   Future<void> _toggleTorch() async {
@@ -347,6 +355,23 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
+  /// Fait défiler jusqu'au panier (depuis le compteur d'articles du panneau
+  /// d'encaissement) ; une recherche en cours est d'abord refermée.
+  void _scrollToCart() {
+    if (_query.isNotEmpty) _clearSearch();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final target = _cartHeaderKey.currentContext;
+      if (target == null || !target.mounted) return;
+      unawaited(
+        Scrollable.ensureVisible(
+          target,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        ),
+      );
+    });
+  }
+
   Future<void> _clearCart() async {
     final confirmed = await showConfirmDialog(
       context,
@@ -428,49 +453,48 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     ref.watch(scanControllerProvider);
     ref.watch(checkoutProvider);
     final cart = ref.watch(cartProvider);
-    // Panier vide (vente encaissée, panier vidé) : retour au catalogue, pour
-    // que le prochain ajout n'ouvre pas le panier par surprise.
-    ref.listen(cartProvider.select((c) => c.isEmpty), (_, isEmpty) {
-      if (isEmpty) setState(() => _view = _SaleView.products);
-    });
-    final view = cart.isEmpty ? _SaleView.products : _view;
+    final cartNotifier = ref.read(cartProvider.notifier);
     final storeName = ref.watch(storeConfigProvider).value?.name;
+    final categories = ref.watch(categoriesProvider).value ?? const [];
+    // Catégorie supprimée entre-temps : le filtre retombe sur « Tous ».
+    final categoryId = categories.any((c) => c.id == _categoryId)
+        ? _categoryId
+        : null;
 
     // Onglet masqué (IndexedStack de la shell) : TickerMode est désactivé.
     // La caméra est alors démontée, sinon elle tournerait en arrière-plan.
     final isTabVisible = TickerMode.valuesOf(context).enabled;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final isSearchFocused = _searchFocus.hasFocus;
+    final isSearching = _query.isNotEmpty;
     final showCamera =
-        _isScannerOpen && !keyboardOpen && !isSearchFocused && _query.isEmpty;
+        _isScannerOpen && !keyboardOpen && !isSearchFocused && !isSearching;
     // Pendant une recherche au clavier, les résultats prennent toute la place.
     final showCheckout = !(keyboardOpen && isSearchFocused);
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: AppSpacing.md,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Nouvelle vente'),
-            if (storeName != null && storeName.isNotEmpty)
-              Text(
-                storeName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.captionText.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
+            const OfflineStatusIndicator(),
+            Text(
+              storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.titleLarge,
+            ),
           ],
         ),
         actions: [
-          const OfflineStatusIndicator(),
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
             onPressed: () =>
                 _withCameraPaused(() => context.push(Routes.bluetoothSetup)),
           ),
+          const SizedBox(width: AppSpacing.xs),
         ],
       ),
       body: LayoutBuilder(
@@ -515,53 +539,55 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                     )
                   : const SizedBox(width: double.infinity),
             ),
-            if (_query.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                ),
-                child: _SaleViewSwitch(
-                  view: view,
-                  cartUnits: cart.unitCount,
-                  onChanged: (value) => setState(() => _view = value),
-                ),
+            if (!isSearching && categories.isNotEmpty)
+              _CategoryChips(
+                categories: categories,
+                selectedId: categoryId,
+                onSelected: (id) => setState(() => _categoryId = id),
               ),
             Expanded(
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: _query.isNotEmpty
+                    child: isSearching
                         ? ProductSearchResults(
                             query: _query,
                             onQuickAdd: _addProduct,
                             onOpen: _openProduct,
+                            onScan: _scanInsteadOfSearch,
                           )
-                        : switch (view) {
-                            _SaleView.products => ProductBrowser(
-                              products: ref.watch(stockProductsProvider),
-                              onProductTap: _openProduct,
-                              onQuickAdd: _addProduct,
-                              onRetry: () =>
-                                  ref.invalidate(stockProductsProvider),
-                              onAddProduct: () => _withCameraPaused(
-                                () => context.push(Routes.productNew),
+                        : CustomScrollView(
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
+                            slivers: [
+                              ProductBrowser(
+                                products: ref.watch(stockProductsProvider),
+                                categoryId: categoryId,
+                                cartQuantities: {
+                                  for (final item in cart.items)
+                                    item.productId: item.quantity,
+                                },
+                                onProductTap: _openProduct,
+                                onQuickAdd: _addProduct,
+                                onRetry: () =>
+                                    ref.invalidate(stockProductsProvider),
+                                onAddProduct: () => _withCameraPaused(
+                                  () => context.push(Routes.productNew),
+                                ),
                               ),
-                            ),
-                            _SaleView.cart => SaleCart(
-                              items: cart.items,
-                              onQuantityChanged: ref
-                                  .read(cartProvider.notifier)
-                                  .updateQuantity,
-                              onRemove: ref
-                                  .read(cartProvider.notifier)
-                                  .removeItem,
-                              onItemTap: _editCartItem,
-                              onClear: _clearCart,
-                            ),
-                          },
+                              SaleCart(
+                                headerKey: _cartHeaderKey,
+                                items: cart.items,
+                                onQuantityChanged: cartNotifier.updateQuantity,
+                                onRemove: cartNotifier.removeItem,
+                                onItemTap: _editCartItem,
+                                onClear: _clearCart,
+                              ),
+                              const SliverToBoxAdapter(
+                                child: SalePaymentSection(),
+                              ),
+                            ],
+                          ),
                   ),
                   Positioned(
                     top: AppSpacing.xs,
@@ -574,8 +600,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
             ),
             if (showCheckout)
               ConstrainedBox(
-                // Clavier ouvert sur un montant : le panneau défile au lieu
-                // de déborder.
+                // Clavier ouvert : le panneau défile au lieu de déborder.
                 constraints: BoxConstraints(
                   maxHeight: constraints.maxHeight * 0.75,
                 ),
@@ -584,6 +609,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                   child: SaleCheckoutPanel(
                     onSubmit: _submit,
                     onEditDiscount: _editCartDiscount,
+                    onShowCart: _scrollToCart,
                     isSubmitting: _isSubmitting,
                   ),
                 ),
@@ -595,41 +621,46 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   }
 }
 
-/// Bascule entre le catalogue et le panier ; l'onglet panier indique le
-/// nombre d'articles et reste désactivé tant que le panier est vide.
-class _SaleViewSwitch extends StatelessWidget {
-  const _SaleViewSwitch({
-    required this.view,
-    required this.cartUnits,
-    required this.onChanged,
+/// Filtre de catégories de la caisse : « Tous » puis les catégories du
+/// catalogue, sur une ligne défilante.
+class _CategoryChips extends StatelessWidget {
+  const _CategoryChips({
+    required this.categories,
+    required this.selectedId,
+    required this.onSelected,
   });
 
-  final _SaleView view;
-  final int cartUnits;
-  final ValueChanged<_SaleView> onChanged;
+  final List<Category> categories;
+  final String? selectedId;
+  final ValueChanged<String?> onSelected;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: SegmentedButton<_SaleView>(
-        showSelectedIcon: false,
-        style: const ButtonStyle(visualDensity: VisualDensity.compact),
-        segments: [
-          const ButtonSegment(
-            value: _SaleView.products,
-            icon: Icon(Icons.grid_view_rounded),
-            label: Text('Produits'),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('Tous'),
+            selected: selectedId == null,
+            onSelected: (_) => onSelected(null),
           ),
-          ButtonSegment(
-            value: _SaleView.cart,
-            enabled: cartUnits > 0,
-            icon: const Icon(Icons.shopping_basket_outlined),
-            label: Text(cartUnits > 0 ? 'Panier · $cartUnits' : 'Panier'),
-          ),
+          for (final category in categories) ...[
+            const SizedBox(width: AppSpacing.sm),
+            ChoiceChip(
+              label: Text(category.name),
+              selected: selectedId == category.id,
+              onSelected: (selected) =>
+                  onSelected(selected ? category.id : null),
+            ),
+          ],
         ],
-        selected: {view},
-        onSelectionChanged: (selection) => onChanged(selection.single),
       ),
     );
   }

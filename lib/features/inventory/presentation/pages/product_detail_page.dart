@@ -18,7 +18,7 @@ import '../../../catalog/presentation/providers/product_image_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_movement_tile.dart';
-import '../widgets/stock_status_badge.dart';
+import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
 /// Nombre de mouvements affichés en aperçu sur la fiche produit.
 const _movementPreviewCount = 3;

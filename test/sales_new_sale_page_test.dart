@@ -12,15 +12,19 @@ import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/catalog/domain/entities/category.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/catalog/domain/entities/product_page.dart';
 import 'package:mobile/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:mobile/features/catalog/providers/catalog_di_providers.dart';
 import 'package:mobile/features/sales/presentation/pages/new_sale_page.dart';
 import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
+import 'package:mobile/features/sales/presentation/providers/checkout_provider.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_search_results.dart';
 import 'package:mobile/features/sales/presentation/widgets/sale_cart.dart';
+import 'package:mobile/features/sales/presentation/widgets/sale_checkout_panel.dart';
+import 'package:mobile/features/sales/presentation/widgets/sale_scanner_panel.dart';
 
 /// Évite que l'orchestrateur de synchro (pastille réseau) initialise la vraie
 /// authentification.
@@ -37,17 +41,23 @@ class _Store extends StoreConfig {
 
 class _MockCatalog extends Mock implements CatalogRepository {}
 
-Product product(String name, {int? stock, String price = '2000'}) => Product(
+Product product(
+  String name, {
+  int? stock,
+  String price = '2000',
+  String? categoryId,
+}) => Product(
   id: name,
   name: name,
   sellingPrice: Decimal.parse(price),
   currentStock: stock,
+  categoryId: categoryId,
   updatedAt: DateTime(2026),
 );
 
 final catalog = [
-  product('Coca-Cola 33cl', stock: 24),
-  product('Eau 1,5L', stock: 1, price: '500'),
+  product('Coca-Cola 33cl', stock: 24, categoryId: 'boissons'),
+  product('Eau 1,5L', stock: 1, price: '500', categoryId: 'boissons'),
   product('Fanta', stock: 0, price: '1500'),
 ];
 
@@ -71,6 +81,9 @@ Future<ProviderContainer> pumpPage(WidgetTester tester) async {
 
   final repo = _MockCatalog();
   when(repo.watchProducts).thenAnswer((_) => Stream.value(catalog));
+  when(repo.watchCategories).thenAnswer(
+    (_) => Stream.value(const [Category(id: 'boissons', name: 'Boissons')]),
+  );
   when(
     () => repo.getProducts(
       query: any(named: 'query'),
@@ -110,12 +123,35 @@ Future<void> settleToast(WidgetTester tester) async {
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
 
-  testWidgets('panier vide : le catalogue est affiché', (tester) async {
+  testWidgets('panier vide : catalogue puis panier vide, scanner replié', (
+    tester,
+  ) async {
     await pumpPage(tester);
     expect(tester.takeException(), isNull);
     expect(find.byType(ProductBrowser), findsOneWidget);
     expect(find.text('Coca-Cola 33cl'), findsOneWidget);
-    expect(find.text('Votre panier est vide'), findsNothing);
+    expect(find.text('Ma boutique'), findsOneWidget);
+    // Le panier est sous le catalogue, dans le même défilement.
+    expect(find.text('Votre panier est vide'), findsOneWidget);
+    // Scanner replié par défaut : il s'ouvre à la demande.
+    expect(find.byType(SaleScannerPanel), findsNothing);
+    await tester.tap(find.byTooltip('Scanner un code-barres'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SaleScannerPanel), findsOneWidget);
+  });
+
+  testWidgets('les catégories filtrent le catalogue', (tester) async {
+    await pumpPage(tester);
+    expect(find.text('Fanta'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Boissons'));
+    await tester.pumpAndSettle();
+    expect(find.text('Fanta'), findsNothing);
+    expect(find.text('Coca-Cola 33cl'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Tous'));
+    await tester.pumpAndSettle();
+    expect(find.text('Fanta'), findsOneWidget);
   });
 
   testWidgets('le bouton + ajoute une unité au panier partagé', (tester) async {
@@ -130,7 +166,8 @@ void main() {
     expect(find.text('Coca-Cola 33cl ajouté'), findsOneWidget);
     // On reste sur le catalogue pour enchaîner les ajouts.
     expect(find.byType(ProductBrowser), findsOneWidget);
-    expect(find.text('Panier · 1'), findsOneWidget);
+    expect(find.text('1 au panier'), findsOneWidget);
+    expect(find.text('1 article'), findsOneWidget);
     await settleToast(tester);
   });
 
@@ -172,7 +209,7 @@ void main() {
 
   testWidgets('produit en rupture : visible, non ajoutable', (tester) async {
     final container = await pumpPage(tester);
-    expect(find.text('Rupture de stock'), findsOneWidget);
+    expect(find.text('Rupture'), findsOneWidget);
     await tester.tap(find.byTooltip('Ajouter Fanta'));
     await tester.pump();
     expect(container.read(cartProvider).isEmpty, isTrue);
@@ -198,6 +235,40 @@ void main() {
     await settleToast(tester);
   });
 
+  testWidgets('recherche sans résultat : propose le scanner', (tester) async {
+    await pumpPage(tester);
+    await tester.enterText(find.byType(TextField), 'xyz');
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pumpAndSettle();
+    expect(find.text('Aucun produit trouvé'), findsOneWidget);
+
+    await tester.tap(find.text('Scanner un code-barres'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProductSearchResults), findsNothing);
+    expect(find.byType(SaleScannerPanel), findsOneWidget);
+  });
+
+  testWidgets('espèces insuffisantes : la raison est rappelée en bas', (
+    tester,
+  ) async {
+    final container = await pumpPage(tester);
+    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
+    await settleToast(tester);
+    container
+        .read(checkoutProvider.notifier)
+        .setCashReceived(Decimal.parse('500'));
+    await tester.pumpAndSettle();
+    // Le champ espèces est plus bas dans le défilement : le panneau fixe
+    // rappelle pourquoi l'encaissement est bloqué.
+    expect(
+      find.descendant(
+        of: find.byType(SaleCheckoutPanel),
+        matching: find.text('Montant insuffisant'),
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('le panier reste accessible et modifiable', (tester) async {
     final container = await pumpPage(tester);
     await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
@@ -205,15 +276,25 @@ void main() {
     await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
     await settleToast(tester);
 
-    await tester.tap(find.text('Panier · 2'));
+    expect(find.text('2 au panier'), findsOneWidget);
+
+    // Le compteur du panneau fixe fait défiler jusqu'au panier.
+    await tester.tap(find.text('2 articles'));
     await tester.pumpAndSettle();
     expect(find.byType(SaleCart), findsOneWidget);
-    expect(find.byType(ProductBrowser), findsNothing);
+    final header = tester.getRect(find.text('Panier en cours'));
+    expect(header.top, greaterThanOrEqualTo(0));
+    expect(header.bottom, lessThan(800));
 
-    // Panier vidé : retour automatique au catalogue.
-    container.read(cartProvider.notifier).clear();
+    container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 3);
     await tester.pumpAndSettle();
-    expect(find.byType(ProductBrowser), findsOneWidget);
+    expect(find.text('3 articles'), findsOneWidget);
+
+    // La croix retire la ligne, sans confirmation (comme le glissement).
+    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
+    await tester.pumpAndSettle();
+    expect(container.read(cartProvider).isEmpty, isTrue);
+    expect(find.text('Votre panier est vide'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

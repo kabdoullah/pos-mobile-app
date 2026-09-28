@@ -6,6 +6,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
+import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 import '../providers/sales_providers.dart';
 
 /// Résultats de recherche de la caisse, affichés à la place du panier pendant
@@ -16,6 +17,7 @@ class ProductSearchResults extends ConsumerWidget {
     required this.query,
     required this.onQuickAdd,
     required this.onOpen,
+    this.onScan,
     super.key,
   });
 
@@ -27,6 +29,9 @@ class ProductSearchResults extends ConsumerWidget {
 
   /// Ouvre le choix de quantité du produit.
   final ValueChanged<Product> onOpen;
+
+  /// Propose le scanner quand aucun produit ne correspond ; masqué si `null`.
+  final VoidCallback? onScan;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -42,10 +47,12 @@ class ProductSearchResults extends ConsumerWidget {
       ),
       data: (products) {
         if (products.isEmpty) {
-          return const EmptyState(
+          return EmptyState(
             icon: Icons.search_off,
-            title: 'Aucun produit',
-            message: 'Vérifiez le nom ou le code-barres',
+            title: 'Aucun produit trouvé',
+            message: 'Essayez un autre nom ou un autre code-barres.',
+            actionLabel: onScan == null ? null : 'Scanner un code-barres',
+            onAction: onScan,
           );
         }
         return ListView.separated(
@@ -71,14 +78,21 @@ class ProductSearchResults extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.titleMedium,
               ),
-              subtitle: Text(
-                [
-                  formatFcfa(product.sellingPrice),
-                  if (stock != null) outOfStock ? 'Rupture' : 'Stock : $stock',
-                ].join(' · '),
-                style: AppTypography.bodySmall.copyWith(
-                  color: outOfStock ? cs.error : cs.onSurfaceVariant,
-                ),
+              subtitle: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      formatFcfa(product.sellingPrice),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: outOfStock ? cs.onSurfaceVariant : cs.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  StockStatusBadge(product: product, showQuantity: true),
+                ],
               ),
               trailing: IconButton.filledTonal(
                 tooltip: 'Ajouter ${product.name}',

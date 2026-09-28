@@ -14,6 +14,7 @@ class QuantityStepper extends StatelessWidget {
     required this.onDecrease,
     required this.onIncrease,
     this.large = false,
+    this.field,
     super.key,
   });
 
@@ -29,9 +30,13 @@ class QuantityStepper extends StatelessWidget {
   /// Variante agrandie (feuille de quantité).
   final bool large;
 
+  /// Champ de saisie affiché à la place de la valeur (quantité tapée au
+  /// clavier) ; `null` = valeur en lecture seule.
+  final Widget? field;
+
   @override
   Widget build(BuildContext context) {
-    final valueWidth = large ? 64.0 : 36.0;
+    final valueWidth = large ? 96.0 : 36.0;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -42,19 +47,21 @@ class QuantityStepper extends StatelessWidget {
         ),
         SizedBox(
           width: valueWidth,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 150),
-            transitionBuilder: (child, animation) =>
-                ScaleTransition(scale: animation, child: child),
-            child: Text(
-              '$quantity',
-              key: ValueKey(quantity),
-              textAlign: TextAlign.center,
-              style: large
-                  ? AppTypography.titleLarge
-                  : AppTypography.titleMedium,
-            ),
-          ),
+          child:
+              field ??
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 150),
+                transitionBuilder: (child, animation) =>
+                    ScaleTransition(scale: animation, child: child),
+                child: Text(
+                  '$quantity',
+                  key: ValueKey(quantity),
+                  textAlign: TextAlign.center,
+                  style: large
+                      ? AppTypography.titleLarge
+                      : AppTypography.titleMedium,
+                ),
+              ),
         ),
         _StepButton(
           icon: Icons.add,
