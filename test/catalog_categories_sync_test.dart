@@ -333,7 +333,7 @@ void main() {
       },
     );
 
-    test('une erreur réseau reste réessayable', () async {
+    test('une erreur réseau reste réessayable, même après 5 essais', () async {
       when(
         () => remote.pushProduct(any()),
       ).thenThrow(DioException(requestOptions: RequestOptions()));
@@ -348,7 +348,20 @@ void main() {
       );
 
       await push.pushPendingProductChanges();
+      var entry = (await db.select(db.syncQueue).get()).single;
+      expect(entry.status, 'pending');
+      expect(entry.retryCount, 1);
+      expect(entry.lastError, startsWith('Push failed'));
 
+      for (var i = 0; i < 4; i++) {
+        await push.pushPendingProductChanges();
+      }
+      entry = (await db.select(db.syncQueue).get()).single;
+      expect(entry.status, 'failed');
+      expect(entry.retryCount, 5);
+
+      await push.pushPendingProductChanges();
+      verify(() => remote.pushProduct(any())).called(6);
       expect(await queue.watchPendingCount().first, 1);
     });
   });

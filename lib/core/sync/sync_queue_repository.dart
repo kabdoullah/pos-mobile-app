@@ -161,24 +161,29 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Incrémente le compteur d'essais d'une entrée.
-  Future<bool> incrementRetry(int id) async {
+  /// Enregistre un essai raté passager (réseau, 5xx) : incrémente le compteur
+  /// et garde [error]. À partir de [_maxRetries] essais, l'entrée passe en
+  /// « failed » (toujours réessayée, mais signalée comme en échec).
+  ///
+  /// Retourne true si le seuil est atteint.
+  Future<bool> incrementRetry(int id, String error) async {
     final entry = await (_db.select(
       _db.syncQueue,
     )..where((t) => t.id.equals(id))).getSingleOrNull();
     if (entry == null) return false;
 
     final newRetryCount = entry.retryCount + 1;
-    final newStatus = newRetryCount > _maxRetries ? 'failed' : 'pending';
+    final reachedMax = newRetryCount >= _maxRetries;
 
-    final rowsAffected =
-        await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
-          SyncQueueCompanion(
-            retryCount: drift.Value(newRetryCount),
-            status: drift.Value(newStatus),
-          ),
-        );
-    return rowsAffected > 0;
+    await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
+      SyncQueueCompanion(
+        retryCount: drift.Value(newRetryCount),
+        status: drift.Value(reachedMax ? 'failed' : 'pending'),
+        lastError: drift.Value(error),
+        lastAttemptAt: drift.Value(DateTime.now()),
+      ),
+    );
+    return reachedMax;
   }
 
   /// Purge les entrées synchronisées depuis plus de 7 jours.
@@ -190,13 +195,6 @@ class SyncQueueRepository {
               t.createdAt.isSmallerThanValue(sevenDaysAgo),
         ))
         .go();
-  }
-
-  /// Récupère une entrée précise de la file par son ID.
-  Future<SyncQueueData?> getEntry(int id) async {
-    return (_db.select(
-      _db.syncQueue,
-    )..where((t) => t.id.equals(id))).getSingleOrNull();
   }
 
   /// Efface toutes les entrées (pour les tests).

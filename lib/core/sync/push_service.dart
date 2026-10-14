@@ -102,17 +102,15 @@ class PushService {
             }
             break;
           case 'failed':
-            // Incrémente le compteur d'essais ; au-delà du seuil, échec
-            // définitif
-            await _queueRepository.incrementRetry(entry.id);
+            // Incrémente le compteur d'essais ; la vente reste réessayée
+            // même au-delà du seuil (une vente n'est jamais abandonnée).
             final errorMsg = result.error ?? 'Unknown error';
-
-            final retryEntry = await _queueRepository.getEntry(entry.id);
-            if (retryEntry != null && retryEntry.retryCount >= 5) {
-              _logger?.w(
-                'Sale ${result.id} failed permanently after 5 retries: $errorMsg',
-              );
-              await _queueRepository.markFailed(entry.id, errorMsg);
+            final reachedMax = await _queueRepository.incrementRetry(
+              entry.id,
+              errorMsg,
+            );
+            if (reachedMax) {
+              _logger?.w('Sale ${result.id} keeps failing: $errorMsg');
             } else {
               _logger?.i('Sale ${result.id} failed (will retry): $errorMsg');
             }
@@ -218,7 +216,7 @@ class PushService {
         );
         return;
       }
-      await _queueRepository.incrementRetry(entry.id);
+      await _queueRepository.incrementRetry(entry.id, 'Push failed: $e');
       _logger?.i('Category ${entry.entityId} push failed (will retry): $e');
     }
   }
@@ -444,14 +442,12 @@ class PushService {
       }
 
       // Erreur réseau / serveur : on incrémente le compteur d'essais.
-      await _queueRepository.incrementRetry(entry.id);
-
-      final retryEntry = await _queueRepository.getEntry(entry.id);
-      if (retryEntry != null && retryEntry.retryCount >= 5) {
-        _logger?.w(
-          'Product ${entry.entityId} failed permanently after 5 retries: $e',
-        );
-        await _queueRepository.markFailed(entry.id, 'Max retries exceeded: $e');
+      final reachedMax = await _queueRepository.incrementRetry(
+        entry.id,
+        'Push failed: $e',
+      );
+      if (reachedMax) {
+        _logger?.w('Product ${entry.entityId} keeps failing: $e');
       } else {
         _logger?.i('Product ${entry.entityId} push failed (will retry): $e');
       }
