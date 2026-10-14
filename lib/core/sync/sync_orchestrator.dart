@@ -154,6 +154,17 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
     }());
   }
 
+  /// Supprime les entrées synchronisées de plus de 7 jours pour que la file ne
+  /// grossisse pas indéfiniment. Un échec ne fait pas échouer la synchro.
+  Future<void> _purgeSyncedEntries() async {
+    try {
+      final purged = await ref.read(syncQueueRepositoryProvider).purgeSynced();
+      if (purged > 0) _logger.d('Purged $purged synced queue entries');
+    } catch (e) {
+      _logger.w('Failed to purge sync queue: $e');
+    }
+  }
+
   /// Lance le timer de synchro périodique (5 minutes) quand l'app est en ligne.
   void _startPeriodicSync() {
     _periodicTimer = Timer.periodic(const Duration(minutes: 5), (_) {
@@ -234,6 +245,7 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
       await pullService.pullChanges(forceFullPull: effectiveFullPull);
 
       _logger.d('Sync completed successfully');
+      await _purgeSyncedEntries();
       state = SyncStatusIdle(lastSyncAt: DateTime.now());
     } catch (e, st) {
       _logger.e('Sync failed', error: e, stackTrace: st);

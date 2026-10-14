@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -200,6 +201,38 @@ void main() {
 
       expect(container.read(syncOrchestratorProvider), isA<SyncStatusError>());
     });
+
+    test(
+      'syncNow purges synced entries older than 7 days after success',
+      () async {
+        final container = await makeContainer();
+        final db = container.read(databaseProvider);
+        final old = DateTime.now().subtract(const Duration(days: 8));
+        final recent = DateTime.now().subtract(const Duration(days: 1));
+        Future<void> insert(String id, String status, DateTime createdAt) => db
+            .into(db.syncQueue)
+            .insert(
+              SyncQueueCompanion.insert(
+                entityType: 'sale',
+                entityId: id,
+                payload: '{}',
+                status: Value(status),
+                createdAt: createdAt,
+              ),
+            );
+        await insert('old-synced', 'synced', old);
+        await insert('recent-synced', 'synced', recent);
+        await insert('old-pending', 'pending', old);
+
+        await container.read(syncOrchestratorProvider.notifier).syncNow();
+
+        final remaining = await db.select(db.syncQueue).get();
+        expect(
+          remaining.map((e) => e.entityId),
+          unorderedEquals(['recent-synced', 'old-pending']),
+        );
+      },
+    );
 
     test('syncNow is skipped while not authenticated', () async {
       final container = await makeContainer();
