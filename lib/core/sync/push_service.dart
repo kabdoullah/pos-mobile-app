@@ -120,9 +120,10 @@ class PushService {
         }
       }
     } catch (e, st) {
-      // Erreur réseau ; on remet les entrées en attente pour réessayer
+      // Erreur réseau : on compte l'essai, les ventes seront renvoyées au
+      // prochain cycle.
       for (final entry in entries) {
-        await _queueRepository.markFailed(entry.id, 'Network error: $e');
+        await _queueRepository.incrementRetry(entry.id, 'Network error: $e');
       }
       _logger?.e('Push sales batch failed', error: e, stackTrace: st);
     }

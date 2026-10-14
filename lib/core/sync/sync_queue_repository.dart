@@ -132,19 +132,6 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
-  /// Marque une entrée de la file en échec avec un message d'erreur.
-  Future<bool> markFailed(int id, String error) async {
-    final rowsAffected =
-        await (_db.update(_db.syncQueue)..where((t) => t.id.equals(id))).write(
-          SyncQueueCompanion(
-            status: const drift.Value('failed'),
-            lastError: drift.Value(error),
-            lastAttemptAt: drift.Value(DateTime.now()),
-          ),
-        );
-    return rowsAffected > 0;
-  }
-
   /// Marque une entrée comme refusée définitivement (erreur 4xx du serveur,
   /// payload irrécupérable). Contrairement à « failed », elle n'est plus jamais
   /// renvoyée ni remise en attente au démarrage, et ne compte plus comme en
@@ -205,7 +192,7 @@ class SyncQueueRepository {
   /// Remet en attente les entrées en échec et celles bloquées en cours de
   /// synchro.
   /// Une entrée reste bloquée en cours de synchro quand l'app plante entre
-  /// markSyncing et markSynced/markFailed. Les entrées refusées (« rejected »)
+  /// markSyncing et markSynced/incrementRetry. Les entrées refusées (« rejected »)
   /// ne sont pas concernées : le serveur les refuserait de nouveau.
   Future<int> resetFailedEntries() async {
     return (_db.update(
