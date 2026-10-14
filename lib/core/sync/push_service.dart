@@ -212,7 +212,7 @@ class PushService {
           e.response?.statusCode != null &&
           e.response!.statusCode! >= 400 &&
           e.response!.statusCode! < 500) {
-        await _queueRepository.markFailed(
+        await _queueRepository.markRejected(
           entry.id,
           'Server rejected: ${e.response!.statusCode} ${e.response?.data}',
         );
@@ -278,7 +278,7 @@ class PushService {
           _db.products,
         )..where((p) => p.id.equals(entry.entityId))).getSingleOrNull();
         if (product == null) {
-          await _queueRepository.markFailed(
+          await _queueRepository.markRejected(
             entry.id,
             'Legacy payload: product not found locally',
           );
@@ -426,17 +426,17 @@ class PushService {
         }
       }
 
-      // Erreurs client non réessayables (4xx) : on journalise et on marque en
-      // échec immédiatement.
+      // Erreurs client non réessayables (4xx) : on journalise et on marque comme
+      // refusé définitivement.
       if (e is DioException &&
           e.response?.statusCode != null &&
           e.response!.statusCode! >= 400 &&
           e.response!.statusCode! < 500) {
         _logger?.w(
           'Product ${entry.entityId} rejected by server '
-          '(${e.response!.statusCode}): ${e.response?.data} — marking failed',
+          '(${e.response!.statusCode}): ${e.response?.data} — marking rejected',
         );
-        await _queueRepository.markFailed(
+        await _queueRepository.markRejected(
           entry.id,
           'Server rejected: ${e.response!.statusCode} ${e.response?.data}',
         );

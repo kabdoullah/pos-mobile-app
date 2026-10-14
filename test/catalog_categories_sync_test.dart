@@ -297,4 +297,59 @@ void main() {
       expect(items.single.quantity, 4);
     });
   });
+
+  group('refus définitif du serveur', () {
+    test(
+      'un 4xx n’est ni renvoyé, ni remis en attente au démarrage, ni compté',
+      () async {
+        when(() => remote.pushProduct(any())).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(),
+            response: Response<Object?>(
+              requestOptions: RequestOptions(),
+              statusCode: 422,
+              data: {'detail': 'invalide'},
+            ),
+          ),
+        );
+        await queue.enqueueProductChange(
+          productId: 'p1',
+          productPayload: const ProductSyncItemDto(
+            id: 'p1',
+            name: 'Savon',
+            sellingPrice: '500',
+            clientUpdatedAt: _now,
+          ).toJson(),
+        );
+
+        await push.pushPendingProductChanges();
+        final entry = (await db.select(db.syncQueue).get()).single;
+        expect(entry.status, 'rejected');
+
+        expect(await queue.resetFailedEntries(), 0);
+        expect(await queue.watchPendingCount().first, 0);
+        await push.pushPendingProductChanges();
+        verify(() => remote.pushProduct(any())).called(1);
+      },
+    );
+
+    test('une erreur réseau reste réessayable', () async {
+      when(
+        () => remote.pushProduct(any()),
+      ).thenThrow(DioException(requestOptions: RequestOptions()));
+      await queue.enqueueProductChange(
+        productId: 'p1',
+        productPayload: const ProductSyncItemDto(
+          id: 'p1',
+          name: 'Savon',
+          sellingPrice: '500',
+          clientUpdatedAt: _now,
+        ).toJson(),
+      );
+
+      await push.pushPendingProductChanges();
+
+      expect(await queue.watchPendingCount().first, 1);
+    });
+  });
 }

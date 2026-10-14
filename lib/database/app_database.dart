@@ -169,7 +169,7 @@ class SyncQueue extends Table {
   /// Payload JSON sérialisé.
   TextColumn get payload => text()();
 
-  /// pending, syncing, synced, failed.
+  /// pending, syncing, synced, failed (réessayé), rejected (refus définitif).
   TextColumn get status => text().withDefault(const Constant('pending'))();
 
   /// Nombre de tentatives.
