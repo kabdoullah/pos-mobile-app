@@ -204,7 +204,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             const AuthHeader(
-              title: 'Bienvenue 👋',
+              title: 'Bienvenue',
               subtitle: 'Gérez votre boutique simplement.',
               centered: true,
             ),
