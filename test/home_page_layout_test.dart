@@ -71,6 +71,7 @@ Future<void> pumpHome(
             totalAmount: Decimal.parse(withData ? '12245000' : '0'),
             cashTotal: Decimal.parse(withData ? '8000000' : '0'),
             mobileMoneyTotal: Decimal.parse(withData ? '4245000' : '0'),
+            refundTotal: Decimal.parse(withData ? '15000' : '0'),
           )),
         ),
         homeLowStockProvider.overrideWith(

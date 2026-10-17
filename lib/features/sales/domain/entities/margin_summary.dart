@@ -59,6 +59,39 @@ class MarginSummary {
     );
   }
 
+  /// Résumé net des retours [lines] (ADR-0010) : le remboursement diminue le
+  /// chiffre d'affaires ; un article remis en stock rend son coût d'achat, un
+  /// article non revendable le laisse (perte). Une ligne au coût inconnu ne
+  /// touche que le chiffre d'affaires, comme à la vente.
+  MarginSummary withReturns(
+    Iterable<
+      ({
+        Decimal refund,
+        Decimal? purchaseUnitPrice,
+        int quantity,
+        bool restocked,
+      })
+    >
+    lines,
+  ) {
+    var revenue = this.revenue;
+    var coveredRevenue = this.coveredRevenue;
+    var cost = this.cost;
+    for (final line in lines) {
+      revenue -= line.refund;
+      final unitCost = line.purchaseUnitPrice;
+      if (unitCost == null) continue;
+      coveredRevenue -= line.refund;
+      if (line.restocked) cost -= unitCost * Decimal.fromInt(line.quantity);
+    }
+    return MarginSummary(
+      revenue: revenue,
+      coveredRevenue: coveredRevenue,
+      cost: cost,
+      hasUnknownCost: hasUnknownCost,
+    );
+  }
+
   /// Résumé vide (aucune vente).
   static final MarginSummary empty = MarginSummary(
     revenue: Decimal.zero,

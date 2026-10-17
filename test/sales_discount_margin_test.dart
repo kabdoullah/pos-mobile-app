@@ -10,7 +10,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/sync/sync_queue_repository.dart';
 import 'package:mobile/database/app_database.dart'
-    show AppDatabase, ProductsCompanion;
+    show
+        AppDatabase,
+        ProductsCompanion,
+        SaleReturnItemsCompanion,
+        SaleReturnsCompanion;
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/sales/data/repositories/sales_repository_impl.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
@@ -475,6 +479,76 @@ void main() {
       expect(summary.revenue, d('3500'));
       expect(summary.cost, d('3000'));
       expect(summary.margin, d('500'));
+    });
+
+    /// Retour d'un Coca sur deux (payé 1 750), daté d'aujourd'hui.
+    Future<void> returnOneCoca({
+      required bool restocked,
+      String status = 'pending',
+    }) async {
+      final sale = await sellTwoCocas();
+      final item = await db.select(db.saleItems).getSingle();
+      await db
+          .into(db.saleReturns)
+          .insert(
+            SaleReturnsCompanion.insert(
+              id: 'r1',
+              saleId: sale.id,
+              reason: 'defective',
+              refundMethod: 'cash',
+              refundAmount: '1750',
+              createdAt: DateTime.now(),
+              syncStatus: drift.Value(status),
+            ),
+          );
+      await db
+          .into(db.saleReturnItems)
+          .insert(
+            SaleReturnItemsCompanion.insert(
+              id: 'ri1',
+              returnId: 'r1',
+              saleItemId: item.id,
+              quantity: 1,
+              condition: restocked ? 'resellable' : 'unsellable',
+              restocked: restocked,
+              refundAmount: '1750',
+            ),
+          );
+    }
+
+    test('chiffres du jour nets du remboursement en espèces', () async {
+      await returnOneCoca(restocked: true);
+      final stats = await repository.watchTodayStats().first;
+      expect(stats.saleCount, 1);
+      expect(stats.totalAmount, d('1750'));
+      expect(stats.cashTotal, d('1750'));
+      expect(stats.mobileMoneyTotal, d('0'));
+      expect(stats.refundTotal, d('1750'));
+    });
+
+    test('un retour refusé par le serveur ne compte pas', () async {
+      await returnOneCoca(restocked: true, status: 'rejected');
+      final stats = await repository.watchTodayStats().first;
+      expect(stats.totalAmount, d('3500'));
+      expect(stats.refundTotal, d('0'));
+    });
+
+    test('marge : un article remis en stock rend son coût', () async {
+      await returnOneCoca(restocked: true);
+      final today = DateTime.now();
+      final summary = await repository.watchMarginSummary(today, today).first;
+      expect(summary.revenue, d('1750'));
+      expect(summary.cost, d('1500'));
+      expect(summary.margin, d('250'));
+    });
+
+    test('marge : un article non revendable reste une perte', () async {
+      await returnOneCoca(restocked: false);
+      final today = DateTime.now();
+      final summary = await repository.watchMarginSummary(today, today).first;
+      expect(summary.revenue, d('1750'));
+      expect(summary.cost, d('3000'));
+      expect(summary.margin, d('-1250'));
     });
   });
 

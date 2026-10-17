@@ -8,11 +8,16 @@ import '../entities/margin_summary.dart';
 import '../entities/sale.dart';
 
 /// Totaux agrégés d'une journée — calculés en SQL.
+///
+/// [totalAmount], [cashTotal] et [mobileMoneyTotal] sont nets des
+/// remboursements faits ce jour-là (retours refusés par le serveur exclus),
+/// chacun imputé à son moyen ; [refundTotal] en est la somme (ADR-0010).
 typedef DailyStats = ({
   int saleCount,
   Decimal totalAmount,
   Decimal cashTotal,
   Decimal mobileMoneyTotal,
+  Decimal refundTotal,
 });
 
 /// Repository abstrait pour les opérations de vente.
@@ -49,7 +54,7 @@ abstract class SalesRepository {
   /// l'appareil).
   Future<List<Sale>> getTodaySales();
 
-  /// Observe les totaux agrégés du jour — réémet à chaque INSERT dans sales.
+  /// Observe les totaux agrégés du jour — réémet à chaque vente ou retour.
   Stream<DailyStats> watchTodayStats();
 
   /// Retourne toutes les ventes créées dans [startDate, endDate] inclus (fuseau
@@ -64,7 +69,9 @@ abstract class SalesRepository {
   );
 
   /// Observe chiffre d'affaires, coût d'achat et marge des ventes créées dans
-  /// [startDate, endDate] inclus (fuseau local) — valeurs figées à la vente.
+  /// [startDate, endDate] inclus (fuseau local) — valeurs figées à la vente,
+  /// nettes des retours faits sur la période (voir
+  /// [MarginSummary.withReturns]).
   Stream<MarginSummary> watchMarginSummary(
     DateTime startDate,
     DateTime endDate,

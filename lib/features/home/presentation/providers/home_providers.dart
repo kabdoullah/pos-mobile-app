@@ -66,12 +66,12 @@ Stream<List<Product>> homeLowStock(Ref ref) {
   return ref.watch(catalogRepositoryProvider).watchLowStockProducts();
 }
 
-/// Panier moyen du jour, arrondi au franc ; `null` sans vente.
+/// Panier moyen du jour, arrondi au franc ; `null` sans vente. Calculé sur
+/// les ventes brutes : un retour ne change pas le montant des paniers vendus.
 Decimal? averageBasket(DailyStats stats) {
   if (stats.saleCount == 0) return null;
-  return Decimal.fromBigInt(
-    (stats.totalAmount / Decimal.fromInt(stats.saleCount)).round(),
-  );
+  final sold = stats.totalAmount + stats.refundTotal;
+  return Decimal.fromBigInt((sold / Decimal.fromInt(stats.saleCount)).round());
 }
 
 /// Part des espèces dans l'encaissé du jour, en pourcentage entier (0–100) ;
