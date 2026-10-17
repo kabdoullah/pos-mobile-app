@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/repositories/printer_repository.dart';
+import '../../providers/printing_di_providers.dart';
 import '../providers/printer_provider.dart';
 
 /// Page d'appairage et de connexion à une imprimante thermique Bluetooth.
@@ -39,9 +42,14 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkPermissions());
   }
 
+  // BLUETOOTH_CONNECT n'existe que sur Android 12+ : sur iOS, permission_handler
+  // la renvoie « refusée définitivement » sans jamais afficher la demande
+  // système. iOS passe par l'autorisation CoreBluetooth.
+  Permission get _bluetoothPermission =>
+      Platform.isIOS ? Permission.bluetooth : Permission.bluetoothConnect;
+
   Future<void> _checkPermissions() async {
-    // Vérifie la permission BLUETOOTH_CONNECT (Android 12+)
-    final status = await Permission.bluetoothConnect.status;
+    final status = await _bluetoothPermission.status;
     final hasPermission = status.isGranted;
 
     if (mounted) {
@@ -57,7 +65,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
   }
 
   Future<void> _requestPermission() async {
-    final result = await Permission.bluetoothConnect.request();
+    final result = await _bluetoothPermission.request();
     if (result.isGranted) {
       if (mounted) setState(() => _hasPermission = true);
       await _loadDevices();
@@ -85,7 +93,9 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     try {
       // Note : BluetoothInfo.macAdress contient une faute de frappe (un seul «
       // d ») dans print_bluetooth_thermal v1.2.x
-      final devices = await PrintBluetoothThermal.pairedBluetooths;
+      final devices = await ref
+          .read(printerRepositoryProvider)
+          .getPairedDevices();
       if (mounted) setState(() => _pairedDevices = devices);
     } catch (e) {
       if (mounted) {
@@ -235,8 +245,11 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
               EmptyState(
                 icon: Icons.print_outlined,
                 title: 'Aucune imprimante trouvée',
-                message:
-                    'Appairez d\'abord votre imprimante Bluetooth dans les réglages Android.',
+                message: Platform.isIOS
+                    ? 'Allumez votre imprimante Bluetooth et placez-la près '
+                          'du téléphone.'
+                    : 'Appairez d\'abord votre imprimante Bluetooth dans les '
+                          'réglages Android.',
                 actionLabel: 'Ouvrir les réglages Bluetooth',
                 // Correctif n°3 : ouvre directement les paramètres Bluetooth
                 // via app_settings

@@ -158,8 +158,7 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
     }
   }
 
-  static String _greeting() =>
-      DateTime.now().hour < 18 ? 'Bonjour 👋' : 'Bonsoir 👋';
+  static String _greeting() => DateTime.now().hour < 18 ? 'Bonjour' : 'Bonsoir';
 
   static String _formatRemaining(Duration d) {
     final minutes = d.inMinutes;

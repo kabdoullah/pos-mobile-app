@@ -30,34 +30,61 @@ Future<bool> showConfirmDialog(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
       ),
+      // Un seul enfant (la Row) : AlertDialog n'empile jamais les boutons.
+      // Annuler à gauche, l'action à droite, à largeur égale ; un libellé
+      // long passe sur deux lignes dans son bouton.
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(
-            cancelLabel,
-            style: AppTypography.labelMedium.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 56,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              // Couleurs du thème : correctes en clair comme en sombre.
-              backgroundColor: isDangerous
-                  ? Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.primary,
-              foregroundColor: isDangerous
-                  ? Theme.of(context).colorScheme.onError
-                  : Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    cancelLabel,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.labelMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
             ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(confirmLabel, style: AppTypography.labelLarge),
-          ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    // Couleurs du thème : correctes en clair comme en sombre.
+                    backgroundColor: isDangerous
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                    foregroundColor: isDangerous
+                        ? Theme.of(context).colorScheme.onError
+                        : Theme.of(context).colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(
+                    confirmLabel,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.labelLarge,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     ),

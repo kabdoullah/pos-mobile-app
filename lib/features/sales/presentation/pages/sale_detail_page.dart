@@ -128,11 +128,6 @@ class SaleDetailPage extends ConsumerWidget {
               ),
             ),
           ),
-          // Retours enregistrés et action « Retourner des articles ».
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: SaleReturnsSection(sale: sale),
-          ),
           if (items != null &&
               items.any((item) => item.purchaseUnitPrice != null)) ...[
             const SizedBox(height: AppSpacing.md),
@@ -166,6 +161,11 @@ class SaleDetailPage extends ConsumerWidget {
               style: muted,
             ),
           ],
+          // Retours enregistrés et action « Retourner des articles ».
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: SaleReturnsSection(sale: sale),
+          ),
         ],
       ),
     );
