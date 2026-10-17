@@ -60,7 +60,7 @@ Two provider locations:
 
 | Feature | Status |
 |---|---|
-| `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, token refresh, store setup |
+| `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, token refresh, store setup, account deletion from Settings (ADR-0011: `DELETE /users/me` with password, then full local wipe) |
 | `catalog` | Implemented — product form/import, barcode scanning, local sync (the product list lives in the Stock tab, `inventory`) |
 | `sales` | Implemented — cart, payment, receipt printing, sale history |
 | `inventory` | Implemented — Stock tab (summary, product list, filters), product detail page, manual adjustments, movement history per product or for all products. **Online-only**: movements are server-authoritative (no drift table); only `Products.currentStock` is refreshed locally |
