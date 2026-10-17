@@ -11,11 +11,13 @@ class LocalDataResetService {
   final AppDatabase _db;
   final ImageFileCache? _imageCache;
 
-  /// Supprime produits, catégories, ventes, lignes de vente, file de sync et
-  /// metadata.
+  /// Supprime produits, catégories, ventes et leurs lignes, retours et leurs
+  /// lignes, file de sync et metadata.
   /// Transaction unique : tout ou rien.
   Future<void> wipeBusinessData() async {
     await _db.transaction(() async {
+      await _db.delete(_db.saleReturnItems).go();
+      await _db.delete(_db.saleReturns).go();
       await _db.delete(_db.saleItems).go();
       await _db.delete(_db.sales).go();
       await _db.delete(_db.products).go();

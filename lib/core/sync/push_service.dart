@@ -8,6 +8,7 @@ import '../../core/network/api_models/category_dto.dart';
 import '../../core/network/api_models/product_dto.dart';
 import '../utils/barcode_utils.dart';
 import '../../core/network/api_models/sale_dto.dart';
+import '../../core/network/api_models/sale_return_dto.dart';
 import '../../core/network/api_models/sync_changes_dto.dart';
 import '../../core/network/api_models/sync_responses_dto.dart';
 import '../../database/app_database.dart';
@@ -127,6 +128,106 @@ class PushService {
       }
       _logger?.e('Push sales batch failed', error: e, stackTrace: st);
     }
+  }
+
+  /// Envoie les retours clients en attente (ADR-0010), un par requête : un
+  /// retour refusé ne bloque pas les autres. À appeler après les ventes.
+  Future<void> pushPendingReturns() async {
+    try {
+      final entries = await _queueRepository.getEntriesByType('sale_return');
+      for (final entry in entries) {
+        await _pushReturn(entry);
+      }
+    } catch (e, st) {
+      _logger?.e('Push pending returns failed', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _pushReturn(SyncQueueData entry) async {
+    await _queueRepository.markSyncing(entry.id);
+    try {
+      final payload = SaleReturnCreateDto.fromJson(
+        jsonDecode(entry.payload) as Map<String, dynamic>,
+      );
+      final response = await _remoteDataSource.pushReturns(
+        ReturnsSyncBatchRequestDto(returns: [payload]),
+      );
+      final result = response.results.single;
+      switch (result.status) {
+        case 'created':
+        case 'already_exists':
+          await _db.transaction(() async {
+            await (_db.update(
+              _db.saleReturns,
+            )..where((r) => r.id.equals(entry.entityId))).write(
+              SaleReturnsCompanion(
+                returnNumber: drift.Value(result.returnNumber ?? 0),
+                syncStatus: const drift.Value('synced'),
+              ),
+            );
+            await _queueRepository.markSynced(entry.id);
+          });
+        case 'rejected':
+          await _rejectReturn(
+            entry,
+            result.errorCode ?? 'rejected',
+            result.error ?? 'Rejected',
+          );
+        default:
+          await _queueRepository.incrementRetry(
+            entry.id,
+            result.error ?? 'Unknown return sync status: ${result.status}',
+          );
+      }
+    } catch (e) {
+      final status = e is DioException ? e.response?.statusCode : null;
+      if (status != null && status >= 400 && status < 500) {
+        // Payload refusé (422…) : le renvoyer échouerait de nouveau.
+        await _rejectReturn(
+          entry,
+          'invalid_payload',
+          'Server rejected: $status ${(e as DioException).response?.data}',
+        );
+        return;
+      }
+      await _queueRepository.incrementRetry(entry.id, 'Push failed: $e');
+      _logger?.i('Return ${entry.entityId} push failed (will retry): $e');
+    }
+  }
+
+  /// Refus définitif d'un retour : statut « rejected » visible par le
+  /// commerçant, remise en stock locale annulée, entrée retirée de l'envoi.
+  Future<void> _rejectReturn(
+    SyncQueueData entry,
+    String code,
+    String error,
+  ) async {
+    await _db.transaction(() async {
+      await (_db.update(
+        _db.saleReturns,
+      )..where((r) => r.id.equals(entry.entityId))).write(
+        SaleReturnsCompanion(
+          syncStatus: const drift.Value('rejected'),
+          rejectionCode: drift.Value(code),
+        ),
+      );
+      final restocked = await (_db.select(
+        _db.saleReturnItems,
+      )..where((i) => i.returnId.equals(entry.entityId) & i.restocked)).get();
+      for (final item in restocked) {
+        await _db.customUpdate(
+          'UPDATE products SET current_stock = current_stock - ? '
+          'WHERE id = ? AND current_stock IS NOT NULL',
+          variables: [
+            drift.Variable.withInt(item.quantity),
+            drift.Variable.withString(item.productId ?? ''),
+          ],
+          updates: {_db.products},
+        );
+      }
+      await _queueRepository.markRejected(entry.id, '$code: $error');
+    });
+    _logger?.w('Return ${entry.entityId} rejected by server: $code $error');
   }
 
   /// Envoie tous les changements de produits en attente au serveur.

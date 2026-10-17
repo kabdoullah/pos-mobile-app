@@ -38,6 +38,7 @@ const _$StockMovementReasonDtoEnumMap = {
   StockMovementReasonDto.sale: 'sale',
   StockMovementReasonDto.manualAdjustment: 'manual_adjustment',
   StockMovementReasonDto.catalogUpdate: 'catalog_update',
+  StockMovementReasonDto.customerReturn: 'customer_return',
 };
 
 _ManualStockAdjustmentCreateDto _$ManualStockAdjustmentCreateDtoFromJson(

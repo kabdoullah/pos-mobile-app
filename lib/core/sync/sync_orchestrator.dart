@@ -233,6 +233,10 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
       _logger.d('Starting sync: push sales');
       await pushService.pushPendingSales();
 
+      // Après les ventes : un retour référence une vente connue du serveur.
+      _logger.d('Sync step: push returns');
+      await pushService.pushPendingReturns();
+
       // Catégories avant produits : le serveur refuse un produit dont la
       // catégorie lui est inconnue.
       _logger.d('Sync step: push categories');

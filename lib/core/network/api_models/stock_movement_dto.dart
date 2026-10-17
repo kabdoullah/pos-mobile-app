@@ -16,6 +16,10 @@ enum StockMovementReasonDto {
   /// Stock fixé directement via une mise à jour du catalogue.
   @JsonValue('catalog_update')
   catalogUpdate,
+
+  /// Article rendu par un client et remis en stock (ADR-0010).
+  @JsonValue('customer_return')
+  customerReturn,
 }
 
 /// Objet de transfert mouvement de stock reçu de l'API.
