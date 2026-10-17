@@ -139,6 +139,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount(String password) async {
+    try {
+      await dataSource.deleteMe(DeleteAccountRequestDto(password: password));
+    } on DioException catch (e) {
+      throw _parseException(e);
+    }
+    await tokenStorage.clearStoreSetupPending();
+    await logout();
+  }
+
+  @override
   Future<User?> getCurrentUser() async {
     final userId = await tokenStorage.getUserId();
     if (userId == null) return null;

@@ -55,4 +55,8 @@ class AppConfig {
 
   /// Limite de produits par boutique au MVP.
   static const int maxProductsPerStore = 5000;
+
+  /// Politique de confidentialité publiée (GitHub Pages).
+  static const String privacyPolicyUrl =
+      'https://kabdoullah.github.io/pos-mobile/privacy-policy';
 }

@@ -7,6 +7,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/network/network_providers.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
+import '../../../../core/sync/sync_providers.dart';
 import '../../domain/entities/pin_failure.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -375,6 +376,26 @@ class Auth extends _$Auth {
       await repo.logout();
       await _resetStoreCache();
       _logger.i('[Auth.logout] Storage cleared');
+    } finally {
+      state = const AsyncData(AuthUnauthenticated());
+    }
+  }
+
+  /// Supprime définitivement le compte (ADR-0011), puis efface toutes les
+  /// données locales : tokens, PIN, boutique en cache, base locale (ventes non
+  /// synchronisées comprises), file de sync et cache d'images.
+  ///
+  /// Lève l'erreur du serveur ou du réseau sans rien effacer ni changer l'état :
+  /// l'écran l'affiche et l'utilisateur reste connecté. Passe à
+  /// `Unauthenticated` une fois le compte supprimé, même si l'effacement local
+  /// échoue (le compte n'existe plus).
+  Future<void> deleteAccount(String password) async {
+    _logger.i('[Auth.deleteAccount] Deleting account');
+    await ref.read(authRepositoryProvider).deleteAccount(password);
+    try {
+      await _resetStoreCache();
+      await ref.read(localDataResetServiceProvider).wipeBusinessData();
+      _logger.i('[Auth.deleteAccount] Local data wiped');
     } finally {
       state = const AsyncData(AuthUnauthenticated());
     }

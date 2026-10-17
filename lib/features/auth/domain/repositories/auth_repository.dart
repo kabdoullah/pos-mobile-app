@@ -34,6 +34,12 @@ abstract class AuthRepository {
   /// Déconnecte l'utilisateur (efface tokens et PIN).
   Future<void> logout();
 
+  /// Supprime définitivement le compte côté serveur (mot de passe revérifié),
+  /// puis efface tokens, PIN et inscription en attente sur cet appareil.
+  ///
+  /// En cas d'échec (mot de passe faux, réseau), rien n'est effacé.
+  Future<void> deleteAccount(String password);
+
   /// Récupère l'utilisateur courant si authentifié.
   Future<User?> getCurrentUser();
 
