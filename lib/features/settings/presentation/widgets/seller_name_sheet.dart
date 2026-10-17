@@ -92,15 +92,13 @@ class _SellerNameSheetState extends ConsumerState<SellerNameSheet> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              TextField(
+              AppTextField(
+                label: 'Nom',
+                hint: 'Ex. : Awa',
                 controller: _controller,
                 autofocus: true,
                 maxLength: sellerNameMaxLength,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nom',
-                  hintText: 'Ex. : Awa',
-                ),
               ),
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.sm),

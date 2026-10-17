@@ -50,6 +50,11 @@ class AppConfig {
   /// Durée du blocage après échec de PIN, en minutes.
   static const int pinLockoutMinutes = 5;
 
+  /// Durée d'inactivité (aucun toucher, app au premier plan ou en
+  /// arrière-plan) après laquelle la session se verrouille et redemande le
+  /// PIN, en minutes.
+  static const int sessionLockMinutes = 5;
+
   /// Largeur du papier d'imprimante thermique en millimètres.
   static const int receiptPaperWidthMm = 58;
 

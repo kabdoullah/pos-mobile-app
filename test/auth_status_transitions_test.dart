@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,8 @@ import 'package:mobile/features/auth/domain/repositories/profile_repository.dart
 import 'package:mobile/features/auth/domain/repositories/store_repository.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/auth_di_providers.dart';
+import 'package:mobile/features/catalog/domain/entities/product.dart';
+import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
 
 import 'pin_storage_test.dart' show InMemorySecureStorage;
 
@@ -307,5 +310,39 @@ void main() {
 
     await auth.login(phone, 'secret123');
     expect(_status(app), isA<AuthPinSetupRequired>());
+  });
+
+  test('verrouillage → PIN redemandé, panier conservé jusqu\'à la '
+      'déconnexion', () async {
+    final app = await _Device().launch();
+    final auth = app.read(authProvider.notifier);
+    await auth.login(phone, 'secret123');
+    await auth.setupPin('2580');
+    app
+        .read(cartProvider.notifier)
+        .addItem(
+          Product(
+            id: 'p1',
+            name: 'Coca-Cola',
+            sellingPrice: Decimal.parse('2500'),
+            updatedAt: DateTime(2026),
+          ),
+        );
+
+    auth.lock();
+    expect(_status(app), isA<AuthPinRequired>());
+
+    await auth.verifyPin('2580');
+    expect(_status(app), isA<AuthAuthenticated>());
+    expect(app.read(cartProvider).items, hasLength(1));
+
+    await auth.logout();
+    expect(app.read(cartProvider).isEmpty, isTrue);
+  });
+
+  test('verrouillage sans effet hors session authentifiée', () async {
+    final app = await _Device().launch();
+    app.read(authProvider.notifier).lock();
+    expect(_status(app), isA<AuthUnauthenticated>());
   });
 }

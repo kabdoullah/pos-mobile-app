@@ -185,6 +185,8 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                   field: Semantics(
                     label: 'Quantité',
                     child: TextField(
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
                       controller: _controller,
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
