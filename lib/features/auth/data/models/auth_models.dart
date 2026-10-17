@@ -121,3 +121,14 @@ sealed class UserMeUpdateDto with _$UserMeUpdateDto {
   factory UserMeUpdateDto.fromJson(Map<String, dynamic> json) =>
       _$UserMeUpdateDtoFromJson(json);
 }
+
+/// Suppression du compte (ADR-0011) : le mot de passe est revérifié.
+@freezed
+sealed class DeleteAccountRequestDto with _$DeleteAccountRequestDto {
+  /// Crée un [DeleteAccountRequestDto].
+  const factory DeleteAccountRequestDto({required String password}) =
+      _DeleteAccountRequestDto;
+
+  factory DeleteAccountRequestDto.fromJson(Map<String, dynamic> json) =>
+      _$DeleteAccountRequestDtoFromJson(json);
+}

@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/theme_mode_provider.dart';
+import '../../../../core/config.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/router/app_router.dart';
@@ -24,6 +26,7 @@ import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 import '../../../auth/providers/seller_profile_provider.dart';
+import '../widgets/delete_account_sheet.dart';
 import '../widgets/receipt_settings_sheet.dart';
 import '../widgets/seller_name_sheet.dart';
 import '../widgets/settings_section.dart';
@@ -177,6 +180,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 showChevron: true,
                 onTap: () => context.push(Routes.tutorial),
               ),
+              SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Politique de confidentialité',
+                trailing: const Icon(Icons.open_in_new, size: 18),
+                onTap: () => _openUrl(AppConfig.privacyPolicyUrl),
+              ),
             ],
           ),
           SettingsSection(
@@ -204,6 +213,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 title: 'Se déconnecter',
                 destructive: true,
                 onTap: _confirmLogout,
+              ),
+              SettingsTile(
+                icon: Icons.delete_forever_outlined,
+                title: 'Supprimer mon compte',
+                subtitle: const Text('Compte, boutique et ventes effacés'),
+                destructive: true,
+                onTap: _confirmDeleteAccount,
               ),
             ],
           ),
@@ -285,6 +301,35 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (confirmed && mounted) {
       unawaited(ref.read(authProvider.notifier).logout());
     }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    if (!(ref.read(isOnlineProvider).value ?? false)) {
+      _showMessage('Connexion requise pour supprimer votre compte.');
+      return;
+    }
+    final pending = ref.read(pendingSyncCountProvider).value ?? 0;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Supprimer votre compte ?',
+      message:
+          'Votre compte, votre boutique, votre catalogue et tout l’historique '
+          'des ventes et retours seront effacés définitivement, sur ce '
+          'téléphone et sur le serveur.'
+          '${pending > 0 ? ' Les ventes non synchronisées seront perdues.' : ''}'
+          ' Pensez à exporter vos ventes avant.',
+      confirmLabel: 'Continuer',
+      isDangerous: true,
+    );
+    if (confirmed && mounted) await showDeleteAccountSheet(context);
+  }
+
+  Future<void> _openUrl(String url) async {
+    final opened = await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) _showMessage('Impossible d’ouvrir la page.');
   }
 
   Future<void> _exportCsv() async {

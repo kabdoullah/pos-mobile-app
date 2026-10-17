@@ -7,6 +7,7 @@ const _detailMap = <String, String>{
   'Invalid phone number or password.': 'Numéro ou mot de passe incorrect.',
   'Invalid email or password.': 'Email ou mot de passe incorrect.',
   'Account is disabled.': 'Le compte est désactivé.',
+  'Invalid password.': 'Mot de passe incorrect.',
   'Invalid or expired refresh token.':
       'Session expirée, veuillez vous reconnecter',
   'User not found or disabled.': 'Utilisateur introuvable ou désactivé',

@@ -46,4 +46,9 @@ abstract class AuthRemoteDataSource {
   /// Endpoint : PATCH /api/v1/users/me
   @PATCH('/api/v1/users/me')
   Future<UserMeDto> updateMe(@Body() UserMeUpdateDto request);
+
+  /// Supprime définitivement le compte et toutes les données de la boutique.
+  /// Endpoint : DELETE /api/v1/users/me (403 si le mot de passe est faux)
+  @DELETE('/api/v1/users/me')
+  Future<void> deleteMe(@Body() DeleteAccountRequestDto request);
 }
