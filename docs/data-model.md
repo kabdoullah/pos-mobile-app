@@ -82,7 +82,7 @@ Toutes les tables qui contiennent des données métier ont une colonne `store_id
 
 | Entité | Description | Multi-tenant | Synchronisée local |
 |---|---|---|---|
-| `users` | Comptes utilisateurs (email + password) | Non (global) | Non (serveur uniquement) |
+| `users` | Comptes utilisateurs (téléphone + mot de passe, ADR-0006) | Non (global) | Non (serveur uniquement) |
 | `stores` | Boutiques (1 par compte au MVP) | Self | Oui |
 | `products` | Catalogue produits | Oui | Oui (état last-write-wins) |
 | `sales` | Ventes encaissées (immuables) | Oui | Oui (événementiel append-only) |
@@ -90,7 +90,7 @@ Toutes les tables qui contiennent des données métier ont une colonne `store_id
 | `sale_returns` | Retours clients (immuables, ADR-0010) | Oui | Oui (événementiel append-only) |
 | `sale_return_items` | Lignes de chaque retour | Oui | Oui (avec sale_returns) |
 | `sync_queue` | File d'attente locale (uniquement SQLite) | n/a | Local uniquement |
-| `email_verification_tokens` | Tokens de validation email | Non | Non |
+| `email_verification_tokens` | Tokens de validation email (table présente, pas d'endpoint exposé) | Non | Non |
 | `password_reset_tokens` | Tokens de reset mot de passe | Non | Non |
 
 ### `users` (serveur uniquement)
@@ -100,9 +100,11 @@ Comptes globaux. Un utilisateur peut posséder une seule boutique au MVP (relati
 Champs principaux :
 
 - `id` — UUID
-- `email` — unique, indexé
-- `password_hash` — bcrypt (cost 12)
-- `phone_number` — pour le support
+- `phone_number` — identifiant de connexion, E.164, unique, indexé (ADR-0006)
+- `email` — NULL, unique, indexé ; sert uniquement à la récupération du compte
+- `password_hash` — Argon2 (`pwdlib.PasswordHash.recommended()`)
+- `display_name` — NULL, nom affiché « Vendeur : … » sur les reçus
+- `is_active` — booléen
 - `email_verified_at` — TIMESTAMPTZ NULL, NULL tant que pas confirmé
 - `created_at`, `updated_at`
 

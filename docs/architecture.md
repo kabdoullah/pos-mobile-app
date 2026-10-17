@@ -38,7 +38,7 @@ flowchart TD
     System -->|Imprime via Bluetooth| Printer
 ```
 
-Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de bienvenue et de récupération de mot de passe, et l'imprimante Bluetooth pour les reçus.
+Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de récupération de mot de passe (comptes ayant renseigné un email), et l'imprimante Bluetooth pour les reçus.
 
 ## Diagramme de conteneurs
 
@@ -124,15 +124,20 @@ Le token contient un payload minimal :
 {
   "sub": "<user_uuid>",
   "store_id": "<store_uuid>",
+  "type": "access",
   "exp": 1735689600
 }
 ```
+
+Le refresh token ne porte que `sub`, `type: "refresh"` et `exp`.
 
 Le `store_id` est extrait du JWT et injecté dans le contexte de la session PostgreSQL pour activer le Row-Level Security (voir section sécurité).
 
 L'access token a une durée de vie de 1 heure. Un refresh token longue durée (30 jours) permet de renouveler sans ressaisir le mot de passe.
 
-Voir [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md).
+L'identifiant est le numéro de téléphone (E.164) + mot de passe ; l'email est optionnel et ne sert qu'à la récupération du compte. Sur l'appareil, un PIN local à 4 chiffres (hashé PBKDF2, jamais envoyé au serveur) protège l'usage quotidien : 5 tentatives, puis blocage 5 minutes. Côté app, le parcours d'authentification est un état `AuthStatus` (inscription → boutique → PIN → authentifié) lu par le routeur.
+
+Voir [ADR-0006 : authentification phone-first](adr/0006-auth-phone-first.md), qui remplace [ADR-0004](adr/0004-auth-email-pin.md).
 
 ## Architecture mobile
 
@@ -319,13 +324,13 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 | Attaque | Mitigation |
 |---|---|
-| Brute force login | Rate limiting via fastapi-limiter (5 tentatives/min/IP) |
+| Brute force login | Prévu : rate limiting via fastapi-limiter (5 tentatives/min/IP), pas encore branché |
 | Brute force PIN | Compteur local, 5 tentatives puis blocage 5 min |
 | SQL injection | SQLAlchemy avec paramètres bindés, jamais de string concat |
 | XSS | Pas de UI web servie par l'API, donc surface réduite |
 | CSRF | API stateless avec JWT, pas de cookies de session |
 | MITM | TLS forcé (HTTPS uniquement) via Caddy |
-| Replay attacks | JWT à courte durée (1h) + refresh token rotatif |
+| Replay attacks | JWT à courte durée (1h) ; un nouveau refresh token (30 jours) est émis à chaque refresh, sans révocation de l'ancien |
 
 ## Déploiement
 
@@ -336,7 +341,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 - **Orchestration** : Docker Compose (3 services : caddy, api, postgres)
 - **Backups** : pg_dump quotidien chiffré vers Backblaze B2
 
-Voir [ADR-0006 : choix d'hébergement Hetzner](adr/0006-hebergement-hetzner.md).
+Pas d'ADR dédié à l'hébergement. **Actuellement**, l'API de bêta tourne sur Render (offre gratuite, `https://pos-mobile-vkuh.onrender.com`, démarrage à froid ~50 s absorbé par le timeout HTTP de 60 s de l'app) ; le VPS Hetzner ci-dessus reste la cible de production.
 
 ### Procédure de déploiement
 
@@ -393,9 +398,12 @@ Ces sujets sont identifiés comme importants mais reportés à des phases ultér
 - [ADR-0001 : monolithe modulaire](adr/0001-monolithe-modulaire.md)
 - [ADR-0002 : multi-tenancy avec RLS PostgreSQL](adr/0002-multi-tenancy-rls.md)
 - [ADR-0003 : synchronisation hybride événementiel + état](adr/0003-sync-hybride.md)
-- [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md)
+- [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md) (remplacé par ADR-0006)
 - [ADR-0005 : stack Flutter + FastAPI](adr/0005-stack-flutter-fastapi.md)
-- [ADR-0006 : choix d'hébergement Hetzner](adr/0006-hebergement-hetzner.md)
+- [ADR-0006 : authentification phone-first](adr/0006-auth-phone-first.md)
+- [ADR-0007 : ledger des mouvements de stock](adr/0007-stock-movements.md)
+- [ADR-0008 : catégories, images et reçus](adr/0008-categories-images-recus.md)
+- [ADR-0009 : prix d'achat, remises et marge](adr/0009-prix-achat-remises-marge.md)
 - [ADR-0010 : retours clients](adr/0010-retours-clients.md)
 - [Modèle de données](data-model.md)
 - [Runbook opérationnel](runbook.md)

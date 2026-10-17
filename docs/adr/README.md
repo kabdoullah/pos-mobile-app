@@ -20,8 +20,10 @@ Pourquoi écrire des ADRs :
 | [0001](0001-monolithe-modulaire.md) | Monolithe modulaire FastAPI | Accepté | 2026-04-29 |
 | [0002](0002-multi-tenancy-rls.md) | Multi-tenancy via store_id + Row-Level Security PostgreSQL | Accepté | 2026-04-29 |
 | [0003](0003-sync-hybride.md) | Synchronisation hybride événementiel + état | Accepté | 2026-04-29 |
-| [0004](0004-auth-email-pin.md) | Authentification email + mot de passe + PIN local | Accepté | 2026-04-29 |
+| [0004](0004-auth-email-pin.md) | Authentification email + mot de passe + PIN local | Superseded by ADR-0006 | 2026-04-29 |
 | [0005](0005-stack-flutter-fastapi.md) | Stack Flutter + FastAPI + PostgreSQL 100% open source | Accepté | 2026-04-29 |
+| [0006](0006-auth-phone-first.md) | Authentification phone-first + email optionnel pour récupération | Accepté | 2026-06-07 |
+| [0007](0007-stock-movements.md) | Traçabilité du stock via un ledger append-only (stock_movements) | Accepté | 2026-08-02 |
 | [0008](0008-categories-images-recus.md) | Catégories produit, images (produit + logo) et reçus enrichis | Accepté | 2026-09-27 |
 | [0009](0009-prix-achat-remises-marge.md) | Prix d'achat, réductions et marge, instantané dans les ventes | Accepté | 2026-09-27 |
 | [0010](0010-retours-clients.md) | Retours clients, remboursement manuel et validation serveur | Accepté | 2026-10-17 |
