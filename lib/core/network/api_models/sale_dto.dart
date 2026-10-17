@@ -81,6 +81,10 @@ sealed class SaleDto with _$SaleDto {
 sealed class SaleItemCreateDto with _$SaleItemCreateDto {
   /// Crée un [SaleItemCreateDto].
   const factory SaleItemCreateDto({
+    /// UUID de la ligne généré sur l'appareil : le serveur le conserve, la
+    /// ligne a donc le même id partout (référencée par les retours). Absent
+    /// des ventes mises en file par une ancienne version de l'app.
+    String? id,
     @JsonKey(name: 'product_id') String? productId,
     @JsonKey(name: 'product_name_at_sale') required String productNameAtSale,
     @JsonKey(name: 'unit_price_at_sale') required String unitPriceAtSale,

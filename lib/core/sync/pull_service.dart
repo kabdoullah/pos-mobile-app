@@ -151,7 +151,14 @@ class PullService {
                 mode: drift.InsertMode.insertOrReplace,
               );
               // Lignes de la vente : le détail et la réimpression fonctionnent
-              // aussi pour une vente faite sur un autre appareil.
+              // aussi pour une vente faite sur un autre appareil. La version
+              // serveur remplace les lignes locales (vente immuable) : une
+              // vente mise en file par une ancienne version de l'app avait des
+              // ids de ligne locaux que le serveur n'a pas repris.
+              batch.deleteWhere(
+                _db.saleItems,
+                (t) => t.saleId.equals(saleDto.id),
+              );
               for (final item in saleDto.items) {
                 batch.insert(
                   _db.saleItems,
@@ -169,7 +176,6 @@ class PullService {
                     discountValue: drift.Value(item.discountValue),
                     discountAmount: drift.Value(item.discountAmount),
                   ),
-                  mode: drift.InsertMode.insertOrIgnore,
                 );
               }
             }

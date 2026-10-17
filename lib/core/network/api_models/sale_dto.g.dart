@@ -73,6 +73,7 @@ Map<String, dynamic> _$SaleDtoToJson(_SaleDto instance) => <String, dynamic>{
 
 _SaleItemCreateDto _$SaleItemCreateDtoFromJson(Map<String, dynamic> json) =>
     _SaleItemCreateDto(
+      id: json['id'] as String?,
       productId: json['product_id'] as String?,
       productNameAtSale: json['product_name_at_sale'] as String,
       unitPriceAtSale: json['unit_price_at_sale'] as String,
@@ -86,6 +87,7 @@ _SaleItemCreateDto _$SaleItemCreateDtoFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$SaleItemCreateDtoToJson(_SaleItemCreateDto instance) =>
     <String, dynamic>{
+      'id': instance.id,
       'product_id': instance.productId,
       'product_name_at_sale': instance.productNameAtSale,
       'unit_price_at_sale': instance.unitPriceAtSale,

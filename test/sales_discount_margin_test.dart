@@ -463,6 +463,9 @@ void main() {
       expect(item['discount_value'], '400');
       expect(item['discount_amount'], '400');
       expect(item['line_total'], '3600');
+      // Même id de ligne sur l'appareil et le serveur.
+      final row = await db.select(db.saleItems).getSingle();
+      expect(item['id'], row.id);
     });
 
     test('résumé de marge depuis drift', () async {
@@ -475,7 +478,7 @@ void main() {
     });
   });
 
-  test('migration drift v6 → v7 : données conservées', () async {
+  test('migration drift v6 → v8 : données conservées', () async {
     final file = File(
       '${Directory.systemTemp.createTempSync('pos_migration').path}/db.sqlite',
     );
@@ -510,6 +513,9 @@ void main() {
         INSERT INTO sales VALUES ('s1', 7, '4000', '0', 'cash', 0);
         INSERT INTO sale_items VALUES ('i1', 's1', 'p1', 'Coca', '2000', 2,
           '4000');
+        INSERT INTO sync_metadata VALUES ('last_pull_at',
+          '2026-09-01T00:00:00.000Z', 0);
+        INSERT INTO sync_metadata VALUES ('active_store_id', 'store-1', 0);
         PRAGMA user_version = 6;
       ''');
     raw.dispose();
@@ -528,5 +534,8 @@ void main() {
     expect(item.lineTotal, '4000');
     expect(item.discountAmount, '0');
     expect(item.purchaseUnitPrice, isNull);
+    // v8 : le dernier pull est oublié (pull complet), la boutique active reste.
+    final metadata = await db.select(db.syncMetadata).get();
+    expect(metadata.map((m) => m.key), ['active_store_id']);
   });
 }

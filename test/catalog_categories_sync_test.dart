@@ -296,6 +296,73 @@ void main() {
       expect(items.single.productName, 'Baguette');
       expect(items.single.quantity, 4);
     });
+
+    test(
+      'les lignes serveur remplacent les lignes aux ids locaux d’une vente',
+      () async {
+        // Vente faite ici par une ancienne version : ligne à l'id local.
+        await db
+            .into(db.sales)
+            .insert(
+              SalesCompanion.insert(
+                id: 'sale-1',
+                receiptNumber: 42,
+                totalAmount: '1000.00',
+                vatAmount: '0.00',
+                paymentMethod: 'cash',
+                createdAt: DateTime.parse(_now),
+              ),
+            );
+        await db
+            .into(db.saleItems)
+            .insert(
+              SaleItemsCompanion.insert(
+                id: 'local-item',
+                saleId: 'sale-1',
+                productId: 'p1',
+                productName: 'Baguette',
+                unitPrice: '250.00',
+                quantity: 4,
+                lineTotal: '1000.00',
+              ),
+            );
+        stubChanges(
+          const SyncChangesDto(
+            products: [],
+            sales: [
+              SaleDto(
+                id: 'sale-1',
+                storeId: 's',
+                receiptNumber: 42,
+                totalAmount: '1000.00',
+                vatAmount: '0.00',
+                paymentMethod: 'cash',
+                createdAt: _now,
+                syncedAt: _now,
+                items: [
+                  SaleItemDto(
+                    id: 'server-item',
+                    saleId: 'sale-1',
+                    productId: 'p1',
+                    productNameAtSale: 'Baguette',
+                    unitPriceAtSale: '250.00',
+                    quantity: 4,
+                    lineTotal: '1000.00',
+                  ),
+                ],
+              ),
+            ],
+            hasMore: false,
+            serverTime: _now,
+          ),
+        );
+
+        await pull.pullChanges();
+
+        final items = await db.select(db.saleItems).get();
+        expect(items.map((i) => i.id), ['server-item']);
+      },
+    );
   });
 
   group('refus définitif du serveur', () {
