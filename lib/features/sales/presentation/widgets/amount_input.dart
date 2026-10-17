@@ -2,6 +2,8 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/widgets/index.dart';
+
 /// Champ de saisie d'un montant FCFA (entier, clavier numérique).
 ///
 /// La valeur fait foi côté appelant ([value]) : un raccourci qui la modifie
@@ -57,7 +59,11 @@ class _AmountInputState extends State<AmountInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return AppTextField(
+      label: widget.label,
+      hint: widget.hint,
+      errorText: widget.errorText,
+      suffixText: 'FCFA',
       controller: _controller,
       keyboardType: TextInputType.number,
       inputFormatters: [
@@ -65,13 +71,6 @@ class _AmountInputState extends State<AmountInput> {
         LengthLimitingTextInputFormatter(10),
       ],
       textInputAction: TextInputAction.done,
-      decoration: InputDecoration(
-        labelText: widget.label,
-        hintText: widget.hint,
-        errorText: widget.errorText,
-        suffixText: 'FCFA',
-        isDense: true,
-      ),
       onChanged: (text) => widget.onChanged(Decimal.tryParse(text)),
     );
   }

@@ -191,7 +191,10 @@ class _DiscountSheetState extends State<_DiscountSheet> {
               ),
               if (_isCustom) ...[
                 const SizedBox(height: AppSpacing.md),
-                TextField(
+                AppTextField(
+                  label: 'Valeur',
+                  suffixText: isPercent ? '%' : 'FCFA',
+                  errorText: error,
                   controller: _controller,
                   autofocus: true,
                   keyboardType: TextInputType.numberWithOptions(
@@ -211,11 +214,6 @@ class _DiscountSheetState extends State<_DiscountSheet> {
                     ),
                     LengthLimitingTextInputFormatter(10),
                   ],
-                  decoration: InputDecoration(
-                    labelText: 'Valeur',
-                    suffixText: isPercent ? '%' : 'FCFA',
-                    errorText: error,
-                  ),
                   onChanged: (_) => setState(() {}),
                 ),
               ],

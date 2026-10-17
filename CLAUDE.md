@@ -12,6 +12,7 @@ make analyze       # static analysis (must pass before commit)
 make format        # dart format (fails if diff — run before commit)
 make test          # flutter test all
 make run           # dev flavor on emulator/device (--flavor dev -t lib/main.dart)
+make run-ios       # dev on iOS, no --flavor (iOS schemes not configured)
 make run-prod      # prod flavor, release
 make build-apk     # release APK (prod flavor)
 make build-apk-dev # debug APK (dev flavor)
@@ -60,7 +61,7 @@ Two provider locations:
 
 | Feature | Status |
 |---|---|
-| `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, token refresh, store setup, account deletion from Settings (ADR-0011: `DELETE /users/me` with password, then full local wipe) |
+| `auth` | Implemented — phone+password registration, phone login, PIN setup/verify, session lock after 5 min of inactivity (PIN asked again, cart kept), token refresh, store setup, account deletion from Settings (ADR-0011: `DELETE /users/me` with password, then full local wipe) |
 | `catalog` | Implemented — product form/import, barcode scanning, local sync (the product list lives in the Stock tab, `inventory`) |
 | `sales` | Implemented — cart, payment, receipt printing, sale history |
 | `inventory` | Implemented — Stock tab (summary, product list, filters), product detail page, manual adjustments, movement history per product or for all products. **Online-only**: movements are server-authoritative (no drift table); only `Products.currentStock` is refreshed locally |
@@ -116,6 +117,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 - **Riverpod writes and auto-dispose:** never perform a write through an auto-dispose provider that the calling screen does not `watch` — it is disposed mid-`await` and throws after the server call succeeded (the user retries → duplicate write). Use a `keepAlive` controller, e.g. `StockAdjustment` in `inventory_providers.dart`, `StoreConfig` in `auth/providers/store_provider.dart`.
 - **Account switch:** `Auth` clears the cached store config (`StoreRepository.clearLocal()` + invalidate `storeConfigProvider`) on login/register/logout; `SyncOrchestrator.syncNow()` wipes drift business data (and the product-photo/logo disk cache, `ImageFileCache`) when the token's `store_id` differs from the last active store; the seller name (`SellerProfile`) is cleared with the store config. Anything new cached per-account must follow the same path.
+- **Session lock:** `SessionLock` (`auth/presentation/providers/session_lock_provider.dart`) calls `Auth.lock()` (`Authenticated → PinRequired`) after `AppConfig.sessionLockMinutes` without a touch (pointer `Listener` in `app.dart`; background time is checked on resume). The cart (`Cart`) is `keepAlive` so it survives the lock, and is cleared in `Auth._resetStoreCache()` on account switch.
 - **Tabs:** `ShellBranch` enum (`core/router/main_shell.dart`) must stay in the same order as the `StatefulShellRoute` branches in `app_router.dart` and the `NavigationBar` destinations. Use `goBranch(ShellBranch.x.index)`, never a literal index.
 - **Low-stock rule** exists twice: `Product.stockLevel` (Dart) and the SQL in `CatalogRepositoryImpl.watchLowStockProducts()`. Change both together.
 - **"Today"-scoped providers** must watch `todayProvider` (`home_providers.dart`), which rebuilds at local midnight; `watchTodayStats()` fixes the day at subscription.

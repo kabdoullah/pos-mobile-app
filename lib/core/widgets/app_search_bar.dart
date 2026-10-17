@@ -39,6 +39,7 @@ class AppSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return SearchBar(
+      onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,

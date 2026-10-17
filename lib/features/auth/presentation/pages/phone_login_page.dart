@@ -105,14 +105,12 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
                 'Sans email, contactez le support.',
               ),
               const SizedBox(height: AppSpacing.md),
-              TextField(
+              AppTextField(
+                label: 'Adresse email de récupération',
+                hint: 'votre@email.com',
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 autofocus: true,
-                decoration: const InputDecoration(
-                  labelText: 'Adresse email de récupération',
-                  hintText: 'votre@email.com',
-                ),
               ),
             ],
           ),

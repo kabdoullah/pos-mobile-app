@@ -137,6 +137,14 @@ L'access token a une durée de vie de 1 heure. Un refresh token longue durée (3
 
 L'identifiant est le numéro de téléphone (E.164) + mot de passe ; l'email est optionnel et ne sert qu'à la récupération du compte. Sur l'appareil, un PIN local à 4 chiffres (hashé PBKDF2, jamais envoyé au serveur) protège l'usage quotidien : 5 tentatives, puis blocage 5 minutes. Côté app, le parcours d'authentification est un état `AuthStatus` (inscription → boutique → PIN → authentifié) lu par le routeur.
 
+**Verrouillage après inactivité.** Après 5 minutes sans toucher l'écran (`AppConfig.sessionLockMinutes`), la session se verrouille et le PIN est redemandé ; l'utilisateur reste connecté (jetons conservés, pas d'appel réseau).
+
+- Le temps passé en arrière-plan compte : au retour au premier plan, l'écart avec le dernier toucher est mesuré sur l'horloge (les timers ne sont pas fiables quand l'app est suspendue, surtout sur iOS).
+- Mécanisme : `SessionLock` (`features/auth/presentation/providers/session_lock_provider.dart`) arme un timer en `AuthAuthenticated`, réarmé par chaque toucher (un `Listener` dans `lib/app/app.dart`, dialogues compris). À l'échéance, `Auth.lock()` repasse en `AuthPinRequired` et le routeur ouvre l'écran PIN existant (tentatives et blocage inchangés).
+- Après déverrouillage, l'app revient à l'accueil. Le panier en cours est conservé (provider `Cart` gardé en vie) et vidé au changement de compte (`Auth._resetStoreCache`). Le montant reçu et le moyen de paiement sont à ressaisir.
+- La synchro s'arrête pendant le verrouillage et reprend au déverrouillage (elle n'agit qu'en `AuthAuthenticated`).
+- Limites : la saisie au clavier et les scans caméra ne comptent pas comme activité ; un sélecteur système (fichier, appareil photo) ouvert plus de 5 minutes verrouille au retour.
+
 Voir [ADR-0006 : authentification phone-first](adr/0006-auth-phone-first.md), qui remplace [ADR-0004](adr/0004-auth-email-pin.md).
 
 ## Architecture mobile
@@ -326,6 +334,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 |---|---|
 | Brute force login | Prévu : rate limiting via fastapi-limiter (5 tentatives/min/IP), pas encore branché |
 | Brute force PIN | Compteur local, 5 tentatives puis blocage 5 min |
+| Appareil laissé ouvert sans surveillance | Verrouillage de session après 5 min sans toucher, PIN redemandé |
 | SQL injection | SQLAlchemy avec paramètres bindés, jamais de string concat |
 | XSS | Pas de UI web servie par l'API, donc surface réduite |
 | CSRF | API stateless avec JWT, pas de cookies de session |

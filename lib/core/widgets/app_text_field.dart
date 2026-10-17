@@ -28,6 +28,10 @@ class AppTextField extends StatefulWidget {
     this.onSubmitted,
     this.autofillHints,
     this.helper,
+    this.autofocus = false,
+    this.maxLength,
+    this.textCapitalization = TextCapitalization.none,
+    this.suffixText,
     super.key,
   });
 
@@ -81,6 +85,18 @@ class AppTextField extends StatefulWidget {
   /// saisie, confirmation de validité).
   final Widget? helper;
 
+  /// Donne le focus au champ dès son affichage (ouvre le clavier).
+  final bool autofocus;
+
+  /// Nombre maximal de caractères, avec compteur sous le champ.
+  final int? maxLength;
+
+  /// Mise en majuscule automatique du clavier (mots, phrases…).
+  final TextCapitalization textCapitalization;
+
+  /// Texte fixe affiché à la fin du champ (ex. unité : « FCFA », « % »).
+  final String? suffixText;
+
   @override
   State<AppTextField> createState() => _AppTextFieldState();
 }
@@ -121,8 +137,14 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
         const SizedBox(height: AppSpacing.xs),
         SizedBox(
-          height: widget.maxLines == 1 ? 56 : null,
+          // Hauteur fixe sans compteur : il s'affiche sous le champ.
+          height: widget.maxLines == 1 && widget.maxLength == null ? 56 : null,
           child: TextField(
+            // Toucher ailleurs ferme le clavier.
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+            autofocus: widget.autofocus,
+            maxLength: widget.maxLength,
+            textCapitalization: widget.textCapitalization,
             controller: widget.controller,
             focusNode: _focusNode,
             obscureText: _isObscured,
@@ -137,6 +159,7 @@ class _AppTextFieldState extends State<AppTextField> {
             style: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,
+              suffixText: widget.suffixText,
               hintStyle: AppTypography.hintText.copyWith(
                 color: cs.onSurfaceVariant,
               ),

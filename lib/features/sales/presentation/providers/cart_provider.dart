@@ -39,7 +39,11 @@ class CartState {
 }
 
 /// CartNotifier gère l'état du panier.
-@riverpod
+///
+/// `keepAlive` : le panier survit au verrouillage de session (la caisse quitte
+/// l'arbre pendant la saisie du PIN). Vidé au changement de compte par
+/// `Auth._resetStoreCache`.
+@Riverpod(keepAlive: true)
 class Cart extends _$Cart {
   @override
   CartState build() => const CartState(items: []);

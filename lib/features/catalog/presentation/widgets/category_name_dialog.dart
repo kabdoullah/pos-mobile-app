@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/index.dart';
+
 /// Longueur maximale d'un nom de catégorie (colonne serveur : 60).
 const categoryNameMaxLength = 60;
 
@@ -54,16 +56,14 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
-      content: TextField(
+      content: AppTextField(
+        label: 'Nom',
+        hint: 'Ex. : Boissons',
         controller: _controller,
         autofocus: true,
         maxLength: categoryNameMaxLength,
         textCapitalization: TextCapitalization.sentences,
         textInputAction: TextInputAction.done,
-        decoration: const InputDecoration(
-          labelText: 'Nom',
-          hintText: 'Ex. : Boissons',
-        ),
         onChanged: (_) => setState(() {}),
         onSubmitted: (_) => _submit(),
       ),

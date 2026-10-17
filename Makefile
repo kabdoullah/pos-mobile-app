@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install gen gen-watch run run-prod analyze format test build-apk build-apk-dev build-aab clean
+.PHONY: help install gen gen-watch run run-ios run-prod analyze format test build-apk build-apk-dev build-aab clean
 
 help: ## Liste les commandes disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -16,6 +16,9 @@ gen-watch: ## Lance la génération de code en mode watch
 
 run: ## Lance l'app en mode dev (flavor dev, API staging)
 	flutter run --flavor dev -t lib/main.dart
+
+run-ios: ## Lance l'app en mode dev sur iOS (flavors iOS non configurés, voir docs/flavors.md)
+	flutter run -t lib/main.dart
 
 run-prod: ## Lance l'app en mode prod (flavor prod, API prod) — release
 	flutter run --release --flavor prod -t lib/main_prod.dart

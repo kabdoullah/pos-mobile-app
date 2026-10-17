@@ -183,16 +183,12 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
               ),
               if (draft.reason == ReturnReason.other) ...[
                 const SizedBox(height: AppSpacing.sm),
-                TextField(
+                AppTextField(
+                  label: 'Précisez le motif',
+                  errorText: draft.needsNote ? 'Commentaire obligatoire' : null,
                   onChanged: _draft.setNote,
                   maxLength: 500,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    labelText: 'Précisez le motif',
-                    errorText: draft.needsNote
-                        ? 'Commentaire obligatoire'
-                        : null,
-                  ),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),

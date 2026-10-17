@@ -112,16 +112,14 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               const SizedBox(height: AppSpacing.md),
               const _LogoRow(),
               const SizedBox(height: AppSpacing.md),
-              TextField(
+              AppTextField(
+                label: 'Pied de page',
+                hint: 'Ex. : Ouvert 7j/7 — Tél. 07 00 00 00 00',
                 controller: _footerController,
                 maxLength: receiptFooterMaxLength,
                 maxLines: 3,
                 minLines: 1,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Pied de page',
-                  hintText: 'Ex. : Ouvert 7j/7 — Tél. 07 00 00 00 00',
-                ),
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSpacing.sm),

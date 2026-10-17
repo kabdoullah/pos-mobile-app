@@ -1,17 +1,15 @@
-import 'dart:async';
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:logger/logger.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/network/network_providers.dart';
-import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/sync/sync_providers.dart';
 import '../../domain/entities/pin_failure.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../../auth/providers/auth_di_providers.dart';
+import '../../../sales/presentation/providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/seller_profile_provider.dart';
 
@@ -277,14 +275,16 @@ class Auth extends _$Auth {
         throw msg;
       }
     });
+    // La synchro part d'elle-même au passage en Authenticated (écouteur de
+    // SyncOrchestrator) : la lire ici créerait une dépendance circulaire.
+  }
 
-    // Déclenche la synchro quand l'utilisateur devient pleinement authentifié.
-    if (state is AsyncData<AuthStatus>) {
-      final status = (state as AsyncData<AuthStatus>).value;
-      if (status is AuthAuthenticated) {
-        _logger.i('[Auth.verifyPin] Triggering sync');
-        unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
-      }
+  /// Verrouille la session : redemande le PIN sans déconnecter (inactivité,
+  /// voir `SessionLock`). Sans effet hors de `Authenticated`.
+  void lock() {
+    if (state.value is AuthAuthenticated) {
+      _logger.i('[Auth.lock] Session locked, PIN required');
+      state = const AsyncData(AuthPinRequired());
     }
   }
 
@@ -354,15 +354,8 @@ class Auth extends _$Auth {
         throw msg;
       }
     });
-
-    // Déclenche la synchro quand l'utilisateur devient pleinement authentifié.
-    if (state is AsyncData<AuthStatus>) {
-      final status = (state as AsyncData<AuthStatus>).value;
-      if (status is AuthAuthenticated) {
-        _logger.i('[Auth.setupPin] Triggering sync');
-        unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
-      }
-    }
+    // La synchro part d'elle-même au passage en Authenticated (écouteur de
+    // SyncOrchestrator) : la lire ici créerait une dépendance circulaire.
   }
 
   /// Déconnecte l'utilisateur courant.
@@ -404,7 +397,9 @@ class Auth extends _$Auth {
   /// Efface la boutique en cache du compte précédent, pour qu'un autre compte
   /// sur cet appareil ne l'affiche ni ne l'imprime jamais (nom, NCC, TVA,
   /// pied de reçu). La lecture suivante recharge la boutique du compte connecté.
+  /// Vide aussi le panier, conservé pendant un verrouillage de session.
   Future<void> _resetStoreCache() async {
+    ref.invalidate(cartProvider);
     await ref.read(storeRepositoryProvider).clearLocal();
     ref.invalidate(storeConfigProvider);
     // Le nom du vendeur appartient au compte : même traitement.
