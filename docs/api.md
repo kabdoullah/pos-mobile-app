@@ -142,9 +142,17 @@ Note : pas de `POST /sales` direct. Les ventes sont créées uniquement via `/sy
 
 ```
 POST   /api/v1/sync/sales                Push événements ventes (batch)
+POST   /api/v1/sync/returns              Push retours clients (lots de 50, après les ventes)
+PUT    /api/v1/sync/categories           Push état catégories
 PUT    /api/v1/sync/products             Push état produit
 GET    /api/v1/sync/changes              Pull des changements depuis un timestamp
 ```
+
+Ordre de push : ventes → retours → catégories → produits.
+
+`POST /sync/returns` (ADR-0010) renvoie un résultat par retour : `created`, `already_exists` (renvoi du même UUID), `rejected` avec un `error_code` définitif (`sale_not_found`, `item_not_in_sale`, `quantity_exceeded`, `amount_mismatch`) — à ne pas renvoyer — ou `failed` (erreur inattendue, à renvoyer). Le serveur verrouille la vente, recalcule le montant remboursé et refuse tout écart avec celui de l'app.
+
+`GET /sync/changes` inclut une phase `returns` (après les ventes).
 
 ### Système
 

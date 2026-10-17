@@ -200,7 +200,8 @@ Le système utilise deux modèles de synchronisation différents selon la nature
 | Donnée | Modèle | Justification |
 |---|---|---|
 | Ventes | Événementiel append-only | Les ventes sont immuables (événements comptables). Pas de modification possible après création. |
-| Catalogue produit | État avec last-write-wins | Les produits sont mutables (changement de prix, modification de nom). |
+| Retours clients | Événementiel append-only | Un retour est un événement distinct de la vente, immuable ; le serveur valide quantités et montant ([ADR-0010](adr/0010-retours-clients.md)). |
+| Catalogue (produits, catégories) | État avec last-write-wins | Les produits sont mutables (changement de prix, modification de nom). |
 
 Voir [ADR-0003 : synchronisation hybride](adr/0003-sync-hybride.md) pour la justification détaillée.
 
@@ -225,6 +226,16 @@ sequenceDiagram
 ```
 
 L'idempotence est garantie par le UUID client : si l'app envoie deux fois la même vente (parce que la première réponse a été perdue), le serveur ne crée pas de doublon.
+
+### Flux de sync retours clients (ADR-0010)
+
+Même modèle que les ventes, sur une vente déjà synchronisée (numéro de reçu attribué) :
+
+1. L'app enregistre le retour hors ligne dans une seule transaction drift : retour, lignes, réintégration du stock local des articles revendables, entrée `sale_return` dans `sync_queue`.
+2. Après les ventes, l'app envoie `POST /sync/returns`. Le serveur verrouille la vente, vérifie les quantités déjà retournées et recalcule le remboursement (`RefundCalculator` côté app, `refund.py` côté serveur — implémentations identiques).
+3. Un refus définitif (`rejected`) marque le retour `rejected` localement et **annule la réintégration du stock local** ; l'argent a pu être rendu, le commerçant régularise à la main.
+
+Les chiffres du jour et la marge sont nets des remboursements.
 
 ### Flux de sync catalogue (état)
 
@@ -258,7 +269,7 @@ Au lancement de l'app et à chaque retour en ligne, l'app récupère les changem
 GET /sync/changes?since=<timestamp_iso8601>
 ```
 
-La réponse contient les ventes et produits modifiés côté serveur depuis ce timestamp. Utile principalement pour le scénario "changement de téléphone" où `since=null` pour rapatrier tout l'historique de la boutique.
+La réponse contient les ventes (avec leurs lignes), retours, catégories et produits modifiés côté serveur depuis ce timestamp. Utile principalement pour le scénario "changement de téléphone" où `since=null` pour rapatrier tout l'historique de la boutique.
 
 ## Sécurité
 
@@ -385,5 +396,6 @@ Ces sujets sont identifiés comme importants mais reportés à des phases ultér
 - [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md)
 - [ADR-0005 : stack Flutter + FastAPI](adr/0005-stack-flutter-fastapi.md)
 - [ADR-0006 : choix d'hébergement Hetzner](adr/0006-hebergement-hetzner.md)
+- [ADR-0010 : retours clients](adr/0010-retours-clients.md)
 - [Modèle de données](data-model.md)
 - [Runbook opérationnel](runbook.md)
