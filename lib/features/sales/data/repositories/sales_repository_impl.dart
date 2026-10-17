@@ -303,29 +303,43 @@ class SalesRepositoryImpl implements SalesRepository {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
 
+    // Remboursements du jour (date du retour, pas de la vente) : ils sortent
+    // de la caisse aujourd'hui (ADR-0010).
     return db
         .customSelect(
           'SELECT '
           '  COUNT(*) AS sale_count, '
           '  COALESCE(SUM(CAST(total_amount AS INTEGER)), 0) AS total, '
           '  COALESCE(SUM(CASE WHEN payment_method = ? THEN CAST(total_amount AS INTEGER) ELSE 0 END), 0) AS cash_total, '
-          '  COALESCE(SUM(CASE WHEN payment_method != ? THEN CAST(total_amount AS INTEGER) ELSE 0 END), 0) AS mobile_total '
+          '  COALESCE(SUM(CASE WHEN payment_method != ? THEN CAST(total_amount AS INTEGER) ELSE 0 END), 0) AS mobile_total, '
+          '  (SELECT COALESCE(SUM(CAST(refund_amount AS INTEGER)), 0) '
+          "     FROM sale_returns WHERE created_at >= ? AND sync_status != 'rejected') AS refund_total, "
+          '  (SELECT COALESCE(SUM(CAST(refund_amount AS INTEGER)), 0) '
+          "     FROM sale_returns WHERE created_at >= ? AND sync_status != 'rejected' "
+          "       AND refund_method = 'cash') AS cash_refund "
           'FROM sales WHERE created_at >= ?',
           variables: [
             drift.Variable.withString('cash'),
             drift.Variable.withString('cash'),
             drift.Variable.withDateTime(todayStart),
+            drift.Variable.withDateTime(todayStart),
+            drift.Variable.withDateTime(todayStart),
           ],
-          readsFrom: {db.sales},
+          readsFrom: {db.sales, db.saleReturns},
         )
         .watchSingle()
         .map((row) {
           Decimal fromInt(int v) => Decimal.fromInt(v);
+          final refund = row.read<int>('refund_total');
+          final cashRefund = row.read<int>('cash_refund');
           return (
             saleCount: row.read<int>('sale_count'),
-            totalAmount: fromInt(row.read<int>('total')),
-            cashTotal: fromInt(row.read<int>('cash_total')),
-            mobileMoneyTotal: fromInt(row.read<int>('mobile_total')),
+            totalAmount: fromInt(row.read<int>('total') - refund),
+            cashTotal: fromInt(row.read<int>('cash_total') - cashRefund),
+            mobileMoneyTotal: fromInt(
+              row.read<int>('mobile_total') - (refund - cashRefund),
+            ),
+            refundTotal: fromInt(refund),
           );
         });
   }
@@ -353,7 +367,25 @@ class SalesRepositoryImpl implements SalesRepository {
               db.sales.createdAt.isSmallerThanValue(rangeEnd),
         );
 
-    return query.watch().map((rows) {
+    // Lignes de retour de la période (date du retour, refusés exclus). Ce flux
+    // lit les quatre tables : il réémet à chaque vente comme à chaque retour.
+    final returnLines = db.customSelect(
+      'SELECT ri.quantity, ri.restocked, ri.refund_amount, '
+      '  si.purchase_unit_price '
+      'FROM sale_return_items ri '
+      'JOIN sale_returns r ON r.id = ri.return_id '
+      'LEFT JOIN sale_items si ON si.id = ri.sale_item_id '
+      "WHERE r.sync_status != 'rejected' "
+      '  AND r.created_at >= ? AND r.created_at < ?',
+      variables: [
+        drift.Variable.withDateTime(rangeStart),
+        drift.Variable.withDateTime(rangeEnd),
+      ],
+      readsFrom: {db.sales, db.saleItems, db.saleReturns, db.saleReturnItems},
+    );
+
+    return returnLines.watch().asyncMap((returned) async {
+      final rows = await query.get();
       final sales = <String, ({sale_entity.Sale sale, List<CartItem> items})>{};
       for (final row in rows) {
         final saleRow = row.readTable(db.sales);
@@ -364,7 +396,20 @@ class SalesRepositoryImpl implements SalesRepository {
         final itemRow = row.readTableOrNull(db.saleItems);
         if (itemRow != null) entry.items.add(itemRow.toCartItem());
       }
-      return MarginSummary.fromSales(sales.values);
+      return MarginSummary.fromSales(sales.values).withReturns([
+        for (final row in returned)
+          (
+            refund: Decimal.parse(row.read<String>('refund_amount')),
+            purchaseUnitPrice: switch (row.readNullable<String>(
+              'purchase_unit_price',
+            )) {
+              final String price => Decimal.parse(price),
+              null => null,
+            },
+            quantity: row.read<int>('quantity'),
+            restocked: row.read<bool>('restocked'),
+          ),
+      ]);
     });
   }
 

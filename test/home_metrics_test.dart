@@ -9,11 +9,13 @@ DailyStats stats({
   String total = '0',
   String cash = '0',
   String mobile = '0',
+  String refund = '0',
 }) => (
   saleCount: count,
   totalAmount: Decimal.parse(total),
   cashTotal: Decimal.parse(cash),
   mobileMoneyTotal: Decimal.parse(mobile),
+  refundTotal: Decimal.parse(refund),
 );
 
 void main() {
@@ -30,6 +32,14 @@ void main() {
       expect(
         averageBasket(stats(count: 2, total: '10500')),
         Decimal.parse('5250'),
+      );
+    });
+
+    test('un retour ne change pas le panier moyen des ventes', () {
+      // 3 ventes pour 10 000, dont 1 000 remboursés : encaissé net 9 000.
+      expect(
+        averageBasket(stats(count: 3, total: '9000', refund: '1000')),
+        Decimal.parse('3333'),
       );
     });
   });

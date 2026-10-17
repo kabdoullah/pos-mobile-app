@@ -140,6 +140,73 @@ class SaleItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Retours clients (ADR-0010) — immuables une fois enregistrés ; seuls le
+/// numéro et le statut de synchro évoluent.
+class SaleReturns extends Table {
+  /// UUID v4 généré côté client (idempotence sync).
+  TextColumn get id => text()();
+
+  /// Vente d'origine.
+  TextColumn get saleId => text()();
+
+  /// Numéro attribué par le serveur (0 = pas encore synchronisé).
+  IntColumn get returnNumber => integer().withDefault(const Constant(0))();
+
+  /// Motif, valeur de l'API (`defective`, `other`…).
+  TextColumn get reason => text()();
+
+  /// Commentaire (obligatoire pour le motif `other`).
+  TextColumn get note => text().nullable()();
+
+  /// Moyen de remboursement, valeur de l'API (`cash`, `mobile_money_wave`…).
+  TextColumn get refundMethod => text()();
+
+  /// Montant rendu au client en FCFA (string).
+  TextColumn get refundAmount => text()();
+
+  /// Date du retour.
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// `pending` (à envoyer), `synced`, `rejected` (refus définitif du serveur).
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+
+  /// Code du refus serveur (`quantity_exceeded`…), null sinon.
+  TextColumn get rejectionCode => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Lignes d'un retour, chacune rattachée à une ligne de vente.
+class SaleReturnItems extends Table {
+  /// UUID v4 généré côté client.
+  TextColumn get id => text()();
+
+  /// Retour parent.
+  TextColumn get returnId => text()();
+
+  /// Ligne de vente d'origine.
+  TextColumn get saleItemId => text()();
+
+  /// Produit (null si supprimé côté serveur).
+  TextColumn get productId => text().nullable()();
+
+  /// Quantité rendue.
+  IntColumn get quantity => integer()();
+
+  /// État de l'article, valeur de l'API (`resellable`, `unsellable`…).
+  TextColumn get condition => text()();
+
+  /// L'article a réintégré le stock disponible.
+  BoolColumn get restocked => boolean()();
+
+  /// Montant remboursé pour cette ligne en FCFA (string).
+  TextColumn get refundAmount => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Métadonnées de synchronisation — stocke les timestamps du dernier pull.
 class SyncMetadata extends Table {
   /// Clé unique (ex: 'last_pull').
@@ -187,7 +254,16 @@ class SyncQueue extends Table {
 
 /// Base de données drift de l'application.
 @DriftDatabase(
-  tables: [Products, Categories, Sales, SaleItems, SyncQueue, SyncMetadata],
+  tables: [
+    Products,
+    Categories,
+    Sales,
+    SaleItems,
+    SaleReturns,
+    SaleReturnItems,
+    SyncQueue,
+    SyncMetadata,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   /// Constructeur.
@@ -198,7 +274,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -272,6 +348,12 @@ class AppDatabase extends _$AppDatabase {
         await customStatement(
           "DELETE FROM sync_metadata WHERE key = 'last_pull_at'",
         );
+      }
+      if (from < 9) {
+        // v8 → v9 (ADR-0010) : retours clients. Tables nouvelles, aucune donnée
+        // existante modifiée.
+        await m.createTable(saleReturns);
+        await m.createTable(saleReturnItems);
       }
     },
   );

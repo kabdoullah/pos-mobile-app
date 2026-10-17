@@ -182,6 +182,50 @@ class PullService {
           });
         }
 
+        // Retours (ADR-0010) : la version serveur fait foi, un retour local
+        // accepté par le serveur passe en « synced » avec son numéro.
+        if (response.returns.isNotEmpty) {
+          await _db.batch((batch) {
+            for (final dto in response.returns) {
+              batch.insert(
+                _db.saleReturns,
+                SaleReturnsCompanion.insert(
+                  id: dto.id,
+                  saleId: dto.saleId,
+                  returnNumber: drift.Value(dto.returnNumber ?? 0),
+                  reason: dto.reason,
+                  note: drift.Value(dto.note),
+                  refundMethod: dto.refundMethod,
+                  refundAmount: dto.refundAmount,
+                  createdAt: DateTime.parse(dto.createdAt),
+                  syncStatus: const drift.Value('synced'),
+                  rejectionCode: const drift.Value(null),
+                ),
+                mode: drift.InsertMode.insertOrReplace,
+              );
+              batch.deleteWhere(
+                _db.saleReturnItems,
+                (t) => t.returnId.equals(dto.id),
+              );
+              for (final item in dto.items) {
+                batch.insert(
+                  _db.saleReturnItems,
+                  SaleReturnItemsCompanion.insert(
+                    id: item.id,
+                    returnId: dto.id,
+                    saleItemId: item.saleItemId,
+                    productId: drift.Value(item.productId),
+                    quantity: item.quantity,
+                    condition: item.condition,
+                    restocked: item.restocked,
+                    refundAmount: item.refundAmount,
+                  ),
+                );
+              }
+            }
+          });
+        }
+
         // Vérification de la pagination.
         hasMore = response.hasMore;
         cursor = response.nextCursor;

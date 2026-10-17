@@ -100,7 +100,7 @@ Voir `docs/adr/0003-sync-hybride.md`. Règles :
 
 ## Impression Bluetooth
 
-- Transport : package `print_bluetooth_thermal` (PAS flutter_blue_plus). Voir docs/adr/0007.
+- Transport : package `print_bluetooth_thermal` (PAS flutter_blue_plus). Pas d'ADR dédié (l'ADR-0007 porte sur les mouvements de stock).
 - Génération des commandes : `esc_pos_utils_plus`
 - L'imprimante cible MVP est la Goojprt PT-210 (thermique 58mm ESC/POS, 32 caractères par ligne en monospace)
 - Toujours gérer les 3 cas d'échec : imprimante non appairée, connexion perdue, échec d'envoi → proposer à l'utilisateur Réessayer / Plus tard / Pas de reçu

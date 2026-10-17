@@ -16,7 +16,8 @@ T _$identity<T>(T value) => value;
 mixin _$SyncChangesDto {
 
 // Absent sur un serveur antérieur à l'ADR-0008.
- List<CategoryDto> get categories; List<ProductDto> get products; List<SaleDto> get sales;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
+ List<CategoryDto> get categories; List<ProductDto> get products; List<SaleDto> get sales;// Absent sur un serveur antérieur à l'ADR-0010.
+ List<SaleReturnDto> get returns;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,16 +30,16 @@ $SyncChangesDtoCopyWith<SyncChangesDto> get copyWith => _$SyncChangesDtoCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SyncChangesDto&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.products, products)&&const DeepCollectionEquality().equals(other.sales, sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SyncChangesDto&&const DeepCollectionEquality().equals(other.categories, categories)&&const DeepCollectionEquality().equals(other.products, products)&&const DeepCollectionEquality().equals(other.sales, sales)&&const DeepCollectionEquality().equals(other.returns, returns)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(products),const DeepCollectionEquality().hash(sales),nextCursor,hasMore,serverTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(categories),const DeepCollectionEquality().hash(products),const DeepCollectionEquality().hash(sales),const DeepCollectionEquality().hash(returns),nextCursor,hasMore,serverTime);
 
 @override
 String toString() {
-  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
+  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, returns: $returns, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
 }
 
 
@@ -49,7 +50,7 @@ abstract mixin class $SyncChangesDtoCopyWith<$Res>  {
   factory $SyncChangesDtoCopyWith(SyncChangesDto value, $Res Function(SyncChangesDto) _then) = _$SyncChangesDtoCopyWithImpl;
 @useResult
 $Res call({
- List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
+ List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales, List<SaleReturnDto> returns,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
 });
 
 
@@ -66,12 +67,13 @@ class _$SyncChangesDtoCopyWithImpl<$Res>
 
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? returns = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
   return _then(_self.copyWith(
 categories: null == categories ? _self.categories : categories // ignore: cast_nullable_to_non_nullable
 as List<CategoryDto>,products: null == products ? _self.products : products // ignore: cast_nullable_to_non_nullable
 as List<ProductDto>,sales: null == sales ? _self.sales : sales // ignore: cast_nullable_to_non_nullable
-as List<SaleDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
+as List<SaleDto>,returns: null == returns ? _self.returns : returns // ignore: cast_nullable_to_non_nullable
+as List<SaleReturnDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,serverTime: null == serverTime ? _self.serverTime : serverTime // ignore: cast_nullable_to_non_nullable
 as String,
@@ -156,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales,  List<SaleReturnDto> returns, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SyncChangesDto() when $default != null:
-return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
+return $default(_that.categories,_that.products,_that.sales,_that.returns,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
   return orElse();
 
 }
@@ -177,10 +179,10 @@ return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales,  List<SaleReturnDto> returns, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)  $default,) {final _that = this;
 switch (_that) {
 case _SyncChangesDto():
-return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);}
+return $default(_that.categories,_that.products,_that.sales,_that.returns,_that.nextCursor,_that.hasMore,_that.serverTime);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -194,10 +196,10 @@ return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<CategoryDto> categories,  List<ProductDto> products,  List<SaleDto> sales,  List<SaleReturnDto> returns, @JsonKey(name: 'next_cursor')  String? nextCursor, @JsonKey(name: 'has_more')  bool hasMore, @JsonKey(name: 'server_time')  String serverTime)?  $default,) {final _that = this;
 switch (_that) {
 case _SyncChangesDto() when $default != null:
-return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
+return $default(_that.categories,_that.products,_that.sales,_that.returns,_that.nextCursor,_that.hasMore,_that.serverTime);case _:
   return null;
 
 }
@@ -209,7 +211,7 @@ return $default(_that.categories,_that.products,_that.sales,_that.nextCursor,_th
 @JsonSerializable()
 
 class _SyncChangesDto implements SyncChangesDto {
-  const _SyncChangesDto({final  List<CategoryDto> categories = const <CategoryDto>[], required final  List<ProductDto> products, required final  List<SaleDto> sales, @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _categories = categories,_products = products,_sales = sales;
+  const _SyncChangesDto({final  List<CategoryDto> categories = const <CategoryDto>[], required final  List<ProductDto> products, required final  List<SaleDto> sales, final  List<SaleReturnDto> returns = const <SaleReturnDto>[], @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _categories = categories,_products = products,_sales = sales,_returns = returns;
   factory _SyncChangesDto.fromJson(Map<String, dynamic> json) => _$SyncChangesDtoFromJson(json);
 
 // Absent sur un serveur antérieur à l'ADR-0008.
@@ -235,6 +237,15 @@ class _SyncChangesDto implements SyncChangesDto {
   return EqualUnmodifiableListView(_sales);
 }
 
+// Absent sur un serveur antérieur à l'ADR-0010.
+ final  List<SaleReturnDto> _returns;
+// Absent sur un serveur antérieur à l'ADR-0010.
+@override@JsonKey() List<SaleReturnDto> get returns {
+  if (_returns is EqualUnmodifiableListView) return _returns;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_returns);
+}
+
 @override@JsonKey(name: 'next_cursor') final  String? nextCursor;
 @override@JsonKey(name: 'has_more') final  bool hasMore;
 @override@JsonKey(name: 'server_time') final  String serverTime;
@@ -252,16 +263,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SyncChangesDto&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._products, _products)&&const DeepCollectionEquality().equals(other._sales, _sales)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SyncChangesDto&&const DeepCollectionEquality().equals(other._categories, _categories)&&const DeepCollectionEquality().equals(other._products, _products)&&const DeepCollectionEquality().equals(other._sales, _sales)&&const DeepCollectionEquality().equals(other._returns, _returns)&&(identical(other.nextCursor, nextCursor) || other.nextCursor == nextCursor)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&(identical(other.serverTime, serverTime) || other.serverTime == serverTime));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_products),const DeepCollectionEquality().hash(_sales),nextCursor,hasMore,serverTime);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_categories),const DeepCollectionEquality().hash(_products),const DeepCollectionEquality().hash(_sales),const DeepCollectionEquality().hash(_returns),nextCursor,hasMore,serverTime);
 
 @override
 String toString() {
-  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
+  return 'SyncChangesDto(categories: $categories, products: $products, sales: $sales, returns: $returns, nextCursor: $nextCursor, hasMore: $hasMore, serverTime: $serverTime)';
 }
 
 
@@ -272,7 +283,7 @@ abstract mixin class _$SyncChangesDtoCopyWith<$Res> implements $SyncChangesDtoCo
   factory _$SyncChangesDtoCopyWith(_SyncChangesDto value, $Res Function(_SyncChangesDto) _then) = __$SyncChangesDtoCopyWithImpl;
 @override @useResult
 $Res call({
- List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
+ List<CategoryDto> categories, List<ProductDto> products, List<SaleDto> sales, List<SaleReturnDto> returns,@JsonKey(name: 'next_cursor') String? nextCursor,@JsonKey(name: 'has_more') bool hasMore,@JsonKey(name: 'server_time') String serverTime
 });
 
 
@@ -289,12 +300,13 @@ class __$SyncChangesDtoCopyWithImpl<$Res>
 
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? returns = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
   return _then(_SyncChangesDto(
 categories: null == categories ? _self._categories : categories // ignore: cast_nullable_to_non_nullable
 as List<CategoryDto>,products: null == products ? _self._products : products // ignore: cast_nullable_to_non_nullable
 as List<ProductDto>,sales: null == sales ? _self._sales : sales // ignore: cast_nullable_to_non_nullable
-as List<SaleDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
+as List<SaleDto>,returns: null == returns ? _self._returns : returns // ignore: cast_nullable_to_non_nullable
+as List<SaleReturnDto>,nextCursor: freezed == nextCursor ? _self.nextCursor : nextCursor // ignore: cast_nullable_to_non_nullable
 as String?,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
 as bool,serverTime: null == serverTime ? _self.serverTime : serverTime // ignore: cast_nullable_to_non_nullable
 as String,

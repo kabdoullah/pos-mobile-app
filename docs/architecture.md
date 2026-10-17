@@ -38,7 +38,7 @@ flowchart TD
     System -->|Imprime via Bluetooth| Printer
 ```
 
-Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de bienvenue et de récupération de mot de passe, et l'imprimante Bluetooth pour les reçus.
+Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de récupération de mot de passe (comptes ayant renseigné un email), et l'imprimante Bluetooth pour les reçus.
 
 ## Diagramme de conteneurs
 
@@ -124,15 +124,20 @@ Le token contient un payload minimal :
 {
   "sub": "<user_uuid>",
   "store_id": "<store_uuid>",
+  "type": "access",
   "exp": 1735689600
 }
 ```
+
+Le refresh token ne porte que `sub`, `type: "refresh"` et `exp`.
 
 Le `store_id` est extrait du JWT et injecté dans le contexte de la session PostgreSQL pour activer le Row-Level Security (voir section sécurité).
 
 L'access token a une durée de vie de 1 heure. Un refresh token longue durée (30 jours) permet de renouveler sans ressaisir le mot de passe.
 
-Voir [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md).
+L'identifiant est le numéro de téléphone (E.164) + mot de passe ; l'email est optionnel et ne sert qu'à la récupération du compte. Sur l'appareil, un PIN local à 4 chiffres (hashé PBKDF2, jamais envoyé au serveur) protège l'usage quotidien : 5 tentatives, puis blocage 5 minutes. Côté app, le parcours d'authentification est un état `AuthStatus` (inscription → boutique → PIN → authentifié) lu par le routeur.
+
+Voir [ADR-0006 : authentification phone-first](adr/0006-auth-phone-first.md), qui remplace [ADR-0004](adr/0004-auth-email-pin.md).
 
 ## Architecture mobile
 
@@ -200,7 +205,8 @@ Le système utilise deux modèles de synchronisation différents selon la nature
 | Donnée | Modèle | Justification |
 |---|---|---|
 | Ventes | Événementiel append-only | Les ventes sont immuables (événements comptables). Pas de modification possible après création. |
-| Catalogue produit | État avec last-write-wins | Les produits sont mutables (changement de prix, modification de nom). |
+| Retours clients | Événementiel append-only | Un retour est un événement distinct de la vente, immuable ; le serveur valide quantités et montant ([ADR-0010](adr/0010-retours-clients.md)). |
+| Catalogue (produits, catégories) | État avec last-write-wins | Les produits sont mutables (changement de prix, modification de nom). |
 
 Voir [ADR-0003 : synchronisation hybride](adr/0003-sync-hybride.md) pour la justification détaillée.
 
@@ -225,6 +231,16 @@ sequenceDiagram
 ```
 
 L'idempotence est garantie par le UUID client : si l'app envoie deux fois la même vente (parce que la première réponse a été perdue), le serveur ne crée pas de doublon.
+
+### Flux de sync retours clients (ADR-0010)
+
+Même modèle que les ventes, sur une vente déjà synchronisée (numéro de reçu attribué) :
+
+1. L'app enregistre le retour hors ligne dans une seule transaction drift : retour, lignes, réintégration du stock local des articles revendables, entrée `sale_return` dans `sync_queue`.
+2. Après les ventes, l'app envoie `POST /sync/returns`. Le serveur verrouille la vente, vérifie les quantités déjà retournées et recalcule le remboursement (`RefundCalculator` côté app, `refund.py` côté serveur — implémentations identiques).
+3. Un refus définitif (`rejected`) marque le retour `rejected` localement et **annule la réintégration du stock local** ; l'argent a pu être rendu, le commerçant régularise à la main.
+
+Les chiffres du jour et la marge sont nets des remboursements.
 
 ### Flux de sync catalogue (état)
 
@@ -258,7 +274,7 @@ Au lancement de l'app et à chaque retour en ligne, l'app récupère les changem
 GET /sync/changes?since=<timestamp_iso8601>
 ```
 
-La réponse contient les ventes et produits modifiés côté serveur depuis ce timestamp. Utile principalement pour le scénario "changement de téléphone" où `since=null` pour rapatrier tout l'historique de la boutique.
+La réponse contient les ventes (avec leurs lignes), retours, catégories et produits modifiés côté serveur depuis ce timestamp. Utile principalement pour le scénario "changement de téléphone" où `since=null` pour rapatrier tout l'historique de la boutique.
 
 ## Sécurité
 
@@ -308,13 +324,13 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 | Attaque | Mitigation |
 |---|---|
-| Brute force login | Rate limiting via fastapi-limiter (5 tentatives/min/IP) |
+| Brute force login | Prévu : rate limiting via fastapi-limiter (5 tentatives/min/IP), pas encore branché |
 | Brute force PIN | Compteur local, 5 tentatives puis blocage 5 min |
 | SQL injection | SQLAlchemy avec paramètres bindés, jamais de string concat |
 | XSS | Pas de UI web servie par l'API, donc surface réduite |
 | CSRF | API stateless avec JWT, pas de cookies de session |
 | MITM | TLS forcé (HTTPS uniquement) via Caddy |
-| Replay attacks | JWT à courte durée (1h) + refresh token rotatif |
+| Replay attacks | JWT à courte durée (1h) ; un nouveau refresh token (30 jours) est émis à chaque refresh, sans révocation de l'ancien |
 
 ## Déploiement
 
@@ -325,7 +341,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 - **Orchestration** : Docker Compose (3 services : caddy, api, postgres)
 - **Backups** : pg_dump quotidien chiffré vers Backblaze B2
 
-Voir [ADR-0006 : choix d'hébergement Hetzner](adr/0006-hebergement-hetzner.md).
+Pas d'ADR dédié à l'hébergement. **Actuellement**, l'API de bêta tourne sur Render (offre gratuite, `https://pos-mobile-vkuh.onrender.com`, démarrage à froid ~50 s absorbé par le timeout HTTP de 60 s de l'app) ; le VPS Hetzner ci-dessus reste la cible de production.
 
 ### Procédure de déploiement
 
@@ -382,8 +398,12 @@ Ces sujets sont identifiés comme importants mais reportés à des phases ultér
 - [ADR-0001 : monolithe modulaire](adr/0001-monolithe-modulaire.md)
 - [ADR-0002 : multi-tenancy avec RLS PostgreSQL](adr/0002-multi-tenancy-rls.md)
 - [ADR-0003 : synchronisation hybride événementiel + état](adr/0003-sync-hybride.md)
-- [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md)
+- [ADR-0004 : authentification email + PIN](adr/0004-auth-email-pin.md) (remplacé par ADR-0006)
 - [ADR-0005 : stack Flutter + FastAPI](adr/0005-stack-flutter-fastapi.md)
-- [ADR-0006 : choix d'hébergement Hetzner](adr/0006-hebergement-hetzner.md)
+- [ADR-0006 : authentification phone-first](adr/0006-auth-phone-first.md)
+- [ADR-0007 : ledger des mouvements de stock](adr/0007-stock-movements.md)
+- [ADR-0008 : catégories, images et reçus](adr/0008-categories-images-recus.md)
+- [ADR-0009 : prix d'achat, remises et marge](adr/0009-prix-achat-remises-marge.md)
+- [ADR-0010 : retours clients](adr/0010-retours-clients.md)
 - [Modèle de données](data-model.md)
 - [Runbook opérationnel](runbook.md)

@@ -42,6 +42,24 @@ class SyncQueueRepository {
     return result;
   }
 
+  /// Ajoute un retour client à la file de synchro (ADR-0010).
+  Future<int> enqueueReturn({
+    required String returnId,
+    required Map<String, dynamic> returnPayload,
+  }) {
+    return _db
+        .into(_db.syncQueue)
+        .insert(
+          SyncQueueCompanion(
+            entityType: const drift.Value('sale_return'),
+            entityId: drift.Value(returnId),
+            payload: drift.Value(jsonEncode(returnPayload)),
+            status: const drift.Value('pending'),
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
+  }
+
   /// Ajoute un changement de produit à la file de synchro.
   /// Retourne l'ID de l'entrée dans la file.
   Future<int> enqueueProductChange({

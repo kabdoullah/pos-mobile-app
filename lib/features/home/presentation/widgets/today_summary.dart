@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -65,6 +66,13 @@ class _SummaryContent extends StatelessWidget {
                 size: AmountSize.hero,
                 color: cs.onPrimaryContainer,
               ),
+              if (stats.refundTotal > Decimal.zero)
+                Text(
+                  'net de ${formatFcfa(stats.refundTotal)} remboursés',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: cs.onPrimaryContainer,
+                  ),
+                ),
             ],
           ),
         ),

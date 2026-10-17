@@ -11,6 +11,7 @@ export 'image_source_sheet.dart';
 export 'loading_indicator.dart';
 export 'offline_status_indicator.dart';
 export 'primary_button.dart';
+export 'quantity_stepper.dart';
 export 'section_header.dart';
 export 'secondary_button.dart';
 export 'skeleton_box.dart';

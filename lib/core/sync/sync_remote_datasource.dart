@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/network/api_models/category_dto.dart';
+import '../../../../core/network/api_models/sale_return_dto.dart';
 import '../../../../core/network/api_models/sync_changes_dto.dart';
 import '../../../../core/network/api_models/sync_responses_dto.dart';
 
@@ -29,6 +30,14 @@ abstract class SyncRemoteDataSource {
   @POST('/api/v1/sync/sales')
   Future<SalesSyncBatchResponseDto> pushSales(
     @Body() SalesSyncBatchRequestDto batch,
+  );
+
+  /// Envoie des retours clients (ADR-0010), après les ventes. Idempotent par
+  /// UUID ; un refus métier est définitif (`rejected` + `error_code`).
+  /// Endpoint : POST /api/v1/sync/returns
+  @POST('/api/v1/sync/returns')
+  Future<ReturnsSyncBatchResponseDto> pushReturns(
+    @Body() ReturnsSyncBatchRequestDto batch,
   );
 
   /// Envoie l'état d'une catégorie (synchro par état, ADR-0008). À appeler

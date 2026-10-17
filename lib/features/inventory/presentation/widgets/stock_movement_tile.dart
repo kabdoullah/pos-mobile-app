@@ -26,6 +26,7 @@ class StockMovementTile extends StatelessWidget {
     StockMovementReason.sale => 'Vente',
     StockMovementReason.manualAdjustment => 'Ajustement',
     StockMovementReason.catalogUpdate => 'Modification du produit',
+    StockMovementReason.customerReturn => 'Retour client',
   };
 
   @override

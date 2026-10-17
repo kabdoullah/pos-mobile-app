@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'category_dto.dart';
 import 'product_dto.dart';
 import 'sale_dto.dart';
+import 'sale_return_dto.dart';
 
 part 'sync_changes_dto.freezed.dart';
 part 'sync_changes_dto.g.dart';
@@ -16,6 +17,8 @@ sealed class SyncChangesDto with _$SyncChangesDto {
     @Default(<CategoryDto>[]) List<CategoryDto> categories,
     required List<ProductDto> products,
     required List<SaleDto> sales,
+    // Absent sur un serveur antérieur à l'ADR-0010.
+    @Default(<SaleReturnDto>[]) List<SaleReturnDto> returns,
     @JsonKey(name: 'next_cursor') String? nextCursor,
     @JsonKey(name: 'has_more') required bool hasMore,
     @JsonKey(name: 'server_time') required String serverTime,

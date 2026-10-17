@@ -7,6 +7,9 @@ import 'package:logger/logger.dart';
 
 import '../../../core/utils/phone_formatter.dart';
 import '../../auth/domain/entities/store.dart';
+import '../../returns/domain/entities/return_labels.dart';
+import '../../returns/domain/entities/sale_return.dart';
+import '../domain/repositories/printer_repository.dart';
 import '../../sales/domain/entities/cart_item.dart';
 import '../../sales/domain/entities/sale.dart';
 
@@ -135,6 +138,83 @@ class ReceiptFormatter {
     bytes.addAll(generator.cut());
 
     _log.d('Receipt formatted: ${bytes.length} bytes');
+    return bytes;
+  }
+
+  /// Construit les octets ESC/POS du reçu d'un retour client (ADR-0010) :
+  /// vente d'origine, articles rendus, montant remboursé et moyen.
+  static Future<List<int>> formatReturn({
+    required Store store,
+    required Sale sale,
+    required SaleReturn saleReturn,
+    required List<ReturnReceiptLine> lines,
+    String? sellerName,
+    List<int>? logo,
+  }) async {
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(PaperSize.mm58, profile);
+    final dateFormatter = DateFormat('dd/MM/yyyy HH:mm', 'fr_FR');
+    final bytes = <int>[
+      ..._header(generator, store, logo),
+      ..._text(
+        generator,
+        'REÇU DE RETOUR',
+        styles: const PosStyles(align: PosAlign.center, bold: true),
+      ),
+      ..._text(
+        generator,
+        'Date : ${dateFormatter.format(saleReturn.createdAt.toLocal())}',
+      ),
+      ..._text(
+        generator,
+        saleReturn.returnNumber > 0
+            ? 'Retour N° ${saleReturn.returnNumber.toString().padLeft(6, '0')}'
+            : 'Retour : PROVISOIRE',
+      ),
+      ..._text(
+        generator,
+        'Vente N° ${sale.receiptNumber.toString().padLeft(6, '0')}'
+        ' du ${DateFormat('dd/MM/yyyy', 'fr_FR').format(sale.createdAt)}',
+      ),
+      if (sellerName != null && sellerName.isNotEmpty)
+        ..._text(generator, 'Vendeur : $sellerName'),
+      ..._text(generator, _separator),
+    ];
+
+    for (final line in lines) {
+      final name = line.productName.length > _lineWidth
+          ? '${line.productName.substring(0, _lineWidth - 3)}...'
+          : line.productName;
+      bytes
+        ..addAll(_text(generator, name))
+        ..addAll(
+          _text(
+            generator,
+            _padLine(
+              '  ${line.quantity} rendu${line.quantity > 1 ? 's' : ''}',
+              _formatFcfa(line.refundAmount),
+            ),
+          ),
+        );
+    }
+
+    bytes
+      ..addAll(_text(generator, _doubleSeparator))
+      ..addAll(
+        _text(
+          generator,
+          _padLine('REMBOURSÉ', _formatFcfa(saleReturn.refundAmount)),
+          styles: const PosStyles(bold: true),
+        ),
+      )
+      ..addAll(_text(generator, _separator))
+      ..addAll(_text(generator, 'Mode : ${saleReturn.refundMethod.label}'))
+      ..addAll(_text(generator, 'Motif : ${saleReturn.reason.label}'))
+      ..addAll(_text(generator, _separator))
+      ..addAll(_footer(generator, store))
+      ..addAll(generator.cut());
+
+    _log.d('Return receipt formatted: ${bytes.length} bytes');
     return bytes;
   }
 

@@ -48,8 +48,12 @@ Cette organisation force le découplage : on peut changer d'API ou de DB locale 
 
 | Feature | Description | Statut |
 |---|---|---|
-| `auth` | Inscription, login, PIN, refresh token | Squelette |
-| `catalog` | CRUD produits, recherche, scan | À implémenter |
-| `sales` | Panier, paiement, validation, historique | À implémenter |
-| `printing` | Bluetooth, impression ESC/POS | À implémenter |
-| `sync` | Queue offline, synchronisation backend | À implémenter |
+| `auth` | Inscription par téléphone, login, PIN, refresh token, configuration boutique | Implémenté |
+| `catalog` | Fiche produit, import, scan, catégories | Implémenté |
+| `sales` | Panier, paiement, reçu, historique | Implémenté |
+| `inventory` | Onglet Stock, ajustements, historique des mouvements (en ligne uniquement) | Implémenté |
+| `returns` | Retours clients, remboursement manuel, reçu de retour (ADR-0010) | Implémenté |
+| `printing` | Bluetooth, impression ESC/POS | Implémenté |
+| `home` / `onboarding` / `settings` | Présentation uniquement | Implémenté |
+
+La synchronisation n'est pas une feature : elle vit dans `lib/core/sync/`.

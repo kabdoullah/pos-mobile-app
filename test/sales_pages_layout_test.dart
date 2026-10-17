@@ -8,6 +8,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/returns/domain/repositories/returns_repository.dart';
+import 'package:mobile/features/returns/providers/returns_di_providers.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mobile/features/sales/domain/repositories/sales_repository.dart';
@@ -22,6 +24,8 @@ class _NoAuth extends Auth {
 }
 
 class _MockSales extends Mock implements SalesRepository {}
+
+class _MockReturns extends Mock implements ReturnsRepository {}
 
 Sale sale(int receipt, String total, PaymentMethod method) => Sale(
   discountAmount: Decimal.zero,
@@ -72,12 +76,20 @@ Future<void> pump(
   ).thenAnswer((_) => Stream.value(history));
   when(() => repo.watchSale(any())).thenAnswer((_) => Stream.value(null));
   when(() => repo.watchSaleItems(any())).thenAnswer((_) => Stream.value(lines));
+  final returns = _MockReturns();
+  when(
+    () => returns.watchReturnableLines(any()),
+  ).thenAnswer((_) => Stream.value(const []));
+  when(
+    () => returns.watchReturnsForSale(any()),
+  ).thenAnswer((_) => Stream.value(const []));
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         authProvider.overrideWith(_NoAuth.new),
         salesRepositoryProvider.overrideWithValue(repo),
+        returnsRepositoryProvider.overrideWithValue(returns),
         isOnlineProvider.overrideWith((ref) => Stream.value(online)),
       ],
       child: MaterialApp(theme: theme, home: page),
@@ -89,6 +101,7 @@ Future<void> pump(
 void main() {
   setUpAll(() {
     registerFallbackValue(DateTime(2026));
+    registerFallbackValue(sales.first);
     return initializeDateFormatting('fr_FR');
   });
 

@@ -19,6 +19,11 @@ _SyncChangesDto _$SyncChangesDtoFromJson(Map<String, dynamic> json) =>
       sales: (json['sales'] as List<dynamic>)
           .map((e) => SaleDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      returns:
+          (json['returns'] as List<dynamic>?)
+              ?.map((e) => SaleReturnDto.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const <SaleReturnDto>[],
       nextCursor: json['next_cursor'] as String?,
       hasMore: json['has_more'] as bool,
       serverTime: json['server_time'] as String,
@@ -29,6 +34,7 @@ Map<String, dynamic> _$SyncChangesDtoToJson(_SyncChangesDto instance) =>
       'categories': instance.categories,
       'products': instance.products,
       'sales': instance.sales,
+      'returns': instance.returns,
       'next_cursor': instance.nextCursor,
       'has_more': instance.hasMore,
       'server_time': instance.serverTime,

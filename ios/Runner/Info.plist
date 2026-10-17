@@ -6,6 +6,10 @@
 	<string>La caméra sert à scanner les codes-barres et à photographier vos produits.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choisissez une photo de produit ou le logo de votre boutique dans vos photos.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Le Bluetooth sert à se connecter à votre imprimante de tickets pour imprimer les reçus.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>

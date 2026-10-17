@@ -82,13 +82,15 @@ Toutes les tables qui contiennent des données métier ont une colonne `store_id
 
 | Entité | Description | Multi-tenant | Synchronisée local |
 |---|---|---|---|
-| `users` | Comptes utilisateurs (email + password) | Non (global) | Non (serveur uniquement) |
+| `users` | Comptes utilisateurs (téléphone + mot de passe, ADR-0006) | Non (global) | Non (serveur uniquement) |
 | `stores` | Boutiques (1 par compte au MVP) | Self | Oui |
 | `products` | Catalogue produits | Oui | Oui (état last-write-wins) |
 | `sales` | Ventes encaissées (immuables) | Oui | Oui (événementiel append-only) |
 | `sale_items` | Lignes de chaque vente | Oui | Oui (avec sales) |
+| `sale_returns` | Retours clients (immuables, ADR-0010) | Oui | Oui (événementiel append-only) |
+| `sale_return_items` | Lignes de chaque retour | Oui | Oui (avec sale_returns) |
 | `sync_queue` | File d'attente locale (uniquement SQLite) | n/a | Local uniquement |
-| `email_verification_tokens` | Tokens de validation email | Non | Non |
+| `email_verification_tokens` | Tokens de validation email (table présente, pas d'endpoint exposé) | Non | Non |
 | `password_reset_tokens` | Tokens de reset mot de passe | Non | Non |
 
 ### `users` (serveur uniquement)
@@ -98,9 +100,11 @@ Comptes globaux. Un utilisateur peut posséder une seule boutique au MVP (relati
 Champs principaux :
 
 - `id` — UUID
-- `email` — unique, indexé
-- `password_hash` — bcrypt (cost 12)
-- `phone_number` — pour le support
+- `phone_number` — identifiant de connexion, E.164, unique, indexé (ADR-0006)
+- `email` — NULL, unique, indexé ; sert uniquement à la récupération du compte
+- `password_hash` — Argon2 (`pwdlib.PasswordHash.recommended()`)
+- `display_name` — NULL, nom affiché « Vendeur : … » sur les reçus
+- `is_active` — booléen
 - `email_verified_at` — TIMESTAMPTZ NULL, NULL tant que pas confirmé
 - `created_at`, `updated_at`
 
@@ -184,6 +188,38 @@ Champs principaux :
 
 La dénormalisation de `product_name_at_sale` et `unit_price_at_sale` est délibérée : elle garantit que l'historique des ventes reste lisible même si le produit est ensuite supprimé ou son prix modifié.
 
+### `sale_returns` (immuable, ADR-0010)
+
+Un retour client sur une vente synchronisée. **Un retour ne modifie jamais la vente d'origine** et n'est jamais modifié après création (trigger d'immuabilité). Le remboursement est confirmé au comptoir : `refund_amount` est ce qui a été rendu au client.
+
+Champs principaux :
+
+- `id` — UUID v4 généré côté client (idempotence sync)
+- `store_id` — UUID, FK vers `stores`
+- `sale_id` — FK vers `sales`
+- `return_number` — entier séquentiel par boutique, posé par trigger depuis `stores.next_return_number` (comme `receipt_number`)
+- `reason` — `defective`, `damaged`, `wrong_product`, `sale_error`, `changed_mind`, `other` (commentaire `note` obligatoire pour `other`)
+- `refund_method` — `cash`, `mobile_money_orange`, `mobile_money_mtn`, `mobile_money_wave`
+- `refund_amount` — NUMERIC(12, 2), somme des montants des lignes
+- `created_at`, `synced_at`
+
+Côté app (drift), la table porte aussi `sync_status` (`pending`, `synced`, `rejected`) et `rejection_code` (refus définitif du serveur). `return_number` vaut `0` tant que le retour n'est pas synchronisé.
+
+### `sale_return_items`
+
+Lignes d'un retour. Chaque ligne référence la **ligne de vente** (`sale_item_id`), qui a le même id sur l'appareil et le serveur.
+
+Champs principaux :
+
+- `id` — UUID v4 généré côté client
+- `return_id` — FK vers `sale_returns`
+- `sale_item_id` — FK vers `sale_items`
+- `product_id` — UUID NULL (produit supprimé)
+- `quantity` — INTEGER, quantité rendue (la somme des retours d'une ligne ne dépasse jamais la quantité vendue)
+- `condition` — `resellable`, `damaged`, `defective`, `unsellable`
+- `restocked` — booléen : seul un article `resellable` dont le produit existe réintègre le stock (mouvement `customer_return`)
+- `refund_amount` — NUMERIC(12, 2), calculé depuis les montants figés de la vente (formule cumulative, voir ADR-0010)
+
 ### `sync_queue` (SQLite local uniquement)
 
 Cette table n'existe QUE côté SQLite local, jamais côté PostgreSQL serveur.
@@ -191,7 +227,7 @@ Cette table n'existe QUE côté SQLite local, jamais côté PostgreSQL serveur.
 Champs principaux :
 
 - `id` — INTEGER auto-incrémenté
-- `entity_type` — TEXT ('sale' au MVP)
+- `entity_type` — TEXT (`sale`, `sale_return`, `product`, `category`)
 - `entity_id` — TEXT (UUID de l'entité concernée)
 - `payload` — TEXT (JSON sérialisé de l'événement)
 - `status` — TEXT ('pending', 'syncing', 'synced', 'failed')
@@ -220,6 +256,9 @@ erDiagram
     stores ||--o{ sales : has
     sales ||--|{ sale_items : contains
     products ||--o{ sale_items : referenced_by
+    sales ||--o{ sale_returns : returned_by
+    sale_returns ||--|{ sale_return_items : contains
+    sale_items ||--o{ sale_return_items : returned_as
 
     users ||--o{ email_verification_tokens : has
     users ||--o{ password_reset_tokens : has
@@ -232,6 +271,7 @@ Cardinalités :
 - Une boutique a 0 à N ventes
 - Une vente contient 1 à N lignes (`sale_items`)
 - Un produit peut être référencé par 0 à N lignes de vente
+- Une vente a 0 à N retours ; un retour contient 1 à N lignes, chacune rattachée à une ligne de vente
 
 ## Différences entre base serveur et base locale
 

@@ -46,6 +46,9 @@ void main() {
         () => mockPushService.pushPendingSales(),
       ).thenAnswer((_) async => {});
       when(
+        () => mockPushService.pushPendingReturns(),
+      ).thenAnswer((_) async => {});
+      when(
         () => mockPushService.pushPendingCategoryChanges(),
       ).thenAnswer((_) async => {});
       when(
@@ -107,44 +110,52 @@ void main() {
       },
     );
 
-    test(
-      'syncNow calls push before pull (sales, categories, products, then pull)',
-      () async {
-        final callOrder = <String>[];
+    test('syncNow calls push before pull '
+        '(sales, returns, categories, products, then pull)', () async {
+      final callOrder = <String>[];
 
-        when(() => mockPushService.pushPendingSales()).thenAnswer((_) async {
-          callOrder.add('pushSales');
-        });
-        when(() => mockPushService.pushPendingCategoryChanges()).thenAnswer((
-          _,
-        ) async {
-          callOrder.add('pushCategories');
-        });
-        when(() => mockPushService.pushPendingProductChanges()).thenAnswer((
-          _,
-        ) async {
-          callOrder.add('pushProducts');
-        });
-        when(
-          () => mockPullService.pullChanges(
-            forceFullPull: any(named: 'forceFullPull'),
-          ),
-        ).thenAnswer((_) async {
-          callOrder.add('pull');
-          return true;
-        });
+      when(() => mockPushService.pushPendingSales()).thenAnswer((_) async {
+        callOrder.add('pushSales');
+      });
+      when(() => mockPushService.pushPendingReturns()).thenAnswer((_) async {
+        callOrder.add('pushReturns');
+      });
+      when(() => mockPushService.pushPendingCategoryChanges()).thenAnswer((
+        _,
+      ) async {
+        callOrder.add('pushCategories');
+      });
+      when(() => mockPushService.pushPendingProductChanges()).thenAnswer((
+        _,
+      ) async {
+        callOrder.add('pushProducts');
+      });
+      when(
+        () => mockPullService.pullChanges(
+          forceFullPull: any(named: 'forceFullPull'),
+        ),
+      ).thenAnswer((_) async {
+        callOrder.add('pull');
+        return true;
+      });
 
-        final container = await makeContainer();
-        await container.read(syncOrchestratorProvider.notifier).syncNow();
+      final container = await makeContainer();
+      await container.read(syncOrchestratorProvider.notifier).syncNow();
 
-        // Catégories avant produits : le serveur refuse un produit dont la
-        // catégorie lui est inconnue.
-        expect(
-          callOrder,
-          equals(['pushSales', 'pushCategories', 'pushProducts', 'pull']),
-        );
-      },
-    );
+      // Retours après les ventes (un retour référence une vente connue du
+      // serveur) ; catégories avant produits : le serveur refuse un produit
+      // dont la catégorie lui est inconnue.
+      expect(
+        callOrder,
+        equals([
+          'pushSales',
+          'pushReturns',
+          'pushCategories',
+          'pushProducts',
+          'pull',
+        ]),
+      );
+    });
 
     // Le test de synchro déclenchée par la connectivité est omis à cause du
     // timing complexe de ref.listen dans build(). Les tests manuels confirment

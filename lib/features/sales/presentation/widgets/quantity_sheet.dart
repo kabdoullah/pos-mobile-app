@@ -6,7 +6,6 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/discount.dart';
-import 'quantity_stepper.dart';
 
 /// Choix fait dans la feuille de quantité.
 sealed class QuantitySheetResult {

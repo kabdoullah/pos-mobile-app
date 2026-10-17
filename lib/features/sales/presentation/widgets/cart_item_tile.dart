@@ -4,7 +4,6 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cart_item.dart';
-import 'quantity_stepper.dart';
 
 /// Ligne compacte du panier : nom et total de ligne, prix unitaire et
 /// quantité, réduction éventuelle. La croix ou un glissement vers la gauche

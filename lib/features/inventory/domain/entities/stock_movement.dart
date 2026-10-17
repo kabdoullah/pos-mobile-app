@@ -12,6 +12,9 @@ enum StockMovementReason {
 
   /// Stock fixé directement via une mise à jour du catalogue.
   catalogUpdate,
+
+  /// Article rendu par un client et remis en stock (ADR-0010).
+  customerReturn,
 }
 
 /// Entité mouvement de stock — une entrée du journal d'audit du stock d'un

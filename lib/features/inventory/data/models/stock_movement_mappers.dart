@@ -9,6 +9,7 @@ extension StockMovementReasonDtoToDomain on StockMovementReasonDto {
     StockMovementReasonDto.manualAdjustment =>
       StockMovementReason.manualAdjustment,
     StockMovementReasonDto.catalogUpdate => StockMovementReason.catalogUpdate,
+    StockMovementReasonDto.customerReturn => StockMovementReason.customerReturn,
   };
 }
 
