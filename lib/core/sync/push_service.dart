@@ -102,17 +102,15 @@ class PushService {
             }
             break;
           case 'failed':
-            // Incrémente le compteur d'essais ; au-delà du seuil, échec
-            // définitif
-            await _queueRepository.incrementRetry(entry.id);
+            // Incrémente le compteur d'essais ; la vente reste réessayée
+            // même au-delà du seuil (une vente n'est jamais abandonnée).
             final errorMsg = result.error ?? 'Unknown error';
-
-            final retryEntry = await _queueRepository.getEntry(entry.id);
-            if (retryEntry != null && retryEntry.retryCount >= 5) {
-              _logger?.w(
-                'Sale ${result.id} failed permanently after 5 retries: $errorMsg',
-              );
-              await _queueRepository.markFailed(entry.id, errorMsg);
+            final reachedMax = await _queueRepository.incrementRetry(
+              entry.id,
+              errorMsg,
+            );
+            if (reachedMax) {
+              _logger?.w('Sale ${result.id} keeps failing: $errorMsg');
             } else {
               _logger?.i('Sale ${result.id} failed (will retry): $errorMsg');
             }
@@ -122,9 +120,10 @@ class PushService {
         }
       }
     } catch (e, st) {
-      // Erreur réseau ; on remet les entrées en attente pour réessayer
+      // Erreur réseau : on compte l'essai, les ventes seront renvoyées au
+      // prochain cycle.
       for (final entry in entries) {
-        await _queueRepository.markFailed(entry.id, 'Network error: $e');
+        await _queueRepository.incrementRetry(entry.id, 'Network error: $e');
       }
       _logger?.e('Push sales batch failed', error: e, stackTrace: st);
     }
@@ -212,13 +211,13 @@ class PushService {
           e.response?.statusCode != null &&
           e.response!.statusCode! >= 400 &&
           e.response!.statusCode! < 500) {
-        await _queueRepository.markFailed(
+        await _queueRepository.markRejected(
           entry.id,
           'Server rejected: ${e.response!.statusCode} ${e.response?.data}',
         );
         return;
       }
-      await _queueRepository.incrementRetry(entry.id);
+      await _queueRepository.incrementRetry(entry.id, 'Push failed: $e');
       _logger?.i('Category ${entry.entityId} push failed (will retry): $e');
     }
   }
@@ -278,7 +277,7 @@ class PushService {
           _db.products,
         )..where((p) => p.id.equals(entry.entityId))).getSingleOrNull();
         if (product == null) {
-          await _queueRepository.markFailed(
+          await _queueRepository.markRejected(
             entry.id,
             'Legacy payload: product not found locally',
           );
@@ -426,17 +425,17 @@ class PushService {
         }
       }
 
-      // Erreurs client non réessayables (4xx) : on journalise et on marque en
-      // échec immédiatement.
+      // Erreurs client non réessayables (4xx) : on journalise et on marque comme
+      // refusé définitivement.
       if (e is DioException &&
           e.response?.statusCode != null &&
           e.response!.statusCode! >= 400 &&
           e.response!.statusCode! < 500) {
         _logger?.w(
           'Product ${entry.entityId} rejected by server '
-          '(${e.response!.statusCode}): ${e.response?.data} — marking failed',
+          '(${e.response!.statusCode}): ${e.response?.data} — marking rejected',
         );
-        await _queueRepository.markFailed(
+        await _queueRepository.markRejected(
           entry.id,
           'Server rejected: ${e.response!.statusCode} ${e.response?.data}',
         );
@@ -444,14 +443,12 @@ class PushService {
       }
 
       // Erreur réseau / serveur : on incrémente le compteur d'essais.
-      await _queueRepository.incrementRetry(entry.id);
-
-      final retryEntry = await _queueRepository.getEntry(entry.id);
-      if (retryEntry != null && retryEntry.retryCount >= 5) {
-        _logger?.w(
-          'Product ${entry.entityId} failed permanently after 5 retries: $e',
-        );
-        await _queueRepository.markFailed(entry.id, 'Max retries exceeded: $e');
+      final reachedMax = await _queueRepository.incrementRetry(
+        entry.id,
+        'Push failed: $e',
+      );
+      if (reachedMax) {
+        _logger?.w('Product ${entry.entityId} keeps failing: $e');
       } else {
         _logger?.i('Product ${entry.entityId} push failed (will retry): $e');
       }

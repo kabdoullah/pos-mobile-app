@@ -169,7 +169,7 @@ class SyncQueue extends Table {
   /// Payload JSON sérialisé.
   TextColumn get payload => text()();
 
-  /// pending, syncing, synced, failed.
+  /// pending, syncing, synced, failed (réessayé), rejected (refus définitif).
   TextColumn get status => text().withDefault(const Constant('pending'))();
 
   /// Nombre de tentatives.
@@ -198,7 +198,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -264,6 +264,14 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(saleItems, saleItems.discountType);
         await m.addColumn(saleItems, saleItems.discountValue);
         await m.addColumn(saleItems, saleItems.discountAmount);
+      }
+      if (from < 8) {
+        // v7 → v8 : les lignes de vente ont désormais le même id sur l'appareil
+        // et le serveur. Oublier le dernier pull force un pull complet, qui
+        // remplace les lignes aux ids locaux des ventes déjà synchronisées.
+        await customStatement(
+          "DELETE FROM sync_metadata WHERE key = 'last_pull_at'",
+        );
       }
     },
   );

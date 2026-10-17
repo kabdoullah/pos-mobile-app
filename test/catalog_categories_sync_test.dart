@@ -296,5 +296,140 @@ void main() {
       expect(items.single.productName, 'Baguette');
       expect(items.single.quantity, 4);
     });
+
+    test(
+      'les lignes serveur remplacent les lignes aux ids locaux d’une vente',
+      () async {
+        // Vente faite ici par une ancienne version : ligne à l'id local.
+        await db
+            .into(db.sales)
+            .insert(
+              SalesCompanion.insert(
+                id: 'sale-1',
+                receiptNumber: 42,
+                totalAmount: '1000.00',
+                vatAmount: '0.00',
+                paymentMethod: 'cash',
+                createdAt: DateTime.parse(_now),
+              ),
+            );
+        await db
+            .into(db.saleItems)
+            .insert(
+              SaleItemsCompanion.insert(
+                id: 'local-item',
+                saleId: 'sale-1',
+                productId: 'p1',
+                productName: 'Baguette',
+                unitPrice: '250.00',
+                quantity: 4,
+                lineTotal: '1000.00',
+              ),
+            );
+        stubChanges(
+          const SyncChangesDto(
+            products: [],
+            sales: [
+              SaleDto(
+                id: 'sale-1',
+                storeId: 's',
+                receiptNumber: 42,
+                totalAmount: '1000.00',
+                vatAmount: '0.00',
+                paymentMethod: 'cash',
+                createdAt: _now,
+                syncedAt: _now,
+                items: [
+                  SaleItemDto(
+                    id: 'server-item',
+                    saleId: 'sale-1',
+                    productId: 'p1',
+                    productNameAtSale: 'Baguette',
+                    unitPriceAtSale: '250.00',
+                    quantity: 4,
+                    lineTotal: '1000.00',
+                  ),
+                ],
+              ),
+            ],
+            hasMore: false,
+            serverTime: _now,
+          ),
+        );
+
+        await pull.pullChanges();
+
+        final items = await db.select(db.saleItems).get();
+        expect(items.map((i) => i.id), ['server-item']);
+      },
+    );
+  });
+
+  group('refus définitif du serveur', () {
+    test(
+      'un 4xx n’est ni renvoyé, ni remis en attente au démarrage, ni compté',
+      () async {
+        when(() => remote.pushProduct(any())).thenThrow(
+          DioException(
+            requestOptions: RequestOptions(),
+            response: Response<Object?>(
+              requestOptions: RequestOptions(),
+              statusCode: 422,
+              data: {'detail': 'invalide'},
+            ),
+          ),
+        );
+        await queue.enqueueProductChange(
+          productId: 'p1',
+          productPayload: const ProductSyncItemDto(
+            id: 'p1',
+            name: 'Savon',
+            sellingPrice: '500',
+            clientUpdatedAt: _now,
+          ).toJson(),
+        );
+
+        await push.pushPendingProductChanges();
+        final entry = (await db.select(db.syncQueue).get()).single;
+        expect(entry.status, 'rejected');
+
+        expect(await queue.resetFailedEntries(), 0);
+        expect(await queue.watchPendingCount().first, 0);
+        await push.pushPendingProductChanges();
+        verify(() => remote.pushProduct(any())).called(1);
+      },
+    );
+
+    test('une erreur réseau reste réessayable, même après 5 essais', () async {
+      when(
+        () => remote.pushProduct(any()),
+      ).thenThrow(DioException(requestOptions: RequestOptions()));
+      await queue.enqueueProductChange(
+        productId: 'p1',
+        productPayload: const ProductSyncItemDto(
+          id: 'p1',
+          name: 'Savon',
+          sellingPrice: '500',
+          clientUpdatedAt: _now,
+        ).toJson(),
+      );
+
+      await push.pushPendingProductChanges();
+      var entry = (await db.select(db.syncQueue).get()).single;
+      expect(entry.status, 'pending');
+      expect(entry.retryCount, 1);
+      expect(entry.lastError, startsWith('Push failed'));
+
+      for (var i = 0; i < 4; i++) {
+        await push.pushPendingProductChanges();
+      }
+      entry = (await db.select(db.syncQueue).get()).single;
+      expect(entry.status, 'failed');
+      expect(entry.retryCount, 5);
+
+      await push.pushPendingProductChanges();
+      verify(() => remote.pushProduct(any())).called(6);
+      expect(await queue.watchPendingCount().first, 1);
+    });
   });
 }

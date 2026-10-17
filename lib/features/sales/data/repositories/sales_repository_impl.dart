@@ -52,27 +52,30 @@ class SalesRepositoryImpl implements SalesRepository {
     final now = DateTime.now().toUtc();
     final subtotal = items.fold(Decimal.zero, (sum, i) => sum + i.lineTotal);
     final discountAmount = discount?.amountOn(subtotal) ?? Decimal.zero;
+    // Ids des lignes générés ici et envoyés au serveur, qui les conserve : une
+    // ligne a le même id sur l'appareil et le serveur.
+    final lines = [for (final item in items) (id: uuid.v4(), item: item)];
 
     // Construit le payload de synchro avec les articles (avant la
     // transaction). Il porte l'instantané complet des prix (ADR-0009) : le
     // serveur ne relit jamais le produit pour reconstituer la vente.
-    final itemPayloads = items
-        .map(
-          (item) => {
-            'product_id': item.productId,
-            'product_name_at_sale': item.productName,
-            'unit_price_at_sale': item.unitPrice.toString(),
-            'quantity': item.quantity,
-            'line_total': item.lineTotal.toString(),
-            'purchase_price_at_sale': item.purchaseUnitPrice?.toString(),
-            'discount_type': item.discount == null
-                ? null
-                : discountTypeToString(item.discount!.type),
-            'discount_value': item.discount?.value.toString(),
-            'discount_amount': item.discountAmount.toString(),
-          },
-        )
-        .toList();
+    final itemPayloads = [
+      for (final (:id, :item) in lines)
+        {
+          'id': id,
+          'product_id': item.productId,
+          'product_name_at_sale': item.productName,
+          'unit_price_at_sale': item.unitPrice.toString(),
+          'quantity': item.quantity,
+          'line_total': item.lineTotal.toString(),
+          'purchase_price_at_sale': item.purchaseUnitPrice?.toString(),
+          'discount_type': item.discount == null
+              ? null
+              : discountTypeToString(item.discount!.type),
+          'discount_value': item.discount?.value.toString(),
+          'discount_amount': item.discountAmount.toString(),
+        },
+    ];
 
     final salePayload = {
       'id': saleId,
@@ -113,13 +116,12 @@ class SalesRepositoryImpl implements SalesRepository {
           );
 
       // Création des articles de la vente
-      for (final item in items) {
-        final itemId = uuid.v4();
+      for (final (:id, :item) in lines) {
         await db
             .into(db.saleItems)
             .insert(
               SaleItemsCompanion(
-                id: drift.Value(itemId),
+                id: drift.Value(id),
                 saleId: drift.Value(saleId),
                 productId: drift.Value(item.productId),
                 productName: drift.Value(item.productName),

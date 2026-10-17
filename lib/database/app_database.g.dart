@@ -2706,7 +2706,7 @@ class SyncQueueData extends DataClass implements Insertable<SyncQueueData> {
   /// Payload JSON sérialisé.
   final String payload;
 
-  /// pending, syncing, synced, failed.
+  /// pending, syncing, synced, failed (réessayé), rejected (refus définitif).
   final String status;
 
   /// Nombre de tentatives.

@@ -114,4 +114,21 @@ void main() {
     final entry = (await db.select(db.syncQueue).get()).single;
     expect(entry.status, 'synced');
   });
+
+  test(
+    'une erreur réseau compte un essai et garde la vente en attente',
+    () async {
+      await createOfflineSale();
+      when(
+        () => remote.pushSales(any()),
+      ).thenThrow(DioException(requestOptions: RequestOptions()));
+
+      await pushService.pushPendingSales();
+
+      final entry = (await db.select(db.syncQueue).get()).single;
+      expect(entry.status, 'pending');
+      expect(entry.retryCount, 1);
+      expect(entry.lastError, startsWith('Network error'));
+    },
+  );
 }

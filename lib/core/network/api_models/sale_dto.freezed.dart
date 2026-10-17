@@ -610,7 +610,10 @@ as List<SaleItemDto>,
 /// @nodoc
 mixin _$SaleItemCreateDto {
 
-@JsonKey(name: 'product_id') String? get productId;@JsonKey(name: 'product_name_at_sale') String get productNameAtSale;@JsonKey(name: 'unit_price_at_sale') String get unitPriceAtSale; int get quantity;@JsonKey(name: 'line_total') String get lineTotal;@JsonKey(name: 'purchase_price_at_sale') String? get purchasePriceAtSale;@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount;
+/// UUID de la ligne généré sur l'appareil : le serveur le conserve, la
+/// ligne a donc le même id partout (référencée par les retours). Absent
+/// des ventes mises en file par une ancienne version de l'app.
+ String? get id;@JsonKey(name: 'product_id') String? get productId;@JsonKey(name: 'product_name_at_sale') String get productNameAtSale;@JsonKey(name: 'unit_price_at_sale') String get unitPriceAtSale; int get quantity;@JsonKey(name: 'line_total') String get lineTotal;@JsonKey(name: 'purchase_price_at_sale') String? get purchasePriceAtSale;@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount;
 /// Create a copy of SaleItemCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -623,16 +626,16 @@ $SaleItemCreateDtoCopyWith<SaleItemCreateDto> get copyWith => _$SaleItemCreateDt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SaleItemCreateDto&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productNameAtSale, productNameAtSale) || other.productNameAtSale == productNameAtSale)&&(identical(other.unitPriceAtSale, unitPriceAtSale) || other.unitPriceAtSale == unitPriceAtSale)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.lineTotal, lineTotal) || other.lineTotal == lineTotal)&&(identical(other.purchasePriceAtSale, purchasePriceAtSale) || other.purchasePriceAtSale == purchasePriceAtSale)&&(identical(other.discountType, discountType) || other.discountType == discountType)&&(identical(other.discountValue, discountValue) || other.discountValue == discountValue)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SaleItemCreateDto&&(identical(other.id, id) || other.id == id)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productNameAtSale, productNameAtSale) || other.productNameAtSale == productNameAtSale)&&(identical(other.unitPriceAtSale, unitPriceAtSale) || other.unitPriceAtSale == unitPriceAtSale)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.lineTotal, lineTotal) || other.lineTotal == lineTotal)&&(identical(other.purchasePriceAtSale, purchasePriceAtSale) || other.purchasePriceAtSale == purchasePriceAtSale)&&(identical(other.discountType, discountType) || other.discountType == discountType)&&(identical(other.discountValue, discountValue) || other.discountValue == discountValue)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,productId,productNameAtSale,unitPriceAtSale,quantity,lineTotal,purchasePriceAtSale,discountType,discountValue,discountAmount);
+int get hashCode => Object.hash(runtimeType,id,productId,productNameAtSale,unitPriceAtSale,quantity,lineTotal,purchasePriceAtSale,discountType,discountValue,discountAmount);
 
 @override
 String toString() {
-  return 'SaleItemCreateDto(productId: $productId, productNameAtSale: $productNameAtSale, unitPriceAtSale: $unitPriceAtSale, quantity: $quantity, lineTotal: $lineTotal, purchasePriceAtSale: $purchasePriceAtSale, discountType: $discountType, discountValue: $discountValue, discountAmount: $discountAmount)';
+  return 'SaleItemCreateDto(id: $id, productId: $productId, productNameAtSale: $productNameAtSale, unitPriceAtSale: $unitPriceAtSale, quantity: $quantity, lineTotal: $lineTotal, purchasePriceAtSale: $purchasePriceAtSale, discountType: $discountType, discountValue: $discountValue, discountAmount: $discountAmount)';
 }
 
 
@@ -643,7 +646,7 @@ abstract mixin class $SaleItemCreateDtoCopyWith<$Res>  {
   factory $SaleItemCreateDtoCopyWith(SaleItemCreateDto value, $Res Function(SaleItemCreateDto) _then) = _$SaleItemCreateDtoCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'product_id') String? productId,@JsonKey(name: 'product_name_at_sale') String productNameAtSale,@JsonKey(name: 'unit_price_at_sale') String unitPriceAtSale, int quantity,@JsonKey(name: 'line_total') String lineTotal,@JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,@JsonKey(name: 'discount_type') String? discountType,@JsonKey(name: 'discount_value') String? discountValue,@JsonKey(name: 'discount_amount') String discountAmount
+ String? id,@JsonKey(name: 'product_id') String? productId,@JsonKey(name: 'product_name_at_sale') String productNameAtSale,@JsonKey(name: 'unit_price_at_sale') String unitPriceAtSale, int quantity,@JsonKey(name: 'line_total') String lineTotal,@JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,@JsonKey(name: 'discount_type') String? discountType,@JsonKey(name: 'discount_value') String? discountValue,@JsonKey(name: 'discount_amount') String discountAmount
 });
 
 
@@ -660,9 +663,10 @@ class _$SaleItemCreateDtoCopyWithImpl<$Res>
 
 /// Create a copy of SaleItemCreateDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
   return _then(_self.copyWith(
-productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String?,productNameAtSale: null == productNameAtSale ? _self.productNameAtSale : productNameAtSale // ignore: cast_nullable_to_non_nullable
 as String,unitPriceAtSale: null == unitPriceAtSale ? _self.unitPriceAtSale : unitPriceAtSale // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
@@ -753,10 +757,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? id, @JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SaleItemCreateDto() when $default != null:
-return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);case _:
+return $default(_that.id,_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);case _:
   return orElse();
 
 }
@@ -774,10 +778,10 @@ return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? id, @JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)  $default,) {final _that = this;
 switch (_that) {
 case _SaleItemCreateDto():
-return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);}
+return $default(_that.id,_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -791,10 +795,10 @@ return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? id, @JsonKey(name: 'product_id')  String? productId, @JsonKey(name: 'product_name_at_sale')  String productNameAtSale, @JsonKey(name: 'unit_price_at_sale')  String unitPriceAtSale,  int quantity, @JsonKey(name: 'line_total')  String lineTotal, @JsonKey(name: 'purchase_price_at_sale')  String? purchasePriceAtSale, @JsonKey(name: 'discount_type')  String? discountType, @JsonKey(name: 'discount_value')  String? discountValue, @JsonKey(name: 'discount_amount')  String discountAmount)?  $default,) {final _that = this;
 switch (_that) {
 case _SaleItemCreateDto() when $default != null:
-return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);case _:
+return $default(_that.id,_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_that.quantity,_that.lineTotal,_that.purchasePriceAtSale,_that.discountType,_that.discountValue,_that.discountAmount);case _:
   return null;
 
 }
@@ -806,9 +810,13 @@ return $default(_that.productId,_that.productNameAtSale,_that.unitPriceAtSale,_t
 @JsonSerializable()
 
 class _SaleItemCreateDto implements SaleItemCreateDto {
-  const _SaleItemCreateDto({@JsonKey(name: 'product_id') this.productId, @JsonKey(name: 'product_name_at_sale') required this.productNameAtSale, @JsonKey(name: 'unit_price_at_sale') required this.unitPriceAtSale, required this.quantity, @JsonKey(name: 'line_total') required this.lineTotal, @JsonKey(name: 'purchase_price_at_sale') this.purchasePriceAtSale, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0'});
+  const _SaleItemCreateDto({this.id, @JsonKey(name: 'product_id') this.productId, @JsonKey(name: 'product_name_at_sale') required this.productNameAtSale, @JsonKey(name: 'unit_price_at_sale') required this.unitPriceAtSale, required this.quantity, @JsonKey(name: 'line_total') required this.lineTotal, @JsonKey(name: 'purchase_price_at_sale') this.purchasePriceAtSale, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0'});
   factory _SaleItemCreateDto.fromJson(Map<String, dynamic> json) => _$SaleItemCreateDtoFromJson(json);
 
+/// UUID de la ligne généré sur l'appareil : le serveur le conserve, la
+/// ligne a donc le même id partout (référencée par les retours). Absent
+/// des ventes mises en file par une ancienne version de l'app.
+@override final  String? id;
 @override@JsonKey(name: 'product_id') final  String? productId;
 @override@JsonKey(name: 'product_name_at_sale') final  String productNameAtSale;
 @override@JsonKey(name: 'unit_price_at_sale') final  String unitPriceAtSale;
@@ -832,16 +840,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaleItemCreateDto&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productNameAtSale, productNameAtSale) || other.productNameAtSale == productNameAtSale)&&(identical(other.unitPriceAtSale, unitPriceAtSale) || other.unitPriceAtSale == unitPriceAtSale)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.lineTotal, lineTotal) || other.lineTotal == lineTotal)&&(identical(other.purchasePriceAtSale, purchasePriceAtSale) || other.purchasePriceAtSale == purchasePriceAtSale)&&(identical(other.discountType, discountType) || other.discountType == discountType)&&(identical(other.discountValue, discountValue) || other.discountValue == discountValue)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaleItemCreateDto&&(identical(other.id, id) || other.id == id)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productNameAtSale, productNameAtSale) || other.productNameAtSale == productNameAtSale)&&(identical(other.unitPriceAtSale, unitPriceAtSale) || other.unitPriceAtSale == unitPriceAtSale)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.lineTotal, lineTotal) || other.lineTotal == lineTotal)&&(identical(other.purchasePriceAtSale, purchasePriceAtSale) || other.purchasePriceAtSale == purchasePriceAtSale)&&(identical(other.discountType, discountType) || other.discountType == discountType)&&(identical(other.discountValue, discountValue) || other.discountValue == discountValue)&&(identical(other.discountAmount, discountAmount) || other.discountAmount == discountAmount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,productId,productNameAtSale,unitPriceAtSale,quantity,lineTotal,purchasePriceAtSale,discountType,discountValue,discountAmount);
+int get hashCode => Object.hash(runtimeType,id,productId,productNameAtSale,unitPriceAtSale,quantity,lineTotal,purchasePriceAtSale,discountType,discountValue,discountAmount);
 
 @override
 String toString() {
-  return 'SaleItemCreateDto(productId: $productId, productNameAtSale: $productNameAtSale, unitPriceAtSale: $unitPriceAtSale, quantity: $quantity, lineTotal: $lineTotal, purchasePriceAtSale: $purchasePriceAtSale, discountType: $discountType, discountValue: $discountValue, discountAmount: $discountAmount)';
+  return 'SaleItemCreateDto(id: $id, productId: $productId, productNameAtSale: $productNameAtSale, unitPriceAtSale: $unitPriceAtSale, quantity: $quantity, lineTotal: $lineTotal, purchasePriceAtSale: $purchasePriceAtSale, discountType: $discountType, discountValue: $discountValue, discountAmount: $discountAmount)';
 }
 
 
@@ -852,7 +860,7 @@ abstract mixin class _$SaleItemCreateDtoCopyWith<$Res> implements $SaleItemCreat
   factory _$SaleItemCreateDtoCopyWith(_SaleItemCreateDto value, $Res Function(_SaleItemCreateDto) _then) = __$SaleItemCreateDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'product_id') String? productId,@JsonKey(name: 'product_name_at_sale') String productNameAtSale,@JsonKey(name: 'unit_price_at_sale') String unitPriceAtSale, int quantity,@JsonKey(name: 'line_total') String lineTotal,@JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,@JsonKey(name: 'discount_type') String? discountType,@JsonKey(name: 'discount_value') String? discountValue,@JsonKey(name: 'discount_amount') String discountAmount
+ String? id,@JsonKey(name: 'product_id') String? productId,@JsonKey(name: 'product_name_at_sale') String productNameAtSale,@JsonKey(name: 'unit_price_at_sale') String unitPriceAtSale, int quantity,@JsonKey(name: 'line_total') String lineTotal,@JsonKey(name: 'purchase_price_at_sale') String? purchasePriceAtSale,@JsonKey(name: 'discount_type') String? discountType,@JsonKey(name: 'discount_value') String? discountValue,@JsonKey(name: 'discount_amount') String discountAmount
 });
 
 
@@ -869,9 +877,10 @@ class __$SaleItemCreateDtoCopyWithImpl<$Res>
 
 /// Create a copy of SaleItemCreateDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = freezed,Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
   return _then(_SaleItemCreateDto(
-productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
+id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as String?,productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String?,productNameAtSale: null == productNameAtSale ? _self.productNameAtSale : productNameAtSale // ignore: cast_nullable_to_non_nullable
 as String,unitPriceAtSale: null == unitPriceAtSale ? _self.unitPriceAtSale : unitPriceAtSale // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
