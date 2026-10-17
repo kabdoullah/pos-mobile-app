@@ -22,6 +22,7 @@ import '../../features/inventory/presentation/pages/stock_history_page.dart';
 import '../../features/inventory/presentation/pages/stock_overview_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
 import '../../features/sales/presentation/pages/sales_history_page.dart';
+import '../../features/returns/presentation/pages/sale_return_page.dart';
 import '../../features/sales/presentation/pages/sale_detail_page.dart';
 import '../../features/sales/domain/entities/sale.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
@@ -104,6 +105,9 @@ abstract class Routes {
 
   /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
+
+  /// Retour d'articles d'une vente (extra : la [Sale]).
+  static const String saleReturn = '/sales/return';
 
   /// Configuration de l'imprimante Bluetooth.
   static const String bluetoothSetup = '/settings/printer';
@@ -331,6 +335,15 @@ GoRouter appRouter(Ref ref) {
               ? const SalesHistoryPage()
               : SaleDetailPage(sale: sale);
           return PageTransitions.scale(context, state, child);
+        },
+      ),
+      GoRoute(
+        path: Routes.saleReturn,
+        builder: (context, state) {
+          final sale = state.extra;
+          return sale is Sale
+              ? SaleReturnPage(sale: sale)
+              : const SalesHistoryPage();
         },
       ),
       GoRoute(

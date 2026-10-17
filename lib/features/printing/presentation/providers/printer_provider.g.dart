@@ -55,7 +55,7 @@ final class PrinterProvider extends $NotifierProvider<Printer, PrinterState> {
   }
 }
 
-String _$printerHash() => r'dbc4604156c154b89a20f33e93b918892e771fb1';
+String _$printerHash() => r'0ab1f51f37c3b0ab6defb8a1275be597048cc65f';
 
 /// Manages Bluetooth printer connection lifecycle and printing.
 ///

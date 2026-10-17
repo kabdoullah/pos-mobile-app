@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
+import '../../app/theme/app_spacing.dart';
+import '../../app/theme/app_typography.dart';
 
 /// Sélecteur de quantité [-] n [+] ; la valeur s'anime à chaque changement.
 class QuantityStepper extends StatelessWidget {

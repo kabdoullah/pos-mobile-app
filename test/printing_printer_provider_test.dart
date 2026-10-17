@@ -8,6 +8,7 @@ import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/printing/domain/repositories/printer_repository.dart';
 import 'package:mobile/features/printing/presentation/providers/printer_provider.dart';
 import 'package:mobile/features/printing/providers/printing_di_providers.dart';
+import 'package:mobile/features/returns/domain/entities/sale_return.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
@@ -53,6 +54,16 @@ class _FakePrinter implements PrinterRepository {
   @override
   Future<void> printTestPage({required Store store, List<int>? logo}) async =>
       testPages++;
+
+  @override
+  Future<void> printReturnReceipt({
+    required Store store,
+    required Sale sale,
+    required SaleReturn saleReturn,
+    required List<ReturnReceiptLine> lines,
+    String? sellerName,
+    List<int>? logo,
+  }) async {}
 }
 
 class _Seller extends SellerProfile {

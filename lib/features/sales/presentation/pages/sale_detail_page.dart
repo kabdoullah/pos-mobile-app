@@ -14,6 +14,7 @@ import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/margin_summary.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
+import '../../../returns/presentation/widgets/sale_returns_section.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
@@ -126,6 +127,11 @@ class SaleDetailPage extends ConsumerWidget {
                 ],
               ),
             ),
+          ),
+          // Retours enregistrés et action « Retourner des articles ».
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: SaleReturnsSection(sale: sale),
           ),
           if (items != null &&
               items.any((item) => item.purchaseUnitPrice != null)) ...[

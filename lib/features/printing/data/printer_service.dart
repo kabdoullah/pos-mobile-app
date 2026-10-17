@@ -2,6 +2,7 @@ import 'package:logger/logger.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 import '../../auth/domain/entities/store.dart';
+import '../../returns/domain/entities/sale_return.dart';
 import '../../sales/domain/entities/cart_item.dart';
 import '../../sales/domain/entities/sale.dart';
 import '../domain/repositories/printer_repository.dart';
@@ -77,6 +78,28 @@ class PrinterService implements PrinterRepository {
       ),
     );
     _log.i('Receipt printed successfully');
+  }
+
+  @override
+  Future<void> printReturnReceipt({
+    required Store store,
+    required Sale sale,
+    required SaleReturn saleReturn,
+    required List<ReturnReceiptLine> lines,
+    String? sellerName,
+    List<int>? logo,
+  }) async {
+    await _send(
+      await ReceiptFormatter.formatReturn(
+        store: store,
+        sale: sale,
+        saleReturn: saleReturn,
+        lines: lines,
+        sellerName: sellerName,
+        logo: logo,
+      ),
+    );
+    _log.i('Return receipt printed successfully');
   }
 
   @override

@@ -10,6 +10,7 @@ import '../../providers/printing_di_providers.dart';
 import '../../../auth/providers/seller_profile_provider.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../sales/domain/entities/cart_item.dart';
+import '../../../returns/domain/entities/sale_return.dart';
 import '../../../sales/domain/entities/sale.dart';
 
 part 'printer_provider.g.dart';
@@ -149,22 +150,41 @@ class Printer extends _$Printer {
   /// échoue.
   Future<void> print({required Sale sale, List<CartItem>? items}) =>
       _printWith((service, store) async {
-        // Nom du vendeur depuis le cache local : l'impression reste possible
-        // hors ligne (ligne absente si le nom n'est pas défini ou inconnu).
-        String? sellerName;
-        try {
-          sellerName = await ref.read(sellerProfileProvider.future);
-        } on Exception {
-          sellerName = null;
-        }
         await service.printReceipt(
           store: store,
           sale: sale,
           items: items,
-          sellerName: sellerName,
+          sellerName: await _sellerName(),
           logo: await _logo(),
         );
       });
+
+  /// Imprime le reçu d'un retour client. Mêmes reconnexion et erreurs que
+  /// [print].
+  Future<void> printReturn({
+    required Sale sale,
+    required SaleReturn saleReturn,
+    required List<ReturnReceiptLine> lines,
+  }) => _printWith((service, store) async {
+    await service.printReturnReceipt(
+      store: store,
+      sale: sale,
+      saleReturn: saleReturn,
+      lines: lines,
+      sellerName: await _sellerName(),
+      logo: await _logo(),
+    );
+  });
+
+  /// Nom du vendeur depuis le cache local : l'impression reste possible hors
+  /// ligne (ligne absente si le nom n'est pas défini ou inconnu).
+  Future<String?> _sellerName() async {
+    try {
+      return await ref.read(sellerProfileProvider.future);
+    } on Exception {
+      return null;
+    }
+  }
 
   /// Imprime un ticket de test sur l'imprimante enregistrée.
   ///

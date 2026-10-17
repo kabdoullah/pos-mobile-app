@@ -1,6 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 import '../../../auth/domain/entities/store.dart';
+import '../../../returns/domain/entities/sale_return.dart';
 import '../../../sales/domain/entities/cart_item.dart';
 import '../../../sales/domain/entities/sale.dart';
 
@@ -44,6 +46,13 @@ extension PrintExceptionMessage on PrintException {
   };
 }
 
+/// Ligne imprimée sur un reçu de retour (jamais de prix d'achat).
+typedef ReturnReceiptLine = ({
+  String productName,
+  int quantity,
+  Decimal refundAmount,
+});
+
 /// Repository pour les opérations d'imprimante Bluetooth.
 ///
 /// Abstrait les interactions matérielles et la gestion de la connexion.
@@ -70,6 +79,19 @@ abstract interface class PrinterRepository {
     required Store store,
     required Sale sale,
     List<CartItem>? items,
+    String? sellerName,
+    List<int>? logo,
+  });
+
+  /// Imprime le reçu d'un retour client (ADR-0010) : vente d'origine,
+  /// articles rendus, montant remboursé et moyen.
+  ///
+  /// Lève [PrintException] comme [printReceipt].
+  Future<void> printReturnReceipt({
+    required Store store,
+    required Sale sale,
+    required SaleReturn saleReturn,
+    required List<ReturnReceiptLine> lines,
     String? sellerName,
     List<int>? logo,
   });
