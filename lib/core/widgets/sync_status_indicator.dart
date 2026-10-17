@@ -119,9 +119,10 @@ class SyncStatusIndicator extends ConsumerWidget {
 
   Widget _buildPendingBanner(BuildContext context, int count) {
     final cs = Theme.of(context).colorScheme;
+    // La file contient ventes, retours, produits et catégories.
     final label = count == 1
-        ? '1 vente à sauvegarder'
-        : '$count ventes à sauvegarder';
+        ? '1 modification à sauvegarder'
+        : '$count modifications à sauvegarder';
     return Container(
       width: double.infinity,
       color: cs.tertiaryContainer,

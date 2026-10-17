@@ -169,15 +169,14 @@ class _Row extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+          // Libellé à sa largeur naturelle : jamais coupé en milieu de mot.
+          Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: cs.onSurfaceVariant,
             ),
           ),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               value,
