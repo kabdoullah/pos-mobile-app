@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:logger/logger.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
@@ -22,7 +24,21 @@ class PrinterService implements PrinterRepository {
   /// Liste tous les appareils BT appairés disponibles sur le système.
   @override
   Future<List<BluetoothInfo>> getPairedDevices() async {
+    if (Platform.isIOS) await _waitForIosBluetooth();
     return PrintBluetoothThermal.pairedBluetooths;
+  }
+
+  /// Attend que CoreBluetooth soit prêt avant le premier scan iOS.
+  ///
+  /// Le plugin ne crée son `CBCentralManager` qu'au premier appel, dont l'état
+  /// est alors « inconnu » : un scan lancé tout de suite ne démarre pas et
+  /// renvoie une liste vide au bout de 5 s. Si le Bluetooth reste éteint, on
+  /// abandonne après ~2 s et le scan renvoie la liste vide comme avant.
+  Future<void> _waitForIosBluetooth() async {
+    for (var i = 0; i < 20; i++) {
+      if (await PrintBluetoothThermal.bluetoothEnabled) return;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
   }
 
   /// Se connecte à l'appareil [mac].
