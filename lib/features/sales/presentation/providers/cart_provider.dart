@@ -114,6 +114,15 @@ class Cart extends _$Cart {
     );
   }
 
+  /// Remet une ligne retirée à sa position [index] (annulation d'un retrait).
+  /// Sans effet si le produit a été rajouté entre-temps.
+  void restoreItem(CartItem item, int index) {
+    if (quantityOf(item.productId) > 0) return;
+    final newItems = [...state.items]
+      ..insert(index.clamp(0, state.items.length), item);
+    _setItems(newItems);
+  }
+
   /// Met à jour la quantité d'un produit (retiré si qté ≤ 0, plafonnée au stock
   /// disponible). Une réduction en montant est ajustée au nouveau total brut.
   void updateQuantity(String productId, int qty) {

@@ -257,6 +257,27 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
+  /// Retire une ligne sans confirmation (croix, glissement, « − » à 1) et
+  /// propose de l'annuler : un geste involontaire ne coûte pas la ligne.
+  void _removeCartItem(String productId) {
+    final items = ref.read(cartProvider).items;
+    final index = items.indexWhere((item) => item.productId == productId);
+    if (index < 0) return;
+    final item = items[index];
+    ref.read(cartProvider.notifier).removeItem(productId);
+    _showToast(
+      SaleToastData(
+        message: '${item.productName} retiré',
+        kind: SaleToastKind.success,
+        actionLabel: 'Annuler',
+        showDismiss: false,
+        onAction: () =>
+            ref.read(cartProvider.notifier).restoreItem(item, index),
+      ),
+      duration: const Duration(seconds: 4),
+    );
+  }
+
   Future<void> _openProduct(Product product) async {
     final stock = product.currentStock;
     final inCart = ref.read(cartProvider.notifier).quantityOf(product.id);
@@ -540,8 +561,14 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                               SaleCart(
                                 headerKey: _cartHeaderKey,
                                 items: cart.items,
-                                onQuantityChanged: cartNotifier.updateQuantity,
-                                onRemove: cartNotifier.removeItem,
+                                onQuantityChanged: (productId, quantity) =>
+                                    quantity <= 0
+                                    ? _removeCartItem(productId)
+                                    : cartNotifier.updateQuantity(
+                                        productId,
+                                        quantity,
+                                      ),
+                                onRemove: _removeCartItem,
                                 onItemTap: _editCartItem,
                                 onClear: _clearCart,
                               ),

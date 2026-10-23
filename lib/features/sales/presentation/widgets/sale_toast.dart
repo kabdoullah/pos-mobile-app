@@ -23,6 +23,7 @@ class SaleToastData {
     required this.kind,
     this.actionLabel,
     this.onAction,
+    this.showDismiss = true,
   });
 
   /// Texte affiché.
@@ -36,6 +37,10 @@ class SaleToastData {
 
   /// Action optionnelle.
   final VoidCallback? onAction;
+
+  /// Affiche le bouton « Annuler » qui masque la pastille à côté de l'action ;
+  /// `false` quand l'action est elle-même une annulation.
+  final bool showDismiss;
 }
 
 /// Pastille de retour affichée en haut du panier, sans bloquer la caisse.
@@ -127,11 +132,12 @@ class _ToastBody extends StatelessWidget {
                   ),
                 ),
                 if (onAction != null) ...[
-                  TextButton(
-                    onPressed: onDismiss,
-                    style: TextButton.styleFrom(foregroundColor: foreground),
-                    child: const Text('Annuler'),
-                  ),
+                  if (data.showDismiss)
+                    TextButton(
+                      onPressed: onDismiss,
+                      style: TextButton.styleFrom(foregroundColor: foreground),
+                      child: const Text('Annuler'),
+                    ),
                   TextButton(
                     onPressed: () {
                       onDismiss();

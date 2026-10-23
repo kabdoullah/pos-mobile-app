@@ -295,6 +295,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(container.read(cartProvider).isEmpty, isTrue);
     expect(find.text('Votre panier est vide'), findsOneWidget);
+
+    // Le retrait s'annule depuis la pastille : la ligne revient telle quelle.
+    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Annuler'));
+    await tester.pumpAndSettle();
+    expect(container.read(cartProvider).unitCount, 3);
+    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
+
+    // « − » à 1 retire aussi la ligne, avec la même annulation possible.
+    container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 1);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Diminuer'));
+    await tester.pumpAndSettle();
+    expect(container.read(cartProvider).isEmpty, isTrue);
+    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
+    // La pastille d'annulation reste 4 s, puis disparaît.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
