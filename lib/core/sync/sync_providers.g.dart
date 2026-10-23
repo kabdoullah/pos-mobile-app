@@ -62,7 +62,7 @@ final class LocalDataResetServiceProvider
 }
 
 String _$localDataResetServiceHash() =>
-    r'922b18fe0c3310f8b6a3d4bfc48b82ae9a984097';
+    r'514fa9a361ea1d3571b25772fc8789f7467dcbbf';
 
 /// Fournit le service de récupération des changements.
 

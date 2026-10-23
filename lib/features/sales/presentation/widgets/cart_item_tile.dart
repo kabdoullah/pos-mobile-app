@@ -4,6 +4,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cart_item.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Ligne compacte du panier : nom et total de ligne, prix unitaire et
 /// quantité, réduction éventuelle. La croix ou un glissement vers la gauche
@@ -72,77 +73,85 @@ class CartItemTile extends StatelessWidget {
               AppSpacing.sm,
               AppSpacing.sm,
             ),
-            child: Column(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.productName,
-                        style: AppTypography.titleMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    AmountDisplay(amount: item.lineTotal),
-                    IconButton(
-                      tooltip: 'Retirer ${item.productName}',
-                      icon: const Icon(Icons.close, size: 20),
-                      color: cs.onSurfaceVariant,
-                      onPressed: onRemove,
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: ProductThumbnailById(productId: item.productId),
                 ),
-                if (item.discount != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.sm),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.local_offer_outlined,
-                          size: 14,
-                          color: cs.primary,
-                        ),
-                        const SizedBox(width: AppSpacing.xs),
-                        Expanded(
-                          child: Text(
-                            '${formatAmount(item.grossTotal)} · '
-                            'Réduction −${formatFcfa(item.discountAmount)}',
-                            style: AppTypography.bodySmall.copyWith(
-                              color: cs.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        atStockLimit
-                            ? '${formatFcfa(item.unitPrice)} · stock max'
-                            : formatFcfa(item.unitPrice),
-                        style: AppTypography.bodySmall.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    QuantityStepper(
-                      quantity: item.quantity,
-                      onDecrease: () => onQuantityChanged(item.quantity - 1),
-                      onIncrease: atStockLimit
-                          ? null
-                          : () => onQuantityChanged(item.quantity + 1),
-                    ),
-                  ],
-                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: _details(cs, atStockLimit)),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _details(ColorScheme cs, bool atStockLimit) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                item.productName,
+                style: AppTypography.titleMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            AmountDisplay(amount: item.lineTotal),
+            IconButton(
+              tooltip: 'Retirer ${item.productName}',
+              icon: const Icon(Icons.close, size: 20),
+              color: cs.onSurfaceVariant,
+              onPressed: onRemove,
+            ),
+          ],
+        ),
+        if (item.discount != null)
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: Row(
+              children: [
+                Icon(Icons.local_offer_outlined, size: 14, color: cs.primary),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    '${formatAmount(item.grossTotal)} · '
+                    'Réduction −${formatFcfa(item.discountAmount)}',
+                    style: AppTypography.bodySmall.copyWith(color: cs.primary),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                atStockLimit
+                    ? '${formatFcfa(item.unitPrice)} · stock max'
+                    : formatFcfa(item.unitPrice),
+                style: AppTypography.bodySmall.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+            QuantityStepper(
+              quantity: item.quantity,
+              onDecrease: () => onQuantityChanged(item.quantity - 1),
+              onIncrease: atStockLimit
+                  ? null
+                  : () => onQuantityChanged(item.quantity + 1),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

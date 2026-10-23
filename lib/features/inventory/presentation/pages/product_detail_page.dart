@@ -18,6 +18,7 @@ import '../../../catalog/presentation/providers/product_image_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_movement_tile.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
 /// Nombre de mouvements affichés en aperçu sur la fiche produit.
@@ -347,14 +348,9 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
 
   @override
   Widget build(BuildContext context) {
-    final version = widget.product.imageVersion;
-    final file = version == null
-        ? null
-        : ref.watch(productImageFileProvider(widget.product.id, version)).value;
-
     return Row(
       children: [
-        AppThumbnail(file: file, size: 96),
+        ProductThumbnail(product: widget.product, size: 96),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _busy
@@ -371,7 +367,7 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
                     onPressed: _edit,
                     icon: const Icon(Icons.photo_camera_outlined),
                     label: Text(
-                      version == null
+                      widget.product.imageVersion == null
                           ? 'Ajouter une photo'
                           : 'Changer la photo',
                     ),

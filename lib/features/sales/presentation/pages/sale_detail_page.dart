@@ -19,6 +19,7 @@ import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Détail d'une vente, présenté comme un ticket : lignes, total, paiement,
 /// statut de synchro, puis impression et reçu PDF.
@@ -290,44 +291,52 @@ class _TicketLine extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(item.productName, style: AppTypography.bodyLarge),
+          ProductThumbnailById(productId: item.productId),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: _details(cs)),
+        ],
+      ),
+    );
+  }
+
+  Widget _details(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(item.productName, style: AppTypography.bodyLarge),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${item.quantity} × ${formatAmount(item.unitPrice)}',
+                style: AppTypography.bodySmall.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(formatAmount(item.grossTotal), style: AppTypography.bodyLarge),
+          ],
+        ),
+        if (item.discountAmount > Decimal.zero)
           Row(
             children: [
               Expanded(
                 child: Text(
-                  '${item.quantity} × ${formatAmount(item.unitPrice)}',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
+                  'Réduction',
+                  style: AppTypography.bodySmall.copyWith(color: cs.primary),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
               Text(
-                formatAmount(item.grossTotal),
-                style: AppTypography.bodyLarge,
+                '−${formatAmount(item.discountAmount)}',
+                style: AppTypography.bodySmall.copyWith(color: cs.primary),
               ),
             ],
           ),
-          if (item.discountAmount > Decimal.zero)
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Réduction',
-                    style: AppTypography.bodySmall.copyWith(color: cs.primary),
-                  ),
-                ),
-                Text(
-                  '−${formatAmount(item.discountAmount)}',
-                  style: AppTypography.bodySmall.copyWith(color: cs.primary),
-                ),
-              ],
-            ),
-        ],
-      ),
+      ],
     );
   }
 }

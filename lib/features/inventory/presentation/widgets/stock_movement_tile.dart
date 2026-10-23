@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../domain/entities/stock_movement.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Ligne d'un mouvement de stock : motif, date, variation et stock obtenu.
 class StockMovementTile extends StatelessWidget {
@@ -53,20 +54,23 @@ class StockMovementTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Icon(
-                isPositive ? Icons.add : Icons.remove,
-                size: 20,
-                color: color,
+          if (productName != null)
+            ProductThumbnailById(productId: movement.productId)
+          else
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Icon(
+                  isPositive ? Icons.add : Icons.remove,
+                  size: 20,
+                  color: color,
+                ),
               ),
             ),
-          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

@@ -78,6 +78,18 @@ void main() {
       expect(await cache.get('product_p2', 'v1'), isNotNull);
     });
 
+    test('purge des anciennes photos produit, logo conservé', () async {
+      await cache.put('product_p1', 'v1', [1]);
+      await cache.put('product_p2', 'v1', [2]);
+      await cache.put('store_logo', 'v1', [3]);
+
+      await cache.purgeLegacyProductImages();
+
+      expect(await cache.get('product_p1', 'v1'), isNull);
+      expect(await cache.get('product_p2', 'v1'), isNull);
+      expect(await cache.get('store_logo', 'v1'), isNotNull);
+    });
+
     test('clear vide tout (changement de compte)', () async {
       await cache.put('store_logo', 'v1', [1]);
       await cache.clear();
@@ -97,7 +109,6 @@ void main() {
         db: db,
         syncQueue: SyncQueueRepository(db: db),
         dio: dio,
-        imageCache: cache,
       );
       await db
           .into(db.products)
@@ -112,27 +123,6 @@ void main() {
     });
 
     tearDown(() => db.close());
-
-    test('image en cache : aucun appel réseau', () async {
-      await cache.put('product_p1', 'v1', [9]);
-      final file = await repo.productImage('p1', 'v1');
-      expect(await file!.readAsBytes(), [9]);
-      verifyNever(
-        () => dio.get<List<int>>(any(), options: any(named: 'options')),
-      );
-    });
-
-    test('image absente du cache : téléchargée puis mise en cache', () async {
-      when(
-        () => dio.get<List<int>>(any(), options: any(named: 'options')),
-      ).thenAnswer((_) async => _response<List<int>>([7, 7]));
-
-      await repo.productImage('p1', 'v2');
-      expect(await (await cache.get('product_p1', 'v2'))!.readAsBytes(), [
-        7,
-        7,
-      ]);
-    });
 
     test(
       'envoi : la version serveur est enregistrée, sans renvoyer le produit',

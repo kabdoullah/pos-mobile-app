@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'app/app.dart';
 import 'app/theme/theme_mode_provider.dart';
 import 'core/config.dart';
 import 'core/network/network_providers.dart';
+import 'core/storage/image_file_cache.dart';
 
 /// Point d'entrée production — flavor "prod", API prod.
 void main() async {
@@ -17,6 +20,11 @@ void main() async {
     apiUrl: 'https://pos-mobile-vkuh.onrender.com',
   );
   await initializeDateFormatting('fr_FR');
+  // Nettoyage en tâche de fond, non bloquant : un échec sera retenté au
+  // prochain démarrage.
+  unawaited(
+    ImageFileCache().purgeLegacyProductImages().catchError((Object _) {}),
+  );
   // Lu avant runApp : la première frame suit le thème choisi par
   // l'utilisateur, pas celui du système.
   final themeMode = await ThemeModeNotifier.readSaved();

@@ -7,6 +7,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../providers/home_providers.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Nombre de produits en alerte affichés sur l'accueil.
 const _previewCount = 3;
@@ -80,11 +81,7 @@ class _LowStockRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
-          Icon(
-            isOut ? Icons.remove_shopping_cart_outlined : Icons.warning_amber,
-            size: 20,
-            color: color,
-          ),
+          ProductThumbnail(product: product, size: 32),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(

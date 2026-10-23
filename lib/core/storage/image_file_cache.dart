@@ -2,7 +2,8 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 
-/// Cache disque des images serveur (photos produit, logo), ADR-0008.
+/// Cache disque des images serveur (logo), ADR-0008. Les photos produit sont
+/// dans le cache de `cached_network_image` (`imageCacheManagerProvider`).
 ///
 /// Une image = un fichier `<clé>_<version>.webp`. La version est le SHA-256
 /// renvoyé par l'API : une image ne change jamais sous une même version, donc
@@ -45,6 +46,10 @@ class ImageFileCache {
       if (entity is File && name.startsWith('${key}_')) await entity.delete();
     }
   }
+
+  /// Supprime les photos produit des versions précédentes de l'app, qui les
+  /// stockaient ici (`product_<id>_<version>.webp`). Sans effet ensuite.
+  Future<void> purgeLegacyProductImages() => remove('product');
 
   /// Vide le cache (changement de compte).
   Future<void> clear() async {

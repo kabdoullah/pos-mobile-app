@@ -13,6 +13,7 @@ import '../../domain/entities/sale_return.dart';
 import '../providers/returns_providers.dart';
 import '../widgets/return_confirmation_sheet.dart';
 import '../widgets/return_success_view.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Retour d'articles d'une vente : quantités et état par article, motif,
 /// moyen de remboursement, puis récapitulatif et confirmation.
@@ -294,16 +295,30 @@ class _LineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(line.productName, style: AppTypography.bodyLarge),
-          Text(
-            '${line.soldQuantity} × ${formatAmount(line.unitPrice)}'
-            '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
-            style: muted,
-          ),
-          Text(
-            'Vendu ${line.soldQuantity} · déjà rendu ${line.returnedQuantity}'
-            ' · retournable $returnable',
-            style: muted,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ProductThumbnailById(productId: line.productId),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(line.productName, style: AppTypography.bodyLarge),
+                    Text(
+                      '${line.soldQuantity} × ${formatAmount(line.unitPrice)}'
+                      '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
+                      style: muted,
+                    ),
+                    Text(
+                      'Vendu ${line.soldQuantity} · déjà rendu '
+                      '${line.returnedQuantity} · retournable $returnable',
+                      style: muted,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.sm),
           if (returnable == 0)
