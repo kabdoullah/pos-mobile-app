@@ -70,21 +70,10 @@ class LowStockSection extends ConsumerWidget {
         ),
         _AlertCounts(outCount: outCount, lowCount: lowCount),
         const SizedBox(height: AppSpacing.sm),
-        Material(
-          color: cs.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            children: [
-              for (final (i, product)
-                  in products.take(_previewCount).indexed) ...[
-                if (i > 0)
-                  Divider(height: 1, indent: 64, color: cs.outlineVariant),
-                _LowStockRow(product: product),
-              ],
-            ],
-          ),
-        ),
+        for (final (i, product) in products.take(_previewCount).indexed) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.sm),
+          _LowStockRow(product: product),
+        ],
       ],
     );
   }
@@ -134,37 +123,46 @@ class _LowStockRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: () =>
-          context.push(Routes.productDetail.replaceFirst(':id', product.id)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.xs,
-            AppSpacing.sm,
-          ),
-          child: Row(
-            children: [
-              ProductThumbnail(product: product, size: 36),
-              const SizedBox(width: AppSpacing.md - AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
+    // Même carte que l'onglet Stock et la caisse.
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: cs.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: InkWell(
+        onTap: () =>
+            context.push(Routes.productDetail.replaceFirst(':id', product.id)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.xs,
+              AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                ProductThumbnail(product: product, size: 36),
+                const SizedBox(width: AppSpacing.md - AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    product.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              // Même badge qu'en caisse : « Rupture » ou « Faible : 3 ».
-              StockStatusBadge(product: product, showQuantity: true),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-            ],
+                const SizedBox(width: AppSpacing.sm),
+                // Même badge qu'en caisse : « Rupture » ou « Faible : 3 ».
+                StockStatusBadge(product: product, showQuantity: true),
+                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              ],
+            ),
           ),
         ),
       ),

@@ -52,26 +52,10 @@ class RecentSalesSection extends ConsumerWidget {
         else if (sales.isEmpty)
           _EmptyToday(onNewSale: onNewSale)
         else
-          // Même surface groupée que les alertes de stock.
-          Material(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (final (i, sale) in sales.indexed) ...[
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      indent: AppSpacing.md,
-                      endIndent: AppSpacing.md,
-                      color: cs.outlineVariant,
-                    ),
-                  _SaleRow(sale: sale),
-                ],
-              ],
-            ),
-          ),
+          for (final (i, sale) in sales.indexed) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
+            _SaleRow(sale: sale),
+          ],
       ],
     );
   }
@@ -91,41 +75,50 @@ class _SaleRow extends StatelessWidget {
         ? 'Reçu #${sale.receiptNumber}'
         : 'En attente de synchro';
 
-    return InkWell(
-      onTap: () => context.push(Routes.saleDetail, extra: sale),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.xs,
-          AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
-                      color: isSynced ? null : cs.onSurfaceVariant,
+    // Même carte que les alertes de stock et l'onglet Stock.
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: cs.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: InkWell(
+        onTap: () => context.push(Routes.saleDetail, extra: sale),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.xs,
+            AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: isSynced ? null : cs.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                  Text(
-                    '${DateFormat.Hm('fr_FR').format(sale.createdAt)}'
-                    ' · ${sale.paymentMethod.label}',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurfaceVariant,
+                    Text(
+                      '${DateFormat.Hm('fr_FR').format(sale.createdAt)}'
+                      ' · ${sale.paymentMethod.label}',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            AmountDisplay(amount: sale.totalAmount),
-            Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-          ],
+              AmountDisplay(amount: sale.totalAmount),
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            ],
+          ),
         ),
       ),
     );
