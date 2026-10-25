@@ -51,12 +51,13 @@ class StockHistoryPage extends ConsumerWidget {
         child: historyState.when(
           loading: () => ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
-            children: const [
-              SkeletonBox(height: 56),
-              SizedBox(height: AppSpacing.sm),
-              SkeletonBox(height: 56),
-              SizedBox(height: AppSpacing.sm),
-              SkeletonBox(height: 56),
+            children: [
+              AppListGroup(
+                dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+                children: [
+                  for (var i = 0; i < 6; i++) const _MovementSkeleton(),
+                ],
+              ),
             ],
           ),
           error: (_, _) => _FullHeight(
@@ -99,25 +100,60 @@ class StockHistoryPage extends ConsumerWidget {
                 }
                 return false;
               },
-              child: ListView.separated(
+              child: CustomScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                  AppSpacing.md,
-                  AppSpacing.xxl,
-                ),
-                itemCount: movements.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final movement = movements[index];
-                  return StockMovementTile(
-                    movement: movement,
-                    productName: productId == null
-                        ? names[movement.productId] ?? 'Produit supprimé'
-                        : null,
-                  );
-                },
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    sliver: SliverAppListGroup(
+                      itemCount: movements.length,
+                      dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+                      itemBuilder: (context, index) {
+                        final movement = movements[index];
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: StockMovementTile(
+                            movement: movement,
+                            productName: productId == null
+                                ? names[movement.productId] ??
+                                      'Produit supprimé'
+                                : null,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  // Page suivante : indicateur tant qu'il reste des
+                  // mouvements à charger (le chargement part en fin de
+                  // défilement).
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        0,
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.xxl,
+                      ),
+                      child: notifier.hasMore
+                          ? const Center(
+                              child: SizedBox.square(
+                                dimension: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -140,6 +176,40 @@ class _FullHeight extends StatelessWidget {
       builder: (context, constraints) => SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: SizedBox(height: constraints.maxHeight, child: child),
+      ),
+    );
+  }
+}
+
+/// Ligne fantôme de [StockMovementTile] : pastille, deux lignes de texte,
+/// quantité à droite.
+class _MovementSkeleton extends StatelessWidget {
+  const _MovementSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          SkeletonBox(width: 36, height: 36, radius: AppSpacing.radiusFull),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 140, height: 14, radius: AppSpacing.xs),
+                SizedBox(height: AppSpacing.sm),
+                SkeletonBox(width: 190, height: 12, radius: AppSpacing.xs),
+              ],
+            ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          SkeletonBox(width: 32, height: 14, radius: AppSpacing.xs),
+        ],
       ),
     );
   }

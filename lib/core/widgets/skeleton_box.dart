@@ -42,7 +42,9 @@ class _SkeletonBoxState extends State<SkeletonBox>
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.surfaceContainerHighest;
+    // outlineVariant : surfaceContainerHighest (#FEF9EE) se confondait avec
+    // le fond de page ivoire (#FFFBF5), le squelette était invisible.
+    final color = Theme.of(context).colorScheme.outlineVariant;
     return Semantics(
       label: 'Chargement',
       child: FadeTransition(
