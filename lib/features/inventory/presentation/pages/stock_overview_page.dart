@@ -263,25 +263,24 @@ class _StockList extends ConsumerWidget {
             ),
           )
         else
-          SliverList.separated(
-            itemCount: visible.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              indent: AppSpacing.md,
-              endIndent: AppSpacing.md,
-              color: cs.outlineVariant,
+          // Cartes espacées, même marge latérale que l'en-tête.
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            sliver: SliverList.separated(
+              itemCount: visible.length,
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final product = visible[index];
+                return StockProductTile(
+                  key: ValueKey(product.id),
+                  product: product,
+                  onTap: () => onOpen(product),
+                  onAdjust: product.currentStock == null
+                      ? null
+                      : () => showStockAdjustmentSheet(context, product.id),
+                );
+              },
             ),
-            itemBuilder: (context, index) {
-              final product = visible[index];
-              return StockProductTile(
-                key: ValueKey(product.id),
-                product: product,
-                onTap: () => onOpen(product),
-                onAdjust: product.currentStock == null
-                    ? null
-                    : () => showStockAdjustmentSheet(context, product.id),
-              );
-            },
           ),
         // Place pour le bouton flottant.
         const SliverToBoxAdapter(child: SizedBox(height: 88)),

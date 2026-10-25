@@ -7,10 +7,10 @@ import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
-/// Ligne produit de l'onglet Stock, sur deux lignes : nom et prix à gauche,
-/// quantité et état (badge) à droite, puis l'accès direct à l'ajustement.
+/// Carte produit de l'onglet Stock (même style que les cartes de la caisse) :
+/// nom et prix à gauche, badge de stock et accès à l'ajustement à droite.
 class StockProductTile extends StatelessWidget {
-  /// Crée la ligne.
+  /// Crée la carte.
   const StockProductTile({
     required this.product,
     required this.onTap,
@@ -38,28 +38,33 @@ class StockProductTile extends StatelessWidget {
         ? '${formatFcfa(product.sellingPrice)} · Stock : $stock'
         : formatFcfa(product.sellingPrice);
 
-    return InkWell(
-      onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: cs.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      child: InkWell(
+        onTap: onTap,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            onAdjust == null ? AppSpacing.md : AppSpacing.xs,
-            AppSpacing.sm,
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.xs,
+            AppSpacing.xs,
           ),
           child: Row(
             children: [
               ProductThumbnail(product: product),
-              const SizedBox(width: AppSpacing.md - AppSpacing.xs),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       product.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
@@ -77,17 +82,30 @@ class StockProductTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              // Stock suivi : la quantité dans le badge (« Stock : 24 »,
-              // « Faible : 3 », « Rupture ») ; sinon « Non suivi ».
-              StockStatusBadge(product: product, showQuantity: stock != null),
-              if (onAdjust != null)
-                IconButton(
-                  tooltip: 'Ajuster le stock de ${product.name}',
-                  // Saisie d'une entrée ou d'une sortie : distinct des filtres
-                  // et du crayon « Modifier » de la fiche produit.
-                  icon: Icon(Icons.edit_note, color: cs.primary),
-                  onPressed: onAdjust,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.sm),
+                    // Stock suivi : la quantité dans le badge (« Stock : 24 »,
+                    // « Faible : 3 », « Rupture ») ; sinon « Non suivi ».
+                    child: StockStatusBadge(
+                      product: product,
+                      showQuantity: stock != null,
+                    ),
+                  ),
+                  if (onAdjust != null)
+                    IconButton(
+                      tooltip: 'Ajuster le stock de ${product.name}',
+                      // Saisie d'une entrée ou d'une sortie : distinct des
+                      // filtres et du crayon « Modifier » de la fiche produit.
+                      icon: Icon(Icons.edit_note, color: cs.primary),
+                      onPressed: onAdjust,
+                    )
+                  else
+                    const SizedBox(height: AppSpacing.sm),
+                ],
+              ),
             ],
           ),
         ),
