@@ -228,19 +228,29 @@ class AppTheme {
 
   static OutlinedButtonThemeData _buildOutlinedButtonTheme(ColorScheme cs) {
     return OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: cs.primary,
-        minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: 12,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        side: BorderSide(color: cs.primary, width: 2),
-        textStyle: AppTypography.labelLarge,
-      ),
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: cs.primary,
+            minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 12,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+            textStyle: AppTypography.labelLarge,
+          ).copyWith(
+            // Désactivé : bordure grise, sinon le bouton semble encore actif.
+            side: WidgetStateProperty.resolveWith(
+              (states) => BorderSide(
+                color: states.contains(WidgetState.disabled)
+                    ? cs.outlineVariant
+                    : cs.primary,
+                width: 2,
+              ),
+            ),
+          ),
     );
   }
 
