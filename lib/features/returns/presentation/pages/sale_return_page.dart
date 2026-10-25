@@ -14,6 +14,7 @@ import '../providers/returns_providers.dart';
 import '../widgets/return_confirmation_sheet.dart';
 import '../widgets/return_success_view.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
+import '../../../../app/theme/app_colors.dart';
 
 /// Retour d'articles d'une vente : quantités et état par article, motif,
 /// moyen de remboursement, puis récapitulatif et confirmation.
@@ -139,6 +140,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final draft = widget.draft;
     final total = draft.refundTotal(widget.lines);
     final hasItems = draft.selections(widget.lines).isNotEmpty;
@@ -223,9 +225,9 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
         // Même panneau que l'encaissement de la caisse : seule surface élevée,
         // le montant à rembourser reste l'objet principal.
         Material(
-          color: cs.surface,
+          color: semantic.raisedSurface,
           elevation: 8,
-          shadowColor: cs.primary.withValues(alpha: 0.35),
+          shadowColor: semantic.elevationShadow.withValues(alpha: 0.35),
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(AppSpacing.radiusLg),

@@ -141,6 +141,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   const AppSemanticColors({
     required this.success,
     required this.successContainer,
+    required this.elevationShadow,
+    required this.raisedSurface,
   });
 
   /// Success / stock ok / mouvement d'entrée. WCAG AA on its own brightness's
@@ -150,23 +152,45 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   /// Teinte de fond des conteneurs en état de succès (chips, cercles d'icône).
   final Color successContainer;
 
+  /// Ombre des surfaces élevées (panneau d'encaissement, ticket, bouton
+  /// principal) : cacao en clair ; noire en sombre, où une ombre de la
+  /// couleur principale (ambre) ferait un halo.
+  final Color elevationShadow;
+
+  /// Fond des surfaces élevées : blanc en clair ; en sombre, un cran plus
+  /// clair que les surfaces — l'élévation se lit par le ton, pas l'ombre.
+  final Color raisedSurface;
+
   /// Instance mode clair.
   static const light = AppSemanticColors(
     success: Color(0xFF166534), // vert forêt, WCAG AA sur blanc
     successContainer: Color(0xFFDCFCE7),
+    elevationShadow: Color(0xFF92400E), // cacao
+    raisedSurface: Color(0xFFFFFFFF),
   );
 
   /// Instance mode sombre.
   static const dark = AppSemanticColors(
     success: Color(0xFF4ADE80), // green-400 — lisible sur surface quasi-noire
     successContainer: Color(0xFF14532D),
+    elevationShadow: Color(0xFF000000),
+    raisedSurface: Color(
+      0xFF2A1B0C,
+    ), // entre surface et surfaceContainerHighest
   );
 
   @override
-  AppSemanticColors copyWith({Color? success, Color? successContainer}) {
+  AppSemanticColors copyWith({
+    Color? success,
+    Color? successContainer,
+    Color? elevationShadow,
+    Color? raisedSurface,
+  }) {
     return AppSemanticColors(
       success: success ?? this.success,
       successContainer: successContainer ?? this.successContainer,
+      elevationShadow: elevationShadow ?? this.elevationShadow,
+      raisedSurface: raisedSurface ?? this.raisedSurface,
     );
   }
 
@@ -178,6 +202,11 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       successContainer:
           Color.lerp(successContainer, other.successContainer, t) ??
           successContainer,
+      elevationShadow:
+          Color.lerp(elevationShadow, other.elevationShadow, t) ??
+          elevationShadow,
+      raisedSurface:
+          Color.lerp(raisedSurface, other.raisedSurface, t) ?? raisedSurface,
     );
   }
 }

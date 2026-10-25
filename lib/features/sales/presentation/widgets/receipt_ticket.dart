@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
+import '../../../../app/theme/app_colors.dart';
 
 /// Ligne d'article d'un [ReceiptTicket].
 class ReceiptTicketLine {
@@ -99,7 +100,9 @@ class ReceiptTicket extends StatelessWidget {
       clipper: const ZigzagClipper(),
       color: cs.surface,
       elevation: 2,
-      shadowColor: cs.primary.withValues(alpha: 0.4),
+      shadowColor: Theme.of(
+        context,
+      ).extension<AppSemanticColors>()!.elevationShadow.withValues(alpha: 0.4),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,

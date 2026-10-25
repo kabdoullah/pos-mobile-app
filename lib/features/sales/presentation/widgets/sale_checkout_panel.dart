@@ -8,6 +8,7 @@ import '../../../../core/widgets/index.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
+import '../../../../app/theme/app_colors.dart';
 
 /// Zone fixe en bas de la caisse : nombre d'articles (accès au panier),
 /// remise, total et bouton d'encaissement, toujours accessibles au pouce.
@@ -39,6 +40,7 @@ class SaleCheckoutPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final cart = ref.watch(cartProvider);
     final checkout = ref.watch(checkoutProvider);
     final total = cart.total;
@@ -63,9 +65,9 @@ class SaleCheckoutPanel extends ConsumerWidget {
 
     return Material(
       // Seule surface élevée de la caisse : le total reste l'objet principal.
-      color: cs.surface,
+      color: semantic.raisedSurface,
       elevation: 8,
-      shadowColor: cs.primary.withValues(alpha: 0.35),
+      shadowColor: semantic.elevationShadow.withValues(alpha: 0.35),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),

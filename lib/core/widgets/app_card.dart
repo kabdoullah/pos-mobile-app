@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/app_spacing.dart';
+import '../../app/theme/app_colors.dart';
 
 /// Surface de contenu, à plat ou élevée.
 ///
@@ -34,18 +35,19 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final borderRadius = BorderRadius.circular(
       elevated ? AppSpacing.radiusLg : AppSpacing.radiusMd,
     );
     return Container(
       decoration: BoxDecoration(
-        color: cs.surface,
+        color: elevated ? semantic.raisedSurface : cs.surface,
         borderRadius: borderRadius,
         border: elevated ? null : Border.all(color: cs.outlineVariant),
         boxShadow: elevated
             ? [
                 BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.14),
+                  color: semantic.elevationShadow.withValues(alpha: 0.14),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),
