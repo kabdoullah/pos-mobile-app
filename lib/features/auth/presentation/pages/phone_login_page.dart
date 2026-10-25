@@ -178,33 +178,15 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
         status.sessionExpired;
 
     return AuthScaffold(
+      header: const AuthBrandBand(),
       child: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: AppSpacing.xl),
-            Center(
-              child: ExcludeSemantics(
-                child: Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                  ),
-                  child: Icon(
-                    Icons.storefront_rounded,
-                    size: 32,
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.sm),
             const AuthHeader(
-              title: 'Bienvenue',
-              subtitle: 'Gérez votre boutique simplement.',
-              centered: true,
+              title: 'Connexion',
+              subtitle: 'Avec le numéro de votre compte.',
             ),
             const SizedBox(height: AppSpacing.lg),
             AnimatedSize(

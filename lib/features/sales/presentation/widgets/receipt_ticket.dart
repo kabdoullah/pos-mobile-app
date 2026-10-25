@@ -96,7 +96,7 @@ class ReceiptTicket extends StatelessWidget {
     final linesPlaceholder = this.linesPlaceholder;
 
     return PhysicalShape(
-      clipper: const _ZigzagClipper(),
+      clipper: const ZigzagClipper(),
       color: cs.surface,
       elevation: 2,
       shadowColor: cs.primary.withValues(alpha: 0.4),
@@ -105,7 +105,7 @@ class ReceiptTicket extends StatelessWidget {
           AppSpacing.md,
           AppSpacing.md,
           AppSpacing.md,
-          AppSpacing.md + _ZigzagClipper.toothHeight,
+          AppSpacing.md + ZigzagClipper.toothHeight,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -274,32 +274,4 @@ class _DashPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_DashPainter oldDelegate) => oldDelegate.color != color;
-}
-
-/// Bord inférieur en dents de scie : le papier déchiré du ticket.
-class _ZigzagClipper extends CustomClipper<Path> {
-  const _ZigzagClipper();
-
-  static const double toothHeight = 6;
-  static const double _toothWidth = 12;
-
-  @override
-  Path getClip(Size size) {
-    final bottom = size.height - toothHeight;
-    final path = Path()
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, bottom);
-    final teeth = (size.width / _toothWidth).ceil();
-    final step = size.width / teeth;
-    for (var i = teeth; i > 0; i--) {
-      final x = i * step;
-      path
-        ..lineTo(x - step / 2, size.height)
-        ..lineTo(x - step, bottom);
-    }
-    return path..close();
-  }
-
-  @override
-  bool shouldReclip(_ZigzagClipper oldClipper) => false;
 }

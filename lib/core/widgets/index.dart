@@ -17,3 +17,4 @@ export 'section_header.dart';
 export 'secondary_button.dart';
 export 'skeleton_box.dart';
 export 'sync_status_indicator.dart';
+export 'zigzag_clipper.dart';
