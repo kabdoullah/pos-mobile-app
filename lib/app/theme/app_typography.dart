@@ -18,6 +18,10 @@ class AppTypography {
 
   /// Famille déclarée dans `pubspec.yaml`. Répétée dans chaque style : les
   /// écrans utilisent souvent [AppTypography] directement, hors du thème.
+  ///
+  /// Les fichiers embarqués ajoutent l'espace fine insécable U+202F, absente
+  /// de la police d'origine : c'est le séparateur de milliers de `intl` en
+  /// `fr_FR`, sans lui « 1 000 » s'afficherait « 1000 ».
   static const String fontFamily = 'SchibstedGrotesk';
 
   /// Chiffres à chasse fixe : les montants ne « bougent » pas quand ils
