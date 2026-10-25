@@ -7,6 +7,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
+import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../providers/home_providers.dart';
 
@@ -51,7 +52,26 @@ class RecentSalesSection extends ConsumerWidget {
         else if (sales.isEmpty)
           _EmptyToday(onNewSale: onNewSale)
         else
-          for (final sale in sales) _SaleRow(sale: sale),
+          // Même surface groupée que les alertes de stock.
+          Material(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (final (i, sale) in sales.indexed) ...[
+                  if (i > 0)
+                    Divider(
+                      height: 1,
+                      indent: AppSpacing.md,
+                      endIndent: AppSpacing.md,
+                      color: cs.outlineVariant,
+                    ),
+                  _SaleRow(sale: sale),
+                ],
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -66,24 +86,36 @@ class _SaleRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     // Numéro 0 = pas encore attribué par le serveur : jamais affiché comme tel.
-    final title = sale.receiptNumber > 0
+    final isSynced = sale.receiptNumber > 0;
+    final title = isSynced
         ? 'Reçu #${sale.receiptNumber}'
         : 'En attente de synchro';
 
     return InkWell(
       onTap: () => context.push(Routes.saleDetail, extra: sale),
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.xs,
+          AppSpacing.sm,
+        ),
         child: Row(
           children: [
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: AppTypography.bodyLarge),
                   Text(
-                    DateFormat.Hm('fr_FR').format(sale.createdAt),
+                    title,
+                    style: AppTypography.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: isSynced ? null : cs.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    '${DateFormat.Hm('fr_FR').format(sale.createdAt)}'
+                    ' · ${sale.paymentMethod.label}',
                     style: AppTypography.bodySmall.copyWith(
                       color: cs.onSurfaceVariant,
                     ),

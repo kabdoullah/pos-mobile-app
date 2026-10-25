@@ -59,6 +59,28 @@ Stream<List<Sale>> recentSales(Ref ref) {
       .map((sales) => sales.take(_recentSalesLimit).toList());
 }
 
+/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
+/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+@riverpod
+Stream<List<Decimal>> todayHourlySales(Ref ref) {
+  final today = ref.watch(todayProvider);
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSalesByDateRange(today, today)
+      .map(salesByHour);
+}
+
+/// Totaux des [sales] par heure locale de création : liste de 24 montants
+/// (montant brut des ventes ; les retours n'y figurent pas).
+List<Decimal> salesByHour(Iterable<Sale> sales) {
+  final totals = List<Decimal>.filled(24, Decimal.zero);
+  for (final sale in sales) {
+    final hour = sale.createdAt.toLocal().hour;
+    totals[hour] += sale.totalAmount;
+  }
+  return totals;
+}
+
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
 /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 @riverpod

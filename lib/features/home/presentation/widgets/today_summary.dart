@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:clock/clock.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,6 +76,7 @@ class _SummaryContent extends StatelessWidget {
                     color: cs.onPrimaryContainer,
                   ),
                 ),
+              _HourlyBars(color: cs.onPrimaryContainer),
             ],
           ),
         ),
@@ -96,6 +100,91 @@ class _SummaryContent extends StatelessWidget {
           _PaymentSplit(cashPercent: cashShare, stats: stats),
         ],
       ],
+    );
+  }
+}
+
+/// Mini-graphique des ventes par heure, de la première vente du jour à l'heure
+/// courante ; la barre du pic est accentuée. Rien tant qu'il n'y a pas de
+/// vente.
+class _HourlyBars extends ConsumerWidget {
+  const _HourlyBars({required this.color});
+
+  static const _minHours = 8;
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(todayHourlySalesProvider).value;
+    if (totals == null) return const SizedBox.shrink();
+    final first = totals.indexWhere((t) => t > Decimal.zero);
+    if (first < 0) return const SizedBox.shrink();
+    final last = totals.lastIndexWhere((t) => t > Decimal.zero);
+    final end = math.max(last, clock.now().hour);
+    // Au moins 8 heures affichées : une seule heure de ventes ne doit pas
+    // donner une barre pleine largeur.
+    final start = math.max(0, math.min(first, end - (_minHours - 1)));
+    final hours = totals.sublist(start, end + 1);
+    final peak = hours.reduce((a, b) => a > b ? a : b);
+    final peakHour = start + hours.indexOf(peak);
+    final labelStyle = AppTypography.labelSmall.copyWith(color: color);
+
+    return Semantics(
+      label: 'Ventes par heure, pic à $peakHour h',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 40,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final total in hours)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                        child: FractionallySizedBox(
+                          // Heure sans vente : simple trait de base.
+                          heightFactor: math.max(
+                            (total / peak).toDouble(),
+                            0.06,
+                          ),
+                          alignment: Alignment.bottomCenter,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: color.withValues(
+                                alpha: total == peak
+                                    ? 0.9
+                                    : total > Decimal.zero
+                                    ? 0.45
+                                    : 0.2,
+                              ),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Text('$start h', style: labelStyle),
+                const Spacer(),
+                Text('$end h', style: labelStyle),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -156,6 +245,9 @@ class _PaymentSplit extends StatelessWidget {
               child: SizedBox(
                 height: 8,
                 child: Row(
+                  // Sans stretch, un ColoredBox sans enfant prend la hauteur
+                  // minimale (0) : la barre était invisible.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (cashPercent > 0)
                       Expanded(

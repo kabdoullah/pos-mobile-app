@@ -203,6 +203,53 @@ final class RecentSalesProvider
 
 String _$recentSalesHash() => r'873d362435a91ec85a763315a8a91ba61d9da61d';
 
+/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
+/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+
+@ProviderFor(todayHourlySales)
+final todayHourlySalesProvider = TodayHourlySalesProvider._();
+
+/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
+/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+
+final class TodayHourlySalesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Decimal>>,
+          List<Decimal>,
+          Stream<List<Decimal>>
+        >
+    with $FutureModifier<List<Decimal>>, $StreamProvider<List<Decimal>> {
+  /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
+  /// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+  TodayHourlySalesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'todayHourlySalesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$todayHourlySalesHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<Decimal>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<Decimal>> create(Ref ref) {
+    return todayHourlySales(ref);
+  }
+}
+
+String _$todayHourlySalesHash() => r'f21d5e305c74dba9e5ba56e2f01ae8c602487e12';
+
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
 /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 
