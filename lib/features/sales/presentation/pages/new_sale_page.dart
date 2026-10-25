@@ -8,7 +8,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
@@ -458,19 +457,15 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const OfflineStatusIndicator(),
-            Text(
-              storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.titleLarge,
-            ),
-          ],
+        // Même en-tête que l'accueil : boutique en titre, état réseau discret
+        // à droite.
+        title: Text(
+          storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          const OfflineStatusIndicator(),
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
