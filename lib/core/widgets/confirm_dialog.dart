@@ -46,8 +46,9 @@ Future<bool> showConfirmDialog(
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    // Même taille que l'action : annuler est un vrai choix.
+                    style: AppTypography.labelLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),

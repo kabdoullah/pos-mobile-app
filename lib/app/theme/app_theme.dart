@@ -56,6 +56,7 @@ class AppTheme {
       chipTheme: _buildChipTheme(colorScheme),
       dividerTheme: _buildDividerTheme(colorScheme),
       snackBarTheme: _buildSnackBarTheme(colorScheme),
+      dialogTheme: _buildDialogTheme(colorScheme),
       navigationBarTheme: _buildNavigationBarTheme(colorScheme),
       floatingActionButtonTheme: _buildFabTheme(colorScheme),
       progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
@@ -112,6 +113,7 @@ class AppTheme {
       chipTheme: _buildChipTheme(colorScheme),
       dividerTheme: _buildDividerTheme(colorScheme),
       snackBarTheme: _buildSnackBarTheme(colorScheme),
+      dialogTheme: _buildDialogTheme(colorScheme),
       navigationBarTheme: _buildNavigationBarTheme(colorScheme),
       floatingActionButtonTheme: _buildFabTheme(colorScheme),
       progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
@@ -289,6 +291,22 @@ class AppTheme {
       color: cs.outlineVariant,
       thickness: 1,
       space: AppSpacing.md,
+    );
+  }
+
+  /// Boîtes de dialogue : coins des surfaces élevées (16) plutôt que les 28
+  /// de Material 3, titre en gras comme les titres de l'app.
+  static DialogThemeData _buildDialogTheme(ColorScheme cs) {
+    return DialogThemeData(
+      backgroundColor: cs.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+      ),
+      titleTextStyle: AppTypography.titleMedium.copyWith(
+        color: cs.onSurface,
+        fontWeight: FontWeight.w600,
+      ),
+      contentTextStyle: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
     );
   }
 
