@@ -57,6 +57,7 @@ class QuantityStepper extends StatelessWidget {
             icon: removes ? Icons.delete_outline : Icons.remove,
             tooltip: removes ? removeTooltip! : 'Diminuer',
             onPressed: onDecrease,
+            large: large,
           ),
           SizedBox(
             width: valueWidth,
@@ -84,6 +85,7 @@ class QuantityStepper extends StatelessWidget {
             icon: Icons.add,
             tooltip: 'Augmenter',
             onPressed: onIncrease,
+            large: large,
           ),
         ],
       ),
@@ -96,11 +98,13 @@ class _StepButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    required this.large,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
+  final bool large;
 
   @override
   Widget build(BuildContext context) {
@@ -108,10 +112,21 @@ class _StepButton extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       color: Theme.of(context).colorScheme.primary,
-      icon: Icon(icon, size: 20),
-      constraints: const BoxConstraints.tightFor(
-        width: AppSpacing.minTapTarget,
-        height: AppSpacing.minTapTarget,
+      icon: Icon(icon, size: large ? 20 : 18),
+      // Compact (lignes de panier) : pilule basse, boutons gardés larges
+      // pour rester faciles à viser. Sans shrinkWrap, Material 3 rajoute une
+      // zone tactile de 48 dp et la pilule reste haute.
+      style: IconButton.styleFrom(
+        padding: EdgeInsets.zero,
+        tapTargetSize: large
+            ? MaterialTapTargetSize.padded
+            : MaterialTapTargetSize.shrinkWrap,
+        fixedSize: large
+            ? const Size.square(AppSpacing.minTapTarget)
+            : const Size(40, 32),
+        minimumSize: large
+            ? const Size.square(AppSpacing.minTapTarget)
+            : const Size(40, 32),
       ),
       onPressed: onPressed == null
           ? null
