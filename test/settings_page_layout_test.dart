@@ -82,7 +82,7 @@ void main() {
     testWidgets('paramètres, thème $name', (tester) async {
       await pump(tester, const SettingsPage(), theme);
       expect(tester.takeException(), isNull);
-      expect(find.text('COMMERCE'), findsOneWidget);
+      expect(find.text('Commerce'), findsOneWidget);
       expect(find.text('3 ventes en attente'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Se déconnecter'), 200);
       expect(

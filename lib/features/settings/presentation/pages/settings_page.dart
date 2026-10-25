@@ -73,7 +73,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
           SettingsSection(
-            title: 'COMMERCE',
+            title: 'Commerce',
             children: [
               SettingsTile(
                 icon: Icons.storefront_outlined,
@@ -114,7 +114,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ],
           ),
           SettingsSection(
-            title: 'CAISSE',
+            title: 'Caisse',
             children: [
               SettingsTile(
                 icon: Icons.print_outlined,
@@ -126,7 +126,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ],
           ),
           SettingsSection(
-            title: 'APPLICATION',
+            title: 'Application',
             children: [
               SettingsTile(
                 icon: Icons.cloud_sync_outlined,
@@ -189,7 +189,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ],
           ),
           SettingsSection(
-            title: 'COMPTE',
+            title: 'Compte',
             children: [
               if (phone != null)
                 SettingsTile(

@@ -251,7 +251,9 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             PinMessage(
               title: title,
               detail: detail,
-              isError: isLocked || authValue.hasError,
+              // Pendant la vérification, l'erreur de l'essai précédent est
+              // encore là : « Vérification… » reste en couleur neutre.
+              isError: isLocked || (authValue.hasError && !authValue.isLoading),
             ),
             const Spacer(),
             PinNumpad(

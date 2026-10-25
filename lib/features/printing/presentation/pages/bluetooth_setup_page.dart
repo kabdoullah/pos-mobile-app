@@ -266,60 +266,65 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
                 style: tt.titleSmall,
               ),
               const SizedBox(height: AppSpacing.md),
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _pairedDevices.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.sm),
-                itemBuilder: (context, index) {
-                  final device = _pairedDevices[index];
-                  final printerState = ref.watch(printerProvider);
-                  final isConnected =
-                      printerState is PrinterConnected &&
-                      printerState.mac == device.macAdress;
-                  final isAnyConnecting = printerState is PrinterConnecting;
-                  // ✨ spinner uniquement sur LA carte du device en cours de connexion
-                  final isThisDeviceConnecting =
-                      _connectingMac == device.macAdress;
+              // Une seule surface, une ligne par appareil.
+              AppListGroup(
+                dividerIndent: 56,
+                children: [
+                  for (final device in _pairedDevices)
+                    Builder(
+                      builder: (context) {
+                        final printerState = ref.watch(printerProvider);
+                        final isConnected =
+                            printerState is PrinterConnected &&
+                            printerState.mac == device.macAdress;
+                        final isAnyConnecting =
+                            printerState is PrinterConnecting;
+                        // Indicateur uniquement sur la ligne de l'appareil
+                        // en cours de connexion.
+                        final isThisDeviceConnecting =
+                            _connectingMac == device.macAdress;
 
-                  return AppCard(
-                    onTap: (isConnected || isAnyConnecting)
-                        ? null
-                        : () => _connectToDevice(device),
-                    child: ListTile(
-                      leading: Icon(
-                        isConnected ? Icons.check_circle : Icons.bluetooth,
-                        color: isConnected ? cs.secondary : cs.onSurfaceVariant,
-                      ),
-                      title: Text(device.name),
-                      subtitle: Text(device.macAdress, style: tt.bodySmall),
-                      trailing: isConnected
-                          ? Text(
-                              'Connectée',
-                              style: tt.bodyMedium?.copyWith(
-                                color: cs.secondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            )
-                          : isThisDeviceConnecting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(
-                              Icons.arrow_forward_ios,
-                              size: 16,
-                              color: cs.onSurfaceVariant,
-                            ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.xs,
-                      ),
+                        return ListTile(
+                          onTap: (isConnected || isAnyConnecting)
+                              ? null
+                              : () => _connectToDevice(device),
+                          leading: Icon(
+                            isConnected ? Icons.check_circle : Icons.bluetooth,
+                            color: isConnected
+                                ? cs.secondary
+                                : cs.onSurfaceVariant,
+                          ),
+                          title: Text(device.name),
+                          subtitle: Text(device.macAdress, style: tt.bodySmall),
+                          trailing: isConnected
+                              ? Text(
+                                  'Connectée',
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: cs.secondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              : isThisDeviceConnecting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.xs,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                ],
               ),
             ],
           ],
@@ -346,65 +351,58 @@ class _SavedPrinterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Imprimante enregistrée',
-              style: AppTypography.labelMedium.copyWith(
-                color: cs.onSurfaceVariant,
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Imprimante enregistrée',
+            style: AppTypography.labelMedium.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Icon(Icons.print_outlined, color: cs.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.titleMedium,
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Icon(Icons.print_outlined, color: cs.primary),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.titleMedium,
-                  ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: isTesting ? null : onTest,
+                  icon: isTesting
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.receipt_outlined),
+                  label: const Text('Tester'),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.tonalIcon(
-                    onPressed: isTesting ? null : onTest,
-                    icon: isTesting
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.receipt_outlined),
-                    label: const Text('Tester'),
-                  ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: TextButton.icon(
+                  onPressed: isTesting ? null : onForget,
+                  icon: const Icon(Icons.link_off),
+                  label: const Text('Oublier'),
+                  style: TextButton.styleFrom(foregroundColor: cs.error),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: isTesting ? null : onForget,
-                    icon: const Icon(Icons.link_off),
-                    label: const Text('Oublier'),
-                    style: TextButton.styleFrom(foregroundColor: cs.error),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

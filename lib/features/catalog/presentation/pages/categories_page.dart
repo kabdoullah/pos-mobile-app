@@ -115,31 +115,42 @@ class CategoriesPage extends ConsumerWidget {
               onAction: () => _add(context, ref),
             );
           }
-          return ListView.separated(
-            padding: const EdgeInsets.only(bottom: 88),
-            itemCount: categories.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              indent: AppSpacing.md,
-              endIndent: AppSpacing.md,
-              color: cs.outlineVariant,
-            ),
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              final count = counts[category.id] ?? 0;
-              return ListTile(
-                title: Text(category.name, style: AppTypography.titleMedium),
-                subtitle: Text(
-                  count <= 1 ? '$count produit' : '$count produits',
+          // Une seule surface à plat ; place en bas pour le bouton flottant.
+          return CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  88,
                 ),
-                onTap: () => _rename(context, ref, category),
-                trailing: IconButton(
-                  tooltip: 'Supprimer ${category.name}',
-                  icon: Icon(Icons.delete_outline, color: cs.error),
-                  onPressed: () => _delete(context, ref, category, count),
+                sliver: SliverAppListGroup(
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    final count = counts[category.id] ?? 0;
+                    return ListTile(
+                      title: Text(
+                        category.name,
+                        style: AppTypography.bodyLarge.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        count <= 1 ? '$count produit' : '$count produits',
+                      ),
+                      onTap: () => _rename(context, ref, category),
+                      trailing: IconButton(
+                        tooltip: 'Supprimer ${category.name}',
+                        icon: Icon(Icons.delete_outline, color: cs.error),
+                        onPressed: () => _delete(context, ref, category, count),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           );
         },
       ),
