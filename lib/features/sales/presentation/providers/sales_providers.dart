@@ -107,6 +107,24 @@ Stream<List<CartItem>> saleItems(Ref ref, String saleId) {
   total: sales.fold(Decimal.zero, (sum, sale) => sum + sale.totalAmount),
 );
 
+/// Regroupe des ventes triées (plus récente d'abord) par jour local, dans le
+/// même ordre — en-têtes de jour de l'historique sur plusieurs jours.
+List<({DateTime day, List<sale_entity.Sale> sales})> groupSalesByDay(
+  List<sale_entity.Sale> sales,
+) {
+  final groups = <({DateTime day, List<sale_entity.Sale> sales})>[];
+  for (final sale in sales) {
+    final local = sale.createdAt.toLocal();
+    final day = DateTime(local.year, local.month, local.day);
+    if (groups.isNotEmpty && groups.last.day == day) {
+      groups.last.sales.add(sale);
+    } else {
+      groups.add((day: day, sales: [sale]));
+    }
+  }
+  return groups;
+}
+
 /// Recherche par numéro de reçu (préfixe « # » accepté). Une vente pas encore
 /// synchronisée n'a pas de numéro : elle ne correspond à aucune recherche.
 List<sale_entity.Sale> searchSalesByReceipt(

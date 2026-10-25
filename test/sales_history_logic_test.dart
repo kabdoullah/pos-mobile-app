@@ -47,6 +47,23 @@ void main() {
     });
   });
 
+  test('groupSalesByDay : un groupe par jour, ordre conservé', () {
+    Sale at(String id, DateTime createdAt) =>
+        sale(1, '1000').copyWith(id: id, createdAt: createdAt);
+    final groups = groupSalesByDay([
+      at('a', DateTime(2026, 10, 25, 18)),
+      at('b', DateTime(2026, 10, 25, 9)),
+      at('c', DateTime(2026, 10, 24, 20)),
+    ]);
+    expect(groups.map((g) => g.day), [
+      DateTime(2026, 10, 25),
+      DateTime(2026, 10, 24),
+    ]);
+    expect(groups.first.sales.map((s) => s.id), ['a', 'b']);
+    expect(groups.last.sales.map((s) => s.id), ['c']);
+    expect(groupSalesByDay(const []), isEmpty);
+  });
+
   test('periodLabel : préréglages et période personnalisée', () {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
