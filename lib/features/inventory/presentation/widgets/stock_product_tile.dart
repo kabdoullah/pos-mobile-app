@@ -5,9 +5,10 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
+import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
-/// Ligne produit de l'onglet Stock : nom et prix à gauche, quantité et état
-/// alignés à droite (lecture en colonne), puis l'accès direct à l'ajustement.
+/// Ligne produit de l'onglet Stock, sur deux lignes : nom et prix à gauche,
+/// quantité et état (badge) à droite, puis l'accès direct à l'ajustement.
 class StockProductTile extends StatelessWidget {
   /// Crée la ligne.
   const StockProductTile({
@@ -29,7 +30,13 @@ class StockProductTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final stock = product.currentStock;
     final onAdjust = this.onAdjust;
+    // Le badge affiche « Rupture » pour un stock négatif : l'écart
+    // d'inventaire reste lisible sous le prix.
+    final price = stock != null && stock < 0
+        ? '${formatFcfa(product.sellingPrice)} · Stock : $stock'
+        : formatFcfa(product.sellingPrice);
 
     return InkWell(
       onTap: onTap,
@@ -59,7 +66,7 @@ class StockProductTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      formatFcfa(product.sellingPrice),
+                      price,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodySmall.copyWith(
@@ -70,81 +77,19 @@ class StockProductTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              _StockQuantity(product: product),
+              // Stock suivi : la quantité dans le badge (« Stock : 24 »,
+              // « Faible : 3 », « Rupture ») ; sinon « Non suivi ».
+              StockStatusBadge(product: product, showQuantity: stock != null),
               if (onAdjust != null)
-                IconButton.filledTonal(
+                IconButton(
                   tooltip: 'Ajuster le stock de ${product.name}',
-                  // ± : ajouter ou retirer du stock (et non un filtre).
-                  icon: const Icon(Icons.exposure, size: 20),
+                  // Saisie d'une entrée ou d'une sortie : distinct des filtres
+                  // et du crayon « Modifier » de la fiche produit.
+                  icon: Icon(Icons.edit_note, color: cs.primary),
                   onPressed: onAdjust,
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Quantité en stock (grand chiffre) et son état en dessous. Seuls les stocks
-/// faibles et les ruptures sont colorés, pour ressortir dans la liste.
-class _StockQuantity extends StatelessWidget {
-  const _StockQuantity({required this.product});
-
-  final Product product;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final stock = product.currentStock;
-    final (label, color) = switch (product.stockLevel) {
-      StockLevel.outOfStock => ('Rupture', cs.error),
-      StockLevel.low => ('Faible', cs.tertiary),
-      StockLevel.normal => ('En stock', cs.onSurfaceVariant),
-      null => ('Non suivi', cs.onSurfaceVariant),
-    };
-    final quantityColor = product.stockLevel == StockLevel.normal
-        ? cs.onSurface
-        : color;
-
-    return Semantics(
-      label: stock == null ? label : '$label, $stock en stock',
-      excludeSemantics: true,
-      // Largeur minimale : les chiffres s'alignent en colonne d'une ligne à
-      // l'autre.
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 56),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              stock == null ? '—' : '$stock',
-              style: AppTypography.titleMedium.copyWith(color: quantityColor),
-            ),
-            if (product.stockLevel == StockLevel.outOfStock)
-              // Rupture : pastille, plus marquée que « Faible » (couleurs
-              // proches).
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: cs.errorContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    label,
-                    style: AppTypography.labelSmall.copyWith(
-                      color: cs.onErrorContainer,
-                    ),
-                  ),
-                ),
-              )
-            else
-              Text(
-                label,
-                style: AppTypography.labelSmall.copyWith(color: color),
-              ),
-          ],
         ),
       ),
     );
