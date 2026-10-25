@@ -36,6 +36,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Center(
       child: SingleChildScrollView(
         child: Padding(
@@ -44,21 +45,30 @@ class EmptyState extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 96,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                title,
-                style: AppTypography.titleLarge,
-                textAlign: TextAlign.center,
+              // Icône dans une pastille : présente sans écraser le message,
+              // y compris clavier ouvert sur petit écran.
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Icon(icon, size: 48, color: cs.primary),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
+                title,
+                style: AppTypography.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
                 message,
-                style: AppTypography.bodyMedium,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               if (actionLabel != null && onAction != null) ...[

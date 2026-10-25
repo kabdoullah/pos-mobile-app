@@ -7,7 +7,7 @@ import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
 /// Bouton d'action principal pleine largeur aux couleurs de la marque
-/// (terracotta).
+/// (brun cacao).
 ///
 /// Conçu pour l'accessibilité et une UX mobile d'abord. Hauteur minimale de 56
 /// dp pour des zones tactiles confortables. Gère les états de chargement et

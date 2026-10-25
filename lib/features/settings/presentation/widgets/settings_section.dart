@@ -119,7 +119,10 @@ class SettingsTile extends StatelessWidget {
 
     return ListTile(
       leading: Icon(icon, color: color ?? cs.onSurfaceVariant),
-      title: Text(title, style: TextStyle(color: color)),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
+      ),
       subtitle: subtitle,
       onTap: busy ? null : onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),

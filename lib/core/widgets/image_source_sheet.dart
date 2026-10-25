@@ -36,14 +36,11 @@ Future<Object?> showImageSourceSheet(
           ),
           if (canRemove)
             ListTile(
-              leading: Icon(
-                Icons.delete_outline,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                'Retirer',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
+              // Action destructive : icône et libellé en couleur d'erreur.
+              iconColor: Theme.of(context).colorScheme.error,
+              textColor: Theme.of(context).colorScheme.error,
+              leading: const Icon(Icons.delete_outline),
+              title: const Text('Retirer'),
               onTap: () => Navigator.of(context).pop(ImageSourceChoice.remove),
             ),
         ],

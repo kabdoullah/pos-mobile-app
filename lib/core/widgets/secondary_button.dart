@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
-/// Bouton d'action secondaire pleine largeur avec contour émeraude.
+/// Bouton d'action secondaire pleine largeur avec contour or.
 ///
 /// Pour les actions moins importantes comme Annuler ou Retour. Hauteur minimale
 /// de 56 dp pour des zones tactiles confortables.

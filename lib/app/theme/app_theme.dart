@@ -143,7 +143,7 @@ class AppTheme {
       foregroundColor: cs.onSurface,
       elevation: 0,
       scrolledUnderElevation: 1,
-      titleTextStyle: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+      titleTextStyle: AppTypography.appBarTitle.copyWith(color: cs.onSurface),
       toolbarTextStyle: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
       centerTitle: false,
       iconTheme: IconThemeData(color: cs.onSurface),

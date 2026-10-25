@@ -41,6 +41,15 @@ class AppTypography {
     letterSpacing: 0,
   );
 
+  /// Titre d'AppBar. 22 sp, w600. Plus compact que [titleLarge] : laisse la
+  /// place au nom de la boutique et aux actions sur un écran de 360 dp.
+  static const TextStyle appBarTitle = TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    height: 1.3,
+    letterSpacing: 0,
+  );
+
   /// Titre moyen. 20 sp, w600. Titres de dialogue, en-têtes d'élément de liste.
   static const TextStyle titleMedium = TextStyle(
     fontSize: 20,
