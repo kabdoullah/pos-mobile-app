@@ -6,9 +6,9 @@ import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
-/// Ligne compacte du panier : nom et total de ligne, prix unitaire et
-/// quantité, réduction éventuelle. La croix ou un glissement vers la gauche
-/// supprime la ligne.
+/// Ligne du panier : nom et total de ligne, puis prix unitaire et quantité,
+/// réduction éventuelle. À 1, « − » devient une corbeille ; un glissement vers
+/// la gauche retire aussi la ligne.
 /// Jamais de prix d'achat : l'écran est visible du client.
 class CartItemTile extends StatelessWidget {
   /// Crée une ligne de panier.
@@ -26,7 +26,7 @@ class CartItemTile extends StatelessWidget {
   /// Nouvelle quantité demandée (0 retire la ligne).
   final ValueChanged<int> onQuantityChanged;
 
-  /// Supprime la ligne (croix ou glissement).
+  /// Supprime la ligne (corbeille à 1 ou glissement).
   final VoidCallback onRemove;
 
   /// Ouvre le choix de quantité détaillé.
@@ -69,17 +69,14 @@ class CartItemTile extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.sm,
+              AppSpacing.sm + AppSpacing.xs,
               AppSpacing.sm,
               AppSpacing.sm,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.xs),
-                  child: ProductThumbnailById(productId: item.productId),
-                ),
+                ProductThumbnailById(productId: item.productId),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(child: _details(cs, atStockLimit)),
               ],
@@ -91,59 +88,66 @@ class CartItemTile extends StatelessWidget {
   }
 
   Widget _details(ColorScheme cs, bool atStockLimit) {
+    final muted = AppTypography.bodySmall.copyWith(
+      color: cs.onSurfaceVariant,
+      fontFeatures: AppTypography.tabularFigures,
+    );
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: Text(
                 item.productName,
-                style: AppTypography.titleMedium,
-                maxLines: 1,
+                style: AppTypography.bodyLarge.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            AmountDisplay(amount: item.lineTotal),
-            IconButton(
-              tooltip: 'Retirer ${item.productName}',
-              icon: const Icon(Icons.close, size: 20),
-              color: cs.onSurfaceVariant,
-              onPressed: onRemove,
+            // Sans « FCFA », comme sur le ticket : le total en bas le porte.
+            Text(
+              formatAmount(item.lineTotal),
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
             ),
           ],
         ),
         if (item.discount != null)
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Row(
-              children: [
-                Icon(Icons.local_offer_outlined, size: 14, color: cs.primary),
-                const SizedBox(width: AppSpacing.xs),
-                Expanded(
-                  child: Text(
-                    '${formatAmount(item.grossTotal)} · '
-                    'Réduction −${formatFcfa(item.discountAmount)}',
-                    style: AppTypography.bodySmall.copyWith(color: cs.primary),
-                  ),
-                ),
-              ],
-            ),
+          Text(
+            'Réduction −${formatAmount(item.discountAmount)} '
+            'sur ${formatAmount(item.grossTotal)}',
+            style: muted.copyWith(color: cs.primary),
           ),
+        const SizedBox(height: AppSpacing.xs),
         Row(
           children: [
             Expanded(
-              child: Text(
-                atStockLimit
-                    ? '${formatFcfa(item.unitPrice)} · stock max'
-                    : formatFcfa(item.unitPrice),
-                style: AppTypography.bodySmall.copyWith(
-                  color: cs.onSurfaceVariant,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: "${formatAmount(item.unitPrice)} l'unité"),
+                    if (atStockLimit)
+                      TextSpan(
+                        text: ' · stock max',
+                        style: TextStyle(color: cs.tertiary),
+                      ),
+                  ],
                 ),
+                style: muted,
               ),
             ),
             QuantityStepper(
               quantity: item.quantity,
+              removeTooltip: 'Retirer ${item.productName}',
               onDecrease: () => onQuantityChanged(item.quantity - 1),
               onIncrease: atStockLimit
                   ? null

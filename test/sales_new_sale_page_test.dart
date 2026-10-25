@@ -291,8 +291,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('3 articles'), findsOneWidget);
 
-    // La croix retire la ligne, sans confirmation (comme le glissement).
-    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
+    // Un glissement vers la gauche retire la ligne, sans confirmation.
+    await tester.drag(find.byType(Dismissible), const Offset(-600, 0));
     await tester.pumpAndSettle();
     expect(container.read(cartProvider).isEmpty, isTrue);
     expect(find.text('Votre panier est vide'), findsOneWidget);
@@ -304,10 +304,12 @@ void main() {
     expect(container.read(cartProvider).unitCount, 3);
     expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
 
-    // « − » à 1 retire aussi la ligne, avec la même annulation possible.
+    // À 1, « − » devient la corbeille : elle retire aussi la ligne, avec la
+    // même annulation possible.
     container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 1);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Diminuer'));
+    expect(find.byTooltip('Diminuer'), findsNothing);
+    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
     await tester.pumpAndSettle();
     expect(container.read(cartProvider).isEmpty, isTrue);
     expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
