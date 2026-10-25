@@ -164,6 +164,60 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
 
 String _$dioHash() => r'd4f1741bef3519747797b387c42e2c8d698db7ba';
 
+/// Cache disque et mémoire des photos produit (`cached_network_image`),
+/// téléchargées via le [Dio] authentifié. Clé = `product_<id>_<version>`.
+
+@ProviderFor(imageCacheManager)
+final imageCacheManagerProvider = ImageCacheManagerProvider._();
+
+/// Cache disque et mémoire des photos produit (`cached_network_image`),
+/// téléchargées via le [Dio] authentifié. Clé = `product_<id>_<version>`.
+
+final class ImageCacheManagerProvider
+    extends
+        $FunctionalProvider<
+          BaseCacheManager,
+          BaseCacheManager,
+          BaseCacheManager
+        >
+    with $Provider<BaseCacheManager> {
+  /// Cache disque et mémoire des photos produit (`cached_network_image`),
+  /// téléchargées via le [Dio] authentifié. Clé = `product_<id>_<version>`.
+  ImageCacheManagerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'imageCacheManagerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$imageCacheManagerHash();
+
+  @$internal
+  @override
+  $ProviderElement<BaseCacheManager> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  BaseCacheManager create(Ref ref) {
+    return imageCacheManager(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BaseCacheManager value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BaseCacheManager>(value),
+    );
+  }
+}
+
+String _$imageCacheManagerHash() => r'303dfd8714c883bea41b82081cbf0af6e94dd2e0';
+
 /// Fournit l'implémentation concrète SecureTokenStorage.
 
 @ProviderFor(secureTokenStorage)

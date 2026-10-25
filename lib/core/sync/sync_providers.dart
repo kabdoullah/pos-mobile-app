@@ -18,6 +18,7 @@ LocalDataResetService localDataResetService(Ref ref) {
   return LocalDataResetService(
     ref.read(databaseProvider),
     imageCache: ref.read(imageFileCacheProvider),
+    imageCacheManager: ref.read(imageCacheManagerProvider),
   );
 }
 

@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../storage/pin_storage.dart';
 import '../storage/secure_token_storage.dart';
 import 'dio_client.dart';
+import 'dio_file_service.dart';
 import 'token_storage.dart';
 import '../sync/sync_remote_datasource.dart';
 
@@ -41,6 +43,20 @@ Dio dio(Ref ref) {
   return buildDio(
     tokenStorage: storage,
     onAuthExpired: () => controller.add(null),
+  );
+}
+
+/// Cache disque et mémoire des photos produit (`cached_network_image`),
+/// téléchargées via le [Dio] authentifié. Clé = `product_<id>_<version>`.
+@Riverpod(keepAlive: true)
+BaseCacheManager imageCacheManager(Ref ref) {
+  return CacheManager(
+    Config(
+      'productImages',
+      stalePeriod: const Duration(days: 365),
+      maxNrOfCacheObjects: 1000,
+      fileService: DioFileService(ref.watch(dioProvider)),
+    ),
   );
 }
 

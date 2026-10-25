@@ -43,9 +43,8 @@ abstract class CatalogRepository {
   /// Supprime une catégorie ; ses produits deviennent « sans catégorie ».
   Future<void> deleteCategory(String id);
 
-  /// Image du produit à la [version] donnée (cache disque, sinon serveur) ;
-  /// null si indisponible (hors ligne et pas en cache).
-  Future<File?> productImage(String productId, String version);
+  /// URL (relative à l'API) de la photo du produit, pour le cache d'images.
+  String productImageUrl(String productId);
 
   /// Envoie une photo (en ligne uniquement). [ProductNotOnServerException] si
   /// le produit, créé hors ligne, n'est pas encore synchronisé.

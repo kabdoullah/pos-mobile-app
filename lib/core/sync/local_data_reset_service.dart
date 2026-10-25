@@ -1,3 +1,5 @@
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+
 import '../../database/app_database.dart';
 import '../storage/image_file_cache.dart';
 
@@ -5,11 +7,16 @@ import '../storage/image_file_cache.dart';
 /// Appelé au changement de commerçant pour éviter la fuite cross-tenant.
 class LocalDataResetService {
   /// Crée le service avec l'instance drift.
-  const LocalDataResetService(this._db, {ImageFileCache? imageCache})
-    : _imageCache = imageCache;
+  const LocalDataResetService(
+    this._db, {
+    ImageFileCache? imageCache,
+    BaseCacheManager? imageCacheManager,
+  }) : _imageCache = imageCache,
+       _imageCacheManager = imageCacheManager;
 
   final AppDatabase _db;
   final ImageFileCache? _imageCache;
+  final BaseCacheManager? _imageCacheManager;
 
   /// Supprime produits, catégories, ventes et leurs lignes, retours et leurs
   /// lignes, file de sync et metadata.
@@ -27,5 +34,6 @@ class LocalDataResetService {
     });
     // Photos et logo du compte précédent.
     await _imageCache?.clear();
+    await _imageCacheManager?.emptyCache();
   }
 }

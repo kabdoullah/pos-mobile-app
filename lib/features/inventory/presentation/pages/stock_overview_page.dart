@@ -190,13 +190,10 @@ class _StockList extends ConsumerWidget {
           ),
           sliver: SliverList.list(
             children: [
-              if (summary != null)
-                StockSummaryHeader(
-                  summary: summary,
-                  filter: filter,
-                  onFilter: onFilterChanged,
-                ),
-              const SizedBox(height: AppSpacing.md),
+              if (summary != null) ...[
+                StockSummaryHeader(summary: summary),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
@@ -210,20 +207,10 @@ class _StockList extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                children: [
-                  for (final (value, label) in const [
-                    (StockFilter.all, 'Tous'),
-                    (StockFilter.lowStock, 'Stock faible'),
-                    (StockFilter.outOfStock, 'Ruptures'),
-                  ])
-                    ChoiceChip(
-                      label: Text(label),
-                      selected: filter == value,
-                      onSelected: (_) => onFilterChanged(value),
-                    ),
-                ],
+              StockFilterChips(
+                filter: filter,
+                onFilter: onFilterChanged,
+                summary: summary,
               ),
               if (categories.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
@@ -276,25 +263,24 @@ class _StockList extends ConsumerWidget {
             ),
           )
         else
-          SliverList.separated(
-            itemCount: visible.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              indent: AppSpacing.md,
-              endIndent: AppSpacing.md,
-              color: cs.outlineVariant,
+          // Une seule surface, même marge latérale que l'en-tête.
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            sliver: SliverAppListGroup(
+              itemCount: visible.length,
+              dividerIndent: AppSpacing.md + 48 + AppSpacing.sm,
+              itemBuilder: (context, index) {
+                final product = visible[index];
+                return StockProductTile(
+                  key: ValueKey(product.id),
+                  product: product,
+                  onTap: () => onOpen(product),
+                  onAdjust: product.currentStock == null
+                      ? null
+                      : () => showStockAdjustmentSheet(context, product.id),
+                );
+              },
             ),
-            itemBuilder: (context, index) {
-              final product = visible[index];
-              return StockProductTile(
-                key: ValueKey(product.id),
-                product: product,
-                onTap: () => onOpen(product),
-                onAdjust: product.currentStock == null
-                    ? null
-                    : () => showStockAdjustmentSheet(context, product.id),
-              );
-            },
           ),
         // Place pour le bouton flottant.
         const SliverToBoxAdapter(child: SizedBox(height: 88)),
@@ -312,8 +298,8 @@ class _LoadingList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       physics: const NeverScrollableScrollPhysics(),
       children: const [
-        SkeletonBox(height: 160, radius: AppSpacing.radiusLg),
-        SizedBox(height: AppSpacing.md),
+        SkeletonBox(height: 20),
+        SizedBox(height: AppSpacing.sm),
         SkeletonBox(height: 56),
         SizedBox(height: AppSpacing.md),
         SkeletonBox(height: 64),

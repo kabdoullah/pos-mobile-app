@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/index.dart';
 
-/// Section de paramètres : titre en capitales puis ses lignes, sur une surface
-/// unique (pas de cartes imbriquées).
+/// Section de paramètres : titre puis ses lignes, sur une surface à plat
+/// unique ([AppListGroup], pas de cartes imbriquées).
 class SettingsSection extends StatelessWidget {
   /// Crée une section.
   const SettingsSection({
@@ -13,7 +14,7 @@ class SettingsSection extends StatelessWidget {
     super.key,
   });
 
-  /// Titre de la section (ex. « CAISSE »).
+  /// Titre de la section (ex. « Caisse »).
   final String title;
 
   /// Lignes de la section.
@@ -41,31 +42,14 @@ class SettingsSection extends StatelessWidget {
               header: true,
               child: Text(
                 title,
-                style: AppTypography.labelSmall.copyWith(
+                style: AppTypography.labelMedium.copyWith(
                   color: cs.onSurfaceVariant,
-                  letterSpacing: 1,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ),
-          Material(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              children: [
-                for (var i = 0; i < children.length; i++) ...[
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      indent: 56,
-                      color: cs.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  children[i],
-                ],
-              ],
-            ),
-          ),
+          AppListGroup(dividerIndent: 56, children: children),
         ],
       ),
     );
@@ -119,7 +103,10 @@ class SettingsTile extends StatelessWidget {
 
     return ListTile(
       leading: Icon(icon, color: color ?? cs.onSurfaceVariant),
-      title: Text(title, style: TextStyle(color: color)),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: color),
+      ),
       subtitle: subtitle,
       onTap: busy ? null : onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),

@@ -6,7 +6,8 @@ import 'package:flutter/services.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
-/// Sélecteur de quantité [-] n [+] ; la valeur s'anime à chaque changement.
+/// Sélecteur de quantité ( − n + ) dans une pilule bordée ; la valeur s'anime
+/// à chaque changement.
 class QuantityStepper extends StatelessWidget {
   /// Crée un sélecteur de quantité. Un callback `null` désactive le bouton.
   const QuantityStepper({
@@ -15,6 +16,7 @@ class QuantityStepper extends StatelessWidget {
     required this.onIncrease,
     this.large = false,
     this.field,
+    this.removeTooltip,
     super.key,
   });
 
@@ -34,41 +36,59 @@ class QuantityStepper extends StatelessWidget {
   /// clavier) ; `null` = valeur en lecture seule.
   final Widget? field;
 
+  /// Infobulle de retrait : à 1, « − » devient une corbeille (ex. ligne de
+  /// panier) ; `null` = « − » reste « Diminuer ».
+  final String? removeTooltip;
+
   @override
   Widget build(BuildContext context) {
-    final valueWidth = large ? 96.0 : 36.0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _StepButton(
-          icon: Icons.remove,
-          tooltip: 'Diminuer',
-          onPressed: onDecrease,
-        ),
-        SizedBox(
-          width: valueWidth,
-          child:
-              field ??
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 150),
-                transitionBuilder: (child, animation) =>
-                    ScaleTransition(scale: animation, child: child),
-                child: Text(
-                  '$quantity',
-                  key: ValueKey(quantity),
-                  textAlign: TextAlign.center,
-                  style: large
-                      ? AppTypography.titleLarge
-                      : AppTypography.titleMedium,
+    final cs = Theme.of(context).colorScheme;
+    final valueWidth = large ? 96.0 : 32.0;
+    final removes = removeTooltip != null && quantity <= 1;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: cs.outline),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _StepButton(
+            icon: removes ? Icons.delete_outline : Icons.remove,
+            tooltip: removes ? removeTooltip! : 'Diminuer',
+            onPressed: onDecrease,
+            large: large,
+          ),
+          SizedBox(
+            width: valueWidth,
+            child:
+                field ??
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 150),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: Text(
+                    '$quantity',
+                    key: ValueKey(quantity),
+                    textAlign: TextAlign.center,
+                    style:
+                        (large
+                                ? AppTypography.titleLarge
+                                : AppTypography.labelLarge)
+                            .copyWith(
+                              fontFeatures: AppTypography.tabularFigures,
+                            ),
+                  ),
                 ),
-              ),
-        ),
-        _StepButton(
-          icon: Icons.add,
-          tooltip: 'Augmenter',
-          onPressed: onIncrease,
-        ),
-      ],
+          ),
+          _StepButton(
+            icon: Icons.add,
+            tooltip: 'Augmenter',
+            onPressed: onIncrease,
+            large: large,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -78,21 +98,34 @@ class _StepButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
+    required this.large,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
+  final bool large;
 
   @override
   Widget build(BuildContext context) {
     final onPressed = this.onPressed;
-    return IconButton.filledTonal(
+    return IconButton(
       tooltip: tooltip,
-      icon: Icon(icon, size: 20),
-      constraints: const BoxConstraints.tightFor(
-        width: AppSpacing.minTapTarget,
-        height: AppSpacing.minTapTarget,
+      color: Theme.of(context).colorScheme.primary,
+      icon: Icon(icon, size: large ? 20 : 18),
+      // Compact (lignes de panier) : boutons de 44 dp, la cible tactile
+      // minimale. Sans shrinkWrap, Material 3 les porte à 48 dp.
+      style: IconButton.styleFrom(
+        padding: EdgeInsets.zero,
+        tapTargetSize: large
+            ? MaterialTapTargetSize.padded
+            : MaterialTapTargetSize.shrinkWrap,
+        fixedSize: large
+            ? const Size.square(AppSpacing.minTapTarget)
+            : const Size.square(AppSpacing.minTapTarget),
+        minimumSize: large
+            ? const Size.square(AppSpacing.minTapTarget)
+            : const Size.square(AppSpacing.minTapTarget),
       ),
       onPressed: onPressed == null
           ? null

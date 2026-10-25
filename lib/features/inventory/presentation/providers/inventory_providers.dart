@@ -98,6 +98,9 @@ class StockHistory extends _$StockHistory {
     return page.items;
   }
 
+  /// Des mouvements plus anciens restent à charger (défilement infini).
+  bool get hasMore => _hasMore;
+
   /// Charge la page suivante de mouvements.
   /// Évite les requêtes en double en suivant un seuil — ne se déclenche qu'une
   /// fois par nouvelle taille de liste.

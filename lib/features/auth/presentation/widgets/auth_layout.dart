@@ -5,6 +5,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
+import '../../../../core/widgets/index.dart';
 
 /// Squelette commun des écrans d'authentification : barre d'état adaptée au
 /// thème, zone sûre, largeur de lecture limitée sur tablette.
@@ -14,8 +15,12 @@ class AuthScaffold extends StatelessWidget {
     required this.child,
     this.scrollable = true,
     this.resizeToAvoidBottomInset = true,
+    this.header,
     super.key,
-  });
+  }) : assert(
+         header == null || scrollable,
+         'Le bandeau ne se pose que sur un écran qui défile.',
+       );
 
   /// Contenu de l'écran.
   final Widget child;
@@ -28,12 +33,19 @@ class AuthScaffold extends StatelessWidget {
   /// n'ouvrent jamais le clavier système.
   final bool resizeToAvoidBottomInset;
 
-  /// Largeur maximale du contenu (tablette, paysage).
-  static const double _maxContentWidth = 480;
+  /// Bandeau pleine largeur en haut de l'écran, sous la barre d'état
+  /// (ex. [AuthBrandBand]) ; il défile avec le formulaire.
+  final Widget? header;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final header = this.header;
+    // Bandeau sous la barre d'état : les icônes suivent sa couleur.
+    final isDark = header != null
+        ? ThemeData.estimateBrightnessForColor(theme.colorScheme.primary) ==
+              Brightness.dark
+        : theme.brightness == Brightness.dark;
     final gutter = responsiveValue(
       context,
       small: AppSpacing.md,
@@ -51,25 +63,114 @@ class AuthScaffold extends StatelessWidget {
       ),
       child: Scaffold(
         resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-        body: SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _maxContentWidth),
-              child: SizedBox(
-                width: double.infinity,
-                child: scrollable
-                    ? SingleChildScrollView(
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        padding: EdgeInsets.all(gutter),
-                        child: child,
-                      )
-                    : Padding(
-                        padding: EdgeInsets.symmetric(horizontal: gutter),
-                        child: child,
+        body: header != null
+            ? SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    children: [
+                      header,
+                      _ReadingWidth(
+                        child: Padding(
+                          padding: EdgeInsets.all(gutter),
+                          child: child,
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+              )
+            : SafeArea(
+                child: _ReadingWidth(
+                  child: scrollable
+                      ? SingleChildScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: EdgeInsets.all(gutter),
+                          child: child,
+                        )
+                      : Padding(
+                          padding: EdgeInsets.symmetric(horizontal: gutter),
+                          child: child,
+                        ),
+                ),
               ),
+      ),
+    );
+  }
+}
+
+/// Largeur de lecture limitée et centrée (tablette, paysage).
+class _ReadingWidth extends StatelessWidget {
+  const _ReadingWidth({required this.child});
+
+  /// Largeur maximale du contenu.
+  static const double maxWidth = 480;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: maxWidth),
+        child: SizedBox(width: double.infinity, child: child),
+      ),
+    );
+  }
+}
+
+/// Bandeau d'entrée de l'app : nom de l'app en grand sur fond cacao, bord
+/// inférieur dentelé comme le haut d'un ticket de caisse — le même motif que
+/// les reçus à l'écran. Réservé à l'écran de connexion.
+class AuthBrandBand extends StatelessWidget {
+  /// Crée le bandeau.
+  const AuthBrandBand({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final top = MediaQuery.paddingOf(context).top;
+    final gutter = responsiveValue(
+      context,
+      small: AppSpacing.md,
+      medium: AppSpacing.lg,
+    );
+    return ClipPath(
+      clipper: const ZigzagClipper(),
+      child: ColoredBox(
+        color: cs.primary,
+        child: _ReadingWidth(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              gutter,
+              top + AppSpacing.xxl,
+              gutter,
+              AppSpacing.xl + ZigzagClipper.toothHeight,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Ma Caisse',
+                    style: AppTypography.displayMedium.copyWith(
+                      color: cs.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Ventes, stock et reçus de votre boutique.',
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: cs.onPrimary.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

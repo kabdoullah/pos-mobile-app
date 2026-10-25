@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:clock/clock.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,29 +76,127 @@ class _SummaryContent extends StatelessWidget {
                     color: cs.onPrimaryContainer,
                   ),
                 ),
+              _HourlyBars(color: cs.onPrimaryContainer),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Row(
+        // Chiffres secondaires : une seule surface à plat sous le
+        // chiffre d'affaires, seul bloc mis en avant.
+        AppListGroup(
+          dividerIndent: 0,
           children: [
-            Expanded(
-              child: _Metric(label: 'Ventes', value: '${stats.saleCount}'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _Metric(
-                label: 'Panier moyen',
-                value: average == null ? '—' : formatFcfa(average),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _Metric(
+                      label: 'Ventes',
+                      value: '${stats.saleCount}',
+                    ),
+                  ),
+                  VerticalDivider(width: 1, color: cs.outlineVariant),
+                  Expanded(
+                    child: _Metric(
+                      label: 'Panier moyen',
+                      value: average == null ? '—' : formatFcfa(average),
+                    ),
+                  ),
+                ],
               ),
+            ),
+            if (cashShare != null)
+              _PaymentSplit(cashPercent: cashShare, stats: stats),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Mini-graphique des ventes par heure, de la première vente du jour à l'heure
+/// courante ; la barre du pic est accentuée. Rien tant qu'il n'y a pas de
+/// vente.
+class _HourlyBars extends ConsumerWidget {
+  const _HourlyBars({required this.color});
+
+  static const _minHours = 8;
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final totals = ref.watch(todayHourlySalesProvider).value;
+    if (totals == null) return const SizedBox.shrink();
+    final first = totals.indexWhere((t) => t > Decimal.zero);
+    if (first < 0) return const SizedBox.shrink();
+    final last = totals.lastIndexWhere((t) => t > Decimal.zero);
+    final end = math.max(last, clock.now().hour);
+    // Au moins 8 heures affichées : une seule heure de ventes ne doit pas
+    // donner une barre pleine largeur.
+    final start = math.max(0, math.min(first, end - (_minHours - 1)));
+    final hours = totals.sublist(start, end + 1);
+    final peak = hours.reduce((a, b) => a > b ? a : b);
+    final peakHour = start + hours.indexOf(peak);
+    final labelStyle = AppTypography.labelSmall.copyWith(color: color);
+
+    return Semantics(
+      label: 'Ventes par heure, pic à $peakHour h',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              height: 40,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (final total in hours)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                        child: FractionallySizedBox(
+                          // Heure sans vente : simple trait de base. Heure
+                          // avec ventes : au moins un quart de la hauteur,
+                          // même écrasée par une grosse vente au pic.
+                          heightFactor: total > Decimal.zero
+                              ? math.max((total / peak).toDouble(), 0.25)
+                              : 0.06,
+                          alignment: Alignment.bottomCenter,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: color.withValues(
+                                alpha: total == peak
+                                    ? 0.9
+                                    : total > Decimal.zero
+                                    ? 0.45
+                                    : 0.2,
+                              ),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Text('$start h', style: labelStyle),
+                const Spacer(),
+                Text('$end h', style: labelStyle),
+              ],
             ),
           ],
         ),
-        if (cashShare != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _PaymentSplit(cashPercent: cashShare, stats: stats),
-        ],
-      ],
+      ),
     );
   }
 }
@@ -109,8 +210,8 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return _Tile(
-      color: cs.surfaceContainerLow,
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -124,7 +225,17 @@ class _Metric extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(value, style: AppTypography.titleLarge),
+            // Une seule ligne : sinon la mesure de IntrinsicHeight (rangée
+            // Ventes / Panier moyen) compte le texte replié sur plusieurs
+            // lignes et la case garde un grand vide.
+            child: Text(
+              value,
+              maxLines: 1,
+              softWrap: false,
+              style: AppTypography.titleLarge.copyWith(
+                fontFeatures: AppTypography.tabularFigures,
+              ),
+            ),
           ),
         ],
       ),
@@ -146,8 +257,8 @@ class _PaymentSplit extends StatelessWidget {
 
     return Semantics(
       label: 'Espèces $cashPercent %, mobile money ${100 - cashPercent} %',
-      child: _Tile(
-        color: cs.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -156,6 +267,9 @@ class _PaymentSplit extends StatelessWidget {
               child: SizedBox(
                 height: 8,
                 child: Row(
+                  // Sans stretch, un ColoredBox sans enfant prend la hauteur
+                  // minimale (0) : la barre était invisible.
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (cashPercent > 0)
                       Expanded(

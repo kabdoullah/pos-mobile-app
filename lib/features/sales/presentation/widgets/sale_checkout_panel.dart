@@ -62,9 +62,10 @@ class SaleCheckoutPanel extends ConsumerWidget {
     };
 
     return Material(
-      color: cs.surfaceContainerLow,
+      // Seule surface élevée de la caisse : le total reste l'objet principal.
+      color: cs.surface,
       elevation: 8,
-      shadowColor: cs.shadow.withValues(alpha: 0.3),
+      shadowColor: cs.primary.withValues(alpha: 0.35),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),
@@ -179,14 +180,18 @@ class _SummaryRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
+      // Ligne « Remise » modifiable : zone tactile pleine hauteur au lieu
+      // d'une ligne de texte de ~20 px.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: onTap == null ? 0 : AppSpacing.minTapTarget,
+        ),
         child: Row(
           children: [
             Text(label, style: style),
             if (onTap != null) ...[
               const SizedBox(width: AppSpacing.xs),
-              Icon(Icons.edit_outlined, size: 14, color: cs.onSurfaceVariant),
+              Icon(Icons.edit_outlined, size: 16, color: cs.primary),
             ],
             const Spacer(),
             Text(value, style: style),

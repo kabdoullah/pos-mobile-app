@@ -1,18 +1,25 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../core/network/network_providers.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
 import '../../domain/repositories/catalog_repository.dart';
 import '../../providers/catalog_di_providers.dart';
 
 part 'product_image_providers.g.dart';
 
-/// Fichier de l'image d'un produit à une version donnée (cache, sinon
-/// téléchargement) ; null si indisponible.
+/// Image d'un produit à une version donnée (cache disque, sinon
+/// téléchargement). La version dans la clé invalide l'ancienne photo.
 @riverpod
-Future<File?> productImageFile(Ref ref, String productId, String version) {
-  return ref.watch(catalogRepositoryProvider).productImage(productId, version);
+ImageProvider productImage(Ref ref, String productId, String version) {
+  return CachedNetworkImageProvider(
+    ref.watch(catalogRepositoryProvider).productImageUrl(productId),
+    cacheKey: 'product_${productId}_$version',
+    cacheManager: ref.watch(imageCacheManagerProvider),
+  );
 }
 
 /// Envoi et retrait des photos produit (en ligne, ADR-0008).

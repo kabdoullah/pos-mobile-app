@@ -8,7 +8,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
@@ -257,6 +256,27 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
+  /// Retire une ligne sans confirmation (croix, glissement, « − » à 1) et
+  /// propose de l'annuler : un geste involontaire ne coûte pas la ligne.
+  void _removeCartItem(String productId) {
+    final items = ref.read(cartProvider).items;
+    final index = items.indexWhere((item) => item.productId == productId);
+    if (index < 0) return;
+    final item = items[index];
+    ref.read(cartProvider.notifier).removeItem(productId);
+    _showToast(
+      SaleToastData(
+        message: '${item.productName} retiré',
+        kind: SaleToastKind.success,
+        actionLabel: 'Annuler',
+        showDismiss: false,
+        onAction: () =>
+            ref.read(cartProvider.notifier).restoreItem(item, index),
+      ),
+      duration: const Duration(seconds: 4),
+    );
+  }
+
   Future<void> _openProduct(Product product) async {
     final stock = product.currentStock;
     final inCart = ref.read(cartProvider.notifier).quantityOf(product.id);
@@ -437,19 +457,15 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const OfflineStatusIndicator(),
-            Text(
-              storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.titleLarge,
-            ),
-          ],
+        // Même en-tête que l'accueil : boutique en titre, état réseau discret
+        // à droite.
+        title: Text(
+          storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          const OfflineStatusIndicator(),
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
@@ -540,8 +556,14 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                               SaleCart(
                                 headerKey: _cartHeaderKey,
                                 items: cart.items,
-                                onQuantityChanged: cartNotifier.updateQuantity,
-                                onRemove: cartNotifier.removeItem,
+                                onQuantityChanged: (productId, quantity) =>
+                                    quantity <= 0
+                                    ? _removeCartItem(productId)
+                                    : cartNotifier.updateQuantity(
+                                        productId,
+                                        quantity,
+                                      ),
+                                onRemove: _removeCartItem,
                                 onItemTap: _editCartItem,
                                 onClear: _clearCart,
                               ),

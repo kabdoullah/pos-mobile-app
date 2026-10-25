@@ -155,19 +155,37 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                     ),
                   );
                 }
-                return ListView.separated(
+                // Plusieurs jours : un en-tête par jour (libellé, sous-total)
+                // puis ses ventes sur une surface à plat ; chaque groupe est
+                // construit à la demande, même sur un mois de ventes.
+                return CustomScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                  itemCount: visible.length,
-                  separatorBuilder: (_, _) => Divider(
-                    height: 1,
-                    indent: AppSpacing.md,
-                    endIndent: AppSpacing.md,
-                    color: cs.outlineVariant,
-                  ),
-                  itemBuilder: (context, index) =>
-                      _SaleTile(sale: visible[index], showDate: !isSingleDay),
+                  slivers: [
+                    for (final group in groupSalesByDay(visible)) ...[
+                      if (!isSingleDay)
+                        SliverToBoxAdapter(
+                          child: _DayHeader(day: group.day, sales: group.sales),
+                        ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                        ),
+                        sliver: SliverAppListGroup(
+                          itemCount: group.sales.length,
+                          dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+                          itemBuilder: (context, index) =>
+                              _SaleTile(sale: group.sales[index]),
+                        ),
+                      ),
+                    ],
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.xl),
+                    ),
+                  ],
                 );
               },
             ),
@@ -202,31 +220,118 @@ class _PeriodTotals extends StatelessWidget {
   }
 }
 
+/// En-tête de jour (période sur plusieurs jours) : « Aujourd'hui », « Hier »
+/// ou la date, puis le total et le nombre de ventes du jour.
+class _DayHeader extends StatelessWidget {
+  const _DayHeader({required this.day, required this.sales});
+
+  final DateTime day;
+  final List<Sale> sales;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final totals = salesTotals(sales);
+    final label = switch (periodLabel(DateTimeRange(start: day, end: day))) {
+      final relative && ("Aujourd'hui" || 'Hier') => relative,
+      _ => toBeginningOfSentenceCase(
+        DateFormat('EEEE d MMMM', 'fr_FR').format(day),
+        'fr_FR',
+      ),
+    };
+    final muted = AppTypography.labelMedium.copyWith(
+      color: cs.onSurfaceVariant,
+    );
+
+    return Semantics(
+      header: true,
+      // Sur le fond de page, au-dessus de la surface de ses ventes.
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTypography.labelMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              totals.count <= 1
+                  ? '${totals.count} vente · '
+                  : '${totals.count} ventes · ',
+              style: muted,
+            ),
+            Text(
+              formatFcfa(totals.total),
+              style: AppTypography.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SaleTile extends StatelessWidget {
-  const _SaleTile({required this.sale, required this.showDate});
+  const _SaleTile({required this.sale});
 
   final Sale sale;
-  final bool showDate;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     // Numéro 0 = pas encore attribué par le serveur : jamais affiché.
     final isSynced = sale.receiptNumber > 0;
-    final when = DateFormat(
-      showDate ? 'd MMM · HH:mm' : 'HH:mm',
-      'fr_FR',
-    ).format(sale.createdAt);
+    final time = DateFormat.Hm('fr_FR').format(sale.createdAt);
 
     return ListTile(
       onTap: () => context.push(Routes.saleDetail, extra: sale),
+      leading: DecoratedBox(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Icon(
+            switch (sale.paymentMethod) {
+              PaymentMethod.cash => Icons.payments_outlined,
+              PaymentMethod.mixed => Icons.call_split,
+              _ => Icons.phone_android,
+            },
+            size: 20,
+            color: cs.onSurfaceVariant,
+          ),
+        ),
+      ),
+      // Une ligne chacun : un gros montant à droite tronque le texte au lieu
+      // de le replier caractère par caractère.
       title: Text(
         isSynced ? 'Reçu #${sale.receiptNumber}' : 'En attente de synchro',
-        style: AppTypography.titleMedium.copyWith(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTypography.bodyMedium.copyWith(
+          fontWeight: FontWeight.w600,
           color: isSynced ? null : cs.onSurfaceVariant,
         ),
       ),
-      subtitle: Text('$when · ${sale.paymentMethod.label}'),
+      subtitle: Text(
+        '$time · ${sale.paymentMethod.label}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
       trailing: AmountDisplay(amount: sale.totalAmount),
     );
   }

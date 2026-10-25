@@ -74,16 +74,17 @@ class SaleCart extends StatelessWidget {
             sliver: SliverToBoxAdapter(child: _EmptyCart(color: cs)),
           )
         else
+          // Même surface à plat que le catalogue au-dessus.
           SliverPadding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            sliver: SliverList.separated(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            sliver: SliverAppListGroup(
               itemCount: items.length,
-              separatorBuilder: (_, _) => Divider(
-                height: 1,
-                indent: AppSpacing.md,
-                endIndent: AppSpacing.md,
-                color: cs.outlineVariant,
-              ),
+              dividerIndent: AppSpacing.md + 40 + AppSpacing.sm,
               itemBuilder: (context, index) {
                 final item = items[index];
                 return CartItemTile(
@@ -112,7 +113,7 @@ class _EmptyCart extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: color.outlineVariant),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -124,12 +125,14 @@ class _EmptyCart extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Votre panier est vide',
-                    style: AppTypography.titleMedium,
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Text(
-                    'Appuyez sur « Ajouter » ou scannez un produit.',
+                    'Appuyez sur + à côté d’un produit, ou scannez-le.',
                     style: AppTypography.bodySmall.copyWith(
                       color: color.onSurfaceVariant,
                     ),

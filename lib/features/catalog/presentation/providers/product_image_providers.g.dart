@@ -8,55 +8,69 @@ part of 'product_image_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Fichier de l'image d'un produit à une version donnée (cache, sinon
-/// téléchargement) ; null si indisponible.
+/// Image d'un produit à une version donnée (cache disque, sinon
+/// téléchargement). La version dans la clé invalide l'ancienne photo.
 
-@ProviderFor(productImageFile)
-final productImageFileProvider = ProductImageFileFamily._();
+@ProviderFor(productImage)
+final productImageProvider = ProductImageFamily._();
 
-/// Fichier de l'image d'un produit à une version donnée (cache, sinon
-/// téléchargement) ; null si indisponible.
+/// Image d'un produit à une version donnée (cache disque, sinon
+/// téléchargement). La version dans la clé invalide l'ancienne photo.
 
-final class ProductImageFileProvider
-    extends $FunctionalProvider<AsyncValue<File?>, File?, FutureOr<File?>>
-    with $FutureModifier<File?>, $FutureProvider<File?> {
-  /// Fichier de l'image d'un produit à une version donnée (cache, sinon
-  /// téléchargement) ; null si indisponible.
-  ProductImageFileProvider._({
-    required ProductImageFileFamily super.from,
+final class ProductImageProvider
+    extends
+        $FunctionalProvider<
+          ImageProvider<Object>,
+          ImageProvider<Object>,
+          ImageProvider<Object>
+        >
+    with $Provider<ImageProvider<Object>> {
+  /// Image d'un produit à une version donnée (cache disque, sinon
+  /// téléchargement). La version dans la clé invalide l'ancienne photo.
+  ProductImageProvider._({
+    required ProductImageFamily super.from,
     required (String, String) super.argument,
   }) : super(
          retry: null,
-         name: r'productImageFileProvider',
+         name: r'productImageProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$productImageFileHash();
+  String debugGetCreateSourceHash() => _$productImageHash();
 
   @override
   String toString() {
-    return r'productImageFileProvider'
+    return r'productImageProvider'
         ''
         '$argument';
   }
 
   @$internal
   @override
-  $FutureProviderElement<File?> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+  $ProviderElement<ImageProvider<Object>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
 
   @override
-  FutureOr<File?> create(Ref ref) {
+  ImageProvider<Object> create(Ref ref) {
     final argument = this.argument as (String, String);
-    return productImageFile(ref, argument.$1, argument.$2);
+    return productImage(ref, argument.$1, argument.$2);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ImageProvider<Object> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ImageProvider<Object>>(value),
+    );
   }
 
   @override
   bool operator ==(Object other) {
-    return other is ProductImageFileProvider && other.argument == argument;
+    return other is ProductImageProvider && other.argument == argument;
   }
 
   @override
@@ -65,30 +79,30 @@ final class ProductImageFileProvider
   }
 }
 
-String _$productImageFileHash() => r'224e4869e10c06845d9d113ed3355d503f8bb47d';
+String _$productImageHash() => r'8eda96443786224f0ae67dcc8f249dd685094d47';
 
-/// Fichier de l'image d'un produit à une version donnée (cache, sinon
-/// téléchargement) ; null si indisponible.
+/// Image d'un produit à une version donnée (cache disque, sinon
+/// téléchargement). La version dans la clé invalide l'ancienne photo.
 
-final class ProductImageFileFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<File?>, (String, String)> {
-  ProductImageFileFamily._()
+final class ProductImageFamily extends $Family
+    with $FunctionalFamilyOverride<ImageProvider<Object>, (String, String)> {
+  ProductImageFamily._()
     : super(
         retry: null,
-        name: r'productImageFileProvider',
+        name: r'productImageProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  /// Fichier de l'image d'un produit à une version donnée (cache, sinon
-  /// téléchargement) ; null si indisponible.
+  /// Image d'un produit à une version donnée (cache disque, sinon
+  /// téléchargement). La version dans la clé invalide l'ancienne photo.
 
-  ProductImageFileProvider call(String productId, String version) =>
-      ProductImageFileProvider._(argument: (productId, version), from: this);
+  ProductImageProvider call(String productId, String version) =>
+      ProductImageProvider._(argument: (productId, version), from: this);
 
   @override
-  String toString() => r'productImageFileProvider';
+  String toString() => r'productImageProvider';
 }
 
 /// Envoi et retrait des photos produit (en ligne, ADR-0008).

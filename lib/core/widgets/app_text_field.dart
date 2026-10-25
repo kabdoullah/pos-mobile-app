@@ -128,7 +128,10 @@ class _AppTextFieldState extends State<AppTextField> {
     final borderColor = hasError ? cs.error : cs.outline;
     final activeBorderColor = hasError ? cs.error : cs.primary;
 
+    // mainAxisSize.min : sans lui, le champ s'étire sur toute la hauteur
+    // d'une boîte de dialogue.
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(

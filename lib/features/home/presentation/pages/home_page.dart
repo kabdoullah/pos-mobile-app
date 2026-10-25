@@ -49,15 +49,16 @@ class HomePage extends ConsumerWidget {
       body: ListView(
         padding: EdgeInsets.fromLTRB(hPad, AppSpacing.sm, hPad, AppSpacing.xl),
         children: [
-          const Text('Bonjour', style: AppTypography.titleLarge),
+          // Le nom de la boutique est dans l'AppBar : salutation et date
+          // tiennent sur une ligne discrète, le chiffre d'affaires reste
+          // l'information principale.
           Text(
-            // « samedi 27 septembre » → « Samedi 27 septembre »
-            toBeginningOfSentenceCase(dateLabel, 'fr_FR'),
+            'Bonjour · ${toBeginningOfSentenceCase(dateLabel, 'fr_FR')}',
             style: AppTypography.bodyMedium.copyWith(
               color: cs.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
           const TodaySummary(),
           const SizedBox(height: AppSpacing.md),
           _QuickActions(

@@ -225,10 +225,10 @@ class _SlideBuilder extends StatelessWidget {
             // commerçant, donc le numéro d'étape apporte une vraie information, ce
             // n'est pas de la décoration.
             Text(
-              'ÉTAPE $step SUR $totalSteps',
-              style: textTheme.labelSmall?.copyWith(
+              'Étape $step sur $totalSteps',
+              style: textTheme.labelMedium?.copyWith(
                 color: color,
-                letterSpacing: 1.2,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: AppSpacing.sm),

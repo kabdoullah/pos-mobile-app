@@ -17,6 +17,7 @@ import '../../domain/entities/sale.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
+import 'receipt_ticket.dart';
 
 /// Affiche la confirmation d'une vente enregistrée par-dessus la caisse.
 ///
@@ -32,6 +33,8 @@ Future<void> showSaleConfirmationSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    // Fond de page ivoire : le ticket blanc se détache comme du papier.
+    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     builder: (_) =>
         SaleConfirmationSheet(sale: sale, items: items, change: change),
   );
@@ -145,20 +148,24 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
               textAlign: TextAlign.center,
               style: AppTypography.titleLarge,
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Center(
-              child: AmountDisplay(
-                amount: sale.totalAmount,
-                size: AmountSize.hero,
-              ),
-            ),
-            Text(
-              '${units <= 1 ? '$units article' : '$units articles'} · '
-              '${sale.paymentMethod.label}',
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+            const SizedBox(height: AppSpacing.md),
+            ReceiptTicket(
+              lines: [
+                for (final item in widget.items)
+                  ReceiptTicketLine(
+                    name: item.productName,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    amount: item.grossTotal,
+                    discount: item.discountAmount,
+                  ),
+              ],
+              total: sale.totalAmount,
+              discount: sale.discountAmount,
+              footer: [
+                ('Articles', '$units'),
+                ('Paiement', sale.paymentMethod.label),
+              ],
             ),
             if (widget.change > Decimal.zero) ...[
               const SizedBox(height: AppSpacing.md),

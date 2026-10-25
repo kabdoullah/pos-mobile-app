@@ -191,7 +191,9 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       textAlign: TextAlign.center,
-                      style: AppTypography.titleLarge,
+                      style: AppTypography.titleLarge.copyWith(
+                        fontFeatures: AppTypography.tabularFigures,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(5),
@@ -203,9 +205,18 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                       ),
                       onChanged: _onTyped,
                       onSubmitted: (_) => _confirm(),
+                      // La pilule du sélecteur sert de cadre : ni fond ni
+                      // contour, sinon deux cadres s'emboîtent.
                       decoration: const InputDecoration(
                         isDense: true,
                         hintText: '0',
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
                       ),
                     ),
                   ),

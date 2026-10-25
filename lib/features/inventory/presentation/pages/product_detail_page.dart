@@ -18,6 +18,7 @@ import '../../../catalog/presentation/providers/product_image_providers.dart';
 import '../providers/inventory_providers.dart';
 import '../widgets/stock_adjustment_sheet.dart';
 import '../widgets/stock_movement_tile.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
 /// Nombre de mouvements affichés en aperçu sur la fiche produit.
@@ -96,33 +97,33 @@ class _ProductDetail extends ConsumerWidget {
           const SizedBox(height: AppSpacing.md),
           Text(product.name, style: AppTypography.titleLarge),
           const SizedBox(height: AppSpacing.xs),
-          AmountDisplay(amount: product.sellingPrice, size: AmountSize.large),
-          const SizedBox(height: AppSpacing.md),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          // AmountDisplay centre son texte : aligné à gauche sous le nom.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AmountDisplay(
+              amount: product.sellingPrice,
+              size: AmountSize.large,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                children: [
-                  _InfoRow(
-                    label: 'Stock',
-                    value: isTracked ? '${product.currentStock}' : 'Non suivi',
-                    trailing: StockStatusBadge(product: product),
-                  ),
-                  _InfoRow(
-                    label: "Seuil d'alerte",
-                    value: product.minStock?.toString() ?? 'Aucun',
-                  ),
-                  _InfoRow(label: 'Catégorie', value: categoryName ?? 'Aucune'),
-                  _InfoRow(
-                    label: 'Code-barres',
-                    value: product.barcode ?? 'Aucun',
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppCard(
+            child: Column(
+              children: [
+                _InfoRow(
+                  label: 'Stock',
+                  value: isTracked ? '${product.currentStock}' : 'Non suivi',
+                  trailing: StockStatusBadge(product: product),
+                ),
+                _InfoRow(
+                  label: "Seuil d'alerte",
+                  value: product.minStock?.toString() ?? 'Aucun',
+                ),
+                _InfoRow(label: 'Catégorie', value: categoryName ?? 'Aucune'),
+                _InfoRow(
+                  label: 'Code-barres',
+                  value: product.barcode ?? 'Aucun',
+                ),
+              ],
             ),
           ),
           if (!isTracked) ...[
@@ -137,36 +138,29 @@ class _ProductDetail extends ConsumerWidget {
           ],
           const SizedBox(height: AppSpacing.md),
           // Prix et marge : informations internes au commerçant (ADR-0009).
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                children: [
-                  _InfoRow(
-                    label: "Prix d'achat",
-                    value: product.purchasePrice == null
-                        ? 'Non renseigné'
-                        : formatFcfa(product.purchasePrice!),
-                  ),
-                  _InfoRow(
-                    label: 'Prix de vente',
-                    value: formatFcfa(product.sellingPrice),
-                  ),
-                  _InfoRow(
-                    label: 'Marge',
-                    value: margin == null
-                        ? '—'
-                        : margin > Decimal.zero
-                        ? '+${formatFcfa(margin)}'
-                        : formatFcfa(margin),
-                    valueColor: marginColor,
-                  ),
-                ],
-              ),
+          AppCard(
+            child: Column(
+              children: [
+                _InfoRow(
+                  label: "Prix d'achat",
+                  value: product.purchasePrice == null
+                      ? 'Non renseigné'
+                      : formatFcfa(product.purchasePrice!),
+                ),
+                _InfoRow(
+                  label: 'Prix de vente',
+                  value: formatFcfa(product.sellingPrice),
+                ),
+                _InfoRow(
+                  label: 'Marge',
+                  value: margin == null
+                      ? '—'
+                      : margin > Decimal.zero
+                      ? '+${formatFcfa(margin)}'
+                      : formatFcfa(margin),
+                  valueColor: marginColor,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -217,19 +211,23 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+          Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: cs.onSurfaceVariant,
             ),
           ),
-          Flexible(
+          const SizedBox(width: AppSpacing.md),
+          // Valeur calée à droite, comme une colonne de ticket.
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTypography.titleMedium.copyWith(color: valueColor),
+              style: AppTypography.bodyLarge.copyWith(
+                fontWeight: FontWeight.w600,
+                color: valueColor,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
             ),
           ),
           if (trailing != null) ...[
@@ -347,14 +345,9 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
 
   @override
   Widget build(BuildContext context) {
-    final version = widget.product.imageVersion;
-    final file = version == null
-        ? null
-        : ref.watch(productImageFileProvider(widget.product.id, version)).value;
-
     return Row(
       children: [
-        AppThumbnail(file: file, size: 96),
+        ProductThumbnail(product: widget.product, size: 96),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _busy
@@ -371,7 +364,7 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
                     onPressed: _edit,
                     icon: const Icon(Icons.photo_camera_outlined),
                     label: Text(
-                      version == null
+                      widget.product.imageVersion == null
                           ? 'Ajouter une photo'
                           : 'Changer la photo',
                     ),

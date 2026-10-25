@@ -42,6 +42,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
       extensions: const [AppSemanticColors.light],
       scaffoldBackgroundColor: const Color(0xFFFFFBF5), // ivory-warm
@@ -97,6 +98,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
       extensions: const [AppSemanticColors.dark],
       scaffoldBackgroundColor: const Color(0xFF0C0906), // near-black warm cacao
@@ -143,7 +145,7 @@ class AppTheme {
       foregroundColor: cs.onSurface,
       elevation: 0,
       scrolledUnderElevation: 1,
-      titleTextStyle: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+      titleTextStyle: AppTypography.appBarTitle.copyWith(color: cs.onSurface),
       toolbarTextStyle: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
       centerTitle: false,
       iconTheme: IconThemeData(color: cs.onSurface),
@@ -226,19 +228,29 @@ class AppTheme {
 
   static OutlinedButtonThemeData _buildOutlinedButtonTheme(ColorScheme cs) {
     return OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: cs.primary,
-        minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: 12,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        side: BorderSide(color: cs.primary, width: 2),
-        textStyle: AppTypography.labelLarge,
-      ),
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: cs.primary,
+            minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: 12,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+            textStyle: AppTypography.labelLarge,
+          ).copyWith(
+            // Désactivé : bordure grise, sinon le bouton semble encore actif.
+            side: WidgetStateProperty.resolveWith(
+              (states) => BorderSide(
+                color: states.contains(WidgetState.disabled)
+                    ? cs.outlineVariant
+                    : cs.primary,
+                width: 2,
+              ),
+            ),
+          ),
     );
   }
 

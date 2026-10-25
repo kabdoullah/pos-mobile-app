@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/network/api_models/sync_changes_dto.dart';
 import '../../../../core/network/api_models/product_dto.dart';
-import '../../../../core/storage/image_file_cache.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../core/utils/barcode_utils.dart';
 import '../../../../core/network/api_models/category_dto.dart';
@@ -35,10 +34,7 @@ class CatalogRepositoryImpl implements CatalogRepository {
     required this.db,
     required this.syncQueue,
     required this.dio,
-    ImageFileCache? imageCache,
-  }) : _imageCache = imageCache ?? ImageFileCache();
-
-  final ImageFileCache _imageCache;
+  });
 
   /// Instance de la base drift locale.
   final AppDatabase db;
@@ -442,28 +438,13 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }
 
   // ---------------------------------------------------------------------------
-  // Images produit (ADR-0008) — en ligne, avec cache disque par version
+  // Images produit (ADR-0008) — en ligne ; affichage et cache côté
+  // `cached_network_image` (clé par version)
   // ---------------------------------------------------------------------------
 
-  static String _imageKey(String productId) => 'product_$productId';
-
   @override
-  Future<File?> productImage(String productId, String version) async {
-    final cached = await _imageCache.get(_imageKey(productId), version);
-    if (cached != null) return cached;
-    try {
-      final response = await dio.get<List<int>>(
-        '/api/v1/products/$productId/image',
-        options: Options(responseType: ResponseType.bytes),
-      );
-      final bytes = response.data;
-      if (bytes == null) return null;
-      return _imageCache.put(_imageKey(productId), version, bytes);
-    } on DioException {
-      // Hors ligne ou image retirée entre-temps : pas d'image affichée.
-      return null;
-    }
-  }
+  String productImageUrl(String productId) =>
+      '/api/v1/products/$productId/image';
 
   @override
   Future<void> uploadProductImage(String productId, File image) async {
@@ -491,11 +472,10 @@ class CatalogRepositoryImpl implements CatalogRepository {
   }
 
   /// Met à jour la version locale sans marquer le produit « dirty » : l'état
-  /// vient du serveur. L'ancienne image est retirée du cache.
+  /// vient du serveur. La nouvelle version change la clé de cache de l'image.
   Future<void> _setImageVersion(String productId, String? version) async {
     await (db.update(db.products)..where((p) => p.id.equals(productId))).write(
       ProductsCompanion(imageVersion: drift.Value(version)),
     );
-    await _imageCache.remove(_imageKey(productId));
   }
 }

@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile/features/home/presentation/providers/home_providers.dart';
+import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mobile/features/sales/domain/repositories/sales_repository.dart';
 
 DailyStats stats({
@@ -41,6 +42,35 @@ void main() {
         averageBasket(stats(count: 3, total: '9000', refund: '1000')),
         Decimal.parse('3333'),
       );
+    });
+  });
+
+  group('salesByHour', () {
+    Sale sale(int hour, String total) => Sale(
+      id: 'sale-$hour-$total',
+      receiptNumber: 1,
+      totalAmount: Decimal.parse(total),
+      vatAmount: Decimal.zero,
+      discountAmount: Decimal.zero,
+      paymentMethod: PaymentMethod.cash,
+      createdAt: DateTime(2026, 10, 25, hour, 30),
+    );
+
+    test('24 cases à zéro sans vente', () {
+      final totals = salesByHour(const []);
+      expect(totals, hasLength(24));
+      expect(totals.every((t) => t == Decimal.zero), isTrue);
+    });
+
+    test('cumule les ventes de la même heure', () {
+      final totals = salesByHour([
+        sale(9, '1500'),
+        sale(9, '500'),
+        sale(14, '12000'),
+      ]);
+      expect(totals[9], Decimal.parse('2000'));
+      expect(totals[14], Decimal.parse('12000'));
+      expect(totals[10], Decimal.zero);
     });
   });
 

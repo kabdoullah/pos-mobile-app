@@ -62,7 +62,7 @@ Règles :
   - `PUT /api/v1/products/{id}/image` (multipart), `GET` (avec `ETag` = `sha256`, `Cache-Control: private, max-age=31536000, immutable` + version dans l'URL), `DELETE`.
   - `PUT|GET|DELETE /api/v1/stores/me/logo`, mêmes règles.
 - **Versionnement** : `ProductResponse` et la réponse boutique exposent `image_version` / `logo_version` (le `sha256`, `null` si pas d'image). L'état synchronisé ne transporte **jamais** le binaire, seulement la version.
-- **Côté mobile** : téléchargement paresseux et mise en cache disque par version (`<id>_<version>.webp`) ; un changement de version invalide le cache. Compression côté client avant envoi (≤ 1024 px) pour économiser les données.
+- **Côté mobile** : téléchargement paresseux et mise en cache disque par version ; un changement de version invalide le cache. Photos produit : `cached_network_image` (clé `product_<id>_<version>`), téléchargées via le `Dio` authentifié (`DioFileService`, JWT + refresh). Logo : `ImageFileCache` (`<clé>_<version>.webp`, répertoire support de l'app, non purgé par l'OS) pour l'impression hors ligne. Compression côté client avant envoi (≤ 1024 px) pour économiser les données.
 - **Upload online-only**, comme les mouvements de stock (ADR-0007) : hors ligne, le produit s'enregistre sans image et l'app propose d'ajouter la photo plus tard. Pas de file d'attente binaire dans la `SyncQueue`.
 - Le logo est **mis en cache local** pour que l'impression Bluetooth fonctionne hors ligne ; sa version est vérifiée à chaque pull de la configuration boutique.
 

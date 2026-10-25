@@ -86,6 +86,19 @@ Future<void> pumpHome(
                 : <Product>[],
           ),
         ),
+        todayHourlySalesProvider.overrideWith(
+          (ref) => Stream.value(
+            salesByHour(
+              withData
+                  ? [
+                      sale(10452, '1250000'),
+                      sale(0, '8000'),
+                      sale(10450, '500'),
+                    ]
+                  : <Sale>[],
+            ),
+          ),
+        ),
         recentSalesProvider.overrideWith(
           (ref) => Stream.value(
             withData
@@ -113,7 +126,22 @@ void main() {
       await pumpHome(tester, theme: theme, withData: true);
       expect(tester.takeException(), isNull);
       expect(find.text("Chiffre d'affaires"), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('Ventes par heure, pic à 19 h')),
+        findsOneWidget,
+      );
+      // Barre de répartition espèces / mobile money réellement visible.
+      final cashSegment = find.byWidgetPredicate(
+        (w) => w is ColoredBox && w.color == theme.colorScheme.primary,
+      );
+      expect(tester.getSize(cashSegment).height, 8);
       await tester.scrollUntilVisible(find.text('Rupture'), 200);
+      // Critiques et avertissements comptés séparément.
+      expect(
+        find.text('1 en rupture · 3 sous le seuil', findRichText: true),
+        findsOneWidget,
+      );
+      expect(find.text('Faible : 3'), findsOneWidget);
       expect(tester.takeException(), isNull);
       // Aperçu limité à 3 produits.
       expect(find.text('Sucre'), findsNothing);

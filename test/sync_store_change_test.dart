@@ -2,11 +2,15 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:mobile/core/sync/local_data_reset_service.dart';
 import 'package:mobile/core/sync/pull_service.dart';
 import 'package:mobile/database/app_database.dart';
 import 'package:sqlite3/open.dart';
+
+class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 void main() {
   late AppDatabase db;
@@ -88,6 +92,18 @@ void main() {
     expect(await db.select(db.saleItems).get(), isEmpty);
     expect(await db.select(db.syncQueue).get(), isEmpty);
     expect(await db.select(db.syncMetadata).get(), isEmpty);
+  });
+
+  test('wipeBusinessData vide aussi le cache des photos produit', () async {
+    final cacheManager = _MockCacheManager();
+    when(cacheManager.emptyCache).thenAnswer((_) async {});
+
+    await LocalDataResetService(
+      db,
+      imageCacheManager: cacheManager,
+    ).wipeBusinessData();
+
+    verify(cacheManager.emptyCache).called(1);
   });
 
   test('active store id round-trips and updates', () async {

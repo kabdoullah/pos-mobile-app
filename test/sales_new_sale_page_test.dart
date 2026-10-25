@@ -199,9 +199,10 @@ void main() {
       findsOneWidget,
     );
 
-    // La carte non plus n'ouvre pas la quantité quand tout est au panier.
+    // La ligne du catalogue non plus n'ouvre pas la quantité quand tout est
+    // au panier (le panier, plus bas, affiche aussi le nom).
     await settleToast(tester);
-    await tester.tap(find.text('Eau 1,5L'));
+    await tester.tap(find.text('Eau 1,5L').first);
     await tester.pump();
     expect(find.byType(BottomSheet), findsNothing);
     await settleToast(tester);
@@ -290,11 +291,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('3 articles'), findsOneWidget);
 
-    // La croix retire la ligne, sans confirmation (comme le glissement).
-    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
+    // Un glissement vers la gauche retire la ligne, sans confirmation.
+    await tester.drag(find.byType(Dismissible), const Offset(-600, 0));
     await tester.pumpAndSettle();
     expect(container.read(cartProvider).isEmpty, isTrue);
     expect(find.text('Votre panier est vide'), findsOneWidget);
+
+    // Le retrait s'annule depuis la pastille : la ligne revient telle quelle.
+    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Annuler'));
+    await tester.pumpAndSettle();
+    expect(container.read(cartProvider).unitCount, 3);
+    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
+
+    // À 1, « − » devient la corbeille : elle retire aussi la ligne, avec la
+    // même annulation possible.
+    container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 1);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Diminuer'), findsNothing);
+    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
+    await tester.pumpAndSettle();
+    expect(container.read(cartProvider).isEmpty, isTrue);
+    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
+    // La pastille d'annulation reste 4 s, puis disparaît.
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }
