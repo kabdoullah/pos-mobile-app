@@ -113,9 +113,8 @@ class _StepButton extends StatelessWidget {
       tooltip: tooltip,
       color: Theme.of(context).colorScheme.primary,
       icon: Icon(icon, size: large ? 20 : 18),
-      // Compact (lignes de panier) : pilule basse, boutons gardés larges
-      // pour rester faciles à viser. Sans shrinkWrap, Material 3 rajoute une
-      // zone tactile de 48 dp et la pilule reste haute.
+      // Compact (lignes de panier) : boutons de 44 dp, la cible tactile
+      // minimale. Sans shrinkWrap, Material 3 les porte à 48 dp.
       style: IconButton.styleFrom(
         padding: EdgeInsets.zero,
         tapTargetSize: large
@@ -123,10 +122,10 @@ class _StepButton extends StatelessWidget {
             : MaterialTapTargetSize.shrinkWrap,
         fixedSize: large
             ? const Size.square(AppSpacing.minTapTarget)
-            : const Size(40, 32),
+            : const Size.square(AppSpacing.minTapTarget),
         minimumSize: large
             ? const Size.square(AppSpacing.minTapTarget)
-            : const Size(40, 32),
+            : const Size.square(AppSpacing.minTapTarget),
       ),
       onPressed: onPressed == null
           ? null
