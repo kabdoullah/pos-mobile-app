@@ -77,6 +77,10 @@ void main() {
       await tester.enterText(find.byType(TextField).at(0), 'Coca');
       // Champ 1 : prix d'achat (optionnel), champ 2 : prix de vente.
       await tester.enterText(find.byType(TextField).at(2), '500');
+      // Clavier fermé : sinon le champ encore actif ramène le défilement sur
+      // lui et le bouton repasse sous le bord de l'écran de test.
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       final save = find.text('Enregistrer');
       await tester.ensureVisible(save);
       await tester.pumpAndSettle();
