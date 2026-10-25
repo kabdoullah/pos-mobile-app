@@ -212,8 +212,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
 
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Supprimer le produit',
-      message: 'Êtes-vous sûr? Cette action ne peut pas être annulée.',
+      title: 'Supprimer ce produit ?',
+      message:
+          'Il ne sera plus proposé en caisse ni dans le stock. Ses ventes '
+          'passées restent dans l’historique.',
       confirmLabel: 'Supprimer',
       isDangerous: true,
     );
