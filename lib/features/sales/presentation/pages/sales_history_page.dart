@@ -156,25 +156,36 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                   );
                 }
                 // Plusieurs jours : un en-tête par jour (libellé, sous-total)
-                // avant ses ventes, dans une liste à plat (construite à la
-                // demande, même sur un mois de ventes).
-                final rows = <Object>[
-                  for (final group in groupSalesByDay(visible)) ...[
-                    if (!isSingleDay) group,
-                    ...group.sales,
-                  ],
-                ];
-                return ListView.builder(
+                // puis ses ventes sur une surface à plat ; chaque groupe est
+                // construit à la demande, même sur un mois de ventes.
+                return CustomScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                  itemCount: rows.length,
-                  itemBuilder: (context, index) => switch (rows[index]) {
-                    final Sale sale => _SaleTile(sale: sale),
-                    (:final DateTime day, :final List<Sale> sales) =>
-                      _DayHeader(day: day, sales: sales),
-                    _ => const SizedBox.shrink(),
-                  },
+                  slivers: [
+                    for (final group in groupSalesByDay(visible)) ...[
+                      if (!isSingleDay)
+                        SliverToBoxAdapter(
+                          child: _DayHeader(day: group.day, sales: group.sales),
+                        ),
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.md,
+                          AppSpacing.sm,
+                        ),
+                        sliver: SliverAppListGroup(
+                          itemCount: group.sales.length,
+                          dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+                          itemBuilder: (context, index) =>
+                              _SaleTile(sale: group.sales[index]),
+                        ),
+                      ),
+                    ],
+                    const SliverToBoxAdapter(
+                      child: SizedBox(height: AppSpacing.xl),
+                    ),
+                  ],
                 );
               },
             ),
@@ -234,11 +245,13 @@ class _DayHeader extends StatelessWidget {
 
     return Semantics(
       header: true,
-      child: Container(
-        color: cs.surfaceContainerLow,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+      // Sur le fond de page, au-dessus de la surface de ses ventes.
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.sm,
         ),
         child: Row(
           children: [

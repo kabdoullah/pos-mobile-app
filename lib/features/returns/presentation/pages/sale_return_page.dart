@@ -220,10 +220,16 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
             ],
           ),
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            border: Border(top: BorderSide(color: cs.outlineVariant)),
+        // Même panneau que l'encaissement de la caisse : seule surface élevée,
+        // le montant à rembourser reste l'objet principal.
+        Material(
+          color: cs.surface,
+          elevation: 8,
+          shadowColor: cs.primary.withValues(alpha: 0.35),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppSpacing.radiusLg),
+            ),
           ),
           child: SafeArea(
             top: false,

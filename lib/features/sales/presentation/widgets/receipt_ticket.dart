@@ -12,7 +12,9 @@ class ReceiptTicketLine {
     required this.name,
     required this.quantity,
     required this.unitPrice,
-    required this.total,
+    required this.amount,
+    this.discount,
+    this.leading,
   });
 
   /// Nom du produit.
@@ -24,8 +26,14 @@ class ReceiptTicketLine {
   /// Prix unitaire.
   final Decimal unitPrice;
 
-  /// Total de la ligne, réduction déduite.
-  final Decimal total;
+  /// Montant brut de la ligne (quantité × prix unitaire).
+  final Decimal amount;
+
+  /// Réduction sur la ligne ; affichée sous le montant si elle est positive.
+  final Decimal? discount;
+
+  /// Vignette optionnelle à gauche (photo du produit).
+  final Widget? leading;
 }
 
 /// Vente présentée comme le reçu thermique 58 mm que la boutique imprime :
@@ -39,6 +47,9 @@ class ReceiptTicket extends StatelessWidget {
     required this.lines,
     required this.total,
     this.discount,
+    this.title,
+    this.subtitle,
+    this.linesPlaceholder,
     this.footer = const [],
     super.key,
   });
@@ -46,13 +57,24 @@ class ReceiptTicket extends StatelessWidget {
   /// Articles vendus.
   final List<ReceiptTicketLine> lines;
 
-  /// Total payé.
+  /// Total payé, remise déduite.
   final Decimal total;
 
-  /// Remise globale ; la ligne n'est affichée que si elle est positive.
+  /// Remise globale ; sous-total et remise ne sont affichés que si elle est
+  /// positive.
   final Decimal? discount;
 
-  /// Lignes libellé / valeur sous le total (paiement, reçu, date…).
+  /// En-tête centré (ex. « Reçu #12 »).
+  final String? title;
+
+  /// Ligne sous l'en-tête (ex. la date).
+  final String? subtitle;
+
+  /// Affiché à la place des articles quand [lines] est vide (chargement,
+  /// détail indisponible).
+  final Widget? linesPlaceholder;
+
+  /// Lignes libellé / valeur sous le total (paiement, statut…).
   final List<(String, String)> footer;
 
   @override
@@ -66,7 +88,12 @@ class ReceiptTicket extends StatelessWidget {
       color: cs.onSurface,
       fontFeatures: AppTypography.tabularFigures,
     );
+    final reduction = muted.copyWith(color: cs.primary);
     final discount = this.discount;
+    final hasDiscount = discount != null && discount > Decimal.zero;
+    final title = this.title;
+    final subtitle = this.subtitle;
+    final linesPlaceholder = this.linesPlaceholder;
 
     return PhysicalShape(
       clipper: const _ZigzagClipper(),
@@ -83,36 +110,82 @@ class ReceiptTicket extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (title != null || subtitle != null) ...[
+              if (title != null)
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.titleMedium,
+                ),
+              if (subtitle != null)
+                // Date : chiffres proportionnels, sinon « 17 : 21 ».
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              const _DashedRule(),
+            ],
+            if (lines.isEmpty && linesPlaceholder != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: linesPlaceholder,
+              ),
             for (final line in lines)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (line.leading case final leading?) ...[
+                      leading,
+                      const SizedBox(width: AppSpacing.sm),
+                    ],
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(line.name, style: body),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: Text(line.name, style: body)),
+                              const SizedBox(width: AppSpacing.sm),
+                              Text(formatAmount(line.amount), style: body),
+                            ],
+                          ),
                           Text(
                             '${line.quantity} × '
                             '${formatAmount(line.unitPrice)}',
                             style: muted,
                           ),
+                          if (line.discount case final lineDiscount?
+                              when lineDiscount > Decimal.zero)
+                            _Row(
+                              label: 'Réduction',
+                              value: '−${formatAmount(lineDiscount)}',
+                              style: reduction,
+                            ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(formatAmount(line.total), style: body),
                   ],
                 ),
               ),
-            if (discount != null && discount > Decimal.zero)
+            if (hasDiscount) ...[
+              const _DashedRule(),
+              _Row(
+                label: 'Sous-total',
+                value: formatAmount(total + discount),
+                style: muted,
+              ),
               _Row(
                 label: 'Remise',
                 value: '−${formatAmount(discount)}',
                 style: muted,
               ),
+            ],
             const _DashedRule(),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,

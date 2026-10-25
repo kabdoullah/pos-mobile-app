@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +18,7 @@ import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
+import '../widgets/receipt_ticket.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Détail d'une vente, présenté comme un ticket : lignes, total, paiement,
@@ -48,86 +48,41 @@ class SaleDetailPage extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ReceiptTicket(
+            title: isSynced
+                ? 'Reçu #${sale.receiptNumber}'
+                : 'Reçu en attente de synchronisation',
+            subtitle: toBeginningOfSentenceCase(
+              DateFormat(
+                "EEEE d MMMM yyyy 'à' HH:mm",
+                'fr_FR',
+              ).format(sale.createdAt),
+              'fr_FR',
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    isSynced
-                        ? 'Reçu #${sale.receiptNumber}'
-                        : 'Reçu en attente de synchronisation',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.titleMedium,
-                  ),
-                  Text(
-                    toBeginningOfSentenceCase(
-                      DateFormat(
-                        "EEEE d MMMM yyyy 'à' HH:mm",
-                        'fr_FR',
-                      ).format(sale.createdAt),
-                      'fr_FR',
-                    ),
-                    textAlign: TextAlign.center,
+            lines: [
+              for (final item in items ?? const <CartItem>[])
+                ReceiptTicketLine(
+                  name: item.productName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  amount: item.grossTotal,
+                  discount: item.discountAmount,
+                  leading: ProductThumbnailById(productId: item.productId),
+                ),
+            ],
+            linesPlaceholder: items == null
+                ? const SkeletonBox(height: 40)
+                : Text(
+                    "Le détail des articles n'est pas disponible sur cet "
+                    'appareil (vente enregistrée ailleurs).',
                     style: muted,
                   ),
-                  const _TicketDivider(),
-                  if (items == null)
-                    const SkeletonBox(height: 40)
-                  else if (items.isEmpty)
-                    Text(
-                      "Le détail des articles n'est pas disponible sur cet "
-                      'appareil (vente enregistrée ailleurs).',
-                      style: muted,
-                    )
-                  else
-                    for (final item in items) _TicketLine(item: item),
-                  const _TicketDivider(),
-                  if (sale.discountAmount > Decimal.zero) ...[
-                    _InfoRow(
-                      label: 'Sous-total',
-                      value: formatFcfa(sale.subtotalAmount),
-                    ),
-                    _InfoRow(
-                      label: 'Remise',
-                      value: '−${formatFcfa(sale.discountAmount)}',
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                  ],
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text('TOTAL', style: AppTypography.titleMedium),
-                      ),
-                      // Gros montant : réduit plutôt que de déborder.
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: AmountDisplay(
-                            amount: sale.totalAmount,
-                            size: AmountSize.large,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _InfoRow(label: 'Paiement', value: sale.paymentMethod.label),
-                  _InfoRow(
-                    label: 'Statut',
-                    value: isSynced ? 'Synchronisée' : 'En attente de synchro',
-                    icon: isSynced
-                        ? Icons.cloud_done_outlined
-                        : Icons.cloud_upload_outlined,
-                  ),
-                ],
-              ),
-            ),
+            total: sale.totalAmount,
+            discount: sale.discountAmount,
+            footer: [
+              ('Paiement', sale.paymentMethod.label),
+              ('Statut', isSynced ? 'Synchronisée' : 'En attente de synchro'),
+            ],
           ),
           if (items != null &&
               items.any((item) => item.purchaseUnitPrice != null)) ...[
@@ -255,92 +210,6 @@ class SaleDetailPage extends ConsumerWidget {
   }
 }
 
-/// Séparateur pointillé façon ticket de caisse.
-class _TicketDivider extends StatelessWidget {
-  const _TicketDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.outlineVariant;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final dashes = (constraints.maxWidth / 8).floor();
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              for (var i = 0; i < dashes; i++)
-                SizedBox(width: 4, height: 1, child: ColoredBox(color: color)),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Ligne d'article : nom, puis « quantité × prix » et total de ligne.
-class _TicketLine extends StatelessWidget {
-  const _TicketLine({required this.item});
-
-  final CartItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ProductThumbnailById(productId: item.productId),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(child: _details(cs)),
-        ],
-      ),
-    );
-  }
-
-  Widget _details(ColorScheme cs) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(item.productName, style: AppTypography.bodyLarge),
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                '${item.quantity} × ${formatAmount(item.unitPrice)}',
-                style: AppTypography.bodySmall.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(formatAmount(item.grossTotal), style: AppTypography.bodyLarge),
-          ],
-        ),
-        if (item.discountAmount > Decimal.zero)
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Réduction',
-                  style: AppTypography.bodySmall.copyWith(color: cs.primary),
-                ),
-              ),
-              Text(
-                '−${formatAmount(item.discountAmount)}',
-                style: AppTypography.bodySmall.copyWith(color: cs.primary),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
 /// Prix d'achat et marge de la vente, repliés par défaut : donnée interne au
 /// commerçant, jamais imprimée ni montrée au client (ADR-0009). Valeurs figées
 /// à la vente, jamais relues depuis le produit actuel.
@@ -399,37 +268,33 @@ class _InternalMargin extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value, this.icon});
+  const _InfoRow({required this.label, required this.value});
 
   final String label;
   final String value;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final icon = this.icon;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+          Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: cs.onSurfaceVariant,
             ),
           ),
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: cs.onSurfaceVariant),
-            const SizedBox(width: AppSpacing.xs),
-          ],
-          Flexible(
+          const SizedBox(width: AppSpacing.md),
+          // Valeur calée à droite, comme une colonne de ticket.
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTypography.labelLarge,
+              style: AppTypography.labelLarge.copyWith(
+                fontFeatures: AppTypography.tabularFigures,
+              ),
             ),
           ),
         ],
