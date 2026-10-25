@@ -159,11 +159,12 @@ class _HourlyBars extends ConsumerWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 1.5),
                         child: FractionallySizedBox(
-                          // Heure sans vente : simple trait de base.
-                          heightFactor: math.max(
-                            (total / peak).toDouble(),
-                            0.06,
-                          ),
+                          // Heure sans vente : simple trait de base. Heure
+                          // avec ventes : au moins un quart de la hauteur,
+                          // même écrasée par une grosse vente au pic.
+                          heightFactor: total > Decimal.zero
+                              ? math.max((total / peak).toDouble(), 0.25)
+                              : 0.06,
                           alignment: Alignment.bottomCenter,
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -224,8 +225,13 @@ class _Metric extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
+            // Une seule ligne : sinon la mesure de IntrinsicHeight (rangée
+            // Ventes / Panier moyen) compte le texte replié sur plusieurs
+            // lignes et la case garde un grand vide.
             child: Text(
               value,
+              maxLines: 1,
+              softWrap: false,
               style: AppTypography.titleLarge.copyWith(
                 fontFeatures: AppTypography.tabularFigures,
               ),
