@@ -199,9 +199,10 @@ void main() {
       findsOneWidget,
     );
 
-    // La carte non plus n'ouvre pas la quantité quand tout est au panier.
+    // La ligne du catalogue non plus n'ouvre pas la quantité quand tout est
+    // au panier (le panier, plus bas, affiche aussi le nom).
     await settleToast(tester);
-    await tester.tap(find.text('Eau 1,5L'));
+    await tester.tap(find.text('Eau 1,5L').first);
     await tester.pump();
     expect(find.byType(BottomSheet), findsNothing);
     await settleToast(tester);

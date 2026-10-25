@@ -62,9 +62,10 @@ class SaleCheckoutPanel extends ConsumerWidget {
     };
 
     return Material(
-      color: cs.surfaceContainerLow,
+      // Seule surface élevée de la caisse : le total reste l'objet principal.
+      color: cs.surface,
       elevation: 8,
-      shadowColor: cs.shadow.withValues(alpha: 0.3),
+      shadowColor: cs.primary.withValues(alpha: 0.35),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),

@@ -16,9 +16,7 @@ const int _maxColumns = 3;
 // Hauteur d'une carte en grille à l'échelle de texte 1 (suit la taille de
 // police système pour éviter les débordements).
 const double _cardHeight = 132;
-const double _thumbSize = 56;
-// Largeur maximale de la colonne prix + bouton.
-const double _maxPriceWidth = 132;
+const double _thumbSize = 48;
 
 /// Catalogue parcourable de la caisse, sous forme de slivers à insérer dans le
 /// défilement de la page : en-tête « Produits · N » puis cartes produit
@@ -118,7 +116,7 @@ class ProductBrowser extends StatelessWidget {
     return _ProductGrid(
       itemCount: 6,
       itemBuilder: (_, _) =>
-          const SkeletonBox(height: 96, radius: AppSpacing.radiusLg),
+          const SkeletonBox(height: 72, radius: AppSpacing.radiusMd),
     );
   }
 }
@@ -162,6 +160,9 @@ class _Message extends StatelessWidget {
 }
 
 /// Liste (une colonne) ou grille paresseuse selon la largeur disponible.
+///
+/// Sur téléphone, les produits forment une seule surface à plat, séparée par
+/// des filets : l'œil parcourt une liste, pas une pile de cartes.
 class _ProductGrid extends StatelessWidget {
   const _ProductGrid({required this.itemCount, required this.itemBuilder});
 
@@ -170,7 +171,14 @@ class _ProductGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final height = MediaQuery.textScalerOf(context).scale(_cardHeight);
+    final radius = BorderRadius.circular(AppSpacing.radiusMd);
+    final surface = BoxDecoration(
+      color: cs.surface,
+      borderRadius: radius,
+      border: Border.all(color: cs.outlineVariant),
+    );
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -185,10 +193,17 @@ class _ProductGrid extends StatelessWidget {
               .clamp(1, _maxColumns);
           if (columns == 1) {
             // Liste : hauteur naturelle, pas de risque de débordement.
-            return SliverList.separated(
-              itemCount: itemCount,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-              itemBuilder: itemBuilder,
+            return DecoratedSliver(
+              decoration: surface,
+              sliver: SliverList.separated(
+                itemCount: itemCount,
+                separatorBuilder: (_, _) => Divider(
+                  height: 1,
+                  indent: AppSpacing.md + _thumbSize + AppSpacing.sm,
+                  color: cs.outlineVariant,
+                ),
+                itemBuilder: itemBuilder,
+              ),
             );
           }
           return SliverGrid.builder(
@@ -199,7 +214,13 @@ class _ProductGrid extends StatelessWidget {
               crossAxisSpacing: AppSpacing.sm,
             ),
             itemCount: itemCount,
-            itemBuilder: itemBuilder,
+            itemBuilder: (context, index) => DecoratedBox(
+              decoration: surface,
+              child: ClipRRect(
+                borderRadius: radius,
+                child: itemBuilder(context, index),
+              ),
+            ),
           );
         },
       ),
@@ -207,8 +228,8 @@ class _ProductGrid extends StatelessWidget {
   }
 }
 
-/// Carte produit : photo, nom, code-barres, stock et quantité au panier à
-/// gauche ; prix de vente et bouton « Ajouter » à droite.
+/// Ligne produit : photo, nom, puis prix, stock et quantité au panier ; un
+/// bouton « + » carré ajoute une unité.
 ///
 /// Le prix d'achat n'est jamais affiché en caisse (ADR-0009).
 class _ProductCard extends StatelessWidget {
@@ -229,29 +250,26 @@ class _ProductCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final stock = product.currentStock;
     final outOfStock = stock != null && stock <= 0;
-    final barcode = product.barcode;
-    final onAdd = outOfStock ? null : () => onQuickAdd(product);
-    final compact = MediaQuery.textScalerOf(context).scale(1) > 1.15;
 
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: cs.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
+    // Material propre : l'encre reste visible au-dessus du fond de la liste.
+    return Material(
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: outOfStock ? null : () => onTap(product),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm + AppSpacing.xs),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm,
+            AppSpacing.sm + AppSpacing.xs,
+          ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Opacity(
                 opacity: outOfStock ? 0.5 : 1,
                 child: ProductThumbnail(product: product, size: _thumbSize),
               ),
-              const SizedBox(width: AppSpacing.md - AppSpacing.xs),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,24 +278,29 @@ class _ProductCard extends StatelessWidget {
                       product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.titleMedium.copyWith(
+                      style: AppTypography.bodyLarge.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
                         color: outOfStock ? cs.onSurfaceVariant : cs.onSurface,
                       ),
                     ),
-                    if (barcode != null && barcode.isNotEmpty)
-                      Text(
-                        barcode,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.captionText.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
                     const SizedBox(height: AppSpacing.xs),
                     Wrap(
-                      spacing: AppSpacing.xs,
+                      spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.xs,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
+                        Text(
+                          formatFcfa(product.sellingPrice),
+                          maxLines: 1,
+                          style: AppTypography.labelLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontFeatures: AppTypography.tabularFigures,
+                            color: outOfStock
+                                ? cs.onSurfaceVariant
+                                : cs.primary,
+                          ),
+                        ),
                         StockStatusBadge(product: product, showQuantity: true),
                         if (inCart > 0) _InCartPill(quantity: inCart),
                       ],
@@ -286,44 +309,18 @@ class _ProductCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              // Grande police : le prix se réduit et le bouton passe en
-              // icône seule plutôt que d'écraser le nom du produit.
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _maxPriceWidth),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        formatFcfa(product.sellingPrice),
-                        maxLines: 1,
-                        style: AppTypography.titleMedium.copyWith(
-                          color: outOfStock ? cs.onSurfaceVariant : cs.primary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Tooltip(
-                      message: 'Ajouter ${product.name}',
-                      child: compact
-                          ? IconButton.filledTonal(
-                              onPressed: onAdd,
-                              icon: const Icon(Icons.add),
-                            )
-                          : FilledButton.tonalIcon(
-                              onPressed: onAdd,
-                              icon: const Icon(Icons.add, size: 20),
-                              label: const Text('Ajouter'),
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size(0, 44),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.md - AppSpacing.xs,
-                                ),
-                              ),
-                            ),
-                    ),
-                  ],
+              IconButton.filledTonal(
+                tooltip: 'Ajouter ${product.name}',
+                onPressed: outOfStock ? null : () => onQuickAdd(product),
+                icon: const Icon(Icons.add),
+                style: IconButton.styleFrom(
+                  // secondaryContainer (or très pâle) disparaît sur fond blanc.
+                  backgroundColor: cs.primaryContainer,
+                  foregroundColor: cs.onPrimaryContainer,
+                  minimumSize: const Size.square(AppSpacing.iconButtonSize),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  ),
                 ),
               ),
             ],
