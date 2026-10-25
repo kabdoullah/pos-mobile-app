@@ -124,10 +124,13 @@ void main() {
     testWidgets('onglet Stock, thème $name', (tester) async {
       await pump(tester, const StockOverviewPage(), theme: theme);
       expect(tester.takeException(), isNull);
-      expect(find.text('Valeur du stock'), findsOneWidget);
+      expect(
+        find.textContaining('Valeur du stock', findRichText: true),
+        findsOneWidget,
+      );
 
-      // Filtre « Ruptures » depuis la tuile de synthèse.
-      await tester.tap(find.text('Ruptures').first);
+      // Filtre « Ruptures » depuis sa puce, qui porte le compteur.
+      await tester.tap(find.textContaining('Ruptures ·', findRichText: true));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Rupture'),

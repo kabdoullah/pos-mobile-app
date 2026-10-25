@@ -190,13 +190,10 @@ class _StockList extends ConsumerWidget {
           ),
           sliver: SliverList.list(
             children: [
-              if (summary != null)
-                StockSummaryHeader(
-                  summary: summary,
-                  filter: filter,
-                  onFilter: onFilterChanged,
-                ),
-              const SizedBox(height: AppSpacing.md),
+              if (summary != null) ...[
+                StockSummaryHeader(summary: summary),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
@@ -210,20 +207,10 @@ class _StockList extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.sm,
-                children: [
-                  for (final (value, label) in const [
-                    (StockFilter.all, 'Tous'),
-                    (StockFilter.lowStock, 'Stock faible'),
-                    (StockFilter.outOfStock, 'Ruptures'),
-                  ])
-                    ChoiceChip(
-                      label: Text(label),
-                      selected: filter == value,
-                      onSelected: (_) => onFilterChanged(value),
-                    ),
-                ],
+              StockFilterChips(
+                filter: filter,
+                onFilter: onFilterChanged,
+                summary: summary,
               ),
               if (categories.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
@@ -312,8 +299,8 @@ class _LoadingList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       physics: const NeverScrollableScrollPhysics(),
       children: const [
-        SkeletonBox(height: 160, radius: AppSpacing.radiusLg),
-        SizedBox(height: AppSpacing.md),
+        SkeletonBox(height: 20),
+        SizedBox(height: AppSpacing.sm),
         SkeletonBox(height: 56),
         SizedBox(height: AppSpacing.md),
         SkeletonBox(height: 64),
