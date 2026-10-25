@@ -52,10 +52,9 @@ class RecentSalesSection extends ConsumerWidget {
         else if (sales.isEmpty)
           _EmptyToday(onNewSale: onNewSale)
         else
-          for (final (i, sale) in sales.indexed) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.sm),
-            _SaleRow(sale: sale),
-          ],
+          AppListGroup(
+            children: [for (final sale in sales) _SaleRow(sale: sale)],
+          ),
       ],
     );
   }
@@ -75,14 +74,8 @@ class _SaleRow extends StatelessWidget {
         ? 'Reçu #${sale.receiptNumber}'
         : 'En attente de synchro';
 
-    // Même carte que les alertes de stock et l'onglet Stock.
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: cs.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
+    return Material(
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () => context.push(Routes.saleDetail, extra: sale),
         child: Padding(

@@ -193,17 +193,10 @@ class _ProductGrid extends StatelessWidget {
               .clamp(1, _maxColumns);
           if (columns == 1) {
             // Liste : hauteur naturelle, pas de risque de débordement.
-            return DecoratedSliver(
-              decoration: surface,
-              sliver: SliverList.separated(
-                itemCount: itemCount,
-                separatorBuilder: (_, _) => Divider(
-                  height: 1,
-                  indent: AppSpacing.md + _thumbSize + AppSpacing.sm,
-                  color: cs.outlineVariant,
-                ),
-                itemBuilder: itemBuilder,
-              ),
+            return SliverAppListGroup(
+              itemCount: itemCount,
+              dividerIndent: AppSpacing.md + _thumbSize + AppSpacing.sm,
+              itemBuilder: (context, index) => itemBuilder(context, index)!,
             );
           }
           return SliverGrid.builder(

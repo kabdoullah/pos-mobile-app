@@ -70,10 +70,13 @@ class LowStockSection extends ConsumerWidget {
         ),
         _AlertCounts(outCount: outCount, lowCount: lowCount),
         const SizedBox(height: AppSpacing.sm),
-        for (final (i, product) in products.take(_previewCount).indexed) ...[
-          if (i > 0) const SizedBox(height: AppSpacing.sm),
-          _LowStockRow(product: product),
-        ],
+        AppListGroup(
+          dividerIndent: AppSpacing.md + 36 + AppSpacing.sm,
+          children: [
+            for (final product in products.take(_previewCount))
+              _LowStockRow(product: product),
+          ],
+        ),
       ],
     );
   }
@@ -123,14 +126,8 @@ class _LowStockRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    // Même carte que l'onglet Stock et la caisse.
-    return Card.filled(
-      margin: EdgeInsets.zero,
-      color: cs.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
+    return Material(
+      type: MaterialType.transparency,
       child: InkWell(
         onTap: () =>
             context.push(Routes.productDetail.replaceFirst(':id', product.id)),
@@ -146,7 +143,7 @@ class _LowStockRow extends StatelessWidget {
             child: Row(
               children: [
                 ProductThumbnail(product: product, size: 36),
-                const SizedBox(width: AppSpacing.md - AppSpacing.xs),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     product.name,

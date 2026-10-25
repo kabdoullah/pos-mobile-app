@@ -81,24 +81,35 @@ class _SummaryContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Row(
+        // Chiffres secondaires : une seule surface à plat sous le
+        // chiffre d'affaires, seul bloc mis en avant.
+        AppListGroup(
+          dividerIndent: 0,
           children: [
-            Expanded(
-              child: _Metric(label: 'Ventes', value: '${stats.saleCount}'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _Metric(
-                label: 'Panier moyen',
-                value: average == null ? '—' : formatFcfa(average),
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _Metric(
+                      label: 'Ventes',
+                      value: '${stats.saleCount}',
+                    ),
+                  ),
+                  VerticalDivider(width: 1, color: cs.outlineVariant),
+                  Expanded(
+                    child: _Metric(
+                      label: 'Panier moyen',
+                      value: average == null ? '—' : formatFcfa(average),
+                    ),
+                  ),
+                ],
               ),
             ),
+            if (cashShare != null)
+              _PaymentSplit(cashPercent: cashShare, stats: stats),
           ],
         ),
-        if (cashShare != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _PaymentSplit(cashPercent: cashShare, stats: stats),
-        ],
       ],
     );
   }
@@ -198,8 +209,8 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return _Tile(
-      color: cs.surfaceContainerLow,
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -213,7 +224,12 @@ class _Metric extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(value, style: AppTypography.titleLarge),
+            child: Text(
+              value,
+              style: AppTypography.titleLarge.copyWith(
+                fontFeatures: AppTypography.tabularFigures,
+              ),
+            ),
           ),
         ],
       ),
@@ -235,8 +251,8 @@ class _PaymentSplit extends StatelessWidget {
 
     return Semantics(
       label: 'Espèces $cashPercent %, mobile money ${100 - cashPercent} %',
-      child: _Tile(
-        color: cs.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

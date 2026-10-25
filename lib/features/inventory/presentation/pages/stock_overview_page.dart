@@ -263,12 +263,12 @@ class _StockList extends ConsumerWidget {
             ),
           )
         else
-          // Cartes espacées, même marge latérale que l'en-tête.
+          // Une seule surface, même marge latérale que l'en-tête.
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverList.separated(
+            sliver: SliverAppListGroup(
               itemCount: visible.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+              dividerIndent: AppSpacing.md + 48 + AppSpacing.sm,
               itemBuilder: (context, index) {
                 final product = visible[index];
                 return StockProductTile(
