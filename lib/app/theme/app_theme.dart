@@ -42,6 +42,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
       extensions: const [AppSemanticColors.light],
       scaffoldBackgroundColor: const Color(0xFFFFFBF5), // ivory-warm
@@ -97,6 +98,7 @@ class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
       extensions: const [AppSemanticColors.dark],
       scaffoldBackgroundColor: const Color(0xFF0C0906), // near-black warm cacao
