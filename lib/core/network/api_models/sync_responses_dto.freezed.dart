@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sync_responses_dto.dart';
@@ -9,6 +9,7 @@ part of 'sync_responses_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$SalesSyncBatchRequestDtoCopyWithImpl<$Res>
 /// Create a copy of SalesSyncBatchRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? sales = null,}) {
-  return _then(_self.copyWith(
+  return _then(SalesSyncBatchRequestDto(
 sales: null == sales ? _self.sales : sales // ignore: cast_nullable_to_non_nullable
 as List<SaleCreateDto>,
   ));
@@ -203,7 +204,7 @@ return $default(_that.sales);case _:
 @JsonSerializable()
 
 class _SalesSyncBatchRequestDto implements SalesSyncBatchRequestDto {
-  const _SalesSyncBatchRequestDto({required final  List<SaleCreateDto> sales}): _sales = sales;
+  const _SalesSyncBatchRequestDto({required  List<SaleCreateDto> sales}): _sales = sales;
   factory _SalesSyncBatchRequestDto.fromJson(Map<String, dynamic> json) => _$SalesSyncBatchRequestDtoFromJson(json);
 
  final  List<SaleCreateDto> _sales;
@@ -278,8 +279,7 @@ as List<SaleCreateDto>,
 /// @nodoc
 mixin _$SaleSyncResultDto {
 
- String get id; String get status;// 'created', 'already_exists', 'failed'
-@JsonKey(name: 'receipt_number') int? get receiptNumber; String? get error;
+ String get id; String get status;@JsonKey(name: 'receipt_number') int? get receiptNumber; String? get error;
 /// Create a copy of SaleSyncResultDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -330,7 +330,7 @@ class _$SaleSyncResultDtoCopyWithImpl<$Res>
 /// Create a copy of SaleSyncResultDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? status = null,Object? receiptNumber = freezed,Object? error = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(SaleSyncResultDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,receiptNumber: freezed == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
@@ -475,7 +475,6 @@ class _SaleSyncResultDto implements SaleSyncResultDto {
 
 @override final  String id;
 @override final  String status;
-// 'created', 'already_exists', 'failed'
 @override@JsonKey(name: 'receipt_number') final  int? receiptNumber;
 @override final  String? error;
 
@@ -597,7 +596,7 @@ class _$SalesSyncBatchResponseDtoCopyWithImpl<$Res>
 /// Create a copy of SalesSyncBatchResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? processed = null,Object? results = null,}) {
-  return _then(_self.copyWith(
+  return _then(SalesSyncBatchResponseDto(
 processed: null == processed ? _self.processed : processed // ignore: cast_nullable_to_non_nullable
 as int,results: null == results ? _self.results : results // ignore: cast_nullable_to_non_nullable
 as List<SaleSyncResultDto>,
@@ -735,7 +734,7 @@ return $default(_that.processed,_that.results);case _:
 @JsonSerializable()
 
 class _SalesSyncBatchResponseDto implements SalesSyncBatchResponseDto {
-  const _SalesSyncBatchResponseDto({required this.processed, required final  List<SaleSyncResultDto> results}): _results = results;
+  const _SalesSyncBatchResponseDto({required this.processed, required  List<SaleSyncResultDto> results}): _results = results;
   factory _SalesSyncBatchResponseDto.fromJson(Map<String, dynamic> json) => _$SalesSyncBatchResponseDtoFromJson(json);
 
 @override final  int processed;
@@ -812,8 +811,7 @@ as List<SaleSyncResultDto>,
 /// @nodoc
 mixin _$ProductSyncResponseDto {
 
- String get status;// 'created', 'updated', 'no_change', 'deleted', 'conflict'
-@JsonKey(name: 'server_state') ProductDto? get serverState;
+ String get status;@JsonKey(name: 'server_state') ProductDto? get serverState;
 /// Create a copy of ProductSyncResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -864,7 +862,7 @@ class _$ProductSyncResponseDtoCopyWithImpl<$Res>
 /// Create a copy of ProductSyncResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? serverState = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProductSyncResponseDto(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,serverState: freezed == serverState ? _self.serverState : serverState // ignore: cast_nullable_to_non_nullable
 as ProductDto?,
@@ -1018,7 +1016,6 @@ class _ProductSyncResponseDto implements ProductSyncResponseDto {
   factory _ProductSyncResponseDto.fromJson(Map<String, dynamic> json) => _$ProductSyncResponseDtoFromJson(json);
 
 @override final  String status;
-// 'created', 'updated', 'no_change', 'deleted', 'conflict'
 @override@JsonKey(name: 'server_state') final  ProductDto? serverState;
 
 /// Create a copy of ProductSyncResponseDto

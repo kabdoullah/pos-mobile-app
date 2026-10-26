@@ -1,6 +1,3 @@
-import 'dart:ffi';
-import 'dart:io';
-
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
@@ -14,7 +11,6 @@ import 'package:mobile/features/sales/data/repositories/sales_repository_impl.da
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
 import 'package:mocktail/mocktail.dart';
-import 'package:sqlite3/open.dart';
 
 class MockSyncRemoteDataSource extends Mock implements SyncRemoteDataSource {}
 
@@ -26,13 +22,6 @@ void main() {
   late PushService pushService;
 
   setUpAll(() {
-    // Le host Linux expose libsqlite3.so.0 ; drift cherche libsqlite3.so.
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
     registerFallbackValue(const SalesSyncBatchRequestDto(sales: []));
   });
 

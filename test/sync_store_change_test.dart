@@ -1,6 +1,3 @@
-import 'dart:ffi';
-import 'dart:io';
-
 import 'package:drift/native.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,22 +5,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile/core/sync/local_data_reset_service.dart';
 import 'package:mobile/core/sync/pull_service.dart';
 import 'package:mobile/database/app_database.dart';
-import 'package:sqlite3/open.dart';
 
 class _MockCacheManager extends Mock implements BaseCacheManager {}
 
 void main() {
   late AppDatabase db;
-
-  setUpAll(() {
-    // Le host Linux expose libsqlite3.so.0 ; drift cherche libsqlite3.so.
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
-  });
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());

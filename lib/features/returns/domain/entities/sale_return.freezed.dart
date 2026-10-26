@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sale_return.dart';
@@ -9,6 +9,7 @@ part of 'sale_return.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -64,7 +65,7 @@ class _$SaleReturnLineCopyWithImpl<$Res>
 /// Create a copy of SaleReturnLine
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleItemId = null,Object? productId = freezed,Object? quantity = null,Object? condition = null,Object? restocked = null,Object? refundAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturnLine(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleItemId: null == saleItemId ? _self.saleItemId : saleItemId // ignore: cast_nullable_to_non_nullable
 as String,productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
@@ -337,7 +338,7 @@ class _$SaleReturnCopyWithImpl<$Res>
 /// Create a copy of SaleReturn
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleId = null,Object? returnNumber = null,Object? reason = null,Object? note = freezed,Object? refundMethod = null,Object? refundAmount = null,Object? createdAt = null,Object? syncStatus = null,Object? rejectionCode = freezed,Object? lines = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturn(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleId: null == saleId ? _self.saleId : saleId // ignore: cast_nullable_to_non_nullable
 as String,returnNumber: null == returnNumber ? _self.returnNumber : returnNumber // ignore: cast_nullable_to_non_nullable
@@ -484,7 +485,7 @@ return $default(_that.id,_that.saleId,_that.returnNumber,_that.reason,_that.note
 
 
 class _SaleReturn implements SaleReturn {
-  const _SaleReturn({required this.id, required this.saleId, required this.returnNumber, required this.reason, this.note, required this.refundMethod, required this.refundAmount, required this.createdAt, required this.syncStatus, this.rejectionCode, required final  List<SaleReturnLine> lines}): _lines = lines;
+  const _SaleReturn({required this.id, required this.saleId, required this.returnNumber, required this.reason, this.note, required this.refundMethod, required this.refundAmount, required this.createdAt, required this.syncStatus, this.rejectionCode, required  List<SaleReturnLine> lines}): _lines = lines;
   
 
 @override final  String id;

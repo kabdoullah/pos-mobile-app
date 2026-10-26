@@ -68,7 +68,7 @@ abstract class _$StoreConfig extends $AsyncNotifier<Store?> {
   FutureOr<Store?> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<Store?>, Store?>;
     final element =
         ref.element
@@ -78,7 +78,7 @@ abstract class _$StoreConfig extends $AsyncNotifier<Store?> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 

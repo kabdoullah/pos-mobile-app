@@ -67,7 +67,7 @@ abstract class _$Printer extends $Notifier<PrinterState> {
   PrinterState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<PrinterState, PrinterState>;
     final element =
         ref.element
@@ -77,6 +77,6 @@ abstract class _$Printer extends $Notifier<PrinterState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

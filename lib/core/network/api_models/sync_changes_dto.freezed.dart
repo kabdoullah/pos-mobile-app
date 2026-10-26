@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sync_changes_dto.dart';
@@ -9,15 +9,14 @@ part of 'sync_changes_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$SyncChangesDto {
 
-// Absent sur un serveur antérieur à l'ADR-0008.
- List<CategoryDto> get categories; List<ProductDto> get products; List<SaleDto> get sales;// Absent sur un serveur antérieur à l'ADR-0010.
- List<SaleReturnDto> get returns;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
+ List<CategoryDto> get categories; List<ProductDto> get products; List<SaleDto> get sales; List<SaleReturnDto> get returns;@JsonKey(name: 'next_cursor') String? get nextCursor;@JsonKey(name: 'has_more') bool get hasMore;@JsonKey(name: 'server_time') String get serverTime;
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -68,7 +67,7 @@ class _$SyncChangesDtoCopyWithImpl<$Res>
 /// Create a copy of SyncChangesDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? categories = null,Object? products = null,Object? sales = null,Object? returns = null,Object? nextCursor = freezed,Object? hasMore = null,Object? serverTime = null,}) {
-  return _then(_self.copyWith(
+  return _then(SyncChangesDto(
 categories: null == categories ? _self.categories : categories // ignore: cast_nullable_to_non_nullable
 as List<CategoryDto>,products: null == products ? _self.products : products // ignore: cast_nullable_to_non_nullable
 as List<ProductDto>,sales: null == sales ? _self.sales : sales // ignore: cast_nullable_to_non_nullable
@@ -211,12 +210,10 @@ return $default(_that.categories,_that.products,_that.sales,_that.returns,_that.
 @JsonSerializable()
 
 class _SyncChangesDto implements SyncChangesDto {
-  const _SyncChangesDto({final  List<CategoryDto> categories = const <CategoryDto>[], required final  List<ProductDto> products, required final  List<SaleDto> sales, final  List<SaleReturnDto> returns = const <SaleReturnDto>[], @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _categories = categories,_products = products,_sales = sales,_returns = returns;
+  const _SyncChangesDto({ List<CategoryDto> categories = const <CategoryDto>[], required  List<ProductDto> products, required  List<SaleDto> sales,  List<SaleReturnDto> returns = const <SaleReturnDto>[], @JsonKey(name: 'next_cursor') this.nextCursor, @JsonKey(name: 'has_more') required this.hasMore, @JsonKey(name: 'server_time') required this.serverTime}): _categories = categories,_products = products,_sales = sales,_returns = returns;
   factory _SyncChangesDto.fromJson(Map<String, dynamic> json) => _$SyncChangesDtoFromJson(json);
 
-// Absent sur un serveur antérieur à l'ADR-0008.
  final  List<CategoryDto> _categories;
-// Absent sur un serveur antérieur à l'ADR-0008.
 @override@JsonKey() List<CategoryDto> get categories {
   if (_categories is EqualUnmodifiableListView) return _categories;
   // ignore: implicit_dynamic_type
@@ -237,9 +234,7 @@ class _SyncChangesDto implements SyncChangesDto {
   return EqualUnmodifiableListView(_sales);
 }
 
-// Absent sur un serveur antérieur à l'ADR-0010.
  final  List<SaleReturnDto> _returns;
-// Absent sur un serveur antérieur à l'ADR-0010.
 @override@JsonKey() List<SaleReturnDto> get returns {
   if (_returns is EqualUnmodifiableListView) return _returns;
   // ignore: implicit_dynamic_type
@@ -371,7 +366,7 @@ class _$ProductSyncBatchDtoCopyWithImpl<$Res>
 /// Create a copy of ProductSyncBatchDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? items = null,}) {
-  return _then(_self.copyWith(
+  return _then(ProductSyncBatchDto(
 items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<ProductSyncItemDto>,
   ));
@@ -508,7 +503,7 @@ return $default(_that.items);case _:
 @JsonSerializable()
 
 class _ProductSyncBatchDto implements ProductSyncBatchDto {
-  const _ProductSyncBatchDto({required final  List<ProductSyncItemDto> items}): _items = items;
+  const _ProductSyncBatchDto({required  List<ProductSyncItemDto> items}): _items = items;
   factory _ProductSyncBatchDto.fromJson(Map<String, dynamic> json) => _$ProductSyncBatchDtoFromJson(json);
 
  final  List<ProductSyncItemDto> _items;
@@ -583,9 +578,7 @@ as List<ProductSyncItemDto>,
 /// @nodoc
 mixin _$ProductSyncItemDto {
 
- String get id; String get name; String? get barcode;@JsonKey(name: 'selling_price') String get sellingPrice;// Toujours envoyé (null = non renseigné) : l'état local fait foi.
-@JsonKey(name: 'purchase_price') String? get purchasePrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
-@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'client_updated_at') String get clientUpdatedAt; bool get deleted;
+ String get id; String get name; String? get barcode;@JsonKey(name: 'selling_price') String get sellingPrice;@JsonKey(name: 'purchase_price') String? get purchasePrice;@JsonKey(name: 'current_stock') int? get currentStock;@JsonKey(name: 'min_stock') int? get minStock;@JsonKey(name: 'category_id') String? get categoryId;@JsonKey(name: 'client_updated_at') String get clientUpdatedAt; bool get deleted;
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -636,7 +629,7 @@ class _$ProductSyncItemDtoCopyWithImpl<$Res>
 /// Create a copy of ProductSyncItemDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? barcode = freezed,Object? sellingPrice = null,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? clientUpdatedAt = null,Object? deleted = null,}) {
-  return _then(_self.copyWith(
+  return _then(ProductSyncItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
@@ -789,11 +782,9 @@ class _ProductSyncItemDto implements ProductSyncItemDto {
 @override final  String name;
 @override final  String? barcode;
 @override@JsonKey(name: 'selling_price') final  String sellingPrice;
-// Toujours envoyé (null = non renseigné) : l'état local fait foi.
 @override@JsonKey(name: 'purchase_price') final  String? purchasePrice;
 @override@JsonKey(name: 'current_stock') final  int? currentStock;
 @override@JsonKey(name: 'min_stock') final  int? minStock;
-// Toujours envoyé (null = sans catégorie) : l'état local fait foi.
 @override@JsonKey(name: 'category_id') final  String? categoryId;
 @override@JsonKey(name: 'client_updated_at') final  String clientUpdatedAt;
 @override@JsonKey() final  bool deleted;
@@ -922,7 +913,7 @@ class _$SyncResponseDtoCopyWithImpl<$Res>
 /// Create a copy of SyncResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? message = null,Object? syncedCount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SyncResponseDto(
 message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
 as String,syncedCount: null == syncedCount ? _self.syncedCount : syncedCount // ignore: cast_nullable_to_non_nullable
 as int,

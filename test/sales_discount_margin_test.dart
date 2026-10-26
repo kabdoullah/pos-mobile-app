@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:decimal/decimal.dart';
@@ -25,7 +24,6 @@ import 'package:mobile/features/sales/domain/repositories/sales_repository.dart'
 import 'package:mobile/features/sales/domain/usecases/create_sale_usecase.dart';
 import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sqlite3/open.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite;
 
 Decimal d(String value) => Decimal.parse(value);
@@ -61,16 +59,6 @@ Product coca({String selling = '2000', String? purchase = '1500'}) => Product(
 class _MockSalesRepository extends Mock implements SalesRepository {}
 
 void main() {
-  setUpAll(() {
-    // Le host Linux expose libsqlite3.so.0 ; drift cherche libsqlite3.so.
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
-  });
-
   group('Prix et marge produit', () {
     test('achat 1 500, vente 2 000 → marge 500', () {
       expect(coca().unitMargin, d('500'));
@@ -592,7 +580,7 @@ void main() {
         INSERT INTO sync_metadata VALUES ('active_store_id', 'store-1', 0);
         PRAGMA user_version = 6;
       ''');
-    raw.dispose();
+    raw.close();
 
     final db = AppDatabase.forTesting(NativeDatabase(file));
     addTearDown(db.close);

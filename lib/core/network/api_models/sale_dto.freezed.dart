@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sale_dto.dart';
@@ -9,15 +9,14 @@ part of 'sale_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
 /// @nodoc
 mixin _$SaleItemDto {
 
- String get id;@JsonKey(name: 'sale_id') String get saleId;@JsonKey(name: 'product_id') String? get productId;@JsonKey(name: 'product_name_at_sale') String get productNameAtSale;@JsonKey(name: 'unit_price_at_sale') String get unitPriceAtSale; int get quantity;@JsonKey(name: 'line_total') String get lineTotal;// Champs ADR-0009 : absents d'une vente antérieure → pas de réduction,
-// prix d'achat inconnu.
-@JsonKey(name: 'purchase_price_at_sale') String? get purchasePriceAtSale;@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount;
+ String get id;@JsonKey(name: 'sale_id') String get saleId;@JsonKey(name: 'product_id') String? get productId;@JsonKey(name: 'product_name_at_sale') String get productNameAtSale;@JsonKey(name: 'unit_price_at_sale') String get unitPriceAtSale; int get quantity;@JsonKey(name: 'line_total') String get lineTotal;@JsonKey(name: 'purchase_price_at_sale') String? get purchasePriceAtSale;@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount;
 /// Create a copy of SaleItemDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -68,7 +67,7 @@ class _$SaleItemDtoCopyWithImpl<$Res>
 /// Create a copy of SaleItemDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleId = null,Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleId: null == saleId ? _self.saleId : saleId // ignore: cast_nullable_to_non_nullable
 as String,productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
@@ -225,8 +224,6 @@ class _SaleItemDto implements SaleItemDto {
 @override@JsonKey(name: 'unit_price_at_sale') final  String unitPriceAtSale;
 @override final  int quantity;
 @override@JsonKey(name: 'line_total') final  String lineTotal;
-// Champs ADR-0009 : absents d'une vente antérieure → pas de réduction,
-// prix d'achat inconnu.
 @override@JsonKey(name: 'purchase_price_at_sale') final  String? purchasePriceAtSale;
 @override@JsonKey(name: 'discount_type') final  String? discountType;
 @override@JsonKey(name: 'discount_value') final  String? discountValue;
@@ -306,8 +303,7 @@ as String,
 /// @nodoc
 mixin _$SaleDto {
 
- String get id;@JsonKey(name: 'store_id') String get storeId;@JsonKey(name: 'receipt_number') int? get receiptNumber;@JsonKey(name: 'total_amount') String get totalAmount;@JsonKey(name: 'vat_amount') String get vatAmount;@JsonKey(name: 'payment_method') String get paymentMethod;@JsonKey(name: 'cash_amount') String? get cashAmount;@JsonKey(name: 'mobile_money_amount') String? get mobileMoneyAmount;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'synced_at') String get syncedAt;// Remise globale (ADR-0009) ; absente d'une vente antérieure.
-@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount; List<SaleItemDto> get items;
+ String get id;@JsonKey(name: 'store_id') String get storeId;@JsonKey(name: 'receipt_number') int? get receiptNumber;@JsonKey(name: 'total_amount') String get totalAmount;@JsonKey(name: 'vat_amount') String get vatAmount;@JsonKey(name: 'payment_method') String get paymentMethod;@JsonKey(name: 'cash_amount') String? get cashAmount;@JsonKey(name: 'mobile_money_amount') String? get mobileMoneyAmount;@JsonKey(name: 'created_at') String get createdAt;@JsonKey(name: 'synced_at') String get syncedAt;@JsonKey(name: 'discount_type') String? get discountType;@JsonKey(name: 'discount_value') String? get discountValue;@JsonKey(name: 'discount_amount') String get discountAmount; List<SaleItemDto> get items;
 /// Create a copy of SaleDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -358,7 +354,7 @@ class _$SaleDtoCopyWithImpl<$Res>
 /// Create a copy of SaleDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? storeId = null,Object? receiptNumber = freezed,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? cashAmount = freezed,Object? mobileMoneyAmount = freezed,Object? createdAt = null,Object? syncedAt = null,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,Object? items = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,storeId: null == storeId ? _self.storeId : storeId // ignore: cast_nullable_to_non_nullable
 as String,receiptNumber: freezed == receiptNumber ? _self.receiptNumber : receiptNumber // ignore: cast_nullable_to_non_nullable
@@ -508,7 +504,7 @@ return $default(_that.id,_that.storeId,_that.receiptNumber,_that.totalAmount,_th
 @JsonSerializable()
 
 class _SaleDto implements SaleDto {
-  const _SaleDto({required this.id, @JsonKey(name: 'store_id') required this.storeId, @JsonKey(name: 'receipt_number') this.receiptNumber, @JsonKey(name: 'total_amount') required this.totalAmount, @JsonKey(name: 'vat_amount') required this.vatAmount, @JsonKey(name: 'payment_method') required this.paymentMethod, @JsonKey(name: 'cash_amount') this.cashAmount, @JsonKey(name: 'mobile_money_amount') this.mobileMoneyAmount, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'synced_at') required this.syncedAt, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0', required final  List<SaleItemDto> items}): _items = items;
+  const _SaleDto({required this.id, @JsonKey(name: 'store_id') required this.storeId, @JsonKey(name: 'receipt_number') this.receiptNumber, @JsonKey(name: 'total_amount') required this.totalAmount, @JsonKey(name: 'vat_amount') required this.vatAmount, @JsonKey(name: 'payment_method') required this.paymentMethod, @JsonKey(name: 'cash_amount') this.cashAmount, @JsonKey(name: 'mobile_money_amount') this.mobileMoneyAmount, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'synced_at') required this.syncedAt, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0', required  List<SaleItemDto> items}): _items = items;
   factory _SaleDto.fromJson(Map<String, dynamic> json) => _$SaleDtoFromJson(json);
 
 @override final  String id;
@@ -521,7 +517,6 @@ class _SaleDto implements SaleDto {
 @override@JsonKey(name: 'mobile_money_amount') final  String? mobileMoneyAmount;
 @override@JsonKey(name: 'created_at') final  String createdAt;
 @override@JsonKey(name: 'synced_at') final  String syncedAt;
-// Remise globale (ADR-0009) ; absente d'une vente antérieure.
 @override@JsonKey(name: 'discount_type') final  String? discountType;
 @override@JsonKey(name: 'discount_value') final  String? discountValue;
 @override@JsonKey(name: 'discount_amount') final  String discountAmount;
@@ -664,7 +659,7 @@ class _$SaleItemCreateDtoCopyWithImpl<$Res>
 /// Create a copy of SaleItemCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = freezed,Object? productId = freezed,Object? productNameAtSale = null,Object? unitPriceAtSale = null,Object? quantity = null,Object? lineTotal = null,Object? purchasePriceAtSale = freezed,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleItemCreateDto(
 id: freezed == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String?,productId: freezed == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
 as String?,productNameAtSale: null == productNameAtSale ? _self.productNameAtSale : productNameAtSale // ignore: cast_nullable_to_non_nullable
@@ -951,7 +946,7 @@ class _$SaleCreateDtoCopyWithImpl<$Res>
 /// Create a copy of SaleCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? items = null,Object? totalAmount = null,Object? vatAmount = null,Object? paymentMethod = null,Object? cashAmount = freezed,Object? mobileMoneyAmount = freezed,Object? createdAt = null,Object? discountType = freezed,Object? discountValue = freezed,Object? discountAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleCreateDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
 as List<SaleItemCreateDto>,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
@@ -1098,7 +1093,7 @@ return $default(_that.id,_that.items,_that.totalAmount,_that.vatAmount,_that.pay
 @JsonSerializable()
 
 class _SaleCreateDto implements SaleCreateDto {
-  const _SaleCreateDto({required this.id, required final  List<SaleItemCreateDto> items, @JsonKey(name: 'total_amount') required this.totalAmount, @JsonKey(name: 'vat_amount') required this.vatAmount, @JsonKey(name: 'payment_method') required this.paymentMethod, @JsonKey(name: 'cash_amount') this.cashAmount, @JsonKey(name: 'mobile_money_amount') this.mobileMoneyAmount, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0'}): _items = items;
+  const _SaleCreateDto({required this.id, required  List<SaleItemCreateDto> items, @JsonKey(name: 'total_amount') required this.totalAmount, @JsonKey(name: 'vat_amount') required this.vatAmount, @JsonKey(name: 'payment_method') required this.paymentMethod, @JsonKey(name: 'cash_amount') this.cashAmount, @JsonKey(name: 'mobile_money_amount') this.mobileMoneyAmount, @JsonKey(name: 'created_at') required this.createdAt, @JsonKey(name: 'discount_type') this.discountType, @JsonKey(name: 'discount_value') this.discountValue, @JsonKey(name: 'discount_amount') this.discountAmount = '0'}): _items = items;
   factory _SaleCreateDto.fromJson(Map<String, dynamic> json) => _$SaleCreateDtoFromJson(json);
 
 @override final  String id;
@@ -1244,7 +1239,7 @@ class _$DailySalesSummaryDtoCopyWithImpl<$Res>
 /// Create a copy of DailySalesSummaryDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? totalAmount = null,Object? salesCount = null,}) {
-  return _then(_self.copyWith(
+  return _then(DailySalesSummaryDto(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
 as String,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
 as String,salesCount: null == salesCount ? _self.salesCount : salesCount // ignore: cast_nullable_to_non_nullable

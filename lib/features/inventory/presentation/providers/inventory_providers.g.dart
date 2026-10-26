@@ -239,7 +239,7 @@ final class StockHistoryProvider
   }
 }
 
-String _$stockHistoryHash() => r'3ee5f3bb0ffd1651dc46ba13bb98b60048e4bd48';
+String _$stockHistoryHash() => r'e16a84cf9097cf9e41e6a51a497eaf9f5ff423c1';
 
 /// Gère l'historique paginé des mouvements de stock, d'un produit ou de tous
 /// les produits ([productId] `null`). Données serveur uniquement (en ligne).
@@ -282,7 +282,7 @@ abstract class _$StockHistory extends $AsyncNotifier<List<StockMovement>> {
   FutureOr<List<StockMovement>> build(String? productId);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref =
         this.ref as $Ref<AsyncValue<List<StockMovement>>, List<StockMovement>>;
     final element =
@@ -293,7 +293,7 @@ abstract class _$StockHistory extends $AsyncNotifier<List<StockMovement>> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -373,7 +373,7 @@ abstract class _$StockAdjustment extends $Notifier<void> {
   void build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
@@ -383,6 +383,6 @@ abstract class _$StockAdjustment extends $Notifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

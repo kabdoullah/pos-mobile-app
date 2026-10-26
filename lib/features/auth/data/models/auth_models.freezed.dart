@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'auth_models.dart';
@@ -9,6 +9,7 @@ part of 'auth_models.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$RegisterRequestDtoCopyWithImpl<$Res>
 /// Create a copy of RegisterRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? phoneNumber = null,Object? password = null,Object? email = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(RegisterRequestDto(
 phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -329,7 +330,7 @@ class _$RegisterResponseDtoCopyWithImpl<$Res>
 /// Create a copy of RegisterResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? userId = null,Object? phoneNumber = null,Object? message = null,}) {
-  return _then(_self.copyWith(
+  return _then(RegisterResponseDto(
 userId: null == userId ? _self.userId : userId // ignore: cast_nullable_to_non_nullable
 as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
@@ -592,7 +593,7 @@ class _$LoginRequestDtoCopyWithImpl<$Res>
 /// Create a copy of LoginRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? phoneNumber = null,Object? password = null,}) {
-  return _then(_self.copyWith(
+  return _then(LoginRequestDto(
 phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,
@@ -852,7 +853,7 @@ class _$TokenResponseDtoCopyWithImpl<$Res>
 /// Create a copy of TokenResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? accessToken = null,Object? refreshToken = null,Object? tokenType = null,Object? expiresIn = null,}) {
-  return _then(_self.copyWith(
+  return _then(TokenResponseDto(
 accessToken: null == accessToken ? _self.accessToken : accessToken // ignore: cast_nullable_to_non_nullable
 as String,refreshToken: null == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
 as String,tokenType: null == tokenType ? _self.tokenType : tokenType // ignore: cast_nullable_to_non_nullable
@@ -1118,7 +1119,7 @@ class _$ForgotPasswordRequestDtoCopyWithImpl<$Res>
 /// Create a copy of ForgotPasswordRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? email = null,}) {
-  return _then(_self.copyWith(
+  return _then(ForgotPasswordRequestDto(
 email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -1375,7 +1376,7 @@ class _$ResetPasswordRequestDtoCopyWithImpl<$Res>
 /// Create a copy of ResetPasswordRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? token = null,Object? newPassword = null,}) {
-  return _then(_self.copyWith(
+  return _then(ResetPasswordRequestDto(
 token: null == token ? _self.token : token // ignore: cast_nullable_to_non_nullable
 as String,newPassword: null == newPassword ? _self.newPassword : newPassword // ignore: cast_nullable_to_non_nullable
 as String,
@@ -1635,7 +1636,7 @@ class _$RefreshRequestDtoCopyWithImpl<$Res>
 /// Create a copy of RefreshRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? refreshToken = null,}) {
-  return _then(_self.copyWith(
+  return _then(RefreshRequestDto(
 refreshToken: null == refreshToken ? _self.refreshToken : refreshToken // ignore: cast_nullable_to_non_nullable
 as String,
   ));
@@ -1892,7 +1893,7 @@ class _$UserMeDtoCopyWithImpl<$Res>
 /// Create a copy of UserMeDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(UserMeDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
@@ -2158,7 +2159,7 @@ class _$UserMeUpdateDtoCopyWithImpl<$Res>
 /// Create a copy of UserMeUpdateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? displayName = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(UserMeUpdateDto(
 displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -2415,7 +2416,7 @@ class _$DeleteAccountRequestDtoCopyWithImpl<$Res>
 /// Create a copy of DeleteAccountRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? password = null,}) {
-  return _then(_self.copyWith(
+  return _then(DeleteAccountRequestDto(
 password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
 as String,
   ));

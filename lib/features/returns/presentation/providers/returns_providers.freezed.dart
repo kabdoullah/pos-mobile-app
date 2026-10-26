@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'returns_providers.dart';
@@ -9,6 +9,7 @@ part of 'returns_providers.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 /// @nodoc
@@ -67,7 +68,7 @@ class _$ReturnDraftStateCopyWithImpl<$Res>
 /// Create a copy of ReturnDraftState
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? returnId = null,Object? quantities = null,Object? conditions = null,Object? reason = freezed,Object? note = null,Object? refundMethod = null,Object? saved = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ReturnDraftState(
 returnId: null == returnId ? _self.returnId : returnId // ignore: cast_nullable_to_non_nullable
 as String,quantities: null == quantities ? _self.quantities : quantities // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,conditions: null == conditions ? _self.conditions : conditions // ignore: cast_nullable_to_non_nullable
@@ -222,7 +223,7 @@ return $default(_that.returnId,_that.quantities,_that.conditions,_that.reason,_t
 
 
 class _ReturnDraftState extends ReturnDraftState {
-  const _ReturnDraftState({required this.returnId, final  Map<String, int> quantities = const <String, int>{}, final  Map<String, ItemCondition> conditions = const <String, ItemCondition>{}, this.reason, this.note = '', required this.refundMethod, this.saved}): _quantities = quantities,_conditions = conditions,super._();
+  const _ReturnDraftState({required this.returnId,  Map<String, int> quantities = const <String, int>{},  Map<String, ItemCondition> conditions = const <String, ItemCondition>{}, this.reason, this.note = '', required this.refundMethod, this.saved}): _quantities = quantities,_conditions = conditions,super._();
   
 
 /// Id du retour, généré une fois par écran (idempotence).

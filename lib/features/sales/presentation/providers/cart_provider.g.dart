@@ -67,7 +67,7 @@ abstract class _$Cart extends $Notifier<CartState> {
   CartState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<CartState, CartState>;
     final element =
         ref.element
@@ -77,6 +77,6 @@ abstract class _$Cart extends $Notifier<CartState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

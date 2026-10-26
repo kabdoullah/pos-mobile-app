@@ -69,11 +69,11 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.pickFiles(
+    final picked = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv', 'xlsx'],
     );
-    final path = result?.files.single.path;
+    final path = picked?.path;
     if (path != null && mounted) {
       setState(() {
         _selectedFile = File(path);
