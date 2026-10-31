@@ -22,6 +22,7 @@ const _detailMap = <String, String>{
   'Sale not found.': 'Vente introuvable',
   // Boutiques
   'Store not found.': 'Boutique introuvable',
+  'Store is suspended.': 'Votre boutique est suspendue.',
   'A store already exists for this user.':
       'Une boutique existe déjà pour cet utilisateur',
   // Synchro

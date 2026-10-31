@@ -10,6 +10,7 @@ import '../../features/auth/presentation/pages/pin_setup_page.dart';
 import '../../features/auth/presentation/pages/pin_login_page.dart';
 import '../../features/auth/presentation/pages/phone_login_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
+import '../../features/auth/presentation/pages/store_suspended_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/catalog/presentation/pages/categories_page.dart';
@@ -58,6 +59,9 @@ abstract class Routes {
 
   /// Tutoriel d'onboarding.
   static const String tutorial = '/tutorial';
+
+  /// Boutique suspendue par la plateforme : l'app y reste bloquée.
+  static const String storeSuspended = '/store-suspended';
 
   // Les 5 onglets principaux (Racines des branches)
 
@@ -124,6 +128,7 @@ const _authRoutes = {
   Routes.pinSetup,
   Routes.pinLogin,
   Routes.storeSetup,
+  Routes.storeSuspended,
 };
 
 /// Redirection pilotée par l'état d'auth : seule source de la navigation du
@@ -152,6 +157,7 @@ String? authRedirect(AsyncValue<AuthStatus> auth, String? location) {
       AuthPinRequired() => Routes.pinLogin,
       AuthAuthenticated() =>
         _authRoutes.contains(location) ? Routes.home : null,
+      AuthStoreSuspended() => Routes.storeSuspended,
     },
   );
   return target != null && target != location ? target : null;
@@ -185,6 +191,11 @@ GoRouter appRouter(Ref ref) {
         path: Routes.register,
         pageBuilder: (context, state) =>
             PageTransitions.fade(context, state, const RegisterPage()),
+      ),
+      GoRoute(
+        path: Routes.storeSuspended,
+        pageBuilder: (context, state) =>
+            PageTransitions.fade(context, state, const StoreSuspendedPage()),
       ),
       GoRoute(
         path: Routes.emailLogin,

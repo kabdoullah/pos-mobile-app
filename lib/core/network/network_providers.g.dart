@@ -116,6 +116,120 @@ final class AuthExpiredControllerProvider
 String _$authExpiredControllerHash() =>
     r'99918469628d8d39d6994ff072367535f53cea56';
 
+/// Diffuse le contact du support (null s'il n'est pas configuré) quand le
+/// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
+/// et bascule sur l'écran de suspension.
+
+@ProviderFor(storeSuspendedController)
+final storeSuspendedControllerProvider = StoreSuspendedControllerProvider._();
+
+/// Diffuse le contact du support (null s'il n'est pas configuré) quand le
+/// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
+/// et bascule sur l'écran de suspension.
+
+final class StoreSuspendedControllerProvider
+    extends
+        $FunctionalProvider<
+          Raw<StreamController<String?>>,
+          Raw<StreamController<String?>>,
+          Raw<StreamController<String?>>
+        >
+    with $Provider<Raw<StreamController<String?>>> {
+  /// Diffuse le contact du support (null s'il n'est pas configuré) quand le
+  /// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
+  /// et bascule sur l'écran de suspension.
+  StoreSuspendedControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'storeSuspendedControllerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$storeSuspendedControllerHash();
+
+  @$internal
+  @override
+  $ProviderElement<Raw<StreamController<String?>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  Raw<StreamController<String?>> create(Ref ref) {
+    return storeSuspendedController(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Raw<StreamController<String?>> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Raw<StreamController<String?>>>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$storeSuspendedControllerHash() =>
+    r'1b1d01d9e35f3614b7339685152fff9c0521110f';
+
+/// Mémorise la suspension de la boutique entre deux lancements de l'app.
+
+@ProviderFor(storeSuspensionStorage)
+final storeSuspensionStorageProvider = StoreSuspensionStorageProvider._();
+
+/// Mémorise la suspension de la boutique entre deux lancements de l'app.
+
+final class StoreSuspensionStorageProvider
+    extends
+        $FunctionalProvider<
+          StoreSuspensionStorage,
+          StoreSuspensionStorage,
+          StoreSuspensionStorage
+        >
+    with $Provider<StoreSuspensionStorage> {
+  /// Mémorise la suspension de la boutique entre deux lancements de l'app.
+  StoreSuspensionStorageProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'storeSuspensionStorageProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$storeSuspensionStorageHash();
+
+  @$internal
+  @override
+  $ProviderElement<StoreSuspensionStorage> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  StoreSuspensionStorage create(Ref ref) {
+    return storeSuspensionStorage(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(StoreSuspensionStorage value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<StoreSuspensionStorage>(value),
+    );
+  }
+}
+
+String _$storeSuspensionStorageHash() =>
+    r'e92e7b9e20d7548ade3d622e980465456d82cad3';
+
 /// Fournit une instance Dio configurée avec auth JWT, rafraîchissement et
 /// gestion des erreurs.
 
@@ -162,7 +276,7 @@ final class DioProvider extends $FunctionalProvider<Dio, Dio, Dio>
   }
 }
 
-String _$dioHash() => r'd4f1741bef3519747797b387c42e2c8d698db7ba';
+String _$dioHash() => r'a93426b445a8f9c66224a5a177d8092bf76c1787';
 
 /// Cache disque et mémoire des photos produit (`cached_network_image`),
 /// téléchargées via le [Dio] authentifié. Clé = `product_<id>_<version>`.

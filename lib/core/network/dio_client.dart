@@ -7,6 +7,7 @@ import '../config.dart';
 import 'api_exception.dart';
 import 'auth_interceptor.dart';
 import 'refresh_interceptor.dart';
+import 'store_suspended_interceptor.dart';
 import 'token_storage.dart';
 
 /// Construit et configure une instance Dio avec auth JWT, rafraîchissement et
@@ -14,6 +15,7 @@ import 'token_storage.dart';
 Dio buildDio({
   required TokenStorage tokenStorage,
   required void Function() onAuthExpired,
+  required void Function(String? supportContact) onStoreSuspended,
 }) {
   // Dio dédié aux appels de rafraîchissement (sans intercepteurs pour éviter
   // les boucles infinies).
@@ -90,6 +92,11 @@ Dio buildDio({
       onAuthExpired: onAuthExpired,
       dio: dio,
     ),
+  );
+  // Après le rafraîchissement : voit aussi un refus de refresh pour
+  // suspension, que RefreshInterceptor enveloppe sans expirer la session.
+  dio.interceptors.add(
+    StoreSuspendedInterceptor(onStoreSuspended: onStoreSuspended),
   );
 
   // Logs de débogage en dev.
