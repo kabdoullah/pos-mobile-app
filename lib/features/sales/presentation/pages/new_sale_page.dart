@@ -73,12 +73,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   @override
   void initState() {
     super.initState();
-    _scanner = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      facing: CameraFacing.back,
-      torchEnabled: false,
-      formats: retailBarcodeFormats,
-    );
+    _scanner = createRetailScannerController();
     // La caméra se replie pendant la saisie d'une recherche.
     _searchFocus.addListener(() => setState(() {}));
   }

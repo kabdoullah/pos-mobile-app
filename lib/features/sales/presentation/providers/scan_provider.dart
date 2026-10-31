@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../catalog/domain/entities/product.dart';
@@ -18,7 +19,7 @@ enum ScanResult {
   /// Code-barres introuvable dans le catalogue.
   notFound,
 
-  /// Même code-barres scanné pendant le délai de carence (2 s).
+  /// Même code-barres revu moins de 2 s après sa dernière lecture.
   cooldown,
 
   /// Produit trouvé mais stock épuisé.
@@ -50,12 +51,15 @@ class ScanController extends _$ScanController {
     );
     if (normalized.isEmpty) return (result: ScanResult.notFound, product: null);
 
-    final now = DateTime.now();
+    // Le délai part de la dernière lecture, pas du dernier ajout : un code
+    // gardé dans le cadre (relu en continu par la caméra) n'est compté qu'une
+    // fois ; pour en ajouter un autre, on écarte la caméra puis on rescanne.
+    final now = clock.now();
     final last = _lastScanTimes[normalized];
+    _lastScanTimes[normalized] = now;
     if (last != null && now.difference(last) < _scanCooldown) {
       return (result: ScanResult.cooldown, product: null);
     }
-    _lastScanTimes[normalized] = now;
     _lastScanTimes.removeWhere((_, t) => now.difference(t) > _scanCooldown);
 
     final repo = ref.read(catalogRepositoryProvider);
