@@ -14,6 +14,7 @@ import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../domain/entities/cart_item.dart';
@@ -76,10 +77,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
-      // Les codes-barres du catalogue sont en EAN-13/EAN-8. Restreindre les
-      // formats évite que ML Kit lise un EAN-13 mal cadré comme un symbole
-      // UPC-A/Code128 parasite (somme de contrôle valide mais faux).
-      formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8],
+      formats: retailBarcodeFormats,
     );
     // La caméra se replie pendant la saisie d'une recherche.
     _searchFocus.addListener(() => setState(() {}));

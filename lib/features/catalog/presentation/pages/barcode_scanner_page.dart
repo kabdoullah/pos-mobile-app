@@ -9,6 +9,14 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
 
+/// Formats lus par tous les scanners de l'app (fiche produit et caisse).
+///
+/// Une seule liste : un code enregistré depuis la fiche produit doit être relu
+/// à l'identique en caisse. Restreindre aux EAN évite que ML Kit lise un
+/// EAN-13 mal cadré comme un symbole UPC-E/Code128 parasite (somme de contrôle
+/// valide mais faux). Les UPC-A sont lus en EAN-13 précédés d'un zéro.
+const retailBarcodeFormats = [BarcodeFormat.ean13, BarcodeFormat.ean8];
+
 /// Page qui affiche un scanner de code-barres et gère la permission caméra.
 class BarcodeScannerPage extends StatefulWidget {
   /// Crée une page de scan de codes-barres avec la caméra de l'appareil.
@@ -32,6 +40,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
       detectionSpeed: DetectionSpeed.noDuplicates,
       facing: CameraFacing.back,
       torchEnabled: false,
+      formats: retailBarcodeFormats,
     );
     unawaited(_checkPermission());
   }

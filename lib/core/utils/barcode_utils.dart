@@ -14,3 +14,19 @@ String? normalizeBarcode(String? raw) {
   if (!RegExp(r'^[A-Za-z0-9]{6,50}$').hasMatch(cleaned)) return null;
   return cleaned;
 }
+
+/// Formes sous lesquelles un code-barres déjà normalisé peut être enregistré.
+///
+/// Un UPC-A (12 chiffres) est aussi un EAN-13 précédé d'un zéro : selon le
+/// scanner ou la saisie, le même article arrive sous l'une ou l'autre forme.
+/// La forme reçue est toujours en tête.
+List<String> barcodeLookupCandidates(String normalized) {
+  final digitsOnly = RegExp(r'^\d+$').hasMatch(normalized);
+  if (digitsOnly && normalized.length == 12) {
+    return [normalized, '0$normalized'];
+  }
+  if (digitsOnly && normalized.length == 13 && normalized.startsWith('0')) {
+    return [normalized, normalized.substring(1)];
+  }
+  return [normalized];
+}
