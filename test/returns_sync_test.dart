@@ -213,19 +213,22 @@ void main() {
     expect(await queue.getEntriesByType('sale_return'), isEmpty);
   });
 
-  test('boutique suspendue : retour gardé en attente, stock conservé', () async {
-    await returnTwoCocas();
-    final stockAfterReturn = await stock();
-    when(() => remote.pushReturns(any())).thenThrow(suspendedError());
+  test(
+    'boutique suspendue : retour gardé en attente, stock conservé',
+    () async {
+      await returnTwoCocas();
+      final stockAfterReturn = await stock();
+      when(() => remote.pushReturns(any())).thenThrow(suspendedError());
 
-    await push.pushPendingReturns();
+      await push.pushPendingReturns();
 
-    expect((await stored()).syncStatus, ReturnSyncStatus.pending);
-    expect(await stock(), stockAfterReturn);
-    final entry = (await queue.getEntriesByType('sale_return')).single;
-    expect(entry.status, 'pending');
-    expect(entry.retryCount, 0);
-  });
+      expect((await stored()).syncStatus, ReturnSyncStatus.pending);
+      expect(await stock(), stockAfterReturn);
+      final entry = (await queue.getEntriesByType('sale_return')).single;
+      expect(entry.status, 'pending');
+      expect(entry.retryCount, 0);
+    },
+  );
 
   test('erreur serveur passagère (failed) : réessayé plus tard', () async {
     await returnTwoCocas();
