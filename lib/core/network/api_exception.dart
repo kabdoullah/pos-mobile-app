@@ -9,12 +9,24 @@ sealed class NetworkException implements Exception {
   final String message;
 }
 
-/// Pas de connexion, délai dépassé ou réseau injoignable.
+/// Aucune réponse du serveur : réseau injoignable ou délai dépassé.
 /// Le message destiné à l'utilisateur est en français.
 class ConnectionException extends NetworkException {
-  /// Crée une ConnectionException.
-  ConnectionException()
-    : super('Pas de connexion. Vos données sont sauvegardées localement.');
+  /// Réseau injoignable (pas d'internet, DNS, connexion refusée).
+  ConnectionException() : super(offlineMessage);
+
+  /// Délai dépassé : en pratique, le serveur (Render, offre gratuite) sort de
+  /// veille et met près d'une minute à répondre.
+  ConnectionException.timeout() : super(timeoutMessage);
+
+  /// Message affiché quand le réseau est injoignable.
+  static const offlineMessage =
+      'Pas de connexion internet. Vérifiez votre réseau puis réessayez.';
+
+  /// Message affiché quand le serveur ne répond pas à temps.
+  static const timeoutMessage =
+      'Le serveur démarre, cela peut prendre une minute. '
+      'Réessayez dans quelques secondes.';
 }
 
 /// L'API a renvoyé un 4xx ou 5xx avec un corps d'erreur structuré.
@@ -62,9 +74,11 @@ class ConflictException extends ApiException {
 NetworkException parseException(DioException e) {
   // Erreurs réseau (aucune réponse reçue).
   if (e.type == DioExceptionType.connectionTimeout ||
-      e.type == DioExceptionType.receiveTimeout ||
-      e.type == DioExceptionType.connectionError ||
-      e.response == null) {
+      e.type == DioExceptionType.sendTimeout ||
+      e.type == DioExceptionType.receiveTimeout) {
+    return ConnectionException.timeout();
+  }
+  if (e.type == DioExceptionType.connectionError || e.response == null) {
     return ConnectionException();
   }
 

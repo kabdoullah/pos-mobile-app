@@ -13,10 +13,7 @@ void main() {
       final result = parseException(dioException);
 
       expect(result, isA<ConnectionException>());
-      expect(
-        result.message,
-        'Pas de connexion. Vos données sont sauvegardées localement.',
-      );
+      expect(result.message, ConnectionException.timeoutMessage);
     });
 
     test('receiveTimeout → ConnectionException', () {
@@ -27,7 +24,21 @@ void main() {
 
       final result = parseException(dioException);
 
+      // Cas du serveur Render en veille : il ne répond qu'après son réveil.
       expect(result, isA<ConnectionException>());
+      expect(result.message, ConnectionException.timeoutMessage);
+    });
+
+    test('sendTimeout → ConnectionException (délai dépassé)', () {
+      final dioException = DioException(
+        requestOptions: RequestOptions(path: '/test'),
+        type: DioExceptionType.sendTimeout,
+      );
+
+      final result = parseException(dioException);
+
+      expect(result, isA<ConnectionException>());
+      expect(result.message, ConnectionException.timeoutMessage);
     });
 
     test('connectionError → ConnectionException', () {
@@ -39,6 +50,7 @@ void main() {
       final result = parseException(dioException);
 
       expect(result, isA<ConnectionException>());
+      expect(result.message, ConnectionException.offlineMessage);
     });
 
     test('null response → ConnectionException', () {

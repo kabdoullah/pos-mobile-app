@@ -277,7 +277,7 @@ adb install mobile/build/app/outputs/flutter-apk/app-prod-release.apk
 Points à vérifier :
 - Bannière "DEBUG" absente
 - Écran de connexion s'ouvre
-- Réseau atteint `https://pos-mobile-vkuh.onrender.com` (premier appel ~50s — cold start Render free tier attendu, timeout configuré à 60s)
+- Réseau atteint `https://pos-mobile-vkuh.onrender.com` (premier appel ~50s — cold start Render free tier attendu, timeout de réception configuré à 90 s, serveur réveillé dès le lancement par `wakeUpServer()`)
 - Login + PIN fonctionnels
 
 ---

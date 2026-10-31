@@ -20,8 +20,12 @@ Dio buildDio({
   final refreshDio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiUrl,
-      connectTimeout: Duration(seconds: AppConfig.httpConnectTimeoutSeconds),
-      receiveTimeout: Duration(seconds: AppConfig.httpReceiveTimeoutSeconds),
+      connectTimeout: const Duration(
+        seconds: AppConfig.httpConnectTimeoutSeconds,
+      ),
+      receiveTimeout: const Duration(
+        seconds: AppConfig.httpReceiveTimeoutSeconds,
+      ),
       contentType: 'application/json',
       validateStatus: null,
     ),
@@ -65,8 +69,12 @@ Dio buildDio({
   final dio = Dio(
     BaseOptions(
       baseUrl: AppConfig.apiUrl,
-      connectTimeout: Duration(seconds: AppConfig.httpConnectTimeoutSeconds),
-      receiveTimeout: Duration(seconds: AppConfig.httpReceiveTimeoutSeconds),
+      connectTimeout: const Duration(
+        seconds: AppConfig.httpConnectTimeoutSeconds,
+      ),
+      receiveTimeout: const Duration(
+        seconds: AppConfig.httpReceiveTimeoutSeconds,
+      ),
       contentType: 'application/json',
       validateStatus: (status) =>
           status != null && status >= 200 && status < 300,
@@ -99,4 +107,32 @@ Dio buildDio({
   }
 
   return dio;
+}
+
+/// Réveille le serveur dès le lancement, sans attendre le résultat.
+///
+/// Sur Render (offre gratuite), le serveur s'endort après 15 min sans trafic
+/// et met près d'une minute à redémarrer. Lancé au démarrage de l'app, ce
+/// ping fait coïncider ce délai avec la saisie du numéro et du mot de passe :
+/// la connexion trouve un serveur déjà réveillé. Échec ignoré (hors ligne,
+/// serveur indisponible) : les vraies requêtes gèrent leurs erreurs.
+Future<void> wakeUpServer() async {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: AppConfig.apiUrl,
+      connectTimeout: const Duration(
+        seconds: AppConfig.httpConnectTimeoutSeconds,
+      ),
+      receiveTimeout: const Duration(
+        seconds: AppConfig.httpReceiveTimeoutSeconds,
+      ),
+    ),
+  );
+  try {
+    await dio.get<void>('/health');
+  } on DioException catch (_) {
+    // Ignoré volontairement, voir la doc ci-dessus.
+  } finally {
+    dio.close();
+  }
 }
