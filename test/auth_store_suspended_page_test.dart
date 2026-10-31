@@ -72,10 +72,37 @@ void main() {
     expect(find.byIcon(Icons.mail_outline), findsNothing);
   });
 
-  testWidgets('contact email : icône mail', (tester) async {
+  testWidgets('contact email : icône mail, pas de WhatsApp', (tester) async {
     await _pump(tester, contact: 'support@exemple.ci');
 
     expect(find.byIcon(Icons.mail_outline), findsOneWidget);
+    expect(find.text('WhatsApp'), findsNothing);
+  });
+
+  testWidgets('contact téléphone : appel et WhatsApp', (tester) async {
+    await _pump(tester, contact: '+225 07 00 00 00 00');
+
+    expect(find.byIcon(Icons.call_outlined), findsOneWidget);
+    expect(find.text('WhatsApp'), findsOneWidget);
+    expect(find.text('Boutique suspendue'), findsOneWidget);
+  });
+
+  group('whatsAppUri', () {
+    test('numéro international → wa.me avec les chiffres seuls', () {
+      expect(
+        whatsAppUri('+225 07 00 00 00 00').toString(),
+        'https://wa.me/2250700000000',
+      );
+      expect(
+        whatsAppUri('00225-0700000000').toString(),
+        'https://wa.me/2250700000000',
+      );
+    });
+
+    test('email ou valeur sans chiffres → null', () {
+      expect(whatsAppUri('support@exemple.ci'), isNull);
+      expect(whatsAppUri('support'), isNull);
+    });
   });
 
   testWidgets('réessayer : interroge le serveur et affiche le refus', (

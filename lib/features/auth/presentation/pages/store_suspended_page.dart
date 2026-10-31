@@ -8,6 +8,17 @@ import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/auth_layout.dart';
 
+/// Lien WhatsApp (`wa.me`) vers [contact] s'il s'agit d'un numéro de téléphone,
+/// null sinon (email, valeur sans chiffres). WhatsApp attend l'indicatif pays
+/// sans « + » ni « 00 » : `+225 07 00 00 00 00` → `wa.me/2250700000000`.
+Uri? whatsAppUri(String contact) {
+  if (contact.contains('@')) return null;
+  var digits = contact.replaceAll(RegExp(r'\D'), '');
+  if (digits.startsWith('00')) digits = digits.substring(2);
+  if (digits.length < 8) return null;
+  return Uri.https('wa.me', '/$digits');
+}
+
 /// Écran affiché quand la plateforme a suspendu la boutique.
 ///
 /// L'app reste bloquée ici (même après un redémarrage hors ligne) jusqu'à ce
@@ -39,7 +50,17 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
     final uri = _isEmail(contact)
         ? Uri(scheme: 'mailto', path: contact)
         : Uri(scheme: 'tel', path: contact.replaceAll(' ', ''));
-    final opened = await launchUrl(uri);
+    await _open(uri);
+  }
+
+  /// Ouvre [uri] dans l'app concernée (téléphone, mail, WhatsApp).
+  Future<void> _open(Uri uri) async {
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Exception catch (_) {
+      // Aucune app ne sait ouvrir ce lien : message ci-dessous.
+    }
     if (!opened && mounted) _showMessage('Impossible d’ouvrir le contact.');
   }
 
@@ -96,6 +117,14 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
                   ? Icons.mail_outline
                   : Icons.call_outlined,
               onPressed: () => _contact(contact),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          if (contact != null && whatsAppUri(contact) != null) ...[
+            SecondaryButton(
+              label: 'WhatsApp',
+              icon: Icons.chat_outlined,
+              onPressed: () => _open(whatsAppUri(contact)!),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
