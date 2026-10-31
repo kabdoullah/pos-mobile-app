@@ -70,6 +70,36 @@ class ConflictException extends ApiException {
     : super(statusCode: 409);
 }
 
+/// 403 STORE_SUSPENDED — la plateforme a suspendu la boutique. Temporaire :
+/// rien de ce qui attend l'envoi ne doit être abandonné.
+class StoreSuspendedException extends ApiException {
+  /// Crée une StoreSuspendedException.
+  StoreSuspendedException({required super.detail, this.supportContact})
+    : super(statusCode: 403, code: errorCode);
+
+  /// Code d'erreur renvoyé par l'API.
+  static const errorCode = 'STORE_SUSPENDED';
+
+  /// Contact du support à afficher (téléphone ou email), null s'il n'est pas
+  /// configuré côté serveur.
+  final String? supportContact;
+}
+
+/// La suspension portée par [error] (réponse HTTP, exception déjà convertie ou
+/// enveloppée par un intercepteur), ou null s'il s'agit d'une autre erreur.
+StoreSuspendedException? storeSuspensionOf(Object error) {
+  if (error is StoreSuspendedException) return error;
+  if (error is! DioException) return null;
+  final wrapped = error.error;
+  if (wrapped is StoreSuspendedException) return wrapped;
+  final response = error.response;
+  if (response?.statusCode != 403 || response?.data is! Map<String, dynamic>) {
+    return null;
+  }
+  final parsed = parseException(error);
+  return parsed is StoreSuspendedException ? parsed : null;
+}
+
 /// Convertit une DioException en NetworkException propre au projet.
 NetworkException parseException(DioException e) {
   // Erreurs réseau (aucune réponse reçue).
@@ -83,11 +113,22 @@ NetworkException parseException(DioException e) {
   }
 
   final statusCode = e.response!.statusCode ?? 500;
-  final (code: code, detail: detail, field: field) = _parseBody(
+  final (
+    code: code,
+    detail: detail,
+    field: field,
+    supportContact: supportContact,
+  ) = _parseBody(
     e.response!.data as Map<String, dynamic>?,
   );
 
   // Codes de statut spécifiques.
+  if (statusCode == 403 && code == StoreSuspendedException.errorCode) {
+    return StoreSuspendedException(
+      detail: detail,
+      supportContact: supportContact,
+    );
+  }
   if (statusCode == 401) {
     return UnauthorizedException(code: code, detail: detail, field: field);
   }
@@ -104,16 +145,29 @@ NetworkException parseException(DioException e) {
   );
 }
 
-({String code, String detail, String? field}) _parseBody(
-  Map<String, dynamic>? data,
-) {
+({String code, String detail, String? field, String? supportContact})
+_parseBody(Map<String, dynamic>? data) {
   if (data == null) {
-    return (code: 'UNKNOWN', detail: 'Erreur serveur.', field: null);
+    return (
+      code: 'UNKNOWN',
+      detail: 'Erreur serveur.',
+      field: null,
+      supportContact: null,
+    );
   }
 
   final code = (data['code'] as String?) ?? 'UNKNOWN';
   final detail = (data['detail'] as String?) ?? 'Erreur serveur.';
   final field = data['field'] as String?;
+  final details = data['details'];
+  final contact = details is Map<String, dynamic>
+      ? (details['support_contact'] as String?)?.trim()
+      : null;
 
-  return (code: code, detail: detail, field: field);
+  return (
+    code: code,
+    detail: detail,
+    field: field,
+    supportContact: contact == null || contact.isEmpty ? null : contact,
+  );
 }

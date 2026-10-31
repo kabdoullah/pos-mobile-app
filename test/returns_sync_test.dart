@@ -18,6 +18,8 @@ import 'package:mobile/features/returns/domain/entities/sale_return.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
 import 'package:mocktail/mocktail.dart';
 
+import 'sync_store_suspended_test.dart' show suspendedError;
+
 class _MockRemote extends Mock implements SyncRemoteDataSource {}
 
 const _now = '2026-10-17T10:00:00Z';
@@ -209,6 +211,20 @@ void main() {
 
     expect((await stored()).rejectionCode, 'invalid_payload');
     expect(await queue.getEntriesByType('sale_return'), isEmpty);
+  });
+
+  test('boutique suspendue : retour gardé en attente, stock conservé', () async {
+    await returnTwoCocas();
+    final stockAfterReturn = await stock();
+    when(() => remote.pushReturns(any())).thenThrow(suspendedError());
+
+    await push.pushPendingReturns();
+
+    expect((await stored()).syncStatus, ReturnSyncStatus.pending);
+    expect(await stock(), stockAfterReturn);
+    final entry = (await queue.getEntriesByType('sale_return')).single;
+    expect(entry.status, 'pending');
+    expect(entry.retryCount, 0);
   });
 
   test('erreur serveur passagère (failed) : réessayé plus tard', () async {
