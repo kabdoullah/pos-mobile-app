@@ -7,6 +7,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../storage/pin_storage.dart';
 import '../storage/secure_token_storage.dart';
 import '../storage/store_suspension_storage.dart';
+import 'api_exception.dart';
 import 'dio_client.dart';
 import 'dio_file_service.dart';
 import 'token_storage.dart';
@@ -33,12 +34,14 @@ Raw<StreamController<void>> authExpiredController(Ref ref) {
   return controller;
 }
 
-/// Diffuse le contact du support (null s'il n'est pas configuré) quand le
-/// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
-/// et bascule sur l'écran de suspension.
+/// Diffuse la suspension (contacts du support compris) quand le serveur
+/// répond que la boutique est suspendue. La couche auth écoute ce flux et
+/// bascule sur l'écran de suspension.
 @Riverpod(keepAlive: true)
-Raw<StreamController<String?>> storeSuspendedController(Ref ref) {
-  final controller = StreamController<String?>.broadcast();
+Raw<StreamController<StoreSuspendedException>> storeSuspendedController(
+  Ref ref,
+) {
+  final controller = StreamController<StoreSuspendedException>.broadcast();
   ref.onDispose(controller.close);
   return controller;
 }

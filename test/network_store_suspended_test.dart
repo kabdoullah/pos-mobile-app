@@ -33,7 +33,8 @@ void main() {
     test('403 STORE_SUSPENDED → StoreSuspendedException avec le contact', () {
       final e = parseException(suspendedError());
       expect(e, isA<StoreSuspendedException>());
-      expect((e as StoreSuspendedException).supportContact, '+2250700000000');
+      expect((e as StoreSuspendedException).supportContact, 'support@pos.ci');
+      expect(e.supportWhatsApp, '+2250700000000');
       expect(e.statusCode, 403);
     });
 
@@ -85,12 +86,12 @@ void main() {
 
   group('StoreSuspendedInterceptor', () {
     test('signale la suspension avec le contact et laisse passer l’erreur', () {
-      String? reported;
+      StoreSuspendedException? reported;
       var calls = 0;
       final interceptor = StoreSuspendedInterceptor(
-        onStoreSuspended: (contact) {
+        onStoreSuspended: (suspension) {
           calls++;
-          reported = contact;
+          reported = suspension;
         },
       );
       final handler = _RecordingHandler();
@@ -98,7 +99,8 @@ void main() {
       interceptor.onError(suspendedError(), handler);
 
       expect(calls, 1);
-      expect(reported, '+2250700000000');
+      expect(reported?.supportContact, 'support@pos.ci');
+      expect(reported?.supportWhatsApp, '+2250700000000');
       expect(handler.passed, isNotNull);
     });
 

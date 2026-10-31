@@ -26,7 +26,10 @@ DioException suspendedError() => DioException(
       'detail': 'Store is suspended.',
       'code': 'STORE_SUSPENDED',
       'field': null,
-      'details': {'support_contact': '+2250700000000'},
+      'details': {
+        'support_contact': 'support@pos.ci',
+        'support_whatsapp': '+2250700000000',
+      },
     },
   ),
 );

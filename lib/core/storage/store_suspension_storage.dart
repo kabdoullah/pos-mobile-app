@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+/// Contacts du support mémorisés avec la suspension.
+typedef StoredSuspension = ({String? supportContact, String? supportWhatsApp});
 
 /// Mémorise qu'une boutique a été suspendue par la plateforme, pour qu'un
 /// redémarrage de l'app (même hors ligne) reste bloqué jusqu'à ce que le
@@ -10,19 +15,34 @@ class StoreSuspensionStorage {
 
   final FlutterSecureStorage _storage;
 
-  /// Valeur : contact du support, chaîne vide s'il n'est pas configuré.
+  /// Valeur : JSON `{"contact": …, "whatsapp": …}`.
   static const _key = 'store_suspended';
 
   /// La suspension mémorisée, ou null si la boutique n'est pas suspendue.
-  Future<({String? supportContact})?> read() async {
+  Future<StoredSuspension?> read() async {
     final value = await _storage.read(key: _key);
     if (value == null) return null;
-    return (supportContact: value.isEmpty ? null : value);
+    try {
+      final data = jsonDecode(value) as Map<String, dynamic>;
+      return (
+        supportContact: data['contact'] as String?,
+        supportWhatsApp: data['whatsapp'] as String?,
+      );
+    } catch (_) {
+      // Valeur illisible : la suspension reste mémorisée, sans contact.
+      return (supportContact: null, supportWhatsApp: null);
+    }
   }
 
-  /// Mémorise la suspension avec le contact du support.
-  Future<void> save(String? supportContact) =>
-      _storage.write(key: _key, value: supportContact ?? '');
+  /// Mémorise la suspension avec les contacts du support.
+  Future<void> save({String? supportContact, String? supportWhatsApp}) =>
+      _storage.write(
+        key: _key,
+        value: jsonEncode({
+          'contact': supportContact,
+          'whatsapp': supportWhatsApp,
+        }),
+      );
 
   /// Oublie la suspension (boutique réactivée).
   Future<void> clear() => _storage.delete(key: _key);

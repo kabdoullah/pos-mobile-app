@@ -77,6 +77,12 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
     final cs = Theme.of(context).colorScheme;
     final status = ref.watch(authProvider).value;
     final contact = status is AuthStoreSuspended ? status.supportContact : null;
+    // Numéro WhatsApp dédié, sinon le contact s'il s'agit d'un numéro.
+    final whatsApp = whatsAppUri(
+      (status is AuthStoreSuspended ? status.supportWhatsApp : null) ??
+          contact ??
+          '',
+    );
 
     return AuthScaffold(
       child: Column(
@@ -120,11 +126,11 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
             ),
             const SizedBox(height: AppSpacing.sm),
           ],
-          if (contact != null && whatsAppUri(contact) != null) ...[
+          if (whatsApp != null) ...[
             SecondaryButton(
               label: 'WhatsApp',
               icon: Icons.chat_outlined,
-              onPressed: () => _open(whatsAppUri(contact)!),
+              onPressed: () => _open(whatsApp),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],

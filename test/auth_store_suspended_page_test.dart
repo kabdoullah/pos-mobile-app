@@ -25,6 +25,7 @@ class _FakeAuth extends Auth {
 Future<_FakeAuth> _pump(
   WidgetTester tester, {
   String? contact,
+  String? whatsApp,
   String? retryMessage,
   bool dark = false,
 }) async {
@@ -32,7 +33,7 @@ Future<_FakeAuth> _pump(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final auth = _FakeAuth(
-    AuthStoreSuspended(supportContact: contact),
+    AuthStoreSuspended(supportContact: contact, supportWhatsApp: whatsApp),
     retryMessage: retryMessage,
   );
   await tester.pumpWidget(
@@ -85,6 +86,17 @@ void main() {
     expect(find.byIcon(Icons.call_outlined), findsOneWidget);
     expect(find.text('WhatsApp'), findsOneWidget);
     expect(find.text('Boutique suspendue'), findsOneWidget);
+  });
+
+  testWidgets('email + numéro WhatsApp : mail et WhatsApp', (tester) async {
+    await _pump(
+      tester,
+      contact: 'support@exemple.ci',
+      whatsApp: '+225 07 00 00 00 00',
+    );
+
+    expect(find.byIcon(Icons.mail_outline), findsOneWidget);
+    expect(find.text('WhatsApp'), findsOneWidget);
   });
 
   group('whatsAppUri', () {

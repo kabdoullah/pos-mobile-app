@@ -11,13 +11,13 @@ class StoreSuspendedInterceptor extends Interceptor {
   /// Crée l'intercepteur.
   StoreSuspendedInterceptor({required this.onStoreSuspended});
 
-  /// Appelée avec le contact du support (null s'il n'est pas configuré).
-  final void Function(String? supportContact) onStoreSuspended;
+  /// Appelée avec la suspension (contacts du support compris).
+  final void Function(StoreSuspendedException suspension) onStoreSuspended;
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
     final suspension = storeSuspensionOf(err);
-    if (suspension != null) onStoreSuspended(suspension.supportContact);
+    if (suspension != null) onStoreSuspended(suspension);
     handler.next(err);
   }
 }

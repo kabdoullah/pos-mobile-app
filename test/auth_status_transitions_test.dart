@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/core/config.dart';
+import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/core/network/network_providers.dart';
 import 'package:mobile/core/storage/pin_storage.dart';
 import 'package:mobile/core/storage/secure_token_storage.dart';
@@ -352,7 +353,8 @@ void main() {
   });
 
   group('boutique suspendue', () {
-    const contact = '+2250700000000';
+    const contact = 'support@pos.ci';
+    const whatsApp = '+2250700000000';
 
     /// Connecté avec un PIN, puis le serveur signale la suspension.
     Future<(ProviderContainer, _Device)> suspendedSession() async {
@@ -361,7 +363,15 @@ void main() {
       final auth = app.read(authProvider.notifier);
       await auth.login(phone, 'secret123');
       await auth.setupPin('2580');
-      app.read(storeSuspendedControllerProvider).add(contact);
+      app
+          .read(storeSuspendedControllerProvider)
+          .add(
+            StoreSuspendedException(
+              detail: 'Store is suspended.',
+              supportContact: contact,
+              supportWhatsApp: whatsApp,
+            ),
+          );
       await pumpEventQueue();
       return (app, device);
     }
@@ -381,6 +391,7 @@ void main() {
       final status = _status(relaunched);
       expect(status, isA<AuthStoreSuspended>());
       expect((status! as AuthStoreSuspended).supportContact, contact);
+      expect((status as AuthStoreSuspended).supportWhatsApp, whatsApp);
     });
 
     test('connexion refusée pour suspension → écran de suspension', () async {

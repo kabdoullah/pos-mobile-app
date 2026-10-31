@@ -15,7 +15,7 @@ import 'token_storage.dart';
 Dio buildDio({
   required TokenStorage tokenStorage,
   required void Function() onAuthExpired,
-  required void Function(String? supportContact) onStoreSuspended,
+  required void Function(StoreSuspendedException suspension) onStoreSuspended,
 }) {
   // Dio dédié aux appels de rafraîchissement (sans intercepteurs pour éviter
   // les boucles infinies).

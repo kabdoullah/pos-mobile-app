@@ -74,8 +74,11 @@ class ConflictException extends ApiException {
 /// rien de ce qui attend l'envoi ne doit être abandonné.
 class StoreSuspendedException extends ApiException {
   /// Crée une StoreSuspendedException.
-  StoreSuspendedException({required super.detail, this.supportContact})
-    : super(statusCode: 403, code: errorCode);
+  StoreSuspendedException({
+    required super.detail,
+    this.supportContact,
+    this.supportWhatsApp,
+  }) : super(statusCode: 403, code: errorCode);
 
   /// Code d'erreur renvoyé par l'API.
   static const errorCode = 'STORE_SUSPENDED';
@@ -83,6 +86,10 @@ class StoreSuspendedException extends ApiException {
   /// Contact du support à afficher (téléphone ou email), null s'il n'est pas
   /// configuré côté serveur.
   final String? supportContact;
+
+  /// Numéro WhatsApp du support (indicatif pays inclus), null s'il n'est pas
+  /// configuré côté serveur.
+  final String? supportWhatsApp;
 }
 
 /// La suspension portée par [error] (réponse HTTP, exception déjà convertie ou
@@ -118,6 +125,7 @@ NetworkException parseException(DioException e) {
     detail: detail,
     field: field,
     supportContact: supportContact,
+    supportWhatsApp: supportWhatsApp,
   ) = _parseBody(
     e.response!.data as Map<String, dynamic>?,
   );
@@ -127,6 +135,7 @@ NetworkException parseException(DioException e) {
     return StoreSuspendedException(
       detail: detail,
       supportContact: supportContact,
+      supportWhatsApp: supportWhatsApp,
     );
   }
   if (statusCode == 401) {
@@ -145,7 +154,13 @@ NetworkException parseException(DioException e) {
   );
 }
 
-({String code, String detail, String? field, String? supportContact})
+({
+  String code,
+  String detail,
+  String? field,
+  String? supportContact,
+  String? supportWhatsApp,
+})
 _parseBody(Map<String, dynamic>? data) {
   if (data == null) {
     return (
@@ -153,6 +168,7 @@ _parseBody(Map<String, dynamic>? data) {
       detail: 'Erreur serveur.',
       field: null,
       supportContact: null,
+      supportWhatsApp: null,
     );
   }
 
@@ -160,14 +176,17 @@ _parseBody(Map<String, dynamic>? data) {
   final detail = (data['detail'] as String?) ?? 'Erreur serveur.';
   final field = data['field'] as String?;
   final details = data['details'];
-  final contact = details is Map<String, dynamic>
-      ? (details['support_contact'] as String?)?.trim()
-      : null;
+  String? detailValue(String key) {
+    if (details is! Map<String, dynamic>) return null;
+    final value = (details[key] as String?)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
 
   return (
     code: code,
     detail: detail,
     field: field,
-    supportContact: contact == null || contact.isEmpty ? null : contact,
+    supportContact: detailValue('support_contact'),
+    supportWhatsApp: detailValue('support_whatsapp'),
   );
 }

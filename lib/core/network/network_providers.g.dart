@@ -116,28 +116,28 @@ final class AuthExpiredControllerProvider
 String _$authExpiredControllerHash() =>
     r'99918469628d8d39d6994ff072367535f53cea56';
 
-/// Diffuse le contact du support (null s'il n'est pas configuré) quand le
-/// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
-/// et bascule sur l'écran de suspension.
+/// Diffuse la suspension (contacts du support compris) quand le serveur
+/// répond que la boutique est suspendue. La couche auth écoute ce flux et
+/// bascule sur l'écran de suspension.
 
 @ProviderFor(storeSuspendedController)
 final storeSuspendedControllerProvider = StoreSuspendedControllerProvider._();
 
-/// Diffuse le contact du support (null s'il n'est pas configuré) quand le
-/// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
-/// et bascule sur l'écran de suspension.
+/// Diffuse la suspension (contacts du support compris) quand le serveur
+/// répond que la boutique est suspendue. La couche auth écoute ce flux et
+/// bascule sur l'écran de suspension.
 
 final class StoreSuspendedControllerProvider
     extends
         $FunctionalProvider<
-          Raw<StreamController<String?>>,
-          Raw<StreamController<String?>>,
-          Raw<StreamController<String?>>
+          Raw<StreamController<StoreSuspendedException>>,
+          Raw<StreamController<StoreSuspendedException>>,
+          Raw<StreamController<StoreSuspendedException>>
         >
-    with $Provider<Raw<StreamController<String?>>> {
-  /// Diffuse le contact du support (null s'il n'est pas configuré) quand le
-  /// serveur répond que la boutique est suspendue. La couche auth écoute ce flux
-  /// et bascule sur l'écran de suspension.
+    with $Provider<Raw<StreamController<StoreSuspendedException>>> {
+  /// Diffuse la suspension (contacts du support compris) quand le serveur
+  /// répond que la boutique est suspendue. La couche auth écoute ce flux et
+  /// bascule sur l'écran de suspension.
   StoreSuspendedControllerProvider._()
     : super(
         from: null,
@@ -154,28 +154,30 @@ final class StoreSuspendedControllerProvider
 
   @$internal
   @override
-  $ProviderElement<Raw<StreamController<String?>>> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  $ProviderElement<Raw<StreamController<StoreSuspendedException>>>
+  $createElement($ProviderPointer pointer) => $ProviderElement(pointer);
 
   @override
-  Raw<StreamController<String?>> create(Ref ref) {
+  Raw<StreamController<StoreSuspendedException>> create(Ref ref) {
     return storeSuspendedController(ref);
   }
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(Raw<StreamController<String?>> value) {
+  Override overrideWithValue(
+    Raw<StreamController<StoreSuspendedException>> value,
+  ) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<Raw<StreamController<String?>>>(
-        value,
-      ),
+      providerOverride:
+          $SyncValueProvider<Raw<StreamController<StoreSuspendedException>>>(
+            value,
+          ),
     );
   }
 }
 
 String _$storeSuspendedControllerHash() =>
-    r'1b1d01d9e35f3614b7339685152fff9c0521110f';
+    r'1a52673b735cf0844ee330a3eb0fdbd97bb53103';
 
 /// Mémorise la suspension de la boutique entre deux lancements de l'app.
 
