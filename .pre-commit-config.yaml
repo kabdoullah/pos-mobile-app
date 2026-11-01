@@ -2,6 +2,10 @@
 # Installation : `pip install pre-commit && pre-commit install`
 # Run manuel : `pre-commit run --all-files`
 
+# Fichiers générés (build_runner) et texte de licence tiers : jamais retouchés
+# à la main, une régénération annulerait toute correction.
+exclude: '(\.g\.dart|\.freezed\.dart)$|^assets/fonts/'
+
 repos:
   # Hooks de base (whitespace, fin de fichiers, etc.)
   - repo: https://github.com/pre-commit/pre-commit-hooks
