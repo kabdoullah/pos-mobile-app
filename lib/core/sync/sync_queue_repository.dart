@@ -166,6 +166,18 @@ class SyncQueueRepository {
     return rowsAffected > 0;
   }
 
+  /// Remet des entrées en attente sans compter d'essai (boutique suspendue :
+  /// le refus est temporaire, elles repartiront à la réactivation).
+  Future<void> releaseToPending(List<int> ids) async {
+    if (ids.isEmpty) return;
+    await (_db.update(_db.syncQueue)..where((t) => t.id.isIn(ids))).write(
+      const SyncQueueCompanion(
+        status: drift.Value('pending'),
+        lastError: drift.Value('STORE_SUSPENDED'),
+      ),
+    );
+  }
+
   /// Enregistre un essai raté passager (réseau, 5xx) : incrémente le compteur
   /// et garde [error]. À partir de [_maxRetries] essais, l'entrée passe en
   /// « failed » (toujours réessayée, mais signalée comme en échec).

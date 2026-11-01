@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'product_bulk_dto.dart';
@@ -9,6 +9,7 @@ part of 'product_bulk_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$ProductBulkItemResultDtoCopyWithImpl<$Res>
 /// Create a copy of ProductBulkItemResultDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? index = null,Object? status = null,Object? product = freezed,Object? error = freezed,Object? field = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProductBulkItemResultDto(
 index: null == index ? _self.index : index // ignore: cast_nullable_to_non_nullable
 as int,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ProductBulkItemStatusDto,product: freezed == product ? _self.product : product // ignore: cast_nullable_to_non_nullable
@@ -359,7 +360,7 @@ class _$ProductBulkCreateResponseDtoCopyWithImpl<$Res>
 /// Create a copy of ProductBulkCreateResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? processed = null,Object? createdCount = null,Object? failedCount = null,Object? results = null,}) {
-  return _then(_self.copyWith(
+  return _then(ProductBulkCreateResponseDto(
 processed: null == processed ? _self.processed : processed // ignore: cast_nullable_to_non_nullable
 as int,createdCount: null == createdCount ? _self.createdCount : createdCount // ignore: cast_nullable_to_non_nullable
 as int,failedCount: null == failedCount ? _self.failedCount : failedCount // ignore: cast_nullable_to_non_nullable
@@ -499,7 +500,7 @@ return $default(_that.processed,_that.createdCount,_that.failedCount,_that.resul
 @JsonSerializable()
 
 class _ProductBulkCreateResponseDto implements ProductBulkCreateResponseDto {
-  const _ProductBulkCreateResponseDto({required this.processed, @JsonKey(name: 'created_count') required this.createdCount, @JsonKey(name: 'failed_count') required this.failedCount, required final  List<ProductBulkItemResultDto> results}): _results = results;
+  const _ProductBulkCreateResponseDto({required this.processed, @JsonKey(name: 'created_count') required this.createdCount, @JsonKey(name: 'failed_count') required this.failedCount, required  List<ProductBulkItemResultDto> results}): _results = results;
   factory _ProductBulkCreateResponseDto.fromJson(Map<String, dynamic> json) => _$ProductBulkCreateResponseDtoFromJson(json);
 
 @override final  int processed;

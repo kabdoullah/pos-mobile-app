@@ -9,12 +9,24 @@ sealed class NetworkException implements Exception {
   final String message;
 }
 
-/// Pas de connexion, délai dépassé ou réseau injoignable.
+/// Aucune réponse du serveur : réseau injoignable ou délai dépassé.
 /// Le message destiné à l'utilisateur est en français.
 class ConnectionException extends NetworkException {
-  /// Crée une ConnectionException.
-  ConnectionException()
-    : super('Pas de connexion. Vos données sont sauvegardées localement.');
+  /// Réseau injoignable (pas d'internet, DNS, connexion refusée).
+  ConnectionException() : super(offlineMessage);
+
+  /// Délai dépassé : en pratique, le serveur (Render, offre gratuite) sort de
+  /// veille et met près d'une minute à répondre.
+  ConnectionException.timeout() : super(timeoutMessage);
+
+  /// Message affiché quand le réseau est injoignable.
+  static const offlineMessage =
+      'Pas de connexion internet. Vérifiez votre réseau puis réessayez.';
+
+  /// Message affiché quand le serveur ne répond pas à temps.
+  static const timeoutMessage =
+      'Le serveur démarre, cela peut prendre une minute. '
+      'Réessayez dans quelques secondes.';
 }
 
 /// L'API a renvoyé un 4xx ou 5xx avec un corps d'erreur structuré.
@@ -58,22 +70,74 @@ class ConflictException extends ApiException {
     : super(statusCode: 409);
 }
 
+/// 403 STORE_SUSPENDED — la plateforme a suspendu la boutique. Temporaire :
+/// rien de ce qui attend l'envoi ne doit être abandonné.
+class StoreSuspendedException extends ApiException {
+  /// Crée une StoreSuspendedException.
+  StoreSuspendedException({
+    required super.detail,
+    this.supportContact,
+    this.supportWhatsApp,
+  }) : super(statusCode: 403, code: errorCode);
+
+  /// Code d'erreur renvoyé par l'API.
+  static const errorCode = 'STORE_SUSPENDED';
+
+  /// Contact du support à afficher (téléphone ou email), null s'il n'est pas
+  /// configuré côté serveur.
+  final String? supportContact;
+
+  /// Numéro WhatsApp du support (indicatif pays inclus), null s'il n'est pas
+  /// configuré côté serveur.
+  final String? supportWhatsApp;
+}
+
+/// La suspension portée par [error] (réponse HTTP, exception déjà convertie ou
+/// enveloppée par un intercepteur), ou null s'il s'agit d'une autre erreur.
+StoreSuspendedException? storeSuspensionOf(Object error) {
+  if (error is StoreSuspendedException) return error;
+  if (error is! DioException) return null;
+  final wrapped = error.error;
+  if (wrapped is StoreSuspendedException) return wrapped;
+  final response = error.response;
+  if (response?.statusCode != 403 || response?.data is! Map<String, dynamic>) {
+    return null;
+  }
+  final parsed = parseException(error);
+  return parsed is StoreSuspendedException ? parsed : null;
+}
+
 /// Convertit une DioException en NetworkException propre au projet.
 NetworkException parseException(DioException e) {
   // Erreurs réseau (aucune réponse reçue).
   if (e.type == DioExceptionType.connectionTimeout ||
-      e.type == DioExceptionType.receiveTimeout ||
-      e.type == DioExceptionType.connectionError ||
-      e.response == null) {
+      e.type == DioExceptionType.sendTimeout ||
+      e.type == DioExceptionType.receiveTimeout) {
+    return ConnectionException.timeout();
+  }
+  if (e.type == DioExceptionType.connectionError || e.response == null) {
     return ConnectionException();
   }
 
   final statusCode = e.response!.statusCode ?? 500;
-  final (code: code, detail: detail, field: field) = _parseBody(
+  final (
+    code: code,
+    detail: detail,
+    field: field,
+    supportContact: supportContact,
+    supportWhatsApp: supportWhatsApp,
+  ) = _parseBody(
     e.response!.data as Map<String, dynamic>?,
   );
 
   // Codes de statut spécifiques.
+  if (statusCode == 403 && code == StoreSuspendedException.errorCode) {
+    return StoreSuspendedException(
+      detail: detail,
+      supportContact: supportContact,
+      supportWhatsApp: supportWhatsApp,
+    );
+  }
   if (statusCode == 401) {
     return UnauthorizedException(code: code, detail: detail, field: field);
   }
@@ -90,16 +154,39 @@ NetworkException parseException(DioException e) {
   );
 }
 
-({String code, String detail, String? field}) _parseBody(
-  Map<String, dynamic>? data,
-) {
+({
+  String code,
+  String detail,
+  String? field,
+  String? supportContact,
+  String? supportWhatsApp,
+})
+_parseBody(Map<String, dynamic>? data) {
   if (data == null) {
-    return (code: 'UNKNOWN', detail: 'Erreur serveur.', field: null);
+    return (
+      code: 'UNKNOWN',
+      detail: 'Erreur serveur.',
+      field: null,
+      supportContact: null,
+      supportWhatsApp: null,
+    );
   }
 
   final code = (data['code'] as String?) ?? 'UNKNOWN';
   final detail = (data['detail'] as String?) ?? 'Erreur serveur.';
   final field = data['field'] as String?;
+  final details = data['details'];
+  String? detailValue(String key) {
+    if (details is! Map<String, dynamic>) return null;
+    final value = (details[key] as String?)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
 
-  return (code: code, detail: detail, field: field);
+  return (
+    code: code,
+    detail: detail,
+    field: field,
+    supportContact: detailValue('support_contact'),
+    supportWhatsApp: detailValue('support_whatsapp'),
+  );
 }

@@ -99,7 +99,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Monetary amounts (FCFA):** Domain entities use `Decimal` (package `decimal`). API DTOs use `String`. Drift uses `TextColumn`. Mappers convert at boundaries — `Decimal.parse()` inbound, `.toString()` outbound. Never use `double` or `int.parse` for money.
 
-**Networking:** Dio with auth/refresh interceptors (`core/network/`). Retrofit generates typed clients. `httpTimeoutSeconds = 60` (absorbs Render free-tier cold start ~50s).
+**Networking:** Dio with auth/refresh interceptors (`core/network/`). Retrofit generates typed clients. Timeouts are the same in dev and prod (`AppConfig`: connect 30 s, receive 90 s) to absorb the Render free-tier cold start (~50 s, sometimes more); `wakeUpServer()` pings `/health` at launch so the server wakes while the user types. A timeout yields `ConnectionException.timeout()` ("le serveur démarre"), no network yields `ConnectionException()`.
 
 **Secure storage:** JWT and PBKDF2-hashed PIN in `flutter_secure_storage`. PIN never sent to backend. 5 attempts → 5-minute lockout.
 

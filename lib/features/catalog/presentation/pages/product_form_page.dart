@@ -10,6 +10,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/utils/barcode_utils.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/catalog_providers.dart';
@@ -46,6 +47,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _purchasePriceError;
   String? _stockError;
   String? _minStockError;
+  String? _barcodeError;
   bool _isLoading = false;
   bool _prefilled = false;
   String? _categoryId;
@@ -95,6 +97,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     String? purchasePriceError;
     String? stockError;
     String? minStockError;
+    String? barcodeError;
 
     if (_nameController.text.trim().isEmpty) {
       nameError = 'Le nom est obligatoire';
@@ -125,19 +128,28 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       minStockError = 'Entrez un nombre entier valide';
     }
 
+    // Sans ce contrôle, normalizeBarcode écarterait le code en silence et le
+    // produit serait introuvable au scan.
+    final barcodeText = _barcodeController.text.trim();
+    if (barcodeText.isNotEmpty && normalizeBarcode(barcodeText) == null) {
+      barcodeError = '6 à 50 lettres ou chiffres, sans espace ni tiret';
+    }
+
     setState(() {
       _nameError = nameError;
       _priceError = priceError;
       _purchasePriceError = purchasePriceError;
       _stockError = stockError;
       _minStockError = minStockError;
+      _barcodeError = barcodeError;
     });
 
     return nameError == null &&
         priceError == null &&
         purchasePriceError == null &&
         stockError == null &&
-        minStockError == null;
+        minStockError == null &&
+        barcodeError == null;
   }
 
   Future<void> _submit() async {
@@ -377,6 +389,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                         label: 'Code-barres',
                         hint: 'Optionnel',
                         controller: _barcodeController,
+                        errorText: _barcodeError,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),

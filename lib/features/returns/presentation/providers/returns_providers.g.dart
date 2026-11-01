@@ -271,7 +271,7 @@ abstract class _$ReturnDraft extends $Notifier<ReturnDraftState> {
   ReturnDraftState build(Sale sale);
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<ReturnDraftState, ReturnDraftState>;
     final element =
         ref.element
@@ -281,7 +281,7 @@ abstract class _$ReturnDraft extends $Notifier<ReturnDraftState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, () => build(_$args));
+    return element.handleCreate(ref, () => build(_$args));
   }
 }
 
@@ -346,7 +346,7 @@ abstract class _$SaleReturnSubmission extends $Notifier<void> {
   void build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<void, void>;
     final element =
         ref.element
@@ -356,6 +356,6 @@ abstract class _$SaleReturnSubmission extends $Notifier<void> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

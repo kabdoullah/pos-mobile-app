@@ -80,7 +80,7 @@ final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
   Auth create() => Auth();
 }
 
-String _$authHash() => r'8f275c3081a2b3d02c2af87c209d442dd1aec664';
+String _$authHash() => r'00a241f723c59e61f5509e88a098f914570c57da';
 
 /// Gère l'état et les actions d'authentification (connexion, inscription,
 /// création/vérification du PIN, déconnexion).
@@ -103,7 +103,7 @@ abstract class _$Auth extends $AsyncNotifier<AuthStatus> {
   FutureOr<AuthStatus> build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AsyncValue<AuthStatus>, AuthStatus>;
     final element =
         ref.element
@@ -113,6 +113,6 @@ abstract class _$Auth extends $AsyncNotifier<AuthStatus> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

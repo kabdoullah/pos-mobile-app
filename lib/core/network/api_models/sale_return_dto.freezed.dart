@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'sale_return_dto.dart';
@@ -9,6 +9,7 @@ part of 'sale_return_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$SaleReturnItemCreateDtoCopyWithImpl<$Res>
 /// Create a copy of SaleReturnItemCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleItemId = null,Object? quantity = null,Object? condition = null,Object? refundAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturnItemCreateDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleItemId: null == saleItemId ? _self.saleItemId : saleItemId // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
@@ -335,7 +336,7 @@ class _$SaleReturnCreateDtoCopyWithImpl<$Res>
 /// Create a copy of SaleReturnCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleId = null,Object? reason = null,Object? note = freezed,Object? refundMethod = null,Object? refundAmount = null,Object? createdAt = null,Object? items = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturnCreateDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleId: null == saleId ? _self.saleId : saleId // ignore: cast_nullable_to_non_nullable
 as String,reason: null == reason ? _self.reason : reason // ignore: cast_nullable_to_non_nullable
@@ -479,7 +480,7 @@ return $default(_that.id,_that.saleId,_that.reason,_that.note,_that.refundMethod
 @JsonSerializable()
 
 class _SaleReturnCreateDto implements SaleReturnCreateDto {
-  const _SaleReturnCreateDto({required this.id, @JsonKey(name: 'sale_id') required this.saleId, required this.reason, this.note, @JsonKey(name: 'refund_method') required this.refundMethod, @JsonKey(name: 'refund_amount') required this.refundAmount, @JsonKey(name: 'created_at') required this.createdAt, required final  List<SaleReturnItemCreateDto> items}): _items = items;
+  const _SaleReturnCreateDto({required this.id, @JsonKey(name: 'sale_id') required this.saleId, required this.reason, this.note, @JsonKey(name: 'refund_method') required this.refundMethod, @JsonKey(name: 'refund_amount') required this.refundAmount, @JsonKey(name: 'created_at') required this.createdAt, required  List<SaleReturnItemCreateDto> items}): _items = items;
   factory _SaleReturnCreateDto.fromJson(Map<String, dynamic> json) => _$SaleReturnCreateDtoFromJson(json);
 
 @override final  String id;
@@ -619,7 +620,7 @@ class _$SaleReturnItemDtoCopyWithImpl<$Res>
 /// Create a copy of SaleReturnItemDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleReturnId = null,Object? saleItemId = null,Object? productId = freezed,Object? quantity = null,Object? condition = null,Object? restocked = null,Object? refundAmount = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturnItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleReturnId: null == saleReturnId ? _self.saleReturnId : saleReturnId // ignore: cast_nullable_to_non_nullable
 as String,saleItemId: null == saleItemId ? _self.saleItemId : saleItemId // ignore: cast_nullable_to_non_nullable
@@ -897,7 +898,7 @@ class _$SaleReturnDtoCopyWithImpl<$Res>
 /// Create a copy of SaleReturnDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? saleId = null,Object? returnNumber = freezed,Object? reason = null,Object? note = freezed,Object? refundMethod = null,Object? refundAmount = null,Object? createdAt = null,Object? items = null,}) {
-  return _then(_self.copyWith(
+  return _then(SaleReturnDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,saleId: null == saleId ? _self.saleId : saleId // ignore: cast_nullable_to_non_nullable
 as String,returnNumber: freezed == returnNumber ? _self.returnNumber : returnNumber // ignore: cast_nullable_to_non_nullable
@@ -1042,7 +1043,7 @@ return $default(_that.id,_that.saleId,_that.returnNumber,_that.reason,_that.note
 @JsonSerializable()
 
 class _SaleReturnDto implements SaleReturnDto {
-  const _SaleReturnDto({required this.id, @JsonKey(name: 'sale_id') required this.saleId, @JsonKey(name: 'return_number') this.returnNumber, required this.reason, this.note, @JsonKey(name: 'refund_method') required this.refundMethod, @JsonKey(name: 'refund_amount') required this.refundAmount, @JsonKey(name: 'created_at') required this.createdAt, required final  List<SaleReturnItemDto> items}): _items = items;
+  const _SaleReturnDto({required this.id, @JsonKey(name: 'sale_id') required this.saleId, @JsonKey(name: 'return_number') this.returnNumber, required this.reason, this.note, @JsonKey(name: 'refund_method') required this.refundMethod, @JsonKey(name: 'refund_amount') required this.refundAmount, @JsonKey(name: 'created_at') required this.createdAt, required  List<SaleReturnItemDto> items}): _items = items;
   factory _SaleReturnDto.fromJson(Map<String, dynamic> json) => _$SaleReturnDtoFromJson(json);
 
 @override final  String id;
@@ -1184,7 +1185,7 @@ class _$ReturnsSyncBatchRequestDtoCopyWithImpl<$Res>
 /// Create a copy of ReturnsSyncBatchRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? returns = null,}) {
-  return _then(_self.copyWith(
+  return _then(ReturnsSyncBatchRequestDto(
 returns: null == returns ? _self.returns : returns // ignore: cast_nullable_to_non_nullable
 as List<SaleReturnCreateDto>,
   ));
@@ -1321,7 +1322,7 @@ return $default(_that.returns);case _:
 @JsonSerializable()
 
 class _ReturnsSyncBatchRequestDto implements ReturnsSyncBatchRequestDto {
-  const _ReturnsSyncBatchRequestDto({required final  List<SaleReturnCreateDto> returns}): _returns = returns;
+  const _ReturnsSyncBatchRequestDto({required  List<SaleReturnCreateDto> returns}): _returns = returns;
   factory _ReturnsSyncBatchRequestDto.fromJson(Map<String, dynamic> json) => _$ReturnsSyncBatchRequestDtoFromJson(json);
 
  final  List<SaleReturnCreateDto> _returns;
@@ -1396,8 +1397,7 @@ as List<SaleReturnCreateDto>,
 /// @nodoc
 mixin _$ReturnSyncResultDto {
 
- String get id;// 'created', 'already_exists', 'rejected' (définitif), 'failed'.
- String get status;@JsonKey(name: 'return_number') int? get returnNumber;@JsonKey(name: 'error_code') String? get errorCode; String? get error;
+ String get id; String get status;@JsonKey(name: 'return_number') int? get returnNumber;@JsonKey(name: 'error_code') String? get errorCode; String? get error;
 /// Create a copy of ReturnSyncResultDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1448,7 +1448,7 @@ class _$ReturnSyncResultDtoCopyWithImpl<$Res>
 /// Create a copy of ReturnSyncResultDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? status = null,Object? returnNumber = freezed,Object? errorCode = freezed,Object? error = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ReturnSyncResultDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,returnNumber: freezed == returnNumber ? _self.returnNumber : returnNumber // ignore: cast_nullable_to_non_nullable
@@ -1593,7 +1593,6 @@ class _ReturnSyncResultDto implements ReturnSyncResultDto {
   factory _ReturnSyncResultDto.fromJson(Map<String, dynamic> json) => _$ReturnSyncResultDtoFromJson(json);
 
 @override final  String id;
-// 'created', 'already_exists', 'rejected' (définitif), 'failed'.
 @override final  String status;
 @override@JsonKey(name: 'return_number') final  int? returnNumber;
 @override@JsonKey(name: 'error_code') final  String? errorCode;
@@ -1718,7 +1717,7 @@ class _$ReturnsSyncBatchResponseDtoCopyWithImpl<$Res>
 /// Create a copy of ReturnsSyncBatchResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? processed = null,Object? results = null,}) {
-  return _then(_self.copyWith(
+  return _then(ReturnsSyncBatchResponseDto(
 processed: null == processed ? _self.processed : processed // ignore: cast_nullable_to_non_nullable
 as int,results: null == results ? _self.results : results // ignore: cast_nullable_to_non_nullable
 as List<ReturnSyncResultDto>,
@@ -1856,7 +1855,7 @@ return $default(_that.processed,_that.results);case _:
 @JsonSerializable()
 
 class _ReturnsSyncBatchResponseDto implements ReturnsSyncBatchResponseDto {
-  const _ReturnsSyncBatchResponseDto({required this.processed, required final  List<ReturnSyncResultDto> results}): _results = results;
+  const _ReturnsSyncBatchResponseDto({required this.processed, required  List<ReturnSyncResultDto> results}): _results = results;
   factory _ReturnsSyncBatchResponseDto.fromJson(Map<String, dynamic> json) => _$ReturnsSyncBatchResponseDtoFromJson(json);
 
 @override final  int processed;

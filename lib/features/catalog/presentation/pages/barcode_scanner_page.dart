@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -8,6 +9,36 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
+
+/// Crée le contrôleur caméra commun à tous les scanners de l'app (fiche
+/// produit et caisse).
+///
+/// Un seul réglage : un code enregistré depuis la fiche produit doit être relu
+/// à l'identique en caisse. Restreindre aux EAN évite que ML Kit lise un
+/// EAN-13 mal cadré comme un symbole UPC-E/Code128 parasite (somme de contrôle
+/// valide mais faux). Les UPC-A sont lus en EAN-13 précédés d'un zéro.
+///
+/// Le zoom initial ×2 laisse tenir le téléphone à bonne distance : collé à
+/// l'étiquette, l'objectif passe sous sa distance minimale de mise au point et
+/// l'image reste floue. L'auto-zoom ML Kit rapproche un code trop lointain.
+/// Ces deux réglages ne sont appliqués que sur Android (sur iOS, initialZoom
+/// suit une autre échelle et autoZoom n'existe pas).
+///
+/// [DetectionSpeed.normal] et non noDuplicates : ce dernier ignore un code
+/// identique au précédent jusqu'au scan d'un autre code, ce qui empêche de
+/// scanner deux fois le même article. Le doublon d'un même passage est filtré
+/// par le délai de carence de ScanController.
+MobileScannerController createRetailScannerController() {
+  final isAndroid = defaultTargetPlatform == TargetPlatform.android;
+  return MobileScannerController(
+    detectionSpeed: DetectionSpeed.normal,
+    facing: CameraFacing.back,
+    torchEnabled: false,
+    formats: const [BarcodeFormat.ean13, BarcodeFormat.ean8],
+    autoZoom: isAndroid,
+    initialZoom: isAndroid ? 2.0 : null,
+  );
+}
 
 /// Page qui affiche un scanner de code-barres et gère la permission caméra.
 class BarcodeScannerPage extends StatefulWidget {
@@ -21,6 +52,9 @@ class BarcodeScannerPage extends StatefulWidget {
 class _BarcodeScannerPageState extends State<BarcodeScannerPage>
     with WidgetsBindingObserver {
   late MobileScannerController _controller;
+  // La détection continue pendant l'animation de fermeture : sans ce verrou,
+  // un second pop fermerait aussi le formulaire.
+  bool _hasReturned = false;
   bool _isPermissionGranted = false;
   bool _isCheckingPermission = true;
 
@@ -28,11 +62,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _controller = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-      facing: CameraFacing.back,
-      torchEnabled: false,
-    );
+    _controller = createRetailScannerController();
     unawaited(_checkPermission());
   }
 
@@ -104,7 +134,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
           onDetect: (capture) {
             // ✨ firstOrNull — null-safe, évite crash si liste vide
             final code = capture.barcodes.firstOrNull?.rawValue;
-            if (code != null && mounted) context.pop(code);
+            if (code == null || !mounted || _hasReturned) return;
+            _hasReturned = true;
+            context.pop(code);
           },
         ),
         // Voile avec découpe du viseur — le remplissage evenOdd laisse la zone

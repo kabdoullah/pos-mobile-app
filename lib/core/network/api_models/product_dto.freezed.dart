@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'product_dto.dart';
@@ -9,6 +9,7 @@ part of 'product_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -68,7 +69,7 @@ class _$ProductDtoCopyWithImpl<$Res>
 /// Create a copy of ProductDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? storeId = null,Object? name = null,Object? barcode = freezed,Object? sellingPrice = null,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,Object? categoryId = freezed,Object? imageVersion = freezed,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProductDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,storeId: null == storeId ? _self.storeId : storeId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -365,7 +366,7 @@ class _$ProductCreateDtoCopyWithImpl<$Res>
 /// Create a copy of ProductCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? barcode = freezed,Object? sellingPrice = null,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProductCreateDto(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
 as String?,sellingPrice: null == sellingPrice ? _self.sellingPrice : sellingPrice // ignore: cast_nullable_to_non_nullable
@@ -639,7 +640,7 @@ class _$ProductUpdateDtoCopyWithImpl<$Res>
 /// Create a copy of ProductUpdateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? barcode = freezed,Object? sellingPrice = freezed,Object? purchasePrice = freezed,Object? currentStock = freezed,Object? minStock = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(ProductUpdateDto(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,barcode: freezed == barcode ? _self.barcode : barcode // ignore: cast_nullable_to_non_nullable
 as String?,sellingPrice: freezed == sellingPrice ? _self.sellingPrice : sellingPrice // ignore: cast_nullable_to_non_nullable

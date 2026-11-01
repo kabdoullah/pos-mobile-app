@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'store_dto.dart';
@@ -9,6 +9,7 @@ part of 'store_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$StoreDtoCopyWithImpl<$Res>
 /// Create a copy of StoreDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? ownerId = null,Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? vatSubject = null,Object? receiptFooterText = freezed,Object? phone = freezed,Object? logoVersion = freezed,Object? nextReceiptNumber = null,Object? createdAt = null,Object? updatedAt = null,}) {
-  return _then(_self.copyWith(
+  return _then(StoreDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,ownerId: null == ownerId ? _self.ownerId : ownerId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -356,7 +357,7 @@ class _$StoreCreateDtoCopyWithImpl<$Res>
 /// Create a copy of StoreCreateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = null,Object? address = freezed,Object? ncc = freezed,Object? vatSubject = freezed,Object? receiptFooterText = freezed,Object? phone = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(StoreCreateDto(
 name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,ncc: freezed == ncc ? _self.ncc : ncc // ignore: cast_nullable_to_non_nullable
@@ -628,7 +629,7 @@ class _$StoreUpdateDtoCopyWithImpl<$Res>
 /// Create a copy of StoreUpdateDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? name = freezed,Object? address = freezed,Object? ncc = freezed,Object? vatSubject = freezed,Object? receiptFooterText = freezed,Object? phone = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(StoreUpdateDto(
 name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String?,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
 as String?,ncc: freezed == ncc ? _self.ncc : ncc // ignore: cast_nullable_to_non_nullable

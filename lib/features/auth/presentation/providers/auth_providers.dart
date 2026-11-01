@@ -80,6 +80,28 @@ class AuthAuthenticated extends AuthStatus {
   final User user;
 }
 
+/// La plateforme a suspendu la boutique : l'app est bloquée sur l'écran de
+/// suspension jusqu'à ce que le serveur confirme la réactivation (voir
+/// [Auth.retryAfterSuspension]). Mémorisé entre deux lancements. Les données
+/// locales (ventes non synchronisées comprises) sont conservées.
+class AuthStoreSuspended extends AuthStatus {
+  /// Crée un statut « boutique suspendue ».
+  const AuthStoreSuspended({this.supportContact, this.supportWhatsApp});
+
+  /// Statut construit depuis la réponse du serveur.
+  AuthStoreSuspended.from(StoreSuspendedException e)
+    : this(
+        supportContact: e.supportContact,
+        supportWhatsApp: e.supportWhatsApp,
+      );
+
+  /// Contact du support (téléphone ou email), null s'il n'est pas configuré.
+  final String? supportContact;
+
+  /// Numéro WhatsApp du support, null s'il n'est pas configuré.
+  final String? supportWhatsApp;
+}
+
 /// Échec de connexion : numéro ou mot de passe refusé par le serveur.
 ///
 /// Typé pour que l'écran de connexion rattache l'erreur au champ mot de passe.
@@ -128,9 +150,62 @@ class Auth extends _$Auth {
     });
     ref.onDispose(sub.cancel);
 
+    // Réponse « boutique suspendue » sur n'importe quelle requête : mémorisée,
+    // puis écran de suspension.
+    // ignore: close_sinks — cycle de vie géré par storeSuspendedControllerProvider
+    final suspendedController = ref.read(storeSuspendedControllerProvider);
+    final suspendedSub = suspendedController.stream.listen(_onStoreSuspended);
+    ref.onDispose(suspendedSub.cancel);
+
     // Init asynchrone (directe — pas besoin d'astuce fire-and-forget dans un
     // AsyncNotifier).
     return _resolveInitialStatus();
+  }
+
+  Future<void> _onStoreSuspended(StoreSuspendedException suspension) async {
+    _logger.w('[Auth] Store suspended by the platform');
+    await _rememberSuspension(suspension);
+    state = AsyncData(AuthStoreSuspended.from(suspension));
+  }
+
+  Future<void> _rememberSuspension(StoreSuspendedException suspension) => ref
+      .read(storeSuspensionStorageProvider)
+      .save(
+        supportContact: suspension.supportContact,
+        supportWhatsApp: suspension.supportWhatsApp,
+      );
+
+  /// Bouton « Réessayer » de l'écran de suspension : demande au serveur si la
+  /// boutique a été réactivée (le rafraîchissement de session est refusé tant
+  /// qu'elle est suspendue).
+  ///
+  /// Réactivée → reprise du parcours (PIN demandé). Sans session (suspension
+  /// constatée à la connexion) → écran de connexion. Sinon l'écran reste
+  /// affiché et le message à montrer est retourné.
+  Future<String?> retryAfterSuspension() async {
+    final repo = ref.read(authRepositoryProvider);
+    final suspension = ref.read(storeSuspensionStorageProvider);
+    if (await repo.getCurrentUser() == null) {
+      await suspension.clear();
+      state = const AsyncData(AuthUnauthenticated());
+      return null;
+    }
+    try {
+      await repo.refreshTokens();
+    } on StoreSuspendedException catch (e) {
+      await _onStoreSuspended(e);
+      return 'Votre boutique est toujours suspendue.';
+    } on UnauthorizedException {
+      await suspension.clear();
+      state = const AsyncData(AuthUnauthenticated(sessionExpired: true));
+      return null;
+    } catch (e) {
+      return errorToFrench(e);
+    }
+    await suspension.clear();
+    _logger.i('[Auth] Store reactivated');
+    state = AsyncData(await _nextStepAfterSignIn(repo));
+    return null;
   }
 
   /// Vérifie les tokens enregistrés et la config du PIN pour déterminer l'état
@@ -145,6 +220,14 @@ class Auth extends _$Auth {
           '[Auth._resolveInitialStatus] No stored token, returning Unauthenticated',
         );
         return const AuthUnauthenticated();
+      }
+
+      final suspension = await ref.read(storeSuspensionStorageProvider).read();
+      if (suspension != null) {
+        return AuthStoreSuspended(
+          supportContact: suspension.supportContact,
+          supportWhatsApp: suspension.supportWhatsApp,
+        );
       }
 
       final status = await _nextStepAfterSignIn(repo);
@@ -184,11 +267,17 @@ class Auth extends _$Auth {
         final repo = ref.read(authRepositoryProvider);
         await repo.login(phoneNumber: phoneNumber, password: password);
         _logger.i('[Auth.login] Backend login succeeded');
+        // Connexion acceptée : la boutique n'est pas (ou plus) suspendue.
+        await ref.read(storeSuspensionStorageProvider).clear();
         await _resetStoreCache();
 
         final status = await _nextStepAfterSignIn(repo);
         _logger.i('[Auth.login] Transitioning to $status');
         return status;
+      } on StoreSuspendedException catch (e) {
+        _logger.w('[Auth.login] Refused: store suspended');
+        await _rememberSuspension(e);
+        return AuthStoreSuspended.from(e);
       } on UnauthorizedException {
         _logger.e('[Auth.login] Failed: invalid credentials');
         throw const InvalidCredentials();

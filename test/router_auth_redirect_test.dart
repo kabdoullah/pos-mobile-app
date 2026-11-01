@@ -93,4 +93,36 @@ void main() {
       expect(authRedirect(error, Routes.home), Routes.emailLogin);
     });
   });
+
+  group('boutique suspendue', () {
+    final suspended = _data(const AuthStoreSuspended(supportContact: 'x'));
+
+    test('toute page renvoie à l\'écran de suspension', () {
+      for (final route in [
+        Routes.splash,
+        Routes.home,
+        Routes.newSale,
+        Routes.settings,
+        Routes.pinLogin,
+        Routes.emailLogin,
+      ]) {
+        expect(authRedirect(suspended, route), Routes.storeSuspended);
+      }
+      expect(authRedirect(suspended, Routes.storeSuspended), isNull);
+    });
+
+    test('réactivée : l\'écran de suspension est quitté', () {
+      expect(
+        authRedirect(_data(const AuthPinRequired()), Routes.storeSuspended),
+        Routes.pinLogin,
+      );
+      expect(
+        authRedirect(
+          _data(const AuthAuthenticated(_user)),
+          Routes.storeSuspended,
+        ),
+        Routes.home,
+      );
+    });
+  });
 }

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:logger/logger.dart';
 
+import '../../core/network/api_exception.dart';
 import '../../core/network/api_models/category_dto.dart';
 import '../../core/network/api_models/product_dto.dart';
 import '../utils/barcode_utils.dart';
@@ -32,6 +33,18 @@ class PushService {
   final SyncQueueRepository _queueRepository;
   final AppDatabase _db;
   final Logger? _logger;
+
+  /// Boutique suspendue : refus temporaire, les [entries] restent en attente
+  /// sans essai compté ni refus définitif. Retourne true si c'est le cas.
+  Future<bool> _keepIfSuspended(
+    Object error,
+    List<SyncQueueData> entries,
+  ) async {
+    if (storeSuspensionOf(error) == null) return false;
+    await _queueRepository.releaseToPending(entries.map((e) => e.id).toList());
+    _logger?.w('Store suspended: ${entries.length} entries kept for later');
+    return true;
+  }
 
   /// Envoie toutes les ventes en attente au serveur.
   /// Synchro par lots au mieux, avec gestion de l'idempotence.
@@ -121,6 +134,7 @@ class PushService {
         }
       }
     } catch (e, st) {
+      if (await _keepIfSuspended(e, entries)) return;
       // Erreur réseau : on compte l'essai, les ventes seront renvoyées au
       // prochain cycle.
       for (final entry in entries) {
@@ -180,6 +194,7 @@ class PushService {
           );
       }
     } catch (e) {
+      if (await _keepIfSuspended(e, [entry])) return;
       final status = e is DioException ? e.response?.statusCode : null;
       if (status != null && status >= 400 && status < 500) {
         // Payload refusé (422…) : le renvoyer échouerait de nouveau.
@@ -299,6 +314,7 @@ class PushService {
       final response = await _remoteDataSource.pushCategory(item);
       await _handleCategoryResponse(entry, response);
     } catch (e) {
+      if (await _keepIfSuspended(e, [entry])) return;
       // 409 : Dio lève une exception, la réponse porte l'état serveur.
       if (e is DioException && e.response?.statusCode == 409) {
         final data = e.response?.data;
@@ -429,6 +445,7 @@ class PushService {
           );
       }
     } catch (e) {
+      if (await _keepIfSuspended(e, [entry])) return;
       // Conflit 409 : le serveur a un état plus récent ou en conflit.
       // On analyse le corps à la main car Dio lève une exception pour les
       // réponses non-2xx.

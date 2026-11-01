@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // coverage:ignore-file
-// ignore_for_file: type=lint
+// ignore_for_file: type=lint, type=warning, deprecated_member_use, deprecated_member_use_from_same_package
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
 part of 'category_dto.dart';
@@ -9,6 +9,7 @@ part of 'category_dto.dart';
 // FreezedGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
 // dart format off
 T _$identity<T>(T value) => value;
 
@@ -66,7 +67,7 @@ class _$CategoryDtoCopyWithImpl<$Res>
 /// Create a copy of CategoryDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? storeId = null,Object? name = null,Object? createdAt = null,Object? updatedAt = null,Object? deletedAt = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CategoryDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,storeId: null == storeId ? _self.storeId : storeId // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
@@ -338,7 +339,7 @@ class _$CategorySyncItemDtoCopyWithImpl<$Res>
 /// Create a copy of CategorySyncItemDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? clientUpdatedAt = null,Object? deleted = null,}) {
-  return _then(_self.copyWith(
+  return _then(CategorySyncItemDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,clientUpdatedAt: null == clientUpdatedAt ? _self.clientUpdatedAt : clientUpdatedAt // ignore: cast_nullable_to_non_nullable
@@ -553,8 +554,7 @@ as bool,
 /// @nodoc
 mixin _$CategorySyncResponseDto {
 
- String get status;// 'created', 'updated', 'no_change', 'deleted', 'conflict'
-@JsonKey(name: 'server_state') CategoryDto? get serverState;
+ String get status;@JsonKey(name: 'server_state') CategoryDto? get serverState;
 /// Create a copy of CategorySyncResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -605,7 +605,7 @@ class _$CategorySyncResponseDtoCopyWithImpl<$Res>
 /// Create a copy of CategorySyncResponseDto
 /// with the given fields replaced by the non-null parameter values.
 @pragma('vm:prefer-inline') @override $Res call({Object? status = null,Object? serverState = freezed,}) {
-  return _then(_self.copyWith(
+  return _then(CategorySyncResponseDto(
 status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as String,serverState: freezed == serverState ? _self.serverState : serverState // ignore: cast_nullable_to_non_nullable
 as CategoryDto?,
@@ -759,7 +759,6 @@ class _CategorySyncResponseDto implements CategorySyncResponseDto {
   factory _CategorySyncResponseDto.fromJson(Map<String, dynamic> json) => _$CategorySyncResponseDtoFromJson(json);
 
 @override final  String status;
-// 'created', 'updated', 'no_change', 'deleted', 'conflict'
 @override@JsonKey(name: 'server_state') final  CategoryDto? serverState;
 
 /// Create a copy of CategorySyncResponseDto

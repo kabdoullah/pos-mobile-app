@@ -9,6 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/app.dart';
 import 'app/theme/theme_mode_provider.dart';
 import 'core/config.dart';
+import 'core/network/dio_client.dart';
 import 'core/network/network_providers.dart';
 import 'core/storage/image_file_cache.dart';
 
@@ -25,6 +26,8 @@ void main() async {
     flavor: AppFlavor.dev,
     apiUrl: 'https://pos-mobile-vkuh.onrender.com',
   );
+  // Sans attendre : le serveur se réveille pendant le démarrage de l'app.
+  unawaited(wakeUpServer());
   await initializeDateFormatting('fr_FR');
   // Nettoyage en tâche de fond, non bloquant : un échec sera retenté au
   // prochain démarrage.

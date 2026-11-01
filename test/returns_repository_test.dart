@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'dart:io';
 
 import 'package:decimal/decimal.dart';
 import 'package:drift/drift.dart' as drift;
@@ -13,7 +11,6 @@ import 'package:mobile/features/returns/domain/entities/returnable_line.dart';
 import 'package:mobile/features/returns/domain/entities/sale_return.dart';
 import 'package:mobile/features/returns/domain/usecases/create_sale_return_usecase.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
-import 'package:sqlite3/open.dart';
 
 /// File de synchro qui échoue : simule une erreur au milieu de la transaction.
 class _FailingQueue extends SyncQueueRepository {
@@ -33,15 +30,6 @@ void main() {
   late CreateSaleReturnUseCase createReturn;
 
   Decimal d(String v) => Decimal.parse(v);
-
-  setUpAll(() {
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
-  });
 
   setUp(() async {
     db = AppDatabase.forTesting(NativeDatabase.memory());

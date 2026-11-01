@@ -1,4 +1,3 @@
-import 'dart:ffi';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -9,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sqlite3/open.dart';
 
 import 'package:mobile/core/storage/image_file_cache.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
@@ -49,12 +47,6 @@ void main() {
 
   setUpAll(() async {
     await initializeDateFormatting('fr_FR');
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
     registerFallbackValue(Options());
     registerFallbackValue(File('x'));
   });

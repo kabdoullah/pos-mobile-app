@@ -7,9 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/core/config.dart';
+import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/core/network/network_providers.dart';
 import 'package:mobile/core/storage/pin_storage.dart';
 import 'package:mobile/core/storage/secure_token_storage.dart';
+import 'package:mobile/core/storage/store_suspension_storage.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
 import 'package:mobile/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mobile/features/auth/data/models/auth_models.dart';
@@ -23,6 +25,7 @@ import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
 
 import 'pin_storage_test.dart' show InMemorySecureStorage;
+import 'sync_store_suspended_test.dart' show suspendedError;
 
 class _MockRemote extends Mock implements AuthRemoteDataSource {}
 
@@ -104,6 +107,9 @@ class _Device {
         storeRepositoryProvider.overrideWithValue(storeRepo),
         profileRepositoryProvider.overrideWithValue(profileRepo),
         syncOrchestratorProvider.overrideWith(_FakeSync.new),
+        storeSuspensionStorageProvider.overrideWithValue(
+          StoreSuspensionStorage(secureStorage: storage),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -344,5 +350,108 @@ void main() {
     final app = await _Device().launch();
     app.read(authProvider.notifier).lock();
     expect(_status(app), isA<AuthUnauthenticated>());
+  });
+
+  group('boutique suspendue', () {
+    const contact = 'support@pos.ci';
+    const whatsApp = '+2250700000000';
+
+    /// Connecté avec un PIN, puis le serveur signale la suspension.
+    Future<(ProviderContainer, _Device)> suspendedSession() async {
+      final device = _Device();
+      final app = await device.launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.login(phone, 'secret123');
+      await auth.setupPin('2580');
+      app
+          .read(storeSuspendedControllerProvider)
+          .add(
+            StoreSuspendedException(
+              detail: 'Store is suspended.',
+              supportContact: contact,
+              supportWhatsApp: whatsApp,
+            ),
+          );
+      await pumpEventQueue();
+      return (app, device);
+    }
+
+    test('signalée en cours de session → écran de suspension', () async {
+      final (app, _) = await suspendedSession();
+      final status = _status(app);
+      expect(status, isA<AuthStoreSuspended>());
+      expect((status! as AuthStoreSuspended).supportContact, contact);
+    });
+
+    test('mémorisée : un redémarrage (même hors ligne) reste bloqué', () async {
+      final (app, device) = await suspendedSession();
+      app.dispose();
+
+      final relaunched = await device.launch();
+      final status = _status(relaunched);
+      expect(status, isA<AuthStoreSuspended>());
+      expect((status! as AuthStoreSuspended).supportContact, contact);
+      expect((status as AuthStoreSuspended).supportWhatsApp, whatsApp);
+    });
+
+    test('connexion refusée pour suspension → écran de suspension', () async {
+      final device = _Device();
+      when(() => device.remote.login(any())).thenThrow(suspendedError());
+      final app = await device.launch();
+
+      await app.read(authProvider.notifier).login(phone, 'secret123');
+
+      expect(_status(app), isA<AuthStoreSuspended>());
+      expect(_error(app), isNull);
+    });
+
+    test('réessayer, boutique réactivée → PIN demandé, plus bloquée', () async {
+      final (app, device) = await suspendedSession();
+
+      final message = await app
+          .read(authProvider.notifier)
+          .retryAfterSuspension();
+
+      expect(message, isNull);
+      expect(_status(app), isA<AuthPinRequired>());
+      app.dispose();
+      expect(_status(await device.launch()), isA<AuthPinRequired>());
+    });
+
+    test('réessayer, toujours suspendue → reste bloquée, message', () async {
+      final (app, device) = await suspendedSession();
+      when(() => device.remote.refresh(any())).thenThrow(suspendedError());
+
+      final message = await app
+          .read(authProvider.notifier)
+          .retryAfterSuspension();
+
+      expect(message, isNotNull);
+      expect(_status(app), isA<AuthStoreSuspended>());
+    });
+
+    test('réessayer sans session → écran de connexion', () async {
+      final device = _Device();
+      when(() => device.remote.login(any())).thenThrow(suspendedError());
+      final app = await device.launch();
+      await app.read(authProvider.notifier).login(phone, 'secret123');
+
+      final message = await app
+          .read(authProvider.notifier)
+          .retryAfterSuspension();
+
+      expect(message, isNull);
+      expect(_status(app), isA<AuthUnauthenticated>());
+    });
+
+    test('reconnexion réussie : la suspension mémorisée est oubliée', () async {
+      final (app, device) = await suspendedSession();
+      app.dispose();
+      final relaunched = await device.launch();
+
+      await relaunched.read(authProvider.notifier).login(phone, 'secret123');
+
+      expect(_status(relaunched), isA<AuthPinRequired>());
+    });
   });
 }

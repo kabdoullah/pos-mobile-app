@@ -383,12 +383,16 @@ class CatalogRepositoryImpl implements CatalogRepository {
     final normalized = normalizeBarcode(barcode);
     if (normalized == null) return null;
 
-    final record =
+    final records =
         await (db.select(db.products)
-              ..where((p) => p.barcode.equals(normalized))
+              ..where(
+                (p) => p.barcode.isIn(barcodeLookupCandidates(normalized)),
+              )
               ..where((p) => p.deletedAt.isNull()))
-            .getSingleOrNull();
-    return record?.toDomain();
+            .get();
+    if (records.isEmpty) return null;
+    final exact = records.where((r) => r.barcode == normalized).firstOrNull;
+    return (exact ?? records.first).toDomain();
   }
 
   @override

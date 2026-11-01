@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:drift/native.dart';
@@ -18,7 +16,6 @@ import 'package:mobile/database/app_database.dart' hide Category;
 import 'package:mobile/features/catalog/data/repositories/catalog_repository_impl.dart';
 import 'package:mobile/features/catalog/domain/entities/category.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:sqlite3/open.dart';
 
 class _MockRemote extends Mock implements SyncRemoteDataSource {}
 
@@ -33,12 +30,6 @@ void main() {
   late PullService pull;
 
   setUpAll(() {
-    if (Platform.isLinux) {
-      open.overrideFor(
-        OperatingSystem.linux,
-        () => DynamicLibrary.open('libsqlite3.so.0'),
-      );
-    }
     registerFallbackValue(
       const CategorySyncItemDto(id: 'x', name: 'x', clientUpdatedAt: _now),
     );

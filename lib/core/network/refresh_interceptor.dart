@@ -109,7 +109,9 @@ class RefreshInterceptor extends Interceptor {
     } catch (e) {
       _logger.e('Token refresh failed: $e');
       _refreshCompleter!.complete(false);
-      onAuthExpired();
+      // Boutique suspendue : la session reste valable, l'écran de suspension
+      // prend le relais (voir StoreSuspendedInterceptor).
+      if (e is! StoreSuspendedException) onAuthExpired();
 
       handler.next(
         DioException(
