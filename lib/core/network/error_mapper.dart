@@ -3,6 +3,12 @@ import 'api_exception.dart';
 const _detailMap = <String, String>{
   // Authentification
   'This phone number is already registered.': 'Ce numéro est déjà enregistré.',
+  'Phone number does not exist (check the number of digits and prefix).':
+      "Ce numéro n'existe pas, vérifiez-le.",
+  'Phone number does not exist (unknown country code).':
+      "Ce numéro n'existe pas, vérifiez-le.",
+  'Phone number must be a mobile number.':
+      'Saisissez un numéro mobile (01, 05 ou 07).',
   'This email is already registered.': 'Cet email est déjà enregistré.',
   'Invalid phone number or password.': 'Numéro ou mot de passe incorrect.',
   'Invalid email or password.': 'Email ou mot de passe incorrect.',

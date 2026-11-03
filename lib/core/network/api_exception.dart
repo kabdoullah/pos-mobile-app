@@ -172,9 +172,16 @@ _parseBody(Map<String, dynamic>? data) {
     );
   }
 
-  final code = (data['code'] as String?) ?? 'UNKNOWN';
-  final detail = (data['detail'] as String?) ?? 'Erreur serveur.';
-  final field = data['field'] as String?;
+  // Lecture tolérante : un champ au mauvais type (ex. `detail` en liste,
+  // format 422 par défaut de FastAPI) ne doit pas faire planter le parsing.
+  String? stringOf(String key) {
+    final value = data[key];
+    return value is String ? value : null;
+  }
+
+  final code = stringOf('code') ?? 'UNKNOWN';
+  final detail = stringOf('detail') ?? 'Erreur serveur.';
+  final field = stringOf('field');
   final details = data['details'];
   String? detailValue(String key) {
     if (details is! Map<String, dynamic>) return null;

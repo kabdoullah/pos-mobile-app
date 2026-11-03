@@ -44,6 +44,16 @@ bool isValidLocalPhoneCi(String localNumber) {
   return RegExp(r'^0\d{9}$').hasMatch(digits);
 }
 
+/// Valide un numéro mobile CI en format local : 01, 05 ou 07 suivi de 8 chiffres.
+///
+/// Reprend la règle du backend à l'inscription (seuls les mobiles reçoivent
+/// SMS/WhatsApp). Les lignes fixes (21, 25, 27) et préfixes inexistants sont
+/// refusés.
+bool isValidMobilePhoneCi(String localNumber) {
+  final digits = localNumber.replaceAll(RegExp(r'[\s\-]'), '');
+  return RegExp(r'^0[157]\d{8}$').hasMatch(digits);
+}
+
 /// Formate la saisie d'un numéro ivoirien en paires espacées : `07 07 07 07 07`.
 ///
 /// À utiliser dans `inputFormatters` d'un [TextField] téléphone.

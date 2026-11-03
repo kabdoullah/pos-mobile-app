@@ -63,7 +63,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String get _password => _passwordController.text;
   String get _confirm => _confirmPasswordController.text;
 
-  bool get _phoneValid => isValidLocalPhoneCi(_phone);
+  bool get _phoneValid => isValidMobilePhoneCi(_phone);
   bool get _passwordValid => _password.length >= _minPasswordLength;
   bool get _passwordsMatch => _confirm.isNotEmpty && _confirm == _password;
   bool get _emailValid =>
@@ -73,6 +73,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!_submitted || _phoneValid) return null;
     return _phone.isEmpty
         ? 'Saisissez votre numéro de téléphone.'
+        : isValidLocalPhoneCi(_phone)
+        ? 'Saisissez un numéro mobile (01, 05 ou 07).'
         : 'Numéro à 10 chiffres, ex. 07 00 00 00 00.';
   }
 
