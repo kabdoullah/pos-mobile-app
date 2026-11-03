@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/sync/sync_orchestrator.dart';
+import '../features/app_update/presentation/widgets/update_required_gate.dart';
 import '../features/auth/presentation/providers/session_lock_provider.dart';
 import 'theme.dart';
 import 'theme/theme_mode_provider.dart';
@@ -40,7 +41,7 @@ class PosMobileApp extends ConsumerWidget {
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) =>
               ref.read(sessionLockProvider.notifier).recordActivity(),
-          child: child ?? const SizedBox.shrink(),
+          child: UpdateRequiredGate(child: child ?? const SizedBox.shrink()),
         );
       },
     );

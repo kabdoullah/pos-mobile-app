@@ -68,6 +68,7 @@ Two provider locations:
 | `returns` | Implemented (ADR-0010) — customer returns of a synced sale: per-line quantity and condition, refund computed from frozen sale amounts (`RefundCalculator`, identical to the backend), manual refund confirmed at the counter, return receipt. Offline: drift + `SyncQueue` (`sale_return`); a server rejection reverts the local restock |
 | `printing` | Implemented — Bluetooth thermal printer (ESC/POS via `print_bluetooth_thermal`) |
 | `sync` | Implemented in `core/sync/` (not a feature folder) — offline event queue, catalog dirty-flag sync, connectivity awareness |
+| `app_update` | Implemented — forced update: `GET /health` returns `min_app_build` (backend env `MIN_APP_BUILD`, Android versionCode); below it, `UpdateRequiredGate` (in `MaterialApp.builder`, above the router) blocks every screen with a non-dismissible dialog opening the Play Store. The minimum is cached (`shared_preferences`) so the block holds offline. Checked at launch and on resume. Raise `MIN_APP_BUILD` only **after** the build is live on the Play Store |
 | `home` | Implemented — dashboard shell (presentation only) |
 | `onboarding` | Implemented — tutorial (presentation only) |
 | `settings` | Implemented — settings (presentation only) |
@@ -99,7 +100,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Monetary amounts (FCFA):** Domain entities use `Decimal` (package `decimal`). API DTOs use `String`. Drift uses `TextColumn`. Mappers convert at boundaries — `Decimal.parse()` inbound, `.toString()` outbound. Never use `double` or `int.parse` for money.
 
-**Networking:** Dio with auth/refresh interceptors (`core/network/`). Retrofit generates typed clients. Timeouts are the same in dev and prod (`AppConfig`: connect 30 s, receive 90 s) to absorb the Render free-tier cold start (~50 s, sometimes more); `wakeUpServer()` pings `/health` at launch so the server wakes while the user types. A timeout yields `ConnectionException.timeout()` ("le serveur démarre"), no network yields `ConnectionException()`.
+**Networking:** Dio with auth/refresh interceptors (`core/network/`). Retrofit generates typed clients. Timeouts are the same in dev and prod (`AppConfig`: connect 30 s, receive 90 s) to absorb the Render free-tier cold start (~50 s, sometimes more); the `GET /health` made at launch by `app_update` (forced-update check) also wakes the server while the user types. A timeout yields `ConnectionException.timeout()` ("le serveur démarre"), no network yields `ConnectionException()`.
 
 **Secure storage:** JWT and PBKDF2-hashed PIN in `flutter_secure_storage`. PIN never sent to backend. 5 attempts → 5-minute lockout.
 

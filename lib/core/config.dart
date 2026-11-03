@@ -58,6 +58,10 @@ class AppConfig {
   /// Limite de produits par boutique au MVP.
   static const int maxProductsPerStore = 5000;
 
+  /// Identifiant de l'app sur le Play Store (flavor prod), ouvert par le
+  /// dialogue de mise à jour obligatoire, y compris depuis le flavor dev.
+  static const String playStoreAppId = 'ci.pos.macaisse';
+
   /// Politique de confidentialité publiée (GitHub Pages).
   static const String privacyPolicyUrl =
       'https://kabdoullah.github.io/pos-mobile/privacy-policy';
