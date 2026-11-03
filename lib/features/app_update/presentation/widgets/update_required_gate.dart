@@ -40,20 +40,15 @@ class UpdateRequiredGate extends ConsumerWidget {
 class _UpdateRequiredDialog extends StatelessWidget {
   const _UpdateRequiredDialog();
 
-  /// Ouvre la fiche Play Store : l'app Play si présente, sinon le navigateur.
+  /// Ouvre la fiche Play Store : l'app Play si présente (lien vérifié),
+  /// sinon le navigateur. Pas de `market://` : certains Android (MIUI)
+  /// proposent alors d'autres boutiques (GetApps…) où l'app n'est pas.
   Future<void> _openStore() async {
-    const id = AppConfig.playStoreAppId;
-    final market = Uri.parse('market://details?id=$id');
-    final web = Uri.https('play.google.com', '/store/apps/details', {'id': id});
+    final store = Uri.https('play.google.com', '/store/apps/details', {
+      'id': AppConfig.playStoreAppId,
+    });
     try {
-      if (await launchUrl(market, mode: LaunchMode.externalApplication)) {
-        return;
-      }
-    } on Exception catch (_) {
-      // Pas d'app Play Store : repli sur le navigateur.
-    }
-    try {
-      await launchUrl(web, mode: LaunchMode.externalApplication);
+      await launchUrl(store, mode: LaunchMode.externalApplication);
     } on Exception catch (_) {
       // Rien pour ouvrir le lien : le dialogue reste affiché.
     }
