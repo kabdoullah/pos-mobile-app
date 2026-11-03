@@ -7,10 +7,16 @@ import 'package:mobile/app/app.dart';
 import 'package:mobile/app/theme/theme_mode_provider.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
+import 'package:mobile/features/app_update/presentation/providers/update_required_provider.dart';
 
 class _FakeSync extends SyncOrchestrator {
   @override
   SyncStatus build() => const SyncStatusIdle();
+}
+
+class _NoUpdateRequired extends UpdateRequired {
+  @override
+  bool build() => false;
 }
 
 void main() {
@@ -44,6 +50,7 @@ void main() {
           ),
           appRouterProvider.overrideWithValue(router),
           syncOrchestratorProvider.overrideWith(_FakeSync.new),
+          updateRequiredProvider.overrideWith(_NoUpdateRequired.new),
         ],
         child: const PosMobileApp(),
       ),

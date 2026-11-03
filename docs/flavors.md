@@ -123,3 +123,14 @@ Oui. L'IDE (VS Code, Android Studio) lance `main.dart` par défaut. On veut qu'u
 AppConfig.flavor  // AppFlavor.dev ou AppFlavor.prod
 AppConfig.isDev   // bool
 ```
+
+## Mise à jour obligatoire
+
+L'app compare son numéro de build (versionCode, `+N` dans `pubspec.yaml`) au champ `min_app_build` de `GET /health`, piloté par la variable d'env backend `MIN_APP_BUILD` (0 = aucun blocage). En dessous, un dialogue non fermable renvoie vers le Play Store ; le minimum est mémorisé, le blocage tient donc hors ligne.
+
+Pour forcer le passage au build N :
+
+1. Publier le build N sur le Play Store et attendre qu'il soit disponible pour tous.
+2. Seulement ensuite, mettre `MIN_APP_BUILD=N` sur Render. Le faire avant bloquerait les utilisateurs sans mise à jour à installer.
+
+Pour lever un blocage posé par erreur : remettre une valeur plus basse ; l'app se débloque au prochain retour au premier plan (en ligne).
