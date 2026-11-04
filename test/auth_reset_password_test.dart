@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/network/api_exception.dart';
+import 'package:mobile/core/network/error_mapper.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/storage/pin_storage.dart';
 import 'package:mobile/core/storage/secure_token_storage.dart';
@@ -138,6 +139,34 @@ void main() {
         ),
       );
     });
+
+    test(
+      'rate limiting (429) → message français, pas « lien invalide »',
+      () async {
+        when(() => remote.resetPassword(any())).thenThrow(
+          _http(429, {
+            'detail': 'Too many requests. Try again later.',
+            'code': 'RATE_LIMITED',
+            'field': null,
+          }),
+        );
+
+        Object? error;
+        try {
+          await repo.resetPassword(token: _token, newPassword: _newPassword);
+        } on Object catch (e) {
+          error = e;
+        }
+        expect(
+          error,
+          isA<ApiException>().having((e) => e.statusCode, 'statusCode', 429),
+        );
+        expect(
+          errorToFrench(error!),
+          'Trop de tentatives. Réessayez dans quelques minutes.',
+        );
+      },
+    );
   });
 
   group('ResetPasswordPage', () {
