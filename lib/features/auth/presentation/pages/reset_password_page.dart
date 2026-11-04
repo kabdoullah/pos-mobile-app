@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -46,6 +47,16 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   bool _isLoading = false;
   String? _error;
   late bool _invalidLink = widget.token == null || widget.token!.isEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    // main() retient la 1re frame (FlutterNativeSplash.preserve) et seule
+    // SplashPage la libère. Ouverte à froid par le lien de l'email, l'app
+    // démarre directement ici : sans ce remove(), l'écran resterait noir.
+    // Sans effet si le splash est déjà retiré.
+    FlutterNativeSplash.remove();
+  }
 
   @override
   void dispose() {
