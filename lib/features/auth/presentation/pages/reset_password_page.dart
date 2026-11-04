@@ -10,6 +10,15 @@ import '../../../../core/widgets/index.dart';
 import '../../providers/auth_di_providers.dart';
 import '../widgets/auth_layout.dart';
 
+/// Token du lien de réinitialisation : dans le fragment (`#token=…`, gardé
+/// hors des logs serveur), ou dans la query pour les liens plus anciens.
+String? resetTokenFrom(Uri uri) {
+  final fromFragment = uri.fragment.isEmpty
+      ? null
+      : Uri.splitQueryString(uri.fragment)['token'];
+  return fromFragment ?? uri.queryParameters['token'];
+}
+
 /// Choix d'un nouveau mot de passe, ouvert par le lien de l'email de
 /// réinitialisation (Android App Link `/auth/reset-password?token=…`).
 ///

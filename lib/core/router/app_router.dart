@@ -215,7 +215,7 @@ GoRouter appRouter(Ref ref) {
         pageBuilder: (context, state) => PageTransitions.fade(
           context,
           state,
-          ResetPasswordPage(token: state.uri.queryParameters['token']),
+          ResetPasswordPage(token: resetTokenFrom(state.uri)),
         ),
       ),
       GoRoute(

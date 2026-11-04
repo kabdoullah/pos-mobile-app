@@ -50,12 +50,13 @@ Future<_MockRepo> _pump(WidgetTester tester, {String? token = _token}) async {
   final router = GoRouter(
     initialLocation: token == null
         ? Routes.resetPassword
-        : '${Routes.resetPassword}?token=$token',
+        // Format du lien de l'email : token dans le fragment.
+        : '${Routes.resetPassword}#token=$token',
     routes: [
       GoRoute(
         path: Routes.resetPassword,
         builder: (context, state) =>
-            ResetPasswordPage(token: state.uri.queryParameters['token']),
+            ResetPasswordPage(token: resetTokenFrom(state.uri)),
       ),
       GoRoute(
         path: Routes.emailLogin,
@@ -167,6 +168,29 @@ void main() {
         );
       },
     );
+  });
+
+  group('resetTokenFrom', () {
+    test('lit le token dans le fragment', () {
+      expect(
+        resetTokenFrom(Uri.parse('https://x.ci/auth/reset-password#token=abc')),
+        'abc',
+      );
+    });
+
+    test('accepte encore un token en query (anciens liens)', () {
+      expect(
+        resetTokenFrom(Uri.parse('https://x.ci/auth/reset-password?token=abc')),
+        'abc',
+      );
+    });
+
+    test('null sans token', () {
+      expect(
+        resetTokenFrom(Uri.parse('https://x.ci/auth/reset-password')),
+        isNull,
+      );
+    });
   });
 
   group('ResetPasswordPage', () {
