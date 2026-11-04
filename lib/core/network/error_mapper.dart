@@ -20,6 +20,9 @@ const _detailMap = <String, String>{
   'Invalid or expired token.': 'Lien invalide ou expiré',
   'Not authenticated': 'Authentification requise',
   'Invalid credentials': 'Session expirée, veuillez vous reconnecter',
+  // Rate limiting (429)
+  'Too many requests. Try again later.':
+      'Trop de tentatives. Réessayez dans quelques minutes.',
   // Catalogue
   'Product not found.': 'Produit introuvable',
   'A product with this barcode already exists.':

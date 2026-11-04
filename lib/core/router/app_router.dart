@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/pin_setup_page.dart';
 import '../../features/auth/presentation/pages/pin_login_page.dart';
 import '../../features/auth/presentation/pages/phone_login_page.dart';
+import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/auth/presentation/pages/store_suspended_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
@@ -53,6 +54,10 @@ abstract class Routes {
   /// Connexion par téléphone pour la récupération de compte / un nouvel
   /// appareil.
   static const String emailLogin = '/email-login';
+
+  /// Nouveau mot de passe, ouvert par le lien de l'email (App Link,
+  /// paramètre de requête `token`). Chemin imposé par l'URL de l'email.
+  static const String resetPassword = '/auth/reset-password';
 
   /// Écran de configuration de la boutique.
   static const String storeSetup = '/store-setup';
@@ -138,6 +143,9 @@ const _authRoutes = {
 /// non authentifié impose une seule route (ou les routes publiques) : pas de
 /// boucle possible.
 String? authRedirect(AsyncValue<AuthStatus> auth, String? location) {
+  // Lien de l'email : ouvrable quel que soit l'état (PIN demandé, connecté…),
+  // sinon le lien serait avalé par la redirection d'auth.
+  if (location == Routes.resetPassword) return null;
   final target = auth.when(
     loading: () => null,
     // Erreur d'une action (connexion, PIN…) : on reste sur la page qui
@@ -201,6 +209,14 @@ GoRouter appRouter(Ref ref) {
         path: Routes.emailLogin,
         pageBuilder: (context, state) =>
             PageTransitions.fade(context, state, const PhoneLoginPage()),
+      ),
+      GoRoute(
+        path: Routes.resetPassword,
+        pageBuilder: (context, state) => PageTransitions.fade(
+          context,
+          state,
+          ResetPasswordPage(token: resetTokenFrom(state.uri)),
+        ),
       ),
       GoRoute(
         path: Routes.pinSetup,
