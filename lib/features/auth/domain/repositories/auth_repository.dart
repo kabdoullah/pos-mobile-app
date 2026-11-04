@@ -31,6 +31,15 @@ abstract class AuthRepository {
   /// Demande un email de réinitialisation de mot de passe.
   Future<void> sendPasswordReset(String email);
 
+  /// Choisit un nouveau mot de passe avec le [token] du lien reçu par email.
+  ///
+  /// Lève une `ApiException` (422) si le lien est invalide, expiré ou déjà
+  /// utilisé. Ne connecte pas l'utilisateur.
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  });
+
   /// Déconnecte l'utilisateur (efface tokens et PIN).
   Future<void> logout();
 

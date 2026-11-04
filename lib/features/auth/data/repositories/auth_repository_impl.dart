@@ -133,6 +133,20 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await dataSource.resetPassword(
+        ResetPasswordRequestDto(token: token, newPassword: newPassword),
+      );
+    } on DioException catch (e) {
+      throw _parseException(e);
+    }
+  }
+
+  @override
   Future<void> logout() async {
     await tokenStorage.clearTokens();
     await pinStorage.clearPin();

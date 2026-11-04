@@ -40,6 +40,22 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- App Link du lien de réinitialisation de mot de passe (email).
+                 Host = celui de l'API (main.dart / main_prod.dart) : le
+                 backend y sert /.well-known/assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="https"
+                    android:host="pos-mobile-vkuh.onrender.com"
+                    android:pathPrefix="/auth/reset-password"/>
+            </intent-filter>
+            <!-- Laisse go_router recevoir les liens entrants. -->
+            <meta-data
+                android:name="flutter_deeplinking_enabled"
+                android:value="true"/>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

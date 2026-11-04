@@ -94,6 +94,26 @@ void main() {
     });
   });
 
+  test('le lien de réinitialisation n\'est jamais redirigé', () {
+    final states = <AsyncValue<AuthStatus>>[
+      const AsyncLoading(),
+      const AsyncValue<AuthStatus>.error('x', StackTrace.empty),
+      _data(const AuthUnauthenticated()),
+      _data(const AuthStoreSetupRequired()),
+      _data(const AuthPinSetupRequired()),
+      _data(const AuthPinRequired()),
+      _data(const AuthAuthenticated(_user)),
+      _data(const AuthStoreSuspended(supportContact: 'x')),
+    ];
+    for (final state in states) {
+      expect(
+        authRedirect(state, Routes.resetPassword),
+        isNull,
+        reason: '$state',
+      );
+    }
+  });
+
   group('boutique suspendue', () {
     final suspended = _data(const AuthStoreSuspended(supportContact: 'x'));
 
