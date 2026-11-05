@@ -7,15 +7,12 @@ import 'package:logger/logger.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../auth/providers/auth_di_providers.dart';
 import '../providers/auth_providers.dart';
-import '../providers/support_contact_provider.dart';
 import '../widgets/auth_layout.dart';
-import '../widgets/support_contact_buttons.dart';
+import '../widgets/forgot_password_dialog.dart';
 
 /// Écran de connexion par numéro de téléphone (authentification principale).
 ///
@@ -88,97 +85,6 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
     final e164 = toE164Ci(_phoneController.text.trim())!;
     _logger.i('[PhoneLogin] Login clicked: $e164');
     await ref.read(authProvider.notifier).login(e164, _passwordController.text);
-  }
-
-  void _showForgotPasswordDialog(BuildContext context) {
-    final emailController = TextEditingController();
-
-    unawaited(
-      showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Mot de passe oublié'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Saisissez l\'email de récupération renseigné à l\'inscription.',
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Adresse email de récupération',
-                hint: 'votre@email.com',
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                autofocus: true,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Pas d\'email, ou email jamais confirmé ? Contactez le support.',
-                style: AppTypography.bodySmall.copyWith(
-                  color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Consumer(
-                builder: (context, ref, _) {
-                  final support = ref.watch(supportContactProvider).value;
-                  return SupportContactButtons(
-                    contact: support?.contact,
-                    whatsApp: support?.whatsApp,
-                    compact: true,
-                  );
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Annuler'),
-            ),
-            TextButton(
-              onPressed: () async {
-                final email = emailController.text.trim();
-                if (email.isEmpty) return;
-                Navigator.of(dialogContext).pop();
-                try {
-                  await ref
-                      .read(authRepositoryProvider)
-                      .sendPasswordReset(email);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Si cette adresse est confirmée, un email vous a '
-                          'été envoyé. Vérifiez votre boîte mail.',
-                        ),
-                        duration: Duration(seconds: 4),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (context.mounted) {
-                    final cs = Theme.of(context).colorScheme;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          errorToFrench(e),
-                          style: TextStyle(color: cs.onError),
-                        ),
-                        backgroundColor: cs.error,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Envoyer'),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -259,7 +165,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
               child: TextButton(
                 onPressed: isLoading
                     ? null
-                    : () => _showForgotPasswordDialog(context),
+                    : () => showForgotPasswordDialog(context),
                 child: const Text('Mot de passe oublié ?'),
               ),
             ),
