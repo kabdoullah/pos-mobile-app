@@ -33,6 +33,18 @@ class _FakeAuth extends Auth {
     state = const AsyncError(InvalidCredentials(), StackTrace.empty);
   }
 
+  /// Email transmis au dernier appel de [register] (null si jamais appelé).
+  String? registeredEmail;
+
+  @override
+  Future<void> register(
+    String phoneNumber,
+    String password, {
+    required String email,
+  }) async {
+    registeredEmail = email;
+  }
+
   @override
   Future<void> verifyPin(String pin) async {
     state = AsyncError(pinFailures[_pinCalls++], StackTrace.empty);
@@ -197,6 +209,29 @@ void main() {
       await tester.enterText(fields.at(3), 'secret123');
       await tester.pump();
       expect(find.text('Les mots de passe correspondent'), findsOneWidget);
+    });
+
+    testWidgets('email obligatoire : pas d\'inscription sans adresse', (
+      tester,
+    ) async {
+      final auth = await _pump(tester, const RegisterPage());
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '0700000001');
+      await tester.enterText(fields.at(2), 'secret123');
+      await tester.enterText(fields.at(3), 'secret123');
+
+      final submit = find.text('Continuer');
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pump();
+      expect(find.text('Saisissez votre adresse email.'), findsOneWidget);
+      expect(auth.registeredEmail, isNull);
+
+      await tester.enterText(fields.at(1), 'awa@example.com');
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pump();
+      expect(auth.registeredEmail, 'awa@example.com');
     });
   });
 

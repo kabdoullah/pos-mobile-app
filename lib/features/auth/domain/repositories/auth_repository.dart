@@ -2,14 +2,15 @@ import '../entities/user.dart';
 
 /// Interface du repository auth. Implémenté dans la couche `data`.
 abstract class AuthRepository {
-  /// Crée un compte utilisateur. Email optionnel (récupération de compte uniquement).
+  /// Crée un compte utilisateur. L'email est obligatoire : c'est le seul canal
+  /// de réinitialisation du mot de passe.
   ///
   /// Marque aussi la configuration de la boutique comme en attente pour ce
   /// compte (voir [isStoreSetupPending]).
   Future<User> register({
     required String phoneNumber,
     required String password,
-    String? email,
+    required String email,
   });
 
   /// Authentifie via numéro de téléphone + mot de passe.

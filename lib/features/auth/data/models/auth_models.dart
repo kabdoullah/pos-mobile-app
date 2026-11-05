@@ -10,7 +10,7 @@ sealed class RegisterRequestDto with _$RegisterRequestDto {
   const factory RegisterRequestDto({
     @JsonKey(name: 'phone_number') required String phoneNumber,
     required String password,
-    String? email,
+    required String email,
   }) = _RegisterRequestDto;
 
   factory RegisterRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -104,6 +104,7 @@ sealed class UserMeDto with _$UserMeDto {
     @JsonKey(name: 'phone_number') required String phoneNumber,
     String? email,
     @JsonKey(name: 'display_name') String? displayName,
+    @JsonKey(name: 'email_verified_at') DateTime? emailVerifiedAt,
   }) = _UserMeDto;
 
   factory UserMeDto.fromJson(Map<String, dynamic> json) =>

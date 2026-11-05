@@ -289,7 +289,7 @@ class Auth extends _$Auth {
     });
   }
 
-  /// Crée un compte utilisateur (téléphone + mot de passe, email optionnel).
+  /// Crée un compte utilisateur (téléphone, mot de passe et email).
   ///
   /// Crée le compte sur le backend, enregistre les tokens dans le secure
   /// storage.
@@ -299,7 +299,7 @@ class Auth extends _$Auth {
   Future<void> register(
     String phoneNumber,
     String password, {
-    String? email,
+    required String email,
   }) async {
     _logger.i('[Auth.register] Starting for $phoneNumber');
     state = const AsyncLoading<AuthStatus>();

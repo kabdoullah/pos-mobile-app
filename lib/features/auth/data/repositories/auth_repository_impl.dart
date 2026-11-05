@@ -31,7 +31,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<User> register({
     required String phoneNumber,
     required String password,
-    String? email,
+    required String email,
   }) async {
     try {
       final registerRes = await dataSource.register(

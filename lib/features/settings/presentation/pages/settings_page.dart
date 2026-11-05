@@ -26,6 +26,7 @@ import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 import '../../../auth/providers/seller_profile_provider.dart';
+import '../widgets/account_email_tile.dart';
 import '../widgets/delete_account_sheet.dart';
 import '../widgets/receipt_settings_sheet.dart';
 import '../widgets/seller_name_sheet.dart';
@@ -208,6 +209,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   showChevron: true,
                   onTap: () => showSellerNameSheet(context, sellerName),
                 ),
+              if (phone != null) const AccountEmailTile(),
               SettingsTile(
                 icon: Icons.logout_outlined,
                 title: 'Se déconnecter',

@@ -59,7 +59,7 @@ final class UpdateRequiredProvider
   }
 }
 
-String _$updateRequiredHash() => r'2005200822d75d915d8a30ffee458ba84647b4ce';
+String _$updateRequiredHash() => r'431745355bc108b0e60cf54f6e7ad57c2861d2e7';
 
 /// Vrai quand l'app doit être mise à jour avant toute utilisation.
 ///

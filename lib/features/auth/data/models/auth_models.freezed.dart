@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RegisterRequestDto {
 
-@JsonKey(name: 'phone_number') String get phoneNumber; String get password; String? get email;
+@JsonKey(name: 'phone_number') String get phoneNumber; String get password; String get email;
 /// Create a copy of RegisterRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -49,7 +49,7 @@ abstract mixin class $RegisterRequestDtoCopyWith<$Res>  {
   factory $RegisterRequestDtoCopyWith(RegisterRequestDto value, $Res Function(RegisterRequestDto) _then) = _$RegisterRequestDtoCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'phone_number') String phoneNumber, String password, String? email
+@JsonKey(name: 'phone_number') String phoneNumber, String password, String email
 });
 
 
@@ -66,12 +66,12 @@ class _$RegisterRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of RegisterRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? phoneNumber = null,Object? password = null,Object? email = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? phoneNumber = null,Object? password = null,Object? email = null,}) {
   return _then(RegisterRequestDto(
 phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
-as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String?,
+as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -153,7 +153,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String? email)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String email)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RegisterRequestDto() when $default != null:
 return $default(_that.phoneNumber,_that.password,_that.email);case _:
@@ -174,7 +174,7 @@ return $default(_that.phoneNumber,_that.password,_that.email);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String? email)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String email)  $default,) {final _that = this;
 switch (_that) {
 case _RegisterRequestDto():
 return $default(_that.phoneNumber,_that.password,_that.email);}
@@ -191,7 +191,7 @@ return $default(_that.phoneNumber,_that.password,_that.email);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String? email)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'phone_number')  String phoneNumber,  String password,  String email)?  $default,) {final _that = this;
 switch (_that) {
 case _RegisterRequestDto() when $default != null:
 return $default(_that.phoneNumber,_that.password,_that.email);case _:
@@ -206,12 +206,12 @@ return $default(_that.phoneNumber,_that.password,_that.email);case _:
 @JsonSerializable()
 
 class _RegisterRequestDto implements RegisterRequestDto {
-  const _RegisterRequestDto({@JsonKey(name: 'phone_number') required this.phoneNumber, required this.password, this.email});
+  const _RegisterRequestDto({@JsonKey(name: 'phone_number') required this.phoneNumber, required this.password, required this.email});
   factory _RegisterRequestDto.fromJson(Map<String, dynamic> json) => _$RegisterRequestDtoFromJson(json);
 
 @override@JsonKey(name: 'phone_number') final  String phoneNumber;
 @override final  String password;
-@override final  String? email;
+@override final  String email;
 
 /// Create a copy of RegisterRequestDto
 /// with the given fields replaced by the non-null parameter values.
@@ -246,7 +246,7 @@ abstract mixin class _$RegisterRequestDtoCopyWith<$Res> implements $RegisterRequ
   factory _$RegisterRequestDtoCopyWith(_RegisterRequestDto value, $Res Function(_RegisterRequestDto) _then) = __$RegisterRequestDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'phone_number') String phoneNumber, String password, String? email
+@JsonKey(name: 'phone_number') String phoneNumber, String password, String email
 });
 
 
@@ -263,12 +263,12 @@ class __$RegisterRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of RegisterRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? phoneNumber = null,Object? password = null,Object? email = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? phoneNumber = null,Object? password = null,Object? email = null,}) {
   return _then(_RegisterRequestDto(
 phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
-as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
-as String?,
+as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -1842,7 +1842,7 @@ as String,
 /// @nodoc
 mixin _$UserMeDto {
 
- String get id;@JsonKey(name: 'phone_number') String get phoneNumber; String? get email;@JsonKey(name: 'display_name') String? get displayName;
+ String get id;@JsonKey(name: 'phone_number') String get phoneNumber; String? get email;@JsonKey(name: 'display_name') String? get displayName;@JsonKey(name: 'email_verified_at') DateTime? get emailVerifiedAt;
 /// Create a copy of UserMeDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1855,16 +1855,16 @@ $UserMeDtoCopyWith<UserMeDto> get copyWith => _$UserMeDtoCopyWithImpl<UserMeDto>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.emailVerifiedAt, emailVerifiedAt) || other.emailVerifiedAt == emailVerifiedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName);
+int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName,emailVerifiedAt);
 
 @override
 String toString() {
-  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName)';
+  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName, emailVerifiedAt: $emailVerifiedAt)';
 }
 
 
@@ -1875,7 +1875,7 @@ abstract mixin class $UserMeDtoCopyWith<$Res>  {
   factory $UserMeDtoCopyWith(UserMeDto value, $Res Function(UserMeDto) _then) = _$UserMeDtoCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName
+ String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName,@JsonKey(name: 'email_verified_at') DateTime? emailVerifiedAt
 });
 
 
@@ -1892,13 +1892,14 @@ class _$UserMeDtoCopyWithImpl<$Res>
 
 /// Create a copy of UserMeDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,Object? emailVerifiedAt = freezed,}) {
   return _then(UserMeDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,emailVerifiedAt: freezed == emailVerifiedAt ? _self.emailVerifiedAt : emailVerifiedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -1980,10 +1981,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName, @JsonKey(name: 'email_verified_at')  DateTime? emailVerifiedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserMeDto() when $default != null:
-return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _:
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName,_that.emailVerifiedAt);case _:
   return orElse();
 
 }
@@ -2001,10 +2002,10 @@ return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName, @JsonKey(name: 'email_verified_at')  DateTime? emailVerifiedAt)  $default,) {final _that = this;
 switch (_that) {
 case _UserMeDto():
-return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);}
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName,_that.emailVerifiedAt);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -2018,10 +2019,10 @@ return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'phone_number')  String phoneNumber,  String? email, @JsonKey(name: 'display_name')  String? displayName, @JsonKey(name: 'email_verified_at')  DateTime? emailVerifiedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _UserMeDto() when $default != null:
-return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _:
+return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName,_that.emailVerifiedAt);case _:
   return null;
 
 }
@@ -2033,13 +2034,14 @@ return $default(_that.id,_that.phoneNumber,_that.email,_that.displayName);case _
 @JsonSerializable()
 
 class _UserMeDto implements UserMeDto {
-  const _UserMeDto({required this.id, @JsonKey(name: 'phone_number') required this.phoneNumber, this.email, @JsonKey(name: 'display_name') this.displayName});
+  const _UserMeDto({required this.id, @JsonKey(name: 'phone_number') required this.phoneNumber, this.email, @JsonKey(name: 'display_name') this.displayName, @JsonKey(name: 'email_verified_at') this.emailVerifiedAt});
   factory _UserMeDto.fromJson(Map<String, dynamic> json) => _$UserMeDtoFromJson(json);
 
 @override final  String id;
 @override@JsonKey(name: 'phone_number') final  String phoneNumber;
 @override final  String? email;
 @override@JsonKey(name: 'display_name') final  String? displayName;
+@override@JsonKey(name: 'email_verified_at') final  DateTime? emailVerifiedAt;
 
 /// Create a copy of UserMeDto
 /// with the given fields replaced by the non-null parameter values.
@@ -2054,16 +2056,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserMeDto&&(identical(other.id, id) || other.id == id)&&(identical(other.phoneNumber, phoneNumber) || other.phoneNumber == phoneNumber)&&(identical(other.email, email) || other.email == email)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.emailVerifiedAt, emailVerifiedAt) || other.emailVerifiedAt == emailVerifiedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName);
+int get hashCode => Object.hash(runtimeType,id,phoneNumber,email,displayName,emailVerifiedAt);
 
 @override
 String toString() {
-  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName)';
+  return 'UserMeDto(id: $id, phoneNumber: $phoneNumber, email: $email, displayName: $displayName, emailVerifiedAt: $emailVerifiedAt)';
 }
 
 
@@ -2074,7 +2076,7 @@ abstract mixin class _$UserMeDtoCopyWith<$Res> implements $UserMeDtoCopyWith<$Re
   factory _$UserMeDtoCopyWith(_UserMeDto value, $Res Function(_UserMeDto) _then) = __$UserMeDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName
+ String id,@JsonKey(name: 'phone_number') String phoneNumber, String? email,@JsonKey(name: 'display_name') String? displayName,@JsonKey(name: 'email_verified_at') DateTime? emailVerifiedAt
 });
 
 
@@ -2091,13 +2093,14 @@ class __$UserMeDtoCopyWithImpl<$Res>
 
 /// Create a copy of UserMeDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? phoneNumber = null,Object? email = freezed,Object? displayName = freezed,Object? emailVerifiedAt = freezed,}) {
   return _then(_UserMeDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,phoneNumber: null == phoneNumber ? _self.phoneNumber : phoneNumber // ignore: cast_nullable_to_non_nullable
 as String,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String?,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String?,
+as String?,emailVerifiedAt: freezed == emailVerifiedAt ? _self.emailVerifiedAt : emailVerifiedAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

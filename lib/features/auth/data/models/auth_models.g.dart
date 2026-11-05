@@ -10,7 +10,7 @@ _RegisterRequestDto _$RegisterRequestDtoFromJson(Map<String, dynamic> json) =>
     _RegisterRequestDto(
       phoneNumber: json['phone_number'] as String,
       password: json['password'] as String,
-      email: json['email'] as String?,
+      email: json['email'] as String,
     );
 
 Map<String, dynamic> _$RegisterRequestDtoToJson(_RegisterRequestDto instance) =>
@@ -96,6 +96,9 @@ _UserMeDto _$UserMeDtoFromJson(Map<String, dynamic> json) => _UserMeDto(
   phoneNumber: json['phone_number'] as String,
   email: json['email'] as String?,
   displayName: json['display_name'] as String?,
+  emailVerifiedAt: json['email_verified_at'] == null
+      ? null
+      : DateTime.parse(json['email_verified_at'] as String),
 );
 
 Map<String, dynamic> _$UserMeDtoToJson(_UserMeDto instance) =>
@@ -104,6 +107,7 @@ Map<String, dynamic> _$UserMeDtoToJson(_UserMeDto instance) =>
       'phone_number': instance.phoneNumber,
       'email': instance.email,
       'display_name': instance.displayName,
+      'email_verified_at': instance.emailVerifiedAt?.toIso8601String(),
     };
 
 _UserMeUpdateDto _$UserMeUpdateDtoFromJson(Map<String, dynamic> json) =>
