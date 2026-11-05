@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/features/auth/presentation/pages/store_suspended_page.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/auth/presentation/widgets/support_contact_buttons.dart';
 
 class _FakeAuth extends Auth {
   _FakeAuth(this.initial, {this.retryMessage});

@@ -2109,6 +2109,266 @@ as DateTime?,
 
 
 /// @nodoc
+mixin _$SupportContactDto {
+
+@JsonKey(name: 'support_contact') String? get supportContact;@JsonKey(name: 'support_whatsapp') String? get supportWhatsApp;
+/// Create a copy of SupportContactDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SupportContactDtoCopyWith<SupportContactDto> get copyWith => _$SupportContactDtoCopyWithImpl<SupportContactDto>(this as SupportContactDto, _$identity);
+
+  /// Serializes this SupportContactDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SupportContactDto&&(identical(other.supportContact, supportContact) || other.supportContact == supportContact)&&(identical(other.supportWhatsApp, supportWhatsApp) || other.supportWhatsApp == supportWhatsApp));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,supportContact,supportWhatsApp);
+
+@override
+String toString() {
+  return 'SupportContactDto(supportContact: $supportContact, supportWhatsApp: $supportWhatsApp)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SupportContactDtoCopyWith<$Res>  {
+  factory $SupportContactDtoCopyWith(SupportContactDto value, $Res Function(SupportContactDto) _then) = _$SupportContactDtoCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'support_contact') String? supportContact,@JsonKey(name: 'support_whatsapp') String? supportWhatsApp
+});
+
+
+
+
+}
+/// @nodoc
+class _$SupportContactDtoCopyWithImpl<$Res>
+    implements $SupportContactDtoCopyWith<$Res> {
+  _$SupportContactDtoCopyWithImpl(this._self, this._then);
+
+  final SupportContactDto _self;
+  final $Res Function(SupportContactDto) _then;
+
+/// Create a copy of SupportContactDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? supportContact = freezed,Object? supportWhatsApp = freezed,}) {
+  return _then(SupportContactDto(
+supportContact: freezed == supportContact ? _self.supportContact : supportContact // ignore: cast_nullable_to_non_nullable
+as String?,supportWhatsApp: freezed == supportWhatsApp ? _self.supportWhatsApp : supportWhatsApp // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [SupportContactDto].
+extension SupportContactDtoPatterns on SupportContactDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SupportContactDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _SupportContactDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SupportContactDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _SupportContactDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SupportContactDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _SupportContactDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'support_contact')  String? supportContact, @JsonKey(name: 'support_whatsapp')  String? supportWhatsApp)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _SupportContactDto() when $default != null:
+return $default(_that.supportContact,_that.supportWhatsApp);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'support_contact')  String? supportContact, @JsonKey(name: 'support_whatsapp')  String? supportWhatsApp)  $default,) {final _that = this;
+switch (_that) {
+case _SupportContactDto():
+return $default(_that.supportContact,_that.supportWhatsApp);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'support_contact')  String? supportContact, @JsonKey(name: 'support_whatsapp')  String? supportWhatsApp)?  $default,) {final _that = this;
+switch (_that) {
+case _SupportContactDto() when $default != null:
+return $default(_that.supportContact,_that.supportWhatsApp);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _SupportContactDto implements SupportContactDto {
+  const _SupportContactDto({@JsonKey(name: 'support_contact') this.supportContact, @JsonKey(name: 'support_whatsapp') this.supportWhatsApp});
+  factory _SupportContactDto.fromJson(Map<String, dynamic> json) => _$SupportContactDtoFromJson(json);
+
+@override@JsonKey(name: 'support_contact') final  String? supportContact;
+@override@JsonKey(name: 'support_whatsapp') final  String? supportWhatsApp;
+
+/// Create a copy of SupportContactDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SupportContactDtoCopyWith<_SupportContactDto> get copyWith => __$SupportContactDtoCopyWithImpl<_SupportContactDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$SupportContactDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SupportContactDto&&(identical(other.supportContact, supportContact) || other.supportContact == supportContact)&&(identical(other.supportWhatsApp, supportWhatsApp) || other.supportWhatsApp == supportWhatsApp));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,supportContact,supportWhatsApp);
+
+@override
+String toString() {
+  return 'SupportContactDto(supportContact: $supportContact, supportWhatsApp: $supportWhatsApp)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SupportContactDtoCopyWith<$Res> implements $SupportContactDtoCopyWith<$Res> {
+  factory _$SupportContactDtoCopyWith(_SupportContactDto value, $Res Function(_SupportContactDto) _then) = __$SupportContactDtoCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'support_contact') String? supportContact,@JsonKey(name: 'support_whatsapp') String? supportWhatsApp
+});
+
+
+
+
+}
+/// @nodoc
+class __$SupportContactDtoCopyWithImpl<$Res>
+    implements _$SupportContactDtoCopyWith<$Res> {
+  __$SupportContactDtoCopyWithImpl(this._self, this._then);
+
+  final _SupportContactDto _self;
+  final $Res Function(_SupportContactDto) _then;
+
+/// Create a copy of SupportContactDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? supportContact = freezed,Object? supportWhatsApp = freezed,}) {
+  return _then(_SupportContactDto(
+supportContact: freezed == supportContact ? _self.supportContact : supportContact // ignore: cast_nullable_to_non_nullable
+as String?,supportWhatsApp: freezed == supportWhatsApp ? _self.supportWhatsApp : supportWhatsApp // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$UserMeUpdateDto {
 
 @JsonKey(name: 'display_name') String? get displayName;

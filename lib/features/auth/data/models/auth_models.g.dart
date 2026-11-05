@@ -110,6 +110,18 @@ Map<String, dynamic> _$UserMeDtoToJson(_UserMeDto instance) =>
       'email_verified_at': instance.emailVerifiedAt?.toIso8601String(),
     };
 
+_SupportContactDto _$SupportContactDtoFromJson(Map<String, dynamic> json) =>
+    _SupportContactDto(
+      supportContact: json['support_contact'] as String?,
+      supportWhatsApp: json['support_whatsapp'] as String?,
+    );
+
+Map<String, dynamic> _$SupportContactDtoToJson(_SupportContactDto instance) =>
+    <String, dynamic>{
+      'support_contact': instance.supportContact,
+      'support_whatsapp': instance.supportWhatsApp,
+    };
+
 _UserMeUpdateDto _$UserMeUpdateDtoFromJson(Map<String, dynamic> json) =>
     _UserMeUpdateDto(displayName: json['display_name'] as String?);
 

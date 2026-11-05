@@ -111,6 +111,19 @@ sealed class UserMeDto with _$UserMeDto {
       _$UserMeDtoFromJson(json);
 }
 
+/// Coordonnées du support (`GET /api/v1/support`, public).
+@freezed
+sealed class SupportContactDto with _$SupportContactDto {
+  /// Crée un [SupportContactDto].
+  const factory SupportContactDto({
+    @JsonKey(name: 'support_contact') String? supportContact,
+    @JsonKey(name: 'support_whatsapp') String? supportWhatsApp,
+  }) = _SupportContactDto;
+
+  factory SupportContactDto.fromJson(Map<String, dynamic> json) =>
+      _$SupportContactDtoFromJson(json);
+}
+
 /// Mise à jour du profil ; `display_name` null ou vide = retiré du reçu.
 @freezed
 sealed class UserMeUpdateDto with _$UserMeUpdateDto {

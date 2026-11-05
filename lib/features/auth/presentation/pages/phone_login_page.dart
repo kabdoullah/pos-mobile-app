@@ -13,7 +13,9 @@ import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/auth_di_providers.dart';
 import '../providers/auth_providers.dart';
+import '../providers/support_contact_provider.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/support_contact_buttons.dart';
 
 /// Écran de connexion par numéro de téléphone (authentification principale).
 ///
@@ -101,8 +103,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Saisissez l\'email de récupération renseigné à l\'inscription. '
-                'Sans email, contactez le support.',
+                'Saisissez l\'email de récupération renseigné à l\'inscription.',
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
@@ -111,6 +112,24 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
                 autofocus: true,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Pas d\'email, ou email jamais confirmé ? Contactez le support.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Consumer(
+                builder: (context, ref, _) {
+                  final support = ref.watch(supportContactProvider).value;
+                  return SupportContactButtons(
+                    contact: support?.contact,
+                    whatsApp: support?.whatsApp,
+                    compact: true,
+                  );
+                },
               ),
             ],
           ),
