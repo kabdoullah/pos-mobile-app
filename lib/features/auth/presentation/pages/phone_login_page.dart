@@ -132,7 +132,8 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          'Email envoyé. Vérifiez votre boîte mail.',
+                          'Si cette adresse est confirmée, un email vous a '
+                          'été envoyé. Vérifiez votre boîte mail.',
                         ),
                         duration: Duration(seconds: 4),
                       ),

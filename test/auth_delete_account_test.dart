@@ -116,7 +116,7 @@ class _Device {
   Future<ProviderContainer> signedIn() async {
     final app = await launch();
     final auth = app.read(authProvider.notifier);
-    await auth.register(_phone, _password);
+    await auth.register(_phone, _password, email: 'awa@example.com');
     await auth.proceedToPinSetup();
     await auth.setupPin('2580');
     expect(app.read(authProvider).value, isA<AuthAuthenticated>());
@@ -128,7 +128,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(const LoginRequestDto(phoneNumber: '', password: ''));
     registerFallbackValue(
-      const RegisterRequestDto(phoneNumber: '', password: ''),
+      const RegisterRequestDto(phoneNumber: '', password: '', email: ''),
     );
     registerFallbackValue(const DeleteAccountRequestDto(password: ''));
   });

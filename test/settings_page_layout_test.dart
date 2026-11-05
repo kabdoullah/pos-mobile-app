@@ -8,9 +8,11 @@ import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
+import 'package:mobile/features/auth/domain/entities/account_email.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/domain/entities/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/auth/providers/account_email_provider.dart';
 import 'package:mobile/features/auth/providers/seller_profile_provider.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/settings/presentation/pages/settings_page.dart';
@@ -25,6 +27,15 @@ class _Authenticated extends Auth {
 class _Seller extends SellerProfile {
   @override
   Future<String?> build() async => 'Awa Koné';
+}
+
+/// Email non confirmé et long : la ligne la plus chargée.
+class _UnverifiedEmail extends AccountEmailStatus {
+  @override
+  Future<AccountEmail> build() async => const AccountEmail(
+    email: 'awa.kone.boutique.cocody.angre@example.com',
+    isVerified: false,
+  );
 }
 
 /// Synchro figée (pas de timers ni d'appels réseau).
@@ -62,6 +73,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
         authProvider.overrideWith(_Authenticated.new),
         storeConfigProvider.overrideWith(_Store.new),
         sellerProfileProvider.overrideWith(_Seller.new),
+        accountEmailStatusProvider.overrideWith(_UnverifiedEmail.new),
         syncOrchestratorProvider.overrideWith(_IdleSync.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(3)),

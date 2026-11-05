@@ -129,7 +129,7 @@ void main() {
   setUpAll(() {
     registerFallbackValue(const LoginRequestDto(phoneNumber: '', password: ''));
     registerFallbackValue(
-      const RegisterRequestDto(phoneNumber: '', password: ''),
+      const RegisterRequestDto(phoneNumber: '', password: '', email: ''),
     );
     registerFallbackValue(const RefreshRequestDto(refreshToken: ''));
   });
@@ -145,7 +145,7 @@ void main() {
     final app = await _Device().launch();
     final auth = app.read(authProvider.notifier);
 
-    await auth.register(phone, 'secret123');
+    await auth.register(phone, 'secret123', email: 'awa@example.com');
     expect(_status(app), isA<AuthStoreSetupRequired>());
 
     await auth.proceedToPinSetup();
@@ -161,7 +161,9 @@ void main() {
       'relancement', () async {
     final device = _Device();
     final first = await device.launch();
-    await first.read(authProvider.notifier).register(phone, 'secret123');
+    await first
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
     first.dispose();
 
     final relaunched = await device.launch();
@@ -172,7 +174,9 @@ void main() {
       'boutique', () async {
     final device = _Device();
     final first = await device.launch();
-    await first.read(authProvider.notifier).register(phone, 'secret123');
+    await first
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
     first.dispose();
 
     final relaunched = await device.launch();
@@ -183,7 +187,9 @@ void main() {
   test('un autre compte n\'hérite pas de la boutique en attente', () async {
     final device = _Device();
     final first = await device.launch();
-    await first.read(authProvider.notifier).register(phone, 'secret123');
+    await first
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
 
     await first
         .read(authProvider.notifier)
@@ -195,7 +201,7 @@ void main() {
     final device = _Device();
     final first = await device.launch();
     final auth = first.read(authProvider.notifier);
-    await auth.register(phone, 'secret123');
+    await auth.register(phone, 'secret123', email: 'awa@example.com');
     await auth.proceedToPinSetup();
     first.dispose();
 
@@ -209,7 +215,7 @@ void main() {
   test('retour PIN → boutique uniquement pendant l\'inscription', () async {
     final app = await _Device().launch();
     final auth = app.read(authProvider.notifier);
-    await auth.register(phone, 'secret123');
+    await auth.register(phone, 'secret123', email: 'awa@example.com');
     await auth.proceedToPinSetup();
 
     auth.returnToStoreSetup();

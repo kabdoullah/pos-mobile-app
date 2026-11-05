@@ -11,12 +11,11 @@ import '../providers/auth_providers.dart';
 import '../widgets/auth_layout.dart';
 import '../widgets/registration_stepper.dart';
 
-/// Étape 1 de l'inscription : compte (téléphone + mot de passe, email
-/// optionnel).
+/// Étape 1 de l'inscription : compte (téléphone, email et mot de passe).
 ///
-/// Le numéro de téléphone est l'identifiant principal. L'email est optionnel,
-/// pour la récupération de compte. Une fois le compte créé, [Auth] passe à
-/// l'étape boutique et le routeur suit.
+/// Le numéro de téléphone est l'identifiant principal. L'email est obligatoire :
+/// c'est le seul canal de réinitialisation du mot de passe. Une fois le compte
+/// créé, [Auth] passe à l'étape boutique et le routeur suit.
 class RegisterPage extends ConsumerStatefulWidget {
   /// Crée une page d'inscription.
   const RegisterPage({super.key});
@@ -67,7 +66,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool get _passwordValid => _password.length >= _minPasswordLength;
   bool get _passwordsMatch => _confirm.isNotEmpty && _confirm == _password;
   bool get _emailValid =>
-      _email.isEmpty || RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email);
+      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email);
 
   String? get _phoneError {
     if (!_submitted || _phoneValid) return null;
@@ -78,8 +77,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         : 'Numéro à 10 chiffres, ex. 07 00 00 00 00.';
   }
 
-  String? get _emailError =>
-      _submitted && !_emailValid ? 'Adresse email invalide.' : null;
+  String? get _emailError {
+    if (!_submitted || _emailValid) return null;
+    return _email.isEmpty
+        ? 'Saisissez votre adresse email.'
+        : 'Adresse email invalide.';
+  }
 
   String? get _passwordError {
     if (!_submitted || _passwordValid) return null;
@@ -115,11 +118,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     await ref
         .read(authProvider.notifier)
-        .register(
-          toE164Ci(_phone)!,
-          _password,
-          email: _email.isEmpty ? null : _email,
-        );
+        .register(toE164Ci(_phone)!, _password, email: _email);
     // Succès : le routeur passe à l'étape boutique.
   }
 
@@ -177,8 +176,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Email (facultatif)',
-                hint: 'Pour récupérer votre compte',
+                label: 'Email',
+                hint: 'Pour récupérer votre mot de passe',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 errorText: _emailError,

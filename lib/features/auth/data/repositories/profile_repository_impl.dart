@@ -1,5 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../../core/network/api_exception.dart';
+import '../../domain/entities/account_email.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_models.dart';
@@ -50,6 +53,28 @@ class ProfileRepositoryImpl implements ProfileRepository {
     );
     await _writeLocal(me.displayName);
     return me.displayName;
+  }
+
+  @override
+  Future<AccountEmail> getAccountEmail() async {
+    try {
+      final me = await remoteDataSource.getMe();
+      return AccountEmail(
+        email: me.email,
+        isVerified: me.emailVerifiedAt != null,
+      );
+    } on DioException catch (e) {
+      throw parseException(e);
+    }
+  }
+
+  @override
+  Future<void> resendEmailVerification() async {
+    try {
+      await remoteDataSource.resendVerification();
+    } on DioException catch (e) {
+      throw parseException(e);
+    }
   }
 
   @override

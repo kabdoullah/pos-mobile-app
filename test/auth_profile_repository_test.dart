@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mobile/features/auth/data/models/auth_models.dart';
 import 'package:mobile/features/auth/data/repositories/profile_repository_impl.dart';
@@ -56,5 +58,55 @@ void main() {
       remote.getMe,
     ).thenAnswer((_) async => me.copyWith(displayName: 'Koffi'));
     expect(await repo.getDisplayName(), 'Koffi');
+  });
+
+  group('email du compte', () {
+    test('vérifié dès que email_verified_at est renseigné', () async {
+      when(remote.getMe).thenAnswer(
+        (_) async => me.copyWith(
+          email: 'awa@example.com',
+          emailVerifiedAt: DateTime.utc(2026, 11, 5),
+        ),
+      );
+
+      final account = await repo.getAccountEmail();
+
+      expect(account.email, 'awa@example.com');
+      expect(account.isVerified, isTrue);
+    });
+
+    test('toujours relu sur le serveur (pas de cache)', () async {
+      when(
+        remote.getMe,
+      ).thenAnswer((_) async => me.copyWith(email: 'awa@example.com'));
+      expect((await repo.getAccountEmail()).isVerified, isFalse);
+
+      when(remote.getMe).thenAnswer(
+        (_) async => me.copyWith(
+          email: 'awa@example.com',
+          emailVerifiedAt: DateTime.utc(2026, 11, 5),
+        ),
+      );
+      expect((await repo.getAccountEmail()).isVerified, isTrue);
+    });
+
+    test('hors ligne : ConnectionException', () async {
+      when(remote.getMe).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(),
+          type: DioExceptionType.connectionError,
+        ),
+      );
+
+      expect(repo.getAccountEmail, throwsA(isA<ConnectionException>()));
+    });
+
+    test('renvoi du lien : appelle resend-verification', () async {
+      when(remote.resendVerification).thenAnswer((_) async {});
+
+      await repo.resendEmailVerification();
+
+      verify(remote.resendVerification).called(1);
+    });
   });
 }

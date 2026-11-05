@@ -37,6 +37,12 @@ abstract class AuthRemoteDataSource {
   @POST('/api/v1/auth/refresh')
   Future<TokenResponseDto> refresh(@Body() RefreshRequestDto request);
 
+  /// Renvoie le lien de vérification à l'email de l'utilisateur connecté.
+  /// Endpoint : POST /api/v1/auth/resend-verification (204, même si déjà
+  /// vérifié ; 429 au-delà de 3 demandes par heure)
+  @POST('/api/v1/auth/resend-verification')
+  Future<void> resendVerification();
+
   /// Profil de l'utilisateur connecté (nom affiché sur les reçus).
   /// Endpoint : GET /api/v1/users/me
   @GET('/api/v1/users/me')
