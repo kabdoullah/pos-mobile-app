@@ -11,6 +11,7 @@ import '../../../../core/router/main_shell.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../providers/home_providers.dart';
+import '../widgets/account_email_banner.dart';
 import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
@@ -59,6 +60,7 @@ class HomePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
+          const AccountEmailBanner(),
           const TodaySummary(),
           const SizedBox(height: AppSpacing.md),
           _QuickActions(

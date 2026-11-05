@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/features/auth/data/datasources/auth_remote_datasource.dart';
@@ -10,17 +11,25 @@ import 'package:mobile/features/auth/data/repositories/profile_repository_impl.d
 
 class _MockRemote extends Mock implements AuthRemoteDataSource {}
 
+class _MockPrefs extends Mock implements SharedPreferencesAsync {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late _MockRemote remote;
+  late _MockPrefs prefs;
   late ProfileRepositoryImpl repo;
 
-  setUpAll(() => registerFallbackValue(const UserMeUpdateDto()));
+  setUpAll(() {
+    registerFallbackValue(const UserMeUpdateDto());
+    registerFallbackValue(const UpdateEmailRequestDto(email: '', password: ''));
+  });
 
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
     remote = _MockRemote();
-    repo = ProfileRepositoryImpl(remoteDataSource: remote);
+    prefs = _MockPrefs();
+    when(() => prefs.remove(any())).thenAnswer((_) async {});
+    repo = ProfileRepositoryImpl(remoteDataSource: remote, prefs: prefs);
   });
 
   const me = UserMeDto(id: 'u1', phoneNumber: '+2250700000000');
@@ -107,6 +116,72 @@ void main() {
       await repo.resendEmailVerification();
 
       verify(remote.resendVerification).called(1);
+    });
+  });
+
+  group('ajout / correction de l\'email', () {
+    test('envoie l\'email nettoyé et le mot de passe, relit l\'état', () async {
+      when(
+        () => remote.updateEmail(any()),
+      ).thenAnswer((_) async => me.copyWith(email: 'awa@example.com'));
+
+      final account = await repo.updateEmail(
+        email: '  awa@example.com ',
+        password: 'secret123',
+      );
+
+      final sent =
+          verify(() => remote.updateEmail(captureAny())).captured.single
+              as UpdateEmailRequestDto;
+      expect(sent.email, 'awa@example.com');
+      expect(sent.password, 'secret123');
+      expect(account.email, 'awa@example.com');
+      expect(account.isVerified, isFalse);
+    });
+
+    test('mot de passe faux : ApiException 403 remontée', () async {
+      when(() => remote.updateEmail(any())).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(),
+          type: DioExceptionType.badResponse,
+          response: Response(
+            requestOptions: RequestOptions(),
+            statusCode: 403,
+            data: {'detail': 'Invalid password.', 'code': 'FORBIDDEN'},
+          ),
+        ),
+      );
+
+      expect(
+        () => repo.updateEmail(email: 'awa@example.com', password: 'faux'),
+        throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 403)),
+      );
+    });
+  });
+
+  group('rappel de l\'accueil', () {
+    test('« Plus tard » est mémorisé puis relu', () async {
+      final until = DateTime.utc(2026, 11, 12, 10);
+      when(() => prefs.setString(any(), any())).thenAnswer((_) async {});
+      when(
+        () => prefs.getString(any()),
+      ).thenAnswer((_) async => until.toIso8601String());
+
+      await repo.snoozeEmailReminder(until);
+
+      verify(
+        () => prefs.setString(
+          'email_reminder_snoozed_until',
+          until.toIso8601String(),
+        ),
+      ).called(1);
+      expect(await repo.emailReminderSnoozedUntil(), until);
+    });
+
+    test('changement de compte : le report est oublié', () async {
+      await repo.clearLocal();
+
+      verify(() => prefs.remove('email_reminder_snoozed_until')).called(1);
     });
   });
 }

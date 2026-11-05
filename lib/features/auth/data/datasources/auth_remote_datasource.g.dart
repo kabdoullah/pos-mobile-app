@@ -212,6 +212,33 @@ class _AuthRemoteDataSource implements AuthRemoteDataSource {
   }
 
   @override
+  Future<UserMeDto> updateEmail(UpdateEmailRequestDto request) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = request;
+    final _options = _setStreamType<UserMeDto>(
+      Options(method: 'PUT', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/api/v1/users/me/email',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late UserMeDto _value;
+    try {
+      _value = UserMeDto.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
+    return _value;
+  }
+
+  @override
   Future<void> deleteMe(DeleteAccountRequestDto request) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};

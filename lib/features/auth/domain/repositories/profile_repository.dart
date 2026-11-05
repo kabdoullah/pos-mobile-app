@@ -18,6 +18,21 @@ abstract interface class ProfileRepository {
   /// Renvoie le lien de vérification de l'email. Nécessite le réseau.
   Future<void> resendEmailVerification();
 
+  /// Ajoute un email au compte, ou corrige un email non vérifié, puis envoie
+  /// le lien de vérification. Le mot de passe est revérifié. Nécessite le
+  /// réseau.
+  Future<AccountEmail> updateEmail({
+    required String email,
+    required String password,
+  });
+
+  /// Date jusqu'à laquelle le rappel « email » de l'accueil est masqué, ou
+  /// null s'il ne l'est pas (préférence de l'appareil).
+  Future<DateTime?> emailReminderSnoozedUntil();
+
+  /// Masque le rappel « email » de l'accueil jusqu'à [until].
+  Future<void> snoozeEmailReminder(DateTime until);
+
   /// Vide le cache local (changement de compte).
   Future<void> clearLocal();
 }

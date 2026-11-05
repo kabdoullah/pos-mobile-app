@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/network/error_mapper.dart';
 import '../../../auth/domain/entities/account_email.dart';
+import '../../../auth/presentation/widgets/account_email_sheet.dart';
 import '../../../auth/providers/account_email_provider.dart';
 import 'settings_section.dart';
 
-/// Email du compte et son état de vérification. Non vérifié : un appui renvoie
-/// le lien (sans adresse vérifiée, le mot de passe oublié ne peut pas être
-/// réinitialisé).
+/// Email du compte et son état de vérification (sans adresse confirmée, le
+/// mot de passe oublié ne peut pas être réinitialisé).
+///
+/// - Aucun email : un appui ouvre l'ajout.
+/// - Non confirmé : un appui renvoie le lien, le crayon corrige l'adresse.
+/// - Confirmé : affichage seul.
 class AccountEmailTile extends ConsumerStatefulWidget {
   /// Crée la ligne « Adresse email ».
   const AccountEmailTile({super.key});
@@ -24,12 +27,18 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final status = ref.watch(accountEmailStatusProvider);
+    final warning = TextStyle(color: cs.error);
 
     return switch (status) {
-      AsyncData(value: AccountEmail(email: null)) => const SettingsTile(
+      AsyncData(value: AccountEmail(email: null)) => SettingsTile(
         icon: Icons.email_outlined,
         title: 'Adresse email',
-        subtitle: Text('Aucun email sur ce compte'),
+        subtitle: Text(
+          'Aucun email — touchez pour en ajouter un',
+          style: warning,
+        ),
+        showChevron: true,
+        onTap: () => showAccountEmailSheet(context),
       ),
       AsyncData(value: AccountEmail(:final email?, isVerified: true)) =>
         SettingsTile(
@@ -46,12 +55,17 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
         title: 'Adresse email',
         subtitle: Text(
           '$email · Non confirmée — touchez pour renvoyer le lien',
-          style: TextStyle(color: cs.error),
+          style: warning,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         busy: _sending,
         onTap: () => _resend(email),
+        trailing: IconButton(
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: 'Corriger l’adresse',
+          onPressed: () => showAccountEmailSheet(context, currentEmail: email),
+        ),
       ),
       AsyncError() => SettingsTile(
         icon: Icons.email_outlined,
@@ -70,28 +84,7 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
   Future<void> _resend(String email) async {
     if (_sending) return;
     setState(() => _sending = true);
-    final messenger = ScaffoldMessenger.of(context);
-    final cs = Theme.of(context).colorScheme;
-    String message;
-    var isError = false;
-    try {
-      await ref.read(accountEmailStatusProvider.notifier).resendVerification();
-      message = 'Lien envoyé à $email. Ouvrez-le pour confirmer votre adresse.';
-    } catch (e) {
-      message = errorToFrench(e);
-      isError = true;
-    }
-    if (!mounted) return;
-    setState(() => _sending = false);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? cs.error : null,
-          duration: const Duration(seconds: 5),
-        ),
-      );
+    await resendEmailVerification(context, ref, email);
+    if (mounted) setState(() => _sending = false);
   }
 }

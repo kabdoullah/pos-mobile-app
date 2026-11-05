@@ -2366,6 +2366,266 @@ as String?,
 
 
 /// @nodoc
+mixin _$UpdateEmailRequestDto {
+
+ String get email; String get password;
+/// Create a copy of UpdateEmailRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$UpdateEmailRequestDtoCopyWith<UpdateEmailRequestDto> get copyWith => _$UpdateEmailRequestDtoCopyWithImpl<UpdateEmailRequestDto>(this as UpdateEmailRequestDto, _$identity);
+
+  /// Serializes this UpdateEmailRequestDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UpdateEmailRequestDto&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email,password);
+
+@override
+String toString() {
+  return 'UpdateEmailRequestDto(email: $email, password: $password)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $UpdateEmailRequestDtoCopyWith<$Res>  {
+  factory $UpdateEmailRequestDtoCopyWith(UpdateEmailRequestDto value, $Res Function(UpdateEmailRequestDto) _then) = _$UpdateEmailRequestDtoCopyWithImpl;
+@useResult
+$Res call({
+ String email, String password
+});
+
+
+
+
+}
+/// @nodoc
+class _$UpdateEmailRequestDtoCopyWithImpl<$Res>
+    implements $UpdateEmailRequestDtoCopyWith<$Res> {
+  _$UpdateEmailRequestDtoCopyWithImpl(this._self, this._then);
+
+  final UpdateEmailRequestDto _self;
+  final $Res Function(UpdateEmailRequestDto) _then;
+
+/// Create a copy of UpdateEmailRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? email = null,Object? password = null,}) {
+  return _then(UpdateEmailRequestDto(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [UpdateEmailRequestDto].
+extension UpdateEmailRequestDtoPatterns on UpdateEmailRequestDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _UpdateEmailRequestDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _UpdateEmailRequestDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _UpdateEmailRequestDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String email,  String password)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto() when $default != null:
+return $default(_that.email,_that.password);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String email,  String password)  $default,) {final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto():
+return $default(_that.email,_that.password);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String email,  String password)?  $default,) {final _that = this;
+switch (_that) {
+case _UpdateEmailRequestDto() when $default != null:
+return $default(_that.email,_that.password);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _UpdateEmailRequestDto implements UpdateEmailRequestDto {
+  const _UpdateEmailRequestDto({required this.email, required this.password});
+  factory _UpdateEmailRequestDto.fromJson(Map<String, dynamic> json) => _$UpdateEmailRequestDtoFromJson(json);
+
+@override final  String email;
+@override final  String password;
+
+/// Create a copy of UpdateEmailRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$UpdateEmailRequestDtoCopyWith<_UpdateEmailRequestDto> get copyWith => __$UpdateEmailRequestDtoCopyWithImpl<_UpdateEmailRequestDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UpdateEmailRequestDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UpdateEmailRequestDto&&(identical(other.email, email) || other.email == email)&&(identical(other.password, password) || other.password == password));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,email,password);
+
+@override
+String toString() {
+  return 'UpdateEmailRequestDto(email: $email, password: $password)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$UpdateEmailRequestDtoCopyWith<$Res> implements $UpdateEmailRequestDtoCopyWith<$Res> {
+  factory _$UpdateEmailRequestDtoCopyWith(_UpdateEmailRequestDto value, $Res Function(_UpdateEmailRequestDto) _then) = __$UpdateEmailRequestDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ String email, String password
+});
+
+
+
+
+}
+/// @nodoc
+class __$UpdateEmailRequestDtoCopyWithImpl<$Res>
+    implements _$UpdateEmailRequestDtoCopyWith<$Res> {
+  __$UpdateEmailRequestDtoCopyWithImpl(this._self, this._then);
+
+  final _UpdateEmailRequestDto _self;
+  final $Res Function(_UpdateEmailRequestDto) _then;
+
+/// Create a copy of UpdateEmailRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? email = null,Object? password = null,}) {
+  return _then(_UpdateEmailRequestDto(
+email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String,password: null == password ? _self.password : password // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$DeleteAccountRequestDto {
 
  String get password;

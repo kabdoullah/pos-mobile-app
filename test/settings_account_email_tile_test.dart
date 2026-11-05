@@ -92,12 +92,35 @@ void main() {
     expect(status.resendCalls, 0);
   });
 
-  testWidgets('ancien compte sans email', (tester) async {
+  testWidgets('ancien compte sans email : un appui ouvre l\'ajout', (
+    tester,
+  ) async {
     await _pump(
       tester,
       _FakeStatus(const AccountEmail(email: null, isVerified: false)),
     );
 
-    expect(find.text('Aucun email sur ce compte'), findsOneWidget);
+    expect(find.textContaining('Aucun email'), findsOneWidget);
+    await tester.tap(find.text('Adresse email'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ajouter un email'), findsOneWidget);
+  });
+
+  testWidgets('non confirmée : le crayon ouvre la correction pré-remplie', (
+    tester,
+  ) async {
+    final status = await _pump(
+      tester,
+      _FakeStatus(
+        const AccountEmail(email: 'awa@exmaple.com', isVerified: false),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Corriger l’adresse'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Corriger mon email'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'awa@exmaple.com'), findsOneWidget);
+    expect(status.resendCalls, 0);
   });
 }
