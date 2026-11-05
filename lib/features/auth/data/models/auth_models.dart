@@ -123,6 +123,19 @@ sealed class UserMeUpdateDto with _$UserMeUpdateDto {
       _$UserMeUpdateDtoFromJson(json);
 }
 
+/// Ajout ou correction de l'email du compte ; le mot de passe est revérifié.
+@freezed
+sealed class UpdateEmailRequestDto with _$UpdateEmailRequestDto {
+  /// Crée un [UpdateEmailRequestDto].
+  const factory UpdateEmailRequestDto({
+    required String email,
+    required String password,
+  }) = _UpdateEmailRequestDto;
+
+  factory UpdateEmailRequestDto.fromJson(Map<String, dynamic> json) =>
+      _$UpdateEmailRequestDtoFromJson(json);
+}
+
 /// Suppression du compte (ADR-0011) : le mot de passe est revérifié.
 @freezed
 sealed class DeleteAccountRequestDto with _$DeleteAccountRequestDto {

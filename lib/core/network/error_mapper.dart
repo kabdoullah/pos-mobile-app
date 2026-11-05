@@ -10,6 +10,8 @@ const _detailMap = <String, String>{
   'Phone number must be a mobile number.':
       'Saisissez un numéro mobile (01, 05 ou 07).',
   'This email is already registered.': 'Cet email est déjà enregistré.',
+  'A verified email cannot be changed.':
+      'Cette adresse est déjà confirmée et ne peut plus être modifiée.',
   'Invalid phone number or password.': 'Numéro ou mot de passe incorrect.',
   'Invalid email or password.': 'Email ou mot de passe incorrect.',
   'Account is disabled.': 'Le compte est désactivé.',

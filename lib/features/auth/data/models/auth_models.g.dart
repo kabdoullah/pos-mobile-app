@@ -116,6 +116,17 @@ _UserMeUpdateDto _$UserMeUpdateDtoFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$UserMeUpdateDtoToJson(_UserMeUpdateDto instance) =>
     <String, dynamic>{'display_name': instance.displayName};
 
+_UpdateEmailRequestDto _$UpdateEmailRequestDtoFromJson(
+  Map<String, dynamic> json,
+) => _UpdateEmailRequestDto(
+  email: json['email'] as String,
+  password: json['password'] as String,
+);
+
+Map<String, dynamic> _$UpdateEmailRequestDtoToJson(
+  _UpdateEmailRequestDto instance,
+) => <String, dynamic>{'email': instance.email, 'password': instance.password};
+
 _DeleteAccountRequestDto _$DeleteAccountRequestDtoFromJson(
   Map<String, dynamic> json,
 ) => _DeleteAccountRequestDto(password: json['password'] as String);

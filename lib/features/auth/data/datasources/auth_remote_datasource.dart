@@ -53,6 +53,13 @@ abstract class AuthRemoteDataSource {
   @PATCH('/api/v1/users/me')
   Future<UserMeDto> updateMe(@Body() UserMeUpdateDto request);
 
+  /// Ajoute un email (comptes créés sans) ou corrige un email non vérifié,
+  /// puis envoie le lien de vérification.
+  /// Endpoint : PUT /api/v1/users/me/email (403 mot de passe faux, 409 email
+  /// déjà pris ou email actuel déjà vérifié)
+  @PUT('/api/v1/users/me/email')
+  Future<UserMeDto> updateEmail(@Body() UpdateEmailRequestDto request);
+
   /// Supprime définitivement le compte et toutes les données de la boutique.
   /// Endpoint : DELETE /api/v1/users/me (403 si le mot de passe est faux)
   @DELETE('/api/v1/users/me')
