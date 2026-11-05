@@ -1,3 +1,4 @@
+import '../entities/support_contact.dart';
 import '../entities/user.dart';
 
 /// Interface du repository auth. Implémenté dans la couche `data`.
@@ -40,6 +41,12 @@ abstract class AuthRepository {
     required String token,
     required String newPassword,
   });
+
+  /// Coordonnées du support, lisibles sans être connecté.
+  ///
+  /// Ne lève jamais : hors ligne ou en cas d'erreur serveur, retourne des
+  /// coordonnées vides (l'UI masque alors les boutons de contact).
+  Future<SupportContact> getSupportContact();
 
   /// Déconnecte l'utilisateur (efface tokens et PIN).
   Future<void> logout();

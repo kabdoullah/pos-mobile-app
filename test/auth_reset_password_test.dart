@@ -14,6 +14,7 @@ import 'package:mobile/core/storage/secure_token_storage.dart';
 import 'package:mobile/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:mobile/features/auth/data/models/auth_models.dart';
 import 'package:mobile/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:mobile/features/auth/domain/entities/support_contact.dart';
 import 'package:mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:mobile/features/auth/providers/auth_di_providers.dart';
@@ -45,8 +46,13 @@ ApiException _invalidToken() => ApiException(
 );
 
 /// Monte la page via go_router, comme à l'ouverture du lien de l'email.
-Future<_MockRepo> _pump(WidgetTester tester, {String? token = _token}) async {
+Future<_MockRepo> _pump(
+  WidgetTester tester, {
+  String? token = _token,
+  SupportContact support = const SupportContact(),
+}) async {
   final repo = _MockRepo();
+  when(repo.getSupportContact).thenAnswer((_) async => support);
   final router = GoRouter(
     initialLocation: token == null
         ? Routes.resetPassword
@@ -170,6 +176,45 @@ void main() {
     );
   });
 
+  group('AuthRepositoryImpl.getSupportContact', () {
+    late _MockRemote remote;
+    late AuthRepositoryImpl repo;
+
+    setUp(() {
+      remote = _MockRemote();
+      repo = AuthRepositoryImpl(
+        dataSource: remote,
+        tokenStorage: _MockTokenStorage(),
+        pinStorage: _MockPinStorage(),
+      );
+    });
+
+    test('mappe la réponse du serveur', () async {
+      when(remote.getSupportContact).thenAnswer(
+        (_) async => const SupportContactDto(
+          supportContact: 'support@pos.ci',
+          supportWhatsApp: '+2250700000000',
+        ),
+      );
+
+      final support = await repo.getSupportContact();
+
+      expect(support.contact, 'support@pos.ci');
+      expect(support.whatsApp, '+2250700000000');
+    });
+
+    test('hors ligne : coordonnées vides, sans erreur', () async {
+      when(remote.getSupportContact).thenThrow(
+        DioException(requestOptions: RequestOptions(path: '/api/v1/support')),
+      );
+
+      final support = await repo.getSupportContact();
+
+      expect(support.contact, isNull);
+      expect(support.whatsApp, isNull);
+    });
+  });
+
   group('resetTokenFrom', () {
     test('lit le token dans le fragment', () {
       expect(
@@ -285,6 +330,25 @@ void main() {
 
       expect(find.text('Lien invalide ou expiré'), findsOne);
       expect(find.text('Enregistrer'), findsNothing);
+      // Support non configuré : aucun bouton de contact.
+      expect(find.text('WhatsApp'), findsNothing);
+    });
+
+    testWidgets('lien invalide : propose de contacter le support', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        token: null,
+        support: const SupportContact(
+          contact: 'support@pos.ci',
+          whatsApp: '+2250700000000',
+        ),
+      );
+
+      expect(find.textContaining('remplacé par un lien plus récent'), findsOne);
+      expect(find.text('support@pos.ci'), findsOne);
+      expect(find.text('WhatsApp'), findsOne);
     });
   });
 }

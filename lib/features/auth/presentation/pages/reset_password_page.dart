@@ -9,7 +9,9 @@ import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../providers/auth_di_providers.dart';
+import '../providers/support_contact_provider.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/support_contact_buttons.dart';
 
 /// Token du lien de réinitialisation : dans le fragment (`#token=…`, gardé
 /// hors des logs serveur), ou dans la query pour les liens plus anciens.
@@ -132,6 +134,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   }
 
   Widget _buildInvalidLink(BuildContext context) {
+    final support = ref.watch(supportContactProvider).value;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -139,16 +142,24 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
         const AuthHeader(
           title: 'Lien invalide ou expiré',
           subtitle:
-              'Ce lien a déjà servi ou a expiré (il est valable 1 heure).',
+              'Ce lien a déjà servi, a expiré (il est valable 1 heure) ou a '
+              'été remplacé par un lien plus récent.',
         ),
         const SizedBox(height: AppSpacing.lg),
         const AuthBanner(
-          title: 'Redemandez un email',
+          title: 'Utilisez le dernier lien reçu',
           message:
-              'Sur l\'écran de connexion, appuyez sur « Mot de passe oublié ? ».',
+              'Ou redemandez-en un : sur l\'écran de connexion, appuyez sur '
+              '« Mot de passe oublié ? ». Sans accès à votre email, contactez '
+              'le support.',
           tone: AuthBannerTone.warning,
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.lg),
+        SupportContactButtons(
+          contact: support?.contact,
+          whatsApp: support?.whatsApp,
+        ),
+        const SizedBox(height: AppSpacing.sm),
         PrimaryButton(
           label: 'Retour à la connexion',
           onPressed: () => context.go(Routes.emailLogin),

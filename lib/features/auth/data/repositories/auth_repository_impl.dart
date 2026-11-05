@@ -4,6 +4,7 @@ import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/pin_storage.dart';
 import '../../../../core/storage/secure_token_storage.dart';
 import '../../domain/entities/pin_failure.dart';
+import '../../domain/entities/support_contact.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -122,6 +123,20 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<DateTime?> pinLockedUntil() => pinStorage.lockedUntil();
+
+  @override
+  Future<SupportContact> getSupportContact() async {
+    try {
+      final dto = await dataSource.getSupportContact();
+      return SupportContact(
+        contact: dto.supportContact,
+        whatsApp: dto.supportWhatsApp,
+      );
+    } on DioException catch (_) {
+      // Best-effort : sans réponse, l'écran reste utilisable sans boutons.
+      return const SupportContact();
+    }
+  }
 
   @override
   Future<void> sendPasswordReset(String email) async {
