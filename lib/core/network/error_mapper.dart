@@ -43,7 +43,14 @@ const _detailMap = <String, String>{
 /// Convertit n'importe quelle exception en message utilisateur en français.
 String errorToFrench(Object e) {
   if (e is ApiException) {
-    return _detailMap[e.message] ?? 'Une erreur est survenue.';
+    final known = _detailMap[e.message];
+    if (known != null) return known;
+    // Le détail Pydantic varie selon le défaut ("must have an @-sign"…) :
+    // seul le champ concerné est stable.
+    if (e.code == 'VALIDATION_ERROR' && e.field == 'email') {
+      return 'Adresse email invalide.';
+    }
+    return 'Une erreur est survenue.';
   }
   if (e is ConnectionException) {
     return e.message; // already French

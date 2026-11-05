@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/utils/email_validator.dart';
 import '../../../../core/widgets/index.dart';
 import '../../providers/account_email_provider.dart';
 
@@ -82,12 +83,10 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
   bool _submitted = false;
   String? _error;
 
-  static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-
   String get _email => _emailController.text.trim();
 
   String? get _emailError {
-    if (!_submitted || _emailPattern.hasMatch(_email)) return null;
+    if (!_submitted || isValidEmail(_email)) return null;
     return _email.isEmpty
         ? 'Saisissez votre adresse email.'
         : 'Adresse email invalide.';

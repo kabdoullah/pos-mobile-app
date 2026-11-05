@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../core/utils/email_validator.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/auth_providers.dart';
@@ -65,8 +66,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool get _phoneValid => isValidMobilePhoneCi(_phone);
   bool get _passwordValid => _password.length >= _minPasswordLength;
   bool get _passwordsMatch => _confirm.isNotEmpty && _confirm == _password;
-  bool get _emailValid =>
-      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_email);
+  bool get _emailValid => isValidEmail(_email);
 
   String? get _phoneError {
     if (!_submitted || _phoneValid) return null;
