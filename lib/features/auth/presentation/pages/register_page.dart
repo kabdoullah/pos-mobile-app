@@ -68,8 +68,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool get _passwordsMatch => _confirm.isNotEmpty && _confirm == _password;
   bool get _emailValid => isValidEmail(_email);
 
+  /// Refus du serveur pour [field], affiché sous ce champ. Effacé dès que
+  /// l'utilisateur modifie un champ (`_onEdited` → `clearError`).
+  String? _serverError(RegisterField field) {
+    final error = ref.read(authProvider).error;
+    return error is RegisterFieldError && error.field == field
+        ? error.message
+        : null;
+  }
+
   String? get _phoneError {
-    if (!_submitted || _phoneValid) return null;
+    if (!_submitted || _phoneValid) return _serverError(RegisterField.phone);
     return _phone.isEmpty
         ? 'Saisissez votre numéro de téléphone.'
         : isValidLocalPhoneCi(_phone)
@@ -78,7 +87,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   String? get _emailError {
-    if (!_submitted || _emailValid) return null;
+    if (!_submitted || _emailValid) return _serverError(RegisterField.email);
     return _email.isEmpty
         ? 'Saisissez votre adresse email.'
         : 'Adresse email invalide.';
@@ -127,7 +136,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final cs = Theme.of(context).colorScheme;
     final authValue = ref.watch(authProvider);
     final isLoading = authValue.isLoading;
-    final errorMessage = authValue.error?.toString();
+    final error = authValue.error;
+    // Une erreur rattachée à un champ s'affiche sous ce champ, pas en bandeau.
+    final errorMessage = error is RegisterFieldError ? null : error?.toString();
 
     return PopScope(
       // Retour système : vers la connexion plutôt que quitter l'app.

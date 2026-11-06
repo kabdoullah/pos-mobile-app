@@ -212,6 +212,34 @@ void main() {
     expect((status! as AuthPinSetupRequired).canReturnToStoreSetup, isFalse);
   });
 
+  test('email déjà utilisé : erreur rattachée au champ email', () async {
+    final device = _Device();
+    when(() => device.remote.register(any())).thenThrow(
+      DioException(
+        requestOptions: RequestOptions(path: '/api/v1/auth/register'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/api/v1/auth/register'),
+          statusCode: 409,
+          data: {
+            'detail': 'This email is already registered.',
+            'code': 'CONFLICT',
+            'field': 'email',
+          },
+        ),
+      ),
+    );
+    final app = await device.launch();
+
+    await app
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
+
+    final error = _error(app);
+    expect(error, isA<RegisterFieldError>());
+    expect((error! as RegisterFieldError).field, RegisterField.email);
+    expect(error.toString(), 'Cet email est déjà enregistré.');
+  });
+
   test('retour PIN → boutique uniquement pendant l\'inscription', () async {
     final app = await _Device().launch();
     final auth = app.read(authProvider.notifier);
