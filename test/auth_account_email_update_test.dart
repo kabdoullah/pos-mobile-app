@@ -80,7 +80,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Ajoutez un email'), findsOneWidget);
-      await tester.tap(find.text('Ajouter'));
+      await tester.tap(find.text('Ajouter mon email'));
       await tester.pumpAndSettle();
 
       final fields = find.byType(TextField);

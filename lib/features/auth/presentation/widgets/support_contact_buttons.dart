@@ -18,7 +18,7 @@ Uri? whatsAppUri(String contact) {
 /// Boutons de contact du support : email (ou appel si le contact est un
 /// numéro) et WhatsApp. Rien n'est affiché pour une coordonnée absente.
 ///
-/// [compact] : deux petits boutons côte à côte (dialogues), sinon des boutons
+/// [compact] : boutons-icônes côte à côte (dialogues), sinon des boutons
 /// pleine largeur (écrans).
 class SupportContactButtons extends StatelessWidget {
   /// Crée les boutons pour [contact] (email ou numéro) et [whatsApp].
@@ -35,7 +35,7 @@ class SupportContactButtons extends StatelessWidget {
   /// Numéro WhatsApp dédié ; à défaut, [contact] s'il s'agit d'un numéro.
   final String? whatsApp;
 
-  /// Deux petits boutons côte à côte au lieu de boutons pleine largeur.
+  /// Boutons-icônes côte à côte au lieu de boutons pleine largeur.
   final bool compact;
 
   static bool _isEmail(String contact) => contact.contains('@');
@@ -71,21 +71,23 @@ class SupportContactButtons extends StatelessWidget {
         : Icons.call_outlined;
 
     if (compact) {
-      return Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.xs,
+      // Icônes seules : le libellé passe dans l'infobulle, lue par TalkBack.
+      return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (whatsAppLink != null)
-            OutlinedButton.icon(
+            IconButton.filledTonal(
+              tooltip: 'Contacter le support sur WhatsApp',
               onPressed: () => _open(context, whatsAppLink),
-              icon: const Icon(Icons.chat_outlined, size: 18),
-              label: const Text('WhatsApp'),
+              icon: const Icon(Icons.chat_outlined),
             ),
           if (contactUri != null)
-            OutlinedButton.icon(
+            IconButton.filledTonal(
+              tooltip: _isEmail(contact!)
+                  ? 'Écrire au support'
+                  : 'Appeler le support',
               onPressed: () => _open(context, contactUri),
-              icon: Icon(contactIcon, size: 18),
-              label: Text(_isEmail(contact!) ? 'Email' : 'Appeler'),
+              icon: Icon(contactIcon),
             ),
         ],
       );
