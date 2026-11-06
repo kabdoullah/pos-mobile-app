@@ -137,17 +137,24 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
               ),
             ],
             const SizedBox(height: AppSpacing.md),
-            Text(
-              'Pas d\'email, ou email jamais confirmé ? Contactez le support.',
-              style: AppTypography.bodySmall.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            SupportContactButtons(
-              contact: support?.contact,
-              whatsApp: support?.whatsApp,
-              compact: true,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Pas d\'email, ou email jamais confirmé ? Contactez le '
+                    'support.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SupportContactButtons(
+                  contact: support?.contact,
+                  whatsApp: support?.whatsApp,
+                  compact: true,
+                ),
+              ],
             ),
           ],
         ),
