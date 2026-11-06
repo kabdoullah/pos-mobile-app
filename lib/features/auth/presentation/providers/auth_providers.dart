@@ -113,6 +113,34 @@ class InvalidCredentials implements Exception {
   String toString() => 'Téléphone ou mot de passe incorrect.';
 }
 
+/// Champ du formulaire d'inscription auquel le serveur rattache un refus.
+enum RegisterField {
+  /// Numéro de téléphone.
+  phone,
+
+  /// Adresse email.
+  email,
+}
+
+/// Refus de l'inscription par le serveur, lié à un champ précis (email déjà
+/// utilisé, numéro inexistant…).
+///
+/// Typé pour que l'écran d'inscription affiche l'erreur sous le champ concerné
+/// plutôt que dans le bandeau du haut, souvent hors de vue clavier ouvert.
+class RegisterFieldError implements Exception {
+  /// Constructeur.
+  const RegisterFieldError({required this.field, required this.message});
+
+  /// Champ concerné.
+  final RegisterField field;
+
+  /// Message en français.
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// Gère l'état et les actions d'authentification (connexion, inscription,
 /// création/vérification du PIN, déconnexion).
 ///
@@ -318,6 +346,14 @@ class Auth extends _$Auth {
       } catch (e) {
         final msg = errorToFrench(e);
         _logger.e('[Auth.register] Failed: $msg');
+        final field = switch (e) {
+          ApiException(field: 'email') => RegisterField.email,
+          ApiException(field: 'phone_number') => RegisterField.phone,
+          _ => null,
+        };
+        if (field != null) {
+          throw RegisterFieldError(field: field, message: msg);
+        }
         throw msg;
       }
     });

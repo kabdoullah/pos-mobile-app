@@ -16,9 +16,12 @@ import 'package:mobile/features/auth/providers/store_provider.dart';
 
 /// Auth pilotable : état initial fixé, erreurs de connexion / PIN simulées.
 class _FakeAuth extends Auth {
-  _FakeAuth(this.initial, {this.pinFailures = const []});
+  _FakeAuth(this.initial, {this.pinFailures = const [], this.registerError});
 
   final AuthStatus initial;
+
+  /// Erreur renvoyée par [register] (null : inscription acceptée).
+  final Object? registerError;
 
   /// Erreurs renvoyées successivement par [verifyPin].
   final List<PinFailure> pinFailures;
@@ -43,6 +46,9 @@ class _FakeAuth extends Auth {
     required String email,
   }) async {
     registeredEmail = email;
+    if (registerError != null) {
+      state = AsyncError(registerError!, StackTrace.empty);
+    }
   }
 
   @override
@@ -74,6 +80,7 @@ Future<_FakeAuth> _pump(
   Widget page, {
   AuthStatus status = const AuthUnauthenticated(),
   List<PinFailure> pinFailures = const [],
+  Object? registerError,
   Size size = const Size(360, 740),
   bool dark = false,
   double keyboard = 0,
@@ -84,7 +91,11 @@ Future<_FakeAuth> _pump(
   tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
   addTearDown(tester.view.reset);
 
-  final auth = _FakeAuth(status, pinFailures: pinFailures);
+  final auth = _FakeAuth(
+    status,
+    pinFailures: pinFailures,
+    registerError: registerError,
+  );
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -232,6 +243,31 @@ void main() {
       await tester.tap(submit);
       await tester.pump();
       expect(auth.registeredEmail, 'awa@example.com');
+    });
+
+    testWidgets('email refusé par le serveur : message sous le champ email, '
+        'pas de bandeau', (tester) async {
+      await _pump(
+        tester,
+        const RegisterPage(),
+        registerError: const RegisterFieldError(
+          field: RegisterField.email,
+          message: 'Cet email est déjà enregistré.',
+        ),
+      );
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), '0700000001');
+      await tester.enterText(fields.at(1), 'awa@example.com');
+      await tester.enterText(fields.at(2), 'secret123');
+      await tester.enterText(fields.at(3), 'secret123');
+
+      final submit = find.text('Continuer');
+      await tester.ensureVisible(submit);
+      await tester.tap(submit);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cet email est déjà enregistré.'), findsOneWidget);
+      expect(find.text('Inscription impossible'), findsNothing);
     });
   });
 
