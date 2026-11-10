@@ -493,7 +493,7 @@ final class CashSessionHistoryProvider
 }
 
 String _$cashSessionHistoryHash() =>
-    r'3871cbf0425f2f5d563f1bb2bbf746019013dff3';
+    r'd56fa74867dde828e6446a3e415aabf72955290c';
 
 /// Historique distant des sessions de la boutique (tous les appareils),
 /// paginé. Lecture en ligne uniquement.
