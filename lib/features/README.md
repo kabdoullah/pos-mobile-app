@@ -53,6 +53,7 @@ Cette organisation force le découplage : on peut changer d'API ou de DB locale 
 | `sales` | Panier, paiement, reçu, historique | Implémenté |
 | `inventory` | Onglet Stock, ajustements, historique des mouvements (en ligne uniquement) | Implémenté |
 | `returns` | Retours clients, remboursement manuel, reçu de retour (ADR-0010) | Implémenté |
+| `cash_register` | Sessions de caisse : ouverture, entrées/sorties, solde théorique, clôture avec écart, historique (ADR-0015) | Implémenté |
 | `printing` | Bluetooth, impression ESC/POS | Implémenté |
 | `home` / `onboarding` / `settings` | Présentation uniquement | Implémenté |
 
