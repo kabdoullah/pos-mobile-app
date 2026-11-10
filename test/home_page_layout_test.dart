@@ -10,6 +10,7 @@ import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/cash_register/presentation/providers/cash_register_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/home/presentation/pages/home_page.dart';
 import 'package:mobile/features/home/presentation/providers/home_providers.dart';
@@ -65,6 +66,8 @@ Future<void> pumpHome(
         storeConfigProvider.overrideWith(_Store.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(0)),
+        // Carte « Caisse » : caisse fermée.
+        activeCashSessionProvider.overrideWith((ref) => Stream.value(null)),
         dailySummaryProvider.overrideWith(
           (ref) => Stream.value((
             saleCount: withData ? 45 : 0,

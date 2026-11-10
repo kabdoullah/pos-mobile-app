@@ -7,6 +7,7 @@ import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
+import '../../domain/entities/cash_session_detail.dart';
 import '../../domain/entities/cash_summary.dart';
 import '../../providers/cash_register_di_providers.dart';
 
@@ -27,6 +28,95 @@ Stream<CashSummary> cashSummary(Ref ref, String sessionId) =>
 @riverpod
 Stream<List<CashMovement>> cashMovements(Ref ref, String sessionId) =>
     ref.watch(cashRegisterRepositoryProvider).watchMovements(sessionId);
+
+/// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
+@riverpod
+Stream<List<CashSession>> localCashSessionHistory(Ref ref) =>
+    ref.watch(cashRegisterRepositoryProvider).watchLocalHistory();
+
+/// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+/// n'y est pas (session d'un autre téléphone).
+@riverpod
+Stream<CashSession?> localCashSession(Ref ref, String sessionId) => ref
+    .watch(cashRegisterRepositoryProvider)
+    .watchLocalHistory()
+    .map((sessions) {
+      for (final session in sessions) {
+        if (session.id == sessionId) return session;
+      }
+      return null;
+    });
+
+/// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+/// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+/// En ligne, une erreur réseau est propagée.
+@riverpod
+Future<CashSessionDetail?> remoteCashSessionDetail(
+  Ref ref,
+  String sessionId,
+) async {
+  final online = await ref.watch(isOnlineProvider.future);
+  if (!online) return null;
+  return ref.read(cashRegisterRepositoryProvider).fetchRemoteDetail(sessionId);
+}
+
+/// Historique distant des sessions de la boutique (tous les appareils),
+/// paginé. Lecture en ligne uniquement.
+@riverpod
+class CashSessionHistory extends _$CashSessionHistory {
+  String? _nextCursor;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  bool _loadMoreFailed = false;
+
+  @override
+  Future<List<CashSession>> build() async {
+    _loadingMore = false;
+    _loadMoreFailed = false;
+    final page = await ref
+        .watch(cashRegisterRepositoryProvider)
+        .fetchRemoteHistory();
+    _nextCursor = page.nextCursor;
+    _hasMore = page.hasMore;
+    return page.items;
+  }
+
+  /// Des sessions plus anciennes restent à charger.
+  bool get hasMore => _hasMore;
+
+  /// Le chargement de la page suivante a échoué (la liste déjà chargée est
+  /// conservée) ; [loadMore] le relance.
+  bool get loadMoreFailed => _loadMoreFailed;
+
+  /// Charge la page suivante ; sans effet pendant un chargement ou en fin
+  /// d'historique.
+  Future<void> loadMore() async {
+    final current = state.value;
+    if (!_hasMore || _loadingMore || current == null) return;
+    _loadingMore = true;
+    _loadMoreFailed = false;
+    try {
+      final page = await ref
+          .read(cashRegisterRepositoryProvider)
+          .fetchRemoteHistory(cursor: _nextCursor);
+      _nextCursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      state = AsyncData([...current, ...page.items]);
+    } catch (_) {
+      // On garde les sessions déjà affichées ; nouvelle liste pour notifier.
+      _loadMoreFailed = true;
+      state = AsyncData([...current]);
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
+  /// Recharge l'historique depuis la première page.
+  Future<void> refresh() async {
+    ref.invalidateSelf();
+    await future;
+  }
+}
 
 /// Écritures de caisse déclenchées depuis l'UI : ouverture, mouvement,
 /// clôture et renvoi d'une clôture avec commentaire.

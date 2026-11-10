@@ -6,6 +6,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../sales/presentation/widgets/amount_input.dart';
+import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 
@@ -34,7 +35,9 @@ class OpenCashSessionSheet extends ConsumerStatefulWidget {
 class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
   final _noteController = TextEditingController();
   Decimal? _amount;
-  String? _error;
+  String? _amountError;
+  String? _noteError;
+  String? _formError;
   bool _isLoading = false;
 
   @override
@@ -46,11 +49,13 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
   Future<void> _submit() async {
     final amount = _amount;
     if (amount == null) {
-      setState(() => _error = 'Saisissez le fond de caisse.');
+      setState(() => _amountError = 'Saisissez le fond de caisse.');
       return;
     }
     setState(() {
-      _error = null;
+      _amountError = null;
+      _noteError = null;
+      _formError = null;
       _isLoading = true;
     });
     try {
@@ -59,7 +64,21 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
           .open(openingAmount: amount, note: _noteController.text);
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      if (mounted) setState(() => _error = cashRegisterErrorMessage(e));
+      if (!mounted) return;
+      // Erreur de saisie sous son champ ; refus (caisse déjà ouverte, réseau)
+      // au-dessus du bouton.
+      final message = cashRegisterErrorMessage(e);
+      final code = e is CashRegisterException ? e.code : null;
+      setState(() {
+        switch (code) {
+          case CashRegisterException.invalidAmount:
+            _amountError = message;
+          case CashRegisterException.noteTooLong:
+            _noteError = message;
+          default:
+            _formError = message;
+        }
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,6 +87,7 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final formError = _formError;
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
@@ -105,18 +125,27 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
                   label: 'Fond de caisse',
                   hint: '0',
                   value: _amount,
-                  errorText: _error,
+                  errorText: _amountError,
                   onChanged: (value) => setState(() {
                     _amount = value;
-                    _error = null;
+                    _amountError = null;
                   }),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
                   label: 'Commentaire (facultatif)',
                   controller: _noteController,
+                  errorText: _noteError,
                   maxLines: 2,
+                  maxLength: CashRegisterException.maxNoteLength,
                 ),
+                if (formError != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    formError,
+                    style: AppTypography.errorText.copyWith(color: cs.error),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.xl),
                 PrimaryButton(
                   label: 'Ouvrir la caisse',

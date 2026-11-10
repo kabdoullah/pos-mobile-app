@@ -30,6 +30,10 @@ void main() {
     '/catalog/abc/movements',
     Routes.bluetoothSetup,
     Routes.barcodeScanner,
+    Routes.cashRegister,
+    Routes.cashClose,
+    Routes.cashHistory,
+    '/cash/sessions/abc',
   ];
 
   test('les pages plein écran ne passent pas par la shell des onglets', () {
@@ -62,6 +66,9 @@ void main() {
       (Routes.productImport, Routes.productImport),
       (Routes.categories, Routes.categories),
       ('/catalog/abc', Routes.productDetail),
+      (Routes.cashClose, Routes.cashClose),
+      (Routes.cashHistory, Routes.cashHistory),
+      ('/cash/sessions/abc', Routes.cashSessionDetail),
     ]) {
       final match = router.configuration.findMatch(Uri.parse(path));
       expect(match.last.route.path, expected, reason: path);

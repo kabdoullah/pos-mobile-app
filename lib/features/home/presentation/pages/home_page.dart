@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/router/main_shell.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
+import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../providers/home_providers.dart';
 import '../widgets/account_email_banner.dart';
 import '../widgets/low_stock_section.dart';
@@ -63,6 +65,8 @@ class HomePage extends ConsumerWidget {
           const AccountEmailBanner(),
           const TodaySummary(),
           const SizedBox(height: AppSpacing.md),
+          _CashCard(onTap: () => context.push(Routes.cashRegister)),
+          const SizedBox(height: AppSpacing.md),
           _QuickActions(
             onNewSale: () => goTo(ShellBranch.sale),
             onNewProduct: () => context.push(Routes.productNew),
@@ -76,6 +80,85 @@ class HomePage extends ConsumerWidget {
             onNewSale: () => goTo(ShellBranch.sale),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Carte « Caisse » : solde théorique de la caisse ouverte, ou « Caisse
+/// fermée · Ouvrir ». Un tap ouvre l'écran de la caisse.
+class _CashCard extends ConsumerWidget {
+  const _CashCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final session = ref.watch(activeCashSessionProvider);
+    final sessionId = session.value?.id;
+    final expected = sessionId == null
+        ? null
+        : ref.watch(cashSummaryProvider(sessionId)).value?.expectedAmount;
+
+    final Widget trailing;
+    final String subtitle;
+    final String semanticsLabel;
+    if (session.isLoading && !session.hasValue) {
+      subtitle = 'Solde théorique';
+      trailing = const SkeletonBox(width: 96, height: 20);
+      semanticsLabel = 'Caisse, chargement';
+    } else if (sessionId == null) {
+      subtitle = session.hasError ? 'Caisse indisponible' : 'Caisse fermée';
+      trailing = const SizedBox.shrink();
+      semanticsLabel = '$subtitle. Ouvrir la caisse';
+    } else {
+      subtitle = 'Solde théorique';
+      trailing = expected == null
+          ? const SkeletonBox(width: 96, height: 20)
+          : AmountDisplay(
+              amount: expected,
+              color: expected < Decimal.zero ? cs.error : null,
+            );
+      semanticsLabel = expected == null
+          ? 'Caisse ouverte'
+          : 'Caisse ouverte, solde théorique ${formatFcfa(expected)}';
+    }
+
+    return Semantics(
+      button: true,
+      label: semanticsLabel,
+      excludeSemantics: true,
+      child: AppCard(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSpacing.buttonHeightSm,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.point_of_sale_outlined, color: cs.primary),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Caisse', style: AppTypography.titleMedium),
+                    Text(
+                      sessionId == null ? '$subtitle · Ouvrir' : subtitle,
+                      style: muted,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              trailing,
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            ],
+          ),
+        ),
       ),
     );
   }

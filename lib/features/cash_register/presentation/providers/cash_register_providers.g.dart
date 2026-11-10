@@ -227,6 +227,296 @@ final class CashMovementsFamily extends $Family
   String toString() => r'cashMovementsProvider';
 }
 
+/// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
+
+@ProviderFor(localCashSessionHistory)
+final localCashSessionHistoryProvider = LocalCashSessionHistoryProvider._();
+
+/// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
+
+final class LocalCashSessionHistoryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CashSession>>,
+          List<CashSession>,
+          Stream<List<CashSession>>
+        >
+    with
+        $FutureModifier<List<CashSession>>,
+        $StreamProvider<List<CashSession>> {
+  /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
+  LocalCashSessionHistoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'localCashSessionHistoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$localCashSessionHistoryHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<CashSession>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<CashSession>> create(Ref ref) {
+    return localCashSessionHistory(ref);
+  }
+}
+
+String _$localCashSessionHistoryHash() =>
+    r'07b0a63738d485d9dc5d3849bffe46ba653613a2';
+
+/// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+/// n'y est pas (session d'un autre téléphone).
+
+@ProviderFor(localCashSession)
+final localCashSessionProvider = LocalCashSessionFamily._();
+
+/// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+/// n'y est pas (session d'un autre téléphone).
+
+final class LocalCashSessionProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CashSession?>,
+          CashSession?,
+          Stream<CashSession?>
+        >
+    with $FutureModifier<CashSession?>, $StreamProvider<CashSession?> {
+  /// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+  /// n'y est pas (session d'un autre téléphone).
+  LocalCashSessionProvider._({
+    required LocalCashSessionFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'localCashSessionProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$localCashSessionHash();
+
+  @override
+  String toString() {
+    return r'localCashSessionProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<CashSession?> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<CashSession?> create(Ref ref) {
+    final argument = this.argument as String;
+    return localCashSession(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is LocalCashSessionProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$localCashSessionHash() => r'dd5081f217c586baee5576f734a91faa8f8252e4';
+
+/// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+/// n'y est pas (session d'un autre téléphone).
+
+final class LocalCashSessionFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<CashSession?>, String> {
+  LocalCashSessionFamily._()
+    : super(
+        retry: null,
+        name: r'localCashSessionProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
+  /// n'y est pas (session d'un autre téléphone).
+
+  LocalCashSessionProvider call(String sessionId) =>
+      LocalCashSessionProvider._(argument: sessionId, from: this);
+
+  @override
+  String toString() => r'localCashSessionProvider';
+}
+
+/// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+/// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+/// En ligne, une erreur réseau est propagée.
+
+@ProviderFor(remoteCashSessionDetail)
+final remoteCashSessionDetailProvider = RemoteCashSessionDetailFamily._();
+
+/// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+/// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+/// En ligne, une erreur réseau est propagée.
+
+final class RemoteCashSessionDetailProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CashSessionDetail?>,
+          CashSessionDetail?,
+          FutureOr<CashSessionDetail?>
+        >
+    with
+        $FutureModifier<CashSessionDetail?>,
+        $FutureProvider<CashSessionDetail?> {
+  /// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+  /// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+  /// En ligne, une erreur réseau est propagée.
+  RemoteCashSessionDetailProvider._({
+    required RemoteCashSessionDetailFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'remoteCashSessionDetailProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$remoteCashSessionDetailHash();
+
+  @override
+  String toString() {
+    return r'remoteCashSessionDetailProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<CashSessionDetail?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CashSessionDetail?> create(Ref ref) {
+    final argument = this.argument as String;
+    return remoteCashSessionDetail(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is RemoteCashSessionDetailProvider &&
+        other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$remoteCashSessionDetailHash() =>
+    r'7451c365ebb3cc8db8a4996bc4fe2cd1eb3e75c6';
+
+/// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+/// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+/// En ligne, une erreur réseau est propagée.
+
+final class RemoteCashSessionDetailFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<CashSessionDetail?>, String> {
+  RemoteCashSessionDetailFamily._()
+    : super(
+        retry: null,
+        name: r'remoteCashSessionDetailProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Détail de la session [sessionId] vu par le serveur (recalcul, impact après
+  /// clôture). Null hors ligne : l'écran affiche alors les chiffres locaux.
+  /// En ligne, une erreur réseau est propagée.
+
+  RemoteCashSessionDetailProvider call(String sessionId) =>
+      RemoteCashSessionDetailProvider._(argument: sessionId, from: this);
+
+  @override
+  String toString() => r'remoteCashSessionDetailProvider';
+}
+
+/// Historique distant des sessions de la boutique (tous les appareils),
+/// paginé. Lecture en ligne uniquement.
+
+@ProviderFor(CashSessionHistory)
+final cashSessionHistoryProvider = CashSessionHistoryProvider._();
+
+/// Historique distant des sessions de la boutique (tous les appareils),
+/// paginé. Lecture en ligne uniquement.
+final class CashSessionHistoryProvider
+    extends $AsyncNotifierProvider<CashSessionHistory, List<CashSession>> {
+  /// Historique distant des sessions de la boutique (tous les appareils),
+  /// paginé. Lecture en ligne uniquement.
+  CashSessionHistoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cashSessionHistoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cashSessionHistoryHash();
+
+  @$internal
+  @override
+  CashSessionHistory create() => CashSessionHistory();
+}
+
+String _$cashSessionHistoryHash() =>
+    r'3871cbf0425f2f5d563f1bb2bbf746019013dff3';
+
+/// Historique distant des sessions de la boutique (tous les appareils),
+/// paginé. Lecture en ligne uniquement.
+
+abstract class _$CashSessionHistory extends $AsyncNotifier<List<CashSession>> {
+  FutureOr<List<CashSession>> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<List<CashSession>>, List<CashSession>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<CashSession>>, List<CashSession>>,
+              AsyncValue<List<CashSession>>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
 /// Écritures de caisse déclenchées depuis l'UI : ouverture, mouvement,
 /// clôture et renvoi d'une clôture avec commentaire.
 ///

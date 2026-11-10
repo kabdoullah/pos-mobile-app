@@ -14,6 +14,10 @@ import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/auth/presentation/pages/store_suspended_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/cash_register/presentation/pages/cash_register_page.dart';
+import '../../features/cash_register/presentation/pages/cash_session_detail_page.dart';
+import '../../features/cash_register/presentation/pages/cash_session_history_page.dart';
+import '../../features/cash_register/presentation/pages/close_cash_session_page.dart';
 import '../../features/catalog/presentation/pages/categories_page.dart';
 import '../../features/catalog/presentation/pages/product_form_page.dart';
 import '../../features/catalog/presentation/pages/product_import_page.dart';
@@ -120,6 +124,18 @@ abstract class Routes {
 
   /// Configuration de l'imprimante Bluetooth.
   static const String bluetoothSetup = '/settings/printer';
+
+  /// Caisse : session ouverte (solde, mouvements) ou invitation à ouvrir.
+  static const String cashRegister = '/cash';
+
+  /// Clôture de la session de caisse ouverte.
+  static const String cashClose = '/cash/close';
+
+  /// Historique des sessions de caisse.
+  static const String cashHistory = '/cash/history';
+
+  /// Détail d'une session de caisse (paramètre de chemin :id).
+  static const String cashSessionDetail = '/cash/sessions/:id';
 }
 
 /// Routes accessibles sans être connecté.
@@ -372,6 +388,23 @@ GoRouter appRouter(Ref ref) {
               ? SaleReturnPage(sale: sale)
               : const SalesHistoryPage();
         },
+      ),
+      GoRoute(
+        path: Routes.cashRegister,
+        builder: (context, state) => const CashRegisterPage(),
+      ),
+      GoRoute(
+        path: Routes.cashClose,
+        builder: (context, state) => const CloseCashSessionPage(),
+      ),
+      GoRoute(
+        path: Routes.cashHistory,
+        builder: (context, state) => const CashSessionHistoryPage(),
+      ),
+      GoRoute(
+        path: Routes.cashSessionDetail,
+        builder: (context, state) =>
+            CashSessionDetailPage(sessionId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: Routes.barcodeScanner,
