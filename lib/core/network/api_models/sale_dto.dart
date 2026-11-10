@@ -118,6 +118,7 @@ sealed class SaleCreateDto with _$SaleCreateDto {
     @JsonKey(name: 'discount_type') String? discountType,
     @JsonKey(name: 'discount_value') String? discountValue,
     @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
+    @JsonKey(name: 'cash_session_id') String? cashSessionId,
   }) = _SaleCreateDto;
 
   factory SaleCreateDto.fromJson(Map<String, dynamic> json) =>

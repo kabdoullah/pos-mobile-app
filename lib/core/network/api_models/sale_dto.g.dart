@@ -119,6 +119,7 @@ _SaleCreateDto _$SaleCreateDtoFromJson(Map<String, dynamic> json) =>
       discountType: json['discount_type'] as String?,
       discountValue: json['discount_value'] as String?,
       discountAmount: json['discount_amount'] as String? ?? '0',
+      cashSessionId: json['cash_session_id'] as String?,
     );
 
 Map<String, dynamic> _$SaleCreateDtoToJson(_SaleCreateDto instance) =>
@@ -134,6 +135,7 @@ Map<String, dynamic> _$SaleCreateDtoToJson(_SaleCreateDto instance) =>
       'discount_type': instance.discountType,
       'discount_value': instance.discountValue,
       'discount_amount': instance.discountAmount,
+      'cash_session_id': instance.cashSessionId,
     };
 
 const _$PaymentMethodDtoEnumMap = {

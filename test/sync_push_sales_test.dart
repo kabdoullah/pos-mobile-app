@@ -97,6 +97,31 @@ void main() {
     expect(entry.status, 'synced');
   });
 
+  test('le push envoie la session de caisse de la vente', () async {
+    final sale = await salesRepository.createSale(
+      items: [
+        CartItem(
+          productId: 'p1',
+          productName: 'Café',
+          unitPrice: Decimal.parse('1500'),
+          quantity: 1,
+        ),
+      ],
+      totalAmount: Decimal.parse('1500'),
+      vatAmount: Decimal.zero,
+      paymentMethod: domain.PaymentMethod.cash,
+      cashSessionId: 'session-1',
+    );
+    stubPushResult(sale.id, receiptNumber: 1);
+
+    await pushService.pushPendingSales();
+
+    final batch =
+        verify(() => remote.pushSales(captureAny())).captured.single
+            as SalesSyncBatchRequestDto;
+    expect(batch.sales.single.toJson()['cash_session_id'], 'session-1');
+  });
+
   test('sans numéro dans la réponse, la vente reste provisoire', () async {
     final sale = await createOfflineSale();
     stubPushResult(sale.id, receiptNumber: null);
