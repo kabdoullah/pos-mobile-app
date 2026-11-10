@@ -55,60 +55,6 @@ final class DeviceIdStorageProvider
 
 String _$deviceIdStorageHash() => r'e1118167a51c486c9e335d0c4d9f81ec91007f4a';
 
-/// Fournit la data source distante des sessions de caisse.
-
-@ProviderFor(cashRegisterRemoteDataSource)
-final cashRegisterRemoteDataSourceProvider =
-    CashRegisterRemoteDataSourceProvider._();
-
-/// Fournit la data source distante des sessions de caisse.
-
-final class CashRegisterRemoteDataSourceProvider
-    extends
-        $FunctionalProvider<
-          CashRegisterRemoteDataSource,
-          CashRegisterRemoteDataSource,
-          CashRegisterRemoteDataSource
-        >
-    with $Provider<CashRegisterRemoteDataSource> {
-  /// Fournit la data source distante des sessions de caisse.
-  CashRegisterRemoteDataSourceProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'cashRegisterRemoteDataSourceProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$cashRegisterRemoteDataSourceHash();
-
-  @$internal
-  @override
-  $ProviderElement<CashRegisterRemoteDataSource> $createElement(
-    $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
-
-  @override
-  CashRegisterRemoteDataSource create(Ref ref) {
-    return cashRegisterRemoteDataSource(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(CashRegisterRemoteDataSource value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<CashRegisterRemoteDataSource>(value),
-    );
-  }
-}
-
-String _$cashRegisterRemoteDataSourceHash() =>
-    r'5e046c76e42eb417ee7a05e0c13ebbbd4b3d7ab3';
-
 /// Fournit le repository des sessions de caisse (local d'abord, via drift).
 
 @ProviderFor(cashRegisterRepository)

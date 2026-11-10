@@ -2,8 +2,8 @@ import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/database_provider.dart';
-import '../../features/cash_register/providers/cash_register_di_providers.dart';
 import '../network/network_providers.dart';
+import 'cash_sync_remote_datasource.dart';
 import 'local_data_reset_service.dart';
 import 'pull_service.dart';
 import 'push_service.dart';
@@ -47,7 +47,6 @@ PushService pushService(Ref ref) {
   return PushService(
     remoteDataSource: ref.read(syncRemoteDataSourceProvider),
     cashRemoteDataSource: ref.read(cashRegisterRemoteDataSourceProvider),
-    cashRegisterRepository: ref.read(cashRegisterRepositoryProvider),
     queueRepository: ref.read(syncQueueRepositoryProvider),
     db: ref.read(databaseProvider),
     logger: Logger(),
@@ -63,3 +62,9 @@ Stream<int> pendingSyncCount(Ref ref) {
 /// Cache disque des images serveur (photos produit, logo).
 @Riverpod(keepAlive: true)
 ImageFileCache imageFileCache(Ref ref) => ImageFileCache();
+
+/// Fournit la data source distante des sessions de caisse.
+@Riverpod(keepAlive: true)
+CashRegisterRemoteDataSource cashRegisterRemoteDataSource(Ref ref) {
+  return CashRegisterRemoteDataSource(ref.watch(dioProvider));
+}

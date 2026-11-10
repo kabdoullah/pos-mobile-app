@@ -11,7 +11,7 @@ import 'package:mobile/features/cash_register/domain/usecases/close_cash_session
 import 'package:mobile/features/cash_register/domain/usecases/open_cash_session_usecase.dart';
 import 'package:mobile/features/cash_register/domain/usecases/record_cash_movement_usecase.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
+import 'package:mobile/core/sync/cash_sync_remote_datasource.dart';
 
 class _MockDeviceIdStorage extends Mock implements DeviceIdStorage {}
 

@@ -10,8 +10,7 @@ import 'package:mobile/core/sync/push_service.dart';
 import 'package:mobile/core/sync/sync_queue_repository.dart';
 import 'package:mobile/core/sync/sync_remote_datasource.dart';
 import 'package:mobile/database/app_database.dart';
-import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
-import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/core/sync/cash_sync_remote_datasource.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockRemote extends Mock implements SyncRemoteDataSource {}
@@ -39,8 +38,6 @@ DioException suspendedError() => DioException(
 /// Une suspension est temporaire : rien de ce qui attend l'envoi ne doit être
 /// refusé ni compté comme un échec, tout repart à la réactivation.
 class _UnusedCashRemote extends Mock implements CashRegisterRemoteDataSource {}
-
-class _UnusedCashRepository extends Mock implements CashRegisterRepository {}
 
 void main() {
   late AppDatabase db;
@@ -73,7 +70,6 @@ void main() {
     push = PushService(
       remoteDataSource: remote,
       cashRemoteDataSource: _UnusedCashRemote(),
-      cashRegisterRepository: _UnusedCashRepository(),
       queueRepository: queue,
       db: db,
     );

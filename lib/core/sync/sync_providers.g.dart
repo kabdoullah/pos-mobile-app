@@ -210,7 +210,7 @@ final class PushServiceProvider
   }
 }
 
-String _$pushServiceHash() => r'45c83e156bdaf986c02ea846d61706c8df4e2c86';
+String _$pushServiceHash() => r'f72de0c6fc4bad9044006975edac815218b24029';
 
 /// Nombre en direct des entrées de la file de synchro en attente ou en échec.
 
@@ -295,3 +295,57 @@ final class ImageFileCacheProvider
 }
 
 String _$imageFileCacheHash() => r'd9c0a6ae678a0275ab4ab4fcabf671b348646cb5';
+
+/// Fournit la data source distante des sessions de caisse.
+
+@ProviderFor(cashRegisterRemoteDataSource)
+final cashRegisterRemoteDataSourceProvider =
+    CashRegisterRemoteDataSourceProvider._();
+
+/// Fournit la data source distante des sessions de caisse.
+
+final class CashRegisterRemoteDataSourceProvider
+    extends
+        $FunctionalProvider<
+          CashRegisterRemoteDataSource,
+          CashRegisterRemoteDataSource,
+          CashRegisterRemoteDataSource
+        >
+    with $Provider<CashRegisterRemoteDataSource> {
+  /// Fournit la data source distante des sessions de caisse.
+  CashRegisterRemoteDataSourceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cashRegisterRemoteDataSourceProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cashRegisterRemoteDataSourceHash();
+
+  @$internal
+  @override
+  $ProviderElement<CashRegisterRemoteDataSource> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CashRegisterRemoteDataSource create(Ref ref) {
+    return cashRegisterRemoteDataSource(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CashRegisterRemoteDataSource value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CashRegisterRemoteDataSource>(value),
+    );
+  }
+}
+
+String _$cashRegisterRemoteDataSourceHash() =>
+    r'5e046c76e42eb417ee7a05e0c13ebbbd4b3d7ab3';

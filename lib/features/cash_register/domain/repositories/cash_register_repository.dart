@@ -35,9 +35,19 @@ class CashRegisterException implements Exception {
   static const reasonTypeMismatch = 'reason_type_mismatch';
 
   /// Clôture refusée par le serveur : son solde recalculé diffère de celui
-  /// de l'appareil et aucun commentaire n'a été envoyé. Refus définitif,
-  /// porté par `CashSession.rejectionCode`.
+  /// de l'appareil et aucun commentaire n'a été envoyé. Porté par
+  /// `CashSession.rejectionCode` ; la session reste ouverte côté serveur et
+  /// la clôture se renvoie avec un commentaire (`resubmitCloseWithNote`).
+  /// Même valeur que `cashClosingNoteRequiredCode` (core/sync).
   static const closingNoteRequired = 'closing_note_required';
+
+  /// Mouvement ou clôture d'une session dont l'ouverture a été refusée par
+  /// le serveur. Même valeur que `cashSessionOpenRejectedCode` (core/sync).
+  static const sessionOpenRejected = 'session_open_rejected';
+
+  /// La clôture ne peut pas être renvoyée : la session n'est pas clôturée ou
+  /// son refus n'est pas [closingNoteRequired].
+  static const closeNotResubmittable = 'close_not_resubmittable';
 
   /// Code du refus.
   final String code;
@@ -101,6 +111,16 @@ abstract class CashRegisterRepository {
   /// Observe toutes les sessions de l'appareil, de la plus récente à la plus
   /// ancienne.
   Stream<List<CashSession>> watchLocalHistory();
+
+  /// Renvoie au serveur une clôture refusée faute de commentaire
+  /// ([CashRegisterException.closingNoteRequired]), avec [note]. Le montant
+  /// compté, le solde affiché et la date de clôture d'origine sont renvoyés à
+  /// l'identique ; la session repasse en attente de synchro.
+  ///
+  /// Lève [CashRegisterException] : `close_not_resubmittable` si la session
+  /// n'est pas clôturée avec ce refus, `note_required` si [note] est vide,
+  /// `note_too_long` au-delà de 500 caractères.
+  Future<void> resubmitCloseWithNote(String sessionId, String note);
 
   /// Reporte sur la session locale le résultat de la clôture serveur :
   /// solde théorique figé, écart et recalcul serveur. Le montant compté, le

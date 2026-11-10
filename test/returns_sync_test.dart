@@ -16,8 +16,7 @@ import 'package:mobile/features/inventory/domain/entities/stock_movement.dart';
 import 'package:mobile/features/returns/data/repositories/returns_repository_impl.dart';
 import 'package:mobile/features/returns/domain/entities/sale_return.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
-import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
-import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/core/sync/cash_sync_remote_datasource.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'sync_store_suspended_test.dart' show suspendedError;
@@ -27,8 +26,6 @@ class _MockRemote extends Mock implements SyncRemoteDataSource {}
 const _now = '2026-10-17T10:00:00Z';
 
 class _UnusedCashRemote extends Mock implements CashRegisterRemoteDataSource {}
-
-class _UnusedCashRepository extends Mock implements CashRegisterRepository {}
 
 void main() {
   late AppDatabase db;
@@ -51,7 +48,6 @@ void main() {
     push = PushService(
       remoteDataSource: remote,
       cashRemoteDataSource: _UnusedCashRemote(),
-      cashRegisterRepository: _UnusedCashRepository(),
       queueRepository: queue,
       db: db,
     );

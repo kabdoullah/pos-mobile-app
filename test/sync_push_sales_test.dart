@@ -10,15 +10,12 @@ import 'package:mobile/database/app_database.dart';
 import 'package:mobile/features/sales/data/repositories/sales_repository_impl.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
-import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
-import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/core/sync/cash_sync_remote_datasource.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSyncRemoteDataSource extends Mock implements SyncRemoteDataSource {}
 
 class _UnusedCashRemote extends Mock implements CashRegisterRemoteDataSource {}
-
-class _UnusedCashRepository extends Mock implements CashRegisterRepository {}
 
 void main() {
   late AppDatabase db;
@@ -39,7 +36,6 @@ void main() {
     pushService = PushService(
       remoteDataSource: remote,
       cashRemoteDataSource: _UnusedCashRemote(),
-      cashRegisterRepository: _UnusedCashRepository(),
       queueRepository: queue,
       db: db,
     );

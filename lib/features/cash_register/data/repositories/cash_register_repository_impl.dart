@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
@@ -5,6 +7,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/device_id_storage.dart';
+import '../../../../core/sync/cash_sync_closure.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../database/app_database.dart' as drift_db;
 import '../../domain/cash_balance_calculator.dart';
@@ -14,7 +17,8 @@ import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_session_detail.dart';
 import '../../domain/entities/cash_summary.dart';
 import '../../domain/repositories/cash_register_repository.dart';
-import '../datasources/cash_register_remote_datasource.dart';
+import '../../domain/usecases/open_cash_session_usecase.dart';
+import '../../../../core/sync/cash_sync_remote_datasource.dart';
 import '../models/cash_mappers.dart';
 
 /// Implémentation drift de [CashRegisterRepository].
@@ -304,6 +308,10 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           discrepancyAmount: drift.Value((countedAmount - expected).toString()),
           closingNote: drift.Value(note),
           closedAt: drift.Value(closedAt),
+          // En attente jusqu'à la réponse du serveur à la clôture, même si
+          // l'ouverture est déjà synchronisée.
+          syncStatus: const drift.Value('pending'),
+          rejectionCode: const drift.Value(null),
         ),
       );
       await syncQueue.enqueueCashSessionClose(
@@ -330,27 +338,65 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
   }
 
   @override
-  Future<void> applyServerClosure(
-    String sessionId,
-    CashSessionDetail detail,
-  ) async {
-    // Session clôturée : le montant figé est le même dans la session et
-    // dans le résumé ; celui du résumé sert si la session ne le porte pas.
-    final expected =
-        detail.session.expectedAmount ?? detail.summary.expectedAmount;
+  Future<void> applyServerClosure(String sessionId, CashSessionDetail detail) {
     final discrepancy = detail.session.discrepancyAmount;
-    // Update seul : une session inconnue de l'appareil n'est jamais insérée.
-    await (db.update(
-      db.cashSessions,
-    )..where((s) => s.id.equals(sessionId))).write(
-      drift_db.CashSessionsCompanion(
-        expectedAmount: drift.Value(expected.toString()),
-        discrepancyAmount: discrepancy == null
-            ? const drift.Value.absent()
-            : drift.Value(discrepancy.toString()),
-        serverRecalculated: drift.Value(detail.summary.serverRecalculated),
-      ),
+    return applyCashServerClosure(
+      db,
+      sessionId,
+      // Session clôturée : même montant figé dans la session et le résumé.
+      expected: (detail.session.expectedAmount ?? detail.summary.expectedAmount)
+          .toString(),
+      discrepancy: discrepancy?.toString(),
+      serverRecalculated: detail.summary.serverRecalculated,
     );
+  }
+
+  @override
+  Future<void> resubmitCloseWithNote(String sessionId, String note) async {
+    final cleanNote = cleanCashNote(note);
+    if (cleanNote == null) {
+      throw const CashRegisterException(CashRegisterException.noteRequired);
+    }
+    await db.transaction(() async {
+      final session = await _sessionRow(sessionId);
+      if (session == null ||
+          session.status !=
+              cashSessionStatusToString(CashSessionStatus.closed) ||
+          session.rejectionCode != CashRegisterException.closingNoteRequired) {
+        throw const CashRegisterException(
+          CashRegisterException.closeNotResubmittable,
+        );
+      }
+      // L'entrée refusée est remise en attente avec le même payload (montant
+      // compté, solde affiché, closed_at) et le commentaire : une seule
+      // entrée de clôture par session.
+      final rejected =
+          await (db.select(db.syncQueue)
+                ..where((q) => q.entityType.equals('cash_session_close'))
+                ..where((q) => q.entityId.equals(sessionId))
+                ..where((q) => q.status.equals('rejected'))
+                ..orderBy([(q) => drift.OrderingTerm.desc(q.id)])
+                ..limit(1))
+              .getSingleOrNull();
+      if (rejected == null) {
+        throw const CashRegisterException(
+          CashRegisterException.closeNotResubmittable,
+        );
+      }
+      final payload = Map<String, dynamic>.from(
+        jsonDecode(rejected.payload) as Map<String, dynamic>,
+      )..['closing_note'] = cleanNote;
+      await (db.update(
+        db.cashSessions,
+      )..where((s) => s.id.equals(sessionId))).write(
+        drift_db.CashSessionsCompanion(
+          closingNote: drift.Value(cleanNote),
+          syncStatus: const drift.Value('pending'),
+          rejectionCode: const drift.Value(null),
+        ),
+      );
+      await syncQueue.resetWithPayload(rejected.id, jsonEncode(payload));
+    });
   }
 
   @override

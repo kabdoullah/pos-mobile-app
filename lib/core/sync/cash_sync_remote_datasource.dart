@@ -1,9 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 
-import '../../../../core/network/api_models/cash_session_dto.dart';
+import '../network/api_models/cash_session_dto.dart';
 
-part 'cash_register_remote_datasource.g.dart';
+part 'cash_sync_remote_datasource.g.dart';
 
 /// Data source distante des sessions de caisse (api.md, « Sessions de
 /// caisse »). Les UUID des sessions et des mouvements sont générés par l'app ;

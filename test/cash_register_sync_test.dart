@@ -2,25 +2,16 @@ import 'package:decimal/decimal.dart';
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/network/api_models/cash_session_dto.dart';
-import 'package:mobile/core/network/network_providers.dart';
-import 'package:mobile/core/network/token_storage.dart';
-import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/storage/device_id_storage.dart';
-import 'package:mobile/core/sync/pull_service.dart';
+import 'package:mobile/core/sync/cash_sync_closure.dart';
 import 'package:mobile/core/sync/push_service.dart';
-import 'package:mobile/core/sync/sync_orchestrator.dart';
-import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/core/sync/sync_queue_repository.dart';
 import 'package:mobile/core/sync/sync_remote_datasource.dart';
 import 'package:mobile/database/app_database.dart'
     hide CashMovement, CashSession;
-import 'package:mobile/database/database_provider.dart';
-import 'package:mobile/features/auth/domain/entities/user.dart';
-import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
-import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
+import 'package:mobile/core/sync/cash_sync_remote_datasource.dart';
 import 'package:mobile/features/cash_register/data/repositories/cash_register_repository_impl.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_movement.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
@@ -32,18 +23,6 @@ class _MockDeviceIdStorage extends Mock implements DeviceIdStorage {}
 class _MockSyncRemote extends Mock implements SyncRemoteDataSource {}
 
 class _MockCashRemote extends Mock implements CashRegisterRemoteDataSource {}
-
-class _MockPushService extends Mock implements PushService {}
-
-class _MockPullService extends Mock implements PullService {}
-
-class _MockTokenStorage extends Mock implements TokenStorage {}
-
-class _AuthenticatedAuth extends Auth {
-  @override
-  Future<AuthStatus> build() async =>
-      const AuthAuthenticated(User(id: 'u1', phoneNumber: '+2250700000000'));
-}
 
 /// Réponse d'erreur HTTP au format de l'API (`code`, `detail`, `field`).
 DioException apiError(int status, String code, {String? field}) => DioException(
@@ -155,7 +134,6 @@ void main() {
     push = PushService(
       remoteDataSource: _MockSyncRemote(),
       cashRemoteDataSource: cashRemote,
-      cashRegisterRepository: repository,
       queueRepository: queue,
       db: db,
     );
@@ -376,7 +354,7 @@ void main() {
       },
     );
 
-    test('close held while the open or a movement is pending', () async {
+    test('close held while the open is pending', () async {
       final session = await repository.openSession(openingAmount: d('1000'));
       await repository.closeSession(
         sessionId: session.id,
@@ -603,60 +581,306 @@ void main() {
     );
   });
 
-  test(
-    'push order: open before sales before returns before movements before closes',
-    () async {
-      final callOrder = <String>[];
-      final pushMock = _MockPushService();
-      final pullMock = _MockPullService();
-      void record(Future<void> Function() call, String name) {
-        when(call).thenAnswer((_) async => callOrder.add(name));
-      }
+  /// Réponse 200 de la clôture, solde figé égal au compté.
+  void closeAccepted(String sessionId, String amount) {
+    when(() => cashRemote.closeSession(any(), any())).thenAnswer(
+      (_) async => detailDto(
+        sessionDto(
+          id: sessionId,
+          expected: amount,
+          clientExpected: amount,
+          counted: amount,
+          discrepancy: '0.00',
+        ),
+        expected: amount,
+      ),
+    );
+  }
 
-      record(pushMock.pushPendingCashSessionOpens, 'opens');
-      record(pushMock.pushPendingSales, 'sales');
-      record(pushMock.pushPendingReturns, 'returns');
-      record(pushMock.pushPendingCashMovements, 'movements');
-      record(pushMock.pushPendingCashSessionCloses, 'closes');
-      record(pushMock.pushPendingCategoryChanges, 'categories');
-      record(pushMock.pushPendingProductChanges, 'products');
-      when(
-        () => pullMock.pullChanges(forceFullPull: any(named: 'forceFullPull')),
-      ).thenAnswer((_) async {
-        callOrder.add('pull');
-        return true;
-      });
-      final tokenStorage = _MockTokenStorage();
-      when(tokenStorage.getStoreId).thenAnswer((_) async => null);
+  group('statut de la session pendant la clôture', () {
+    test(
+      'offline open + close: pending after the open push, synced after close 200',
+      () async {
+        final session = await repository.openSession(openingAmount: d('1000'));
+        await repository.closeSession(
+          sessionId: session.id,
+          countedAmount: d('1000'),
+        );
+        when(() => cashRemote.openSession(any())).thenAnswer(
+          (_) async =>
+              sessionDto(id: session.id, status: 'open', closedAt: null),
+        );
 
-      TestWidgetsFlutterBinding.ensureInitialized();
-      final container = ProviderContainer(
-        overrides: [
-          pushServiceProvider.overrideWithValue(pushMock),
-          pullServiceProvider.overrideWithValue(pullMock),
-          isOnlineProvider.overrideWith(
-            (_) => Stream.value(true).asBroadcastStream(),
-          ),
-          authProvider.overrideWith(_AuthenticatedAuth.new),
-          tokenStorageProvider.overrideWithValue(tokenStorage),
-          databaseProvider.overrideWithValue(db),
-        ],
+        await push.pushPendingCashSessionOpens();
+
+        expect(
+          (await entryOf('cash_session_open', session.id)).status,
+          'synced',
+        );
+        expect(
+          (await sessionOf(session.id)).syncStatus,
+          CashSyncStatus.pending,
+        );
+
+        closeAccepted(session.id, '1000.00');
+        await push.pushPendingCashSessionCloses();
+
+        expect((await sessionOf(session.id)).syncStatus, CashSyncStatus.synced);
+      },
+    );
+
+    test('local close of a synced session sets it back to pending', () async {
+      final session = await openSynced();
+      expect((await sessionOf(session.id)).syncStatus, CashSyncStatus.synced);
+
+      await repository.closeSession(
+        sessionId: session.id,
+        countedAmount: d('25000'),
       );
-      addTearDown(container.dispose);
-      await container.read(authProvider.future);
 
-      await container.read(syncOrchestratorProvider.notifier).syncNow();
+      final local = await sessionOf(session.id);
+      expect(local.syncStatus, CashSyncStatus.pending);
+      expect(local.rejectionCode, isNull);
+    });
+  });
 
-      expect(callOrder, [
-        'opens',
-        'sales',
-        'returns',
-        'movements',
-        'closes',
-        'categories',
-        'products',
-        'pull',
-      ]);
+  test(
+    'open rejected: movement and close rejected without calling the server',
+    () async {
+      final session = await repository.openSession(openingAmount: d('1000'));
+      final movement = await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('500'),
+      );
+      // Une vente de la session reste en échec (session inconnue du serveur) :
+      // elle ne doit pas retenir la clôture.
+      await db
+          .into(db.sales)
+          .insert(
+            SalesCompanion.insert(
+              id: 'sale-1',
+              receiptNumber: 0,
+              totalAmount: '2000',
+              vatAmount: '0',
+              paymentMethod: 'cash',
+              createdAt: DateTime.utc(2026, 11, 10, 9),
+              cashSessionId: drift.Value(session.id),
+            ),
+          );
+      await queue.enqueueSale(saleId: 'sale-1', salePayload: {'id': 'sale-1'});
+      await repository.closeSession(
+        sessionId: session.id,
+        countedAmount: d('3500'),
+      );
+      when(
+        () => cashRemote.openSession(any()),
+      ).thenThrow(apiError(409, 'CASH_SESSION_ALREADY_OPEN'));
+
+      await push.pushPendingCashSessionOpens();
+      await push.pushPendingCashMovements();
+      await push.pushPendingCashSessionCloses();
+
+      verifyNever(() => cashRemote.createMovement(any(), any()));
+      verifyNever(() => cashRemote.closeSession(any(), any()));
+      final local = await movementOf(session.id);
+      expect(local.syncStatus, CashSyncStatus.rejected);
+      expect(local.rejectionCode, cashSessionOpenRejectedCode);
+      final movementEntry = await entryOf('cash_movement', movement.id);
+      expect(movementEntry.status, 'rejected');
+      final closeEntry = await entryOf('cash_session_close', session.id);
+      expect(closeEntry.status, 'rejected');
+      final localSession = await sessionOf(session.id);
+      expect(localSession.syncStatus, CashSyncStatus.rejected);
+      expect(localSession.rejectionCode, cashSessionOpenRejectedCode);
     },
   );
+
+  group('renvoi de la clôture avec un commentaire', () {
+    test(
+      'resubmitCloseWithNote resends the same close with the note',
+      () async {
+        final session = await openSynced();
+        final closed = await repository.closeSession(
+          sessionId: session.id,
+          countedAmount: d('25000'),
+        );
+        when(
+          () => cashRemote.closeSession(any(), any()),
+        ).thenThrow(apiError(422, 'VALIDATION_ERROR', field: 'closing_note'));
+        await push.pushPendingCashSessionCloses();
+        final firstBody =
+            verify(
+                  () => cashRemote.closeSession(session.id, captureAny()),
+                ).captured.single
+                as CashSessionCloseRequestDto;
+
+        await repository.resubmitCloseWithNote(session.id, '  Vente oubliée  ');
+
+        final local = await sessionOf(session.id);
+        expect(local.status, CashSessionStatus.closed);
+        expect(local.syncStatus, CashSyncStatus.pending);
+        expect(local.rejectionCode, isNull);
+        expect(local.closingNote, 'Vente oubliée');
+        expect(local.closedAt, closed.closedAt);
+        final entries = await (db.select(
+          db.syncQueue,
+        )..where((q) => q.entityType.equals('cash_session_close'))).get();
+        // Entrée refusée remise en attente (resetWithPayload), pas de doublon.
+        expect(entries, hasLength(1));
+        expect(entries.single.status, 'pending');
+
+        closeAccepted(session.id, '25000.00');
+        await push.pushPendingCashSessionCloses();
+
+        final resent =
+            verify(
+                  () => cashRemote.closeSession(session.id, captureAny()),
+                ).captured.single
+                as CashSessionCloseRequestDto;
+        expect(resent.closingNote, 'Vente oubliée');
+        expect(resent.closedAt, firstBody.closedAt);
+        expect(resent.countedAmount, firstBody.countedAmount);
+        expect(resent.clientExpectedAmount, firstBody.clientExpectedAmount);
+        expect((await sessionOf(session.id)).syncStatus, CashSyncStatus.synced);
+      },
+    );
+
+    test(
+      'resubmit refused unless the close was rejected for its note',
+      () async {
+        final session = await openSynced();
+        await repository.closeSession(
+          sessionId: session.id,
+          countedAmount: d('25000'),
+        );
+
+        await expectLater(
+          repository.resubmitCloseWithNote(session.id, 'Commentaire'),
+          throwsA(
+            isA<CashRegisterException>().having(
+              (e) => e.code,
+              'code',
+              CashRegisterException.closeNotResubmittable,
+            ),
+          ),
+        );
+        await expectLater(
+          repository.resubmitCloseWithNote(session.id, '   '),
+          throwsA(
+            isA<CashRegisterException>().having(
+              (e) => e.code,
+              'code',
+              CashRegisterException.noteRequired,
+            ),
+          ),
+        );
+      },
+    );
+
+    test('domain codes match the core sync codes', () {
+      expect(
+        CashRegisterException.closingNoteRequired,
+        cashClosingNoteRequiredCode,
+      );
+      expect(
+        CashRegisterException.sessionOpenRejected,
+        cashSessionOpenRejectedCode,
+      );
+    });
+  });
+
+  group('attente de la clôture', () {
+    /// Session ouverte (synchronisée) puis clôturée sur l'appareil.
+    Future<CashSession> closedSession() async {
+      final session = await openSynced();
+      await repository.closeSession(
+        sessionId: session.id,
+        countedAmount: d('25000'),
+      );
+      closeAccepted(session.id, '25000.00');
+      return session;
+    }
+
+    Future<int> enqueueSessionSale(String sessionId) async {
+      await db
+          .into(db.sales)
+          .insert(
+            SalesCompanion.insert(
+              id: 'sale-1',
+              receiptNumber: 0,
+              totalAmount: '0',
+              vatAmount: '0',
+              paymentMethod: 'mobile_money_wave',
+              createdAt: DateTime.utc(2026, 11, 10, 9),
+              cashSessionId: drift.Value(sessionId),
+            ),
+          );
+      return queue.enqueueSale(saleId: 'sale-1', salePayload: {'id': 'sale-1'});
+    }
+
+    test('a pending movement holds the close', () async {
+      final session = await openSynced();
+      await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('500'),
+      );
+      await repository.closeSession(
+        sessionId: session.id,
+        countedAmount: d('25500'),
+      );
+
+      await push.pushPendingCashSessionCloses();
+
+      verifyNever(() => cashRemote.closeSession(any(), any()));
+    });
+
+    test('a pending sale_return holds the close', () async {
+      final session = await closedSession();
+      await db
+          .into(db.saleReturns)
+          .insert(
+            SaleReturnsCompanion.insert(
+              id: 'r1',
+              saleId: 'sale-0',
+              reason: 'defective',
+              refundMethod: 'mobile_money_wave',
+              refundAmount: '1000',
+              createdAt: DateTime.utc(2026, 11, 10, 10),
+              cashSessionId: drift.Value(session.id),
+            ),
+          );
+      await queue.enqueueReturn(returnId: 'r1', returnPayload: {'id': 'r1'});
+
+      await push.pushPendingCashSessionCloses();
+
+      verifyNever(() => cashRemote.closeSession(any(), any()));
+    });
+
+    test('a failed sale holds the close', () async {
+      final session = await closedSession();
+      final saleEntry = await enqueueSessionSale(session.id);
+      for (var i = 0; i < 5; i++) {
+        await queue.incrementRetry(saleEntry, 'cash session not found');
+      }
+      expect((await entryOf('sale', 'sale-1')).status, 'failed');
+
+      await push.pushPendingCashSessionCloses();
+
+      verifyNever(() => cashRemote.closeSession(any(), any()));
+    });
+
+    test('a rejected sale does not hold the close', () async {
+      final session = await closedSession();
+      final saleEntry = await enqueueSessionSale(session.id);
+      await queue.markRejected(saleEntry, 'invalid');
+
+      await push.pushPendingCashSessionCloses();
+
+      verify(() => cashRemote.closeSession(session.id, any())).called(1);
+    });
+  });
 }

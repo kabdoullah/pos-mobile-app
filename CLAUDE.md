@@ -122,7 +122,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 - **Tabs:** `ShellBranch` enum (`core/router/main_shell.dart`) must stay in the same order as the `StatefulShellRoute` branches in `app_router.dart` and the `NavigationBar` destinations. Use `goBranch(ShellBranch.x.index)`, never a literal index.
 - **Low-stock rule** exists twice: `Product.stockLevel` (Dart) and the SQL in `CatalogRepositoryImpl.watchLowStockProducts()`. Change both together.
 - **"Today"-scoped providers** must watch `todayProvider` (`home_providers.dart`), which rebuilds at local midnight; `watchTodayStats()` fixes the day at subscription.
-- **Known inversions:** `core/sync/sync_orchestrator.dart` imports `features/auth` (sync waits for `AuthAuthenticated`); `core/sync/push_service.dart` and `sync_providers.dart` import `features/cash_register` (its datasource, mappers, repository and DI providers, to push cash sessions). Don't add more core → feature imports.
+- **Known inversion:** `core/sync/sync_orchestrator.dart` imports `features/auth` (sync waits for `AuthAuthenticated`). Don't add more core → feature imports.
 - **Testing `SyncOrchestrator`:** `syncNow()` is a no-op unless `authProvider` is `AuthAuthenticated`, and it reads `tokenStorageProvider` + `databaseProvider` — override all three (see `test/sync_orchestrator_test.dart`). Tests use `package:clock` + `fake_async` for time.
 
 ## App initialization
