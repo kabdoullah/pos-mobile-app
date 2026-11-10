@@ -223,6 +223,15 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           session.status != cashSessionStatusToString(CashSessionStatus.open)) {
         throw const CashRegisterException(CashRegisterException.noOpenSession);
       }
+      // Solde relu sous transaction : une écriture survenue depuis la
+      // vérification du cas d'usage (synchro en arrière-plan) est prise en
+      // compte, et le serveur refuserait définitivement la sortie.
+      if (type == CashMovementType.cashOut &&
+          amount > (await _computeSummary(sessionId)).expectedAmount) {
+        throw const CashRegisterException(
+          CashRegisterException.insufficientCash,
+        );
+      }
       await db
           .into(db.cashMovements)
           .insert(
@@ -267,6 +276,12 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
 
       final summary = await _computeSummary(sessionId);
       final expected = summary.expectedAmount;
+      // Revérifié sur le solde figé ici : un écart sans commentaire serait
+      // refusé définitivement par le serveur, et le payload de clôture ne
+      // change plus une fois en file. La transaction est annulée.
+      if (countedAmount != expected && (note == null || note.trim().isEmpty)) {
+        throw const CashRegisterException(CashRegisterException.noteRequired);
+      }
       final closedAt = _now();
 
       await (db.update(

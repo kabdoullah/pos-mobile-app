@@ -184,13 +184,22 @@ void main() {
     'close computes discrepancy and stores client_expected_amount and closed_at',
     () async {
       final session = await repository.openSession(openingAmount: d('25000'));
-      await repository.recordMovement(
-        sessionId: session.id,
-        type: CashMovementType.cashOut,
-        reason: CashMovementReason.expense,
-        amount: d('26000'),
-      );
-      // Solde local négatif : -1000.
+      // Sortie acceptée par le serveur sur un solde que l'appareil ne voyait
+      // pas encore (seul un remboursement en espèces passe sous zéro en
+      // usage normal) : solde local négatif, -1000.
+      await db
+          .into(db.cashMovements)
+          .insert(
+            CashMovementsCompanion.insert(
+              id: 'm1',
+              sessionId: session.id,
+              type: 'cash_out',
+              reason: 'expense',
+              amount: '26000',
+              createdAt: DateTime.utc(2026, 11, 10, 9),
+              syncStatus: 'synced',
+            ),
+          );
 
       final closed = await repository.closeSession(
         sessionId: session.id,
@@ -218,6 +227,66 @@ void main() {
       });
     },
   );
+
+  test(
+    'closeSession with a gap and no note throws and writes nothing',
+    () async {
+      final session = await repository.openSession(openingAmount: d('5000'));
+
+      for (final note in [null, '   ']) {
+        await expectLater(
+          repository.closeSession(
+            sessionId: session.id,
+            countedAmount: d('4500'),
+            note: note,
+          ),
+          throwsA(
+            isA<CashRegisterException>().having(
+              (e) => e.code,
+              'code',
+              CashRegisterException.noteRequired,
+            ),
+          ),
+        );
+      }
+
+      final active = await repository.getActiveSession();
+      expect(active?.id, session.id);
+      expect(active!.closedAt, isNull);
+      expect(active.countedAmount, isNull);
+      expect(await queueOf('cash_session_close'), isEmpty);
+    },
+  );
+
+  test('recordMovement re-checks the balance for cash_out', () async {
+    final session = await repository.openSession(openingAmount: d('3000'));
+
+    await expectLater(
+      repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashOut,
+        reason: CashMovementReason.withdrawal,
+        amount: d('3000.01'),
+      ),
+      throwsA(
+        isA<CashRegisterException>().having(
+          (e) => e.code,
+          'code',
+          CashRegisterException.insufficientCash,
+        ),
+      ),
+    );
+    expect(await db.select(db.cashMovements).get(), isEmpty);
+    expect(await queueOf('cash_movement'), isEmpty);
+
+    await repository.recordMovement(
+      sessionId: session.id,
+      type: CashMovementType.cashOut,
+      reason: CashMovementReason.withdrawal,
+      amount: d('3000'),
+    );
+    expect(await queueOf('cash_movement'), hasLength(1));
+  });
 
   test('close payload re-read from queue is byte-identical', () async {
     final session = await repository.openSession(openingAmount: d('5000'));

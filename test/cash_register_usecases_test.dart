@@ -157,6 +157,30 @@ void main() {
     });
   });
 
+  test('notes longer than 500 characters are refused', () async {
+    final tooLong = 'a' * 501;
+    await expectLater(
+      open(openingAmount: d('1000'), note: tooLong),
+      _refused(CashRegisterException.noteTooLong),
+    );
+    await open(openingAmount: d('1000'), note: 'a' * 500);
+    await expectLater(
+      record(
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('100'),
+        note: tooLong,
+      ),
+      _refused(CashRegisterException.noteTooLong),
+    );
+    await expectLater(
+      close(countedAmount: d('0'), note: tooLong),
+      _refused(CashRegisterException.noteTooLong),
+    );
+    expect(await movementCount(), 0);
+    expect(await repository.getActiveSession(), isNotNull);
+  });
+
   group('clôture', () {
     test('refused without an open session', () async {
       await expectLater(

@@ -15,7 +15,8 @@ class OpenCashSessionUseCase {
   /// facultatif.
   ///
   /// Lève [CashRegisterException] : `invalid_amount` si le montant est
-  /// négatif, `session_already_open` si l'appareil a déjà une session ouverte.
+  /// négatif, `note_too_long` si le commentaire dépasse 500 caractères,
+  /// `session_already_open` si l'appareil a déjà une session ouverte.
   Future<CashSession> call({
     required Decimal openingAmount,
     String? note,
@@ -23,6 +24,7 @@ class OpenCashSessionUseCase {
     if (openingAmount < Decimal.zero) {
       throw const CashRegisterException(CashRegisterException.invalidAmount);
     }
+    final cleanNote = cleanCashNote(note);
     if (await repository.getActiveSession() != null) {
       throw const CashRegisterException(
         CashRegisterException.sessionAlreadyOpen,
@@ -30,13 +32,20 @@ class OpenCashSessionUseCase {
     }
     return repository.openSession(
       openingAmount: openingAmount,
-      note: cleanCashNote(note),
+      note: cleanNote,
     );
   }
 }
 
 /// Commentaire sans espaces superflus, null s'il est vide.
+///
+/// Lève [CashRegisterException] (`note_too_long`) au-delà de
+/// [CashRegisterException.maxNoteLength] caractères.
 String? cleanCashNote(String? note) {
   final trimmed = note?.trim();
-  return (trimmed == null || trimmed.isEmpty) ? null : trimmed;
+  if (trimmed == null || trimmed.isEmpty) return null;
+  if (trimmed.length > CashRegisterException.maxNoteLength) {
+    throw const CashRegisterException(CashRegisterException.noteTooLong);
+  }
+  return trimmed;
 }

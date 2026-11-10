@@ -21,6 +21,12 @@ class CashRegisterException implements Exception {
   /// Commentaire obligatoire manquant.
   static const noteRequired = 'note_required';
 
+  /// Commentaire plus long que [maxNoteLength] caractères.
+  static const noteTooLong = 'note_too_long';
+
+  /// Longueur maximale d'un commentaire (limite du serveur).
+  static const maxNoteLength = 500;
+
   /// Sortie supérieure au solde théorique du tiroir.
   static const insufficientCash = 'insufficient_cash';
 
@@ -62,8 +68,9 @@ abstract class CashRegisterRepository {
   /// Enregistre une entrée ou une sortie d'espèces et la met en file de
   /// synchro, dans une seule transaction.
   ///
-  /// Lève [CashRegisterException] (`no_open_session`) si la session n'est pas
-  /// ouverte.
+  /// Lève [CashRegisterException] : `no_open_session` si la session n'est pas
+  /// ouverte, `insufficient_cash` pour une sortie supérieure au solde relu
+  /// dans la transaction.
   Future<CashMovement> recordMovement({
     required String sessionId,
     required CashMovementType type,
@@ -76,8 +83,9 @@ abstract class CashRegisterRepository {
   /// de clôture, puis met la clôture en file de synchro, dans une seule
   /// transaction. Une session déjà clôturée est renvoyée telle quelle.
   ///
-  /// Lève [CashRegisterException] (`no_open_session`) si la session est
-  /// inconnue.
+  /// Lève [CashRegisterException] : `no_open_session` si la session est
+  /// inconnue, `note_required` si l'écart avec le solde calculé dans la
+  /// transaction n'est pas nul et le commentaire vide (rien n'est écrit).
   Future<CashSession> closeSession({
     required String sessionId,
     required Decimal countedAmount,

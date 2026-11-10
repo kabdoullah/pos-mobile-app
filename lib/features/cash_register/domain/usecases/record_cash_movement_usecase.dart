@@ -19,6 +19,7 @@ class RecordCashMovementUseCase {
   /// - `invalid_amount` si le montant est ≤ 0 ;
   /// - `reason_type_mismatch` si [reason] n'est pas autorisé pour [type] ;
   /// - `note_required` pour le motif `other` sans commentaire ;
+  /// - `note_too_long` pour un commentaire de plus de 500 caractères ;
   /// - `insufficient_cash` pour une sortie supérieure au solde théorique
   ///   (une sortie égale au solde est acceptée).
   Future<CashMovement> call({

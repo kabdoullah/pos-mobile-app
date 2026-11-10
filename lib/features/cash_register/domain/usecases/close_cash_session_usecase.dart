@@ -21,7 +21,8 @@ class CloseCashSessionUseCase {
   ///
   /// Lève [CashRegisterException] : `no_open_session` sans session ouverte,
   /// `invalid_amount` si le montant compté est négatif, `note_required` si
-  /// l'écart n'est pas nul et le commentaire vide.
+  /// l'écart n'est pas nul et le commentaire vide, `note_too_long` au-delà
+  /// de 500 caractères. Le repository revérifie l'écart dans sa transaction.
   Future<CashSession> call({
     required Decimal countedAmount,
     String? note,
