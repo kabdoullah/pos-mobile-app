@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -22,6 +23,7 @@ import 'package:mobile/features/cash_register/domain/entities/cash_session_detai
 import 'package:mobile/features/cash_register/domain/entities/cash_summary.dart';
 import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'package:mobile/features/cash_register/presentation/pages/cash_register_page.dart';
+import 'package:mobile/features/cash_register/presentation/providers/cash_register_providers.dart';
 import 'package:mobile/features/cash_register/presentation/pages/cash_session_detail_page.dart';
 import 'package:mobile/features/cash_register/presentation/pages/cash_session_history_page.dart';
 import 'package:mobile/features/cash_register/presentation/pages/close_cash_session_page.dart';
@@ -479,7 +481,8 @@ void main() {
         find.text('Le serveur exige un commentaire pour cet écart'),
         findsOneWidget,
       );
-      // Clôture non acceptée : pas de chiffres serveur.
+      // Clôture non acceptée : le serveur n'est même pas interrogé.
+      verifyNever(() => repo.fetchRemoteDetail(any()));
       expect(find.textContaining('Opérations arrivées'), findsNothing);
 
       await tester.tap(find.text('Renvoyer la clôture'));
@@ -525,6 +528,47 @@ void main() {
     );
     expect(find.text('Déficit de ${formatFcfa(d('1000'))}'), findsOneWidget);
     verifyNever(() => repo.fetchRemoteHistory(cursor: any(named: 'cursor')));
+  });
+
+  test('history ignores a page that arrives after a refresh', () async {
+    final pending = Completer<CashSessionPage>();
+    var firstPageCalls = 0;
+    when(() => repo.fetchRemoteHistory()).thenAnswer((_) async {
+      firstPageCalls++;
+      return CashSessionPage(
+        items: [closedSession().copyWith(id: 'p$firstPageCalls')],
+        nextCursor: 'c2',
+        hasMore: true,
+      );
+    });
+    when(
+      () => repo.fetchRemoteHistory(cursor: 'c2'),
+    ).thenAnswer((_) => pending.future);
+    final container = ProviderContainer(
+      overrides: [cashRegisterRepositoryProvider.overrideWithValue(repo)],
+      retry: (_, _) => null,
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(cashSessionHistoryProvider, (_, _) {});
+    addTearDown(sub.close);
+    await container.read(cashSessionHistoryProvider.future);
+
+    final notifier = container.read(cashSessionHistoryProvider.notifier);
+    final loading = notifier.loadMore();
+    await notifier.refresh();
+    pending.complete(
+      CashSessionPage(
+        items: [openSession().copyWith(id: 'old')],
+        hasMore: false,
+      ),
+    );
+    await loading;
+
+    // La page de l'ancienne liste n'est pas collée à la liste rechargée.
+    expect(container.read(cashSessionHistoryProvider).value!.map((s) => s.id), [
+      'p2',
+    ]);
+    expect(notifier.hasMore, isTrue);
   });
 
   testWidgets('history online pages through server sessions', (tester) async {
@@ -597,6 +641,15 @@ void main() {
       'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
     );
     expect(card, findsOneWidget);
+    // Action de tap exposée aux lecteurs d'écran (TalkBack, VoiceOver).
+    expect(
+      tester.getSemantics(card),
+      matchesSemantics(
+        label: 'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
     await tester.tap(card);
     await tester.pumpAndSettle();
     expect(find.text('page caisse'), findsOneWidget);

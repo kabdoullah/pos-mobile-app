@@ -35,7 +35,17 @@ class CashSessionDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final local = ref.watch(localCashSessionProvider(sessionId));
-    final remote = ref.watch(remoteCashSessionDetailProvider(sessionId));
+    final localSession = local.value;
+    // Le serveur n'est interrogé que s'il peut compléter l'affichage : session
+    // d'un autre téléphone, ou session locale entièrement synchronisée (en
+    // attente ou refusée, il ne connaît pas encore la clôture).
+    final needsServer =
+        !(local.isLoading && !local.hasValue) &&
+        (localSession == null ||
+            localSession.syncStatus == CashSyncStatus.synced);
+    final remote = needsServer
+        ? ref.watch(remoteCashSessionDetailProvider(sessionId))
+        : const AsyncValue<CashSessionDetail?>.data(null);
     void retry() {
       ref
         ..invalidate(localCashSessionProvider(sessionId))
@@ -45,13 +55,11 @@ class CashSessionDetailPage extends ConsumerWidget {
     final Widget body;
     if (local.isLoading && !local.hasValue) {
       body = const _DetailSkeleton();
-    } else if (local.value case final session?) {
-      // Session de ce téléphone : le serveur ne complète les chiffres qu'une
-      // fois tout synchronisé (sinon il ne connaît pas encore la clôture).
-      final serverDetail = session.syncStatus == CashSyncStatus.synced
-          ? remote.value
-          : null;
-      body = _LocalSessionBody(session: session, serverDetail: serverDetail);
+    } else if (localSession != null) {
+      body = _LocalSessionBody(
+        session: localSession,
+        serverDetail: remote.value,
+      );
     } else {
       body = remote.when(
         loading: () => const _DetailSkeleton(),

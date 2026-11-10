@@ -126,9 +126,12 @@ class _CashCard extends ConsumerWidget {
           : 'Caisse ouverte, solde théorique ${formatFcfa(expected)}';
     }
 
+    // excludeSemantics retire l'action de l'InkWell : on la redonne ici,
+    // sinon les lecteurs d'écran annoncent un bouton inactif.
     return Semantics(
       button: true,
       label: semanticsLabel,
+      onTap: onTap,
       excludeSemantics: true,
       child: AppCard(
         onTap: onTap,

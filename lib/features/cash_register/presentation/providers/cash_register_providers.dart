@@ -69,8 +69,13 @@ class CashSessionHistory extends _$CashSessionHistory {
   bool _loadingMore = false;
   bool _loadMoreFailed = false;
 
+  /// Incrémenté à chaque (re)chargement : une page suivante arrivée après un
+  /// [refresh] appartient à l'ancienne liste et est ignorée.
+  int _generation = 0;
+
   @override
   Future<List<CashSession>> build() async {
+    _generation++;
     _loadingMore = false;
     _loadMoreFailed = false;
     final page = await ref
@@ -93,21 +98,24 @@ class CashSessionHistory extends _$CashSessionHistory {
   Future<void> loadMore() async {
     final current = state.value;
     if (!_hasMore || _loadingMore || current == null) return;
+    final generation = _generation;
     _loadingMore = true;
     _loadMoreFailed = false;
     try {
       final page = await ref
           .read(cashRegisterRepositoryProvider)
           .fetchRemoteHistory(cursor: _nextCursor);
+      if (generation != _generation) return;
       _nextCursor = page.nextCursor;
       _hasMore = page.hasMore;
       state = AsyncData([...current, ...page.items]);
     } catch (_) {
+      if (generation != _generation) return;
       // On garde les sessions déjà affichées ; nouvelle liste pour notifier.
       _loadMoreFailed = true;
       state = AsyncData([...current]);
     } finally {
-      _loadingMore = false;
+      if (generation == _generation) _loadingMore = false;
     }
   }
 
