@@ -102,6 +102,7 @@ Future<_FakeAuth> _pump(
   final cash = _MockCashRegister();
   when(cash.getActiveSession).thenAnswer((_) async => cashSession);
   when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
+  when(cash.hasCloseAwaitingNote).thenAnswer((_) async => false);
   final auth = _FakeAuth(
     status,
     pinFailures: pinFailures,

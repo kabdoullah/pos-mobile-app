@@ -362,9 +362,32 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('logout blocked while a close waits for a note', (
+      tester,
+    ) async {
+      // Clôture refusée faute de commentaire : la session reste ouverte côté
+      // serveur, son entrée de file est « rejected ».
+      when(cash.getActiveSession).thenAnswer((_) async => null);
+      when(cash.hasCloseAwaitingNote).thenAnswer((_) async => true);
+      when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
+
+      await pumpSettings(tester);
+
+      expect(
+        find.text(
+          'Une clôture de caisse attend un commentaire : complétez-la avant '
+          'de vous déconnecter.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Se déconnecter ?'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('logout blocked while a cash close is queued', (tester) async {
       // Session clôturée sur l'appareil, clôture pas encore envoyée.
       when(cash.getActiveSession).thenAnswer((_) async => null);
+      when(cash.hasCloseAwaitingNote).thenAnswer((_) async => false);
       when(cash.hasPendingCashOperations).thenAnswer((_) async => true);
 
       await pumpSettings(tester);
@@ -383,6 +406,7 @@ void main() {
 
     testWidgets('logout confirm shown without open session', (tester) async {
       when(cash.getActiveSession).thenAnswer((_) async => null);
+      when(cash.hasCloseAwaitingNote).thenAnswer((_) async => false);
       when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
 
       await pumpSettings(tester);

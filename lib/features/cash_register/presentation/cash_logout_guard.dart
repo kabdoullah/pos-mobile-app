@@ -6,6 +6,11 @@ import '../providers/cash_register_di_providers.dart';
 const cashLogoutOpenSessionMessage =
     'Clôturez la caisse avant de vous déconnecter.';
 
+/// Refus de déconnexion : une clôture refusée attend un commentaire.
+const cashLogoutCloseAwaitingNoteMessage =
+    'Une clôture de caisse attend un commentaire : complétez-la avant de vous '
+    'déconnecter.';
+
 /// Refus de déconnexion : des opérations de caisse attendent la synchro.
 const cashLogoutPendingMessage =
     'Des opérations de caisse ne sont pas encore synchronisées. Connectez-vous '
@@ -24,6 +29,11 @@ Future<String?> cashLogoutBlockReason(WidgetRef ref) async {
   final repository = ref.read(cashRegisterRepositoryProvider);
   if (await repository.getActiveSession() != null) {
     return cashLogoutOpenSessionMessage;
+  }
+  // La session reste ouverte côté serveur tant que la clôture n'est pas
+  // renvoyée avec un commentaire ; son entrée de file est « rejected ».
+  if (await repository.hasCloseAwaitingNote()) {
+    return cashLogoutCloseAwaitingNoteMessage;
   }
   if (await repository.hasPendingCashOperations()) {
     return cashLogoutPendingMessage;

@@ -326,6 +326,14 @@ class PushService {
       await _rejectCashMovement(entry, cashSessionOpenRejectedCode);
       return;
     }
+    if (payload['type'] == 'cash_out' &&
+        await _hasEarlierSessionOperations(sessionId, entry.id)) {
+      // Le serveur verrait un solde incomplet et répondrait
+      // INSUFFICIENT_CASH (refus définitif) : la sortie reste en attente, sans
+      // essai compté, comme une clôture.
+      _logger?.d('Cash out ${entry.entityId} waits for session operations');
+      return;
+    }
     await _queueRepository.markSyncing(entry.id);
     try {
       final body = CashMovementCreateRequestDto.fromJson(_cashBody(entry));
@@ -408,6 +416,42 @@ class PushService {
           '  )'
           ') AS waiting',
           variables: [drift.Variable.withString(sessionId)],
+          readsFrom: {
+            _db.syncQueue,
+            _db.sales,
+            _db.saleReturns,
+            _db.cashMovements,
+          },
+        )
+        .getSingle();
+    return row.read<bool>('waiting');
+  }
+
+  /// Vrai s'il reste en file (en attente, en cours ou en échec) une vente ou
+  /// un retour de la session, ou un mouvement de la session mis en file avant
+  /// l'entrée [queueId] : le solde du serveur ne les compte pas encore.
+  Future<bool> _hasEarlierSessionOperations(
+    String sessionId,
+    int queueId,
+  ) async {
+    final row = await _db
+        .customSelect(
+          'SELECT EXISTS ('
+          '  SELECT 1 FROM sync_queue q'
+          "  WHERE q.status IN ('pending', 'syncing', 'failed') AND ("
+          "    (q.entity_type = 'sale' AND q.entity_id IN"
+          '      (SELECT id FROM sales WHERE cash_session_id = ?1))'
+          "    OR (q.entity_type = 'sale_return' AND q.entity_id IN"
+          '      (SELECT id FROM sale_returns WHERE cash_session_id = ?1))'
+          "    OR (q.entity_type = 'cash_movement' AND q.id < ?2"
+          '      AND q.entity_id IN'
+          '      (SELECT id FROM cash_movements WHERE session_id = ?1))'
+          '  )'
+          ') AS waiting',
+          variables: [
+            drift.Variable.withString(sessionId),
+            drift.Variable.withInt(queueId),
+          ],
           readsFrom: {
             _db.syncQueue,
             _db.sales,
@@ -553,19 +597,33 @@ class PushService {
     return parsed is ApiException ? parsed : null;
   }
 
+  /// Horodatages client refusés par le serveur s'ils dépassent `now + 5 min`
+  /// (api.md) : une horloge d'appareil en avance, pas un payload invalide.
+  static const _clientTimestampFields = {
+    'opened_at',
+    'created_at',
+    'closed_at',
+  };
+
   /// Traite l'échec d'une requête de caisse. Retourne le code du refus
   /// définitif (4xx), ou null après avoir laissé [entries] en attente :
   /// boutique suspendue (sans essai compté), réseau, 5xx, 404 (session pas
-  /// encore connue du serveur), 401, 408 et 429 (essai compté).
+  /// encore connue du serveur), 401, 408, 429 et VALIDATION_ERROR sur un
+  /// horodatage client (essai compté). L'horodatage en file ne change pas :
+  /// un essai suivant passe une fois l'heure réelle rattrapée.
   Future<String?> _definitiveCashError(
     Object error,
     List<SyncQueueData> entries,
   ) async {
     if (await _keepIfSuspended(error, entries)) return null;
     final api = _cashApiError(error);
+    final clockAhead =
+        api?.code == 'VALIDATION_ERROR' &&
+        _clientTimestampFields.contains(api?.field);
     if (api != null &&
         api.statusCode >= 400 &&
         api.statusCode < 500 &&
+        !clockAhead &&
         !const {401, 404, 408, 429}.contains(api.statusCode)) {
       return api.code;
     }

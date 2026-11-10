@@ -69,6 +69,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
   final cash = _MockCashRegister();
   when(cash.getActiveSession).thenAnswer((_) async => null);
   when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
+  when(cash.hasCloseAwaitingNote).thenAnswer((_) async => false);
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

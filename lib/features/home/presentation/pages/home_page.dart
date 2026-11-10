@@ -98,9 +98,10 @@ class _CashCard extends ConsumerWidget {
     final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
     final session = ref.watch(activeCashSessionProvider);
     final sessionId = session.value?.id;
-    final expected = sessionId == null
+    final summary = sessionId == null
         ? null
-        : ref.watch(cashSummaryProvider(sessionId)).value?.expectedAmount;
+        : ref.watch(cashSummaryProvider(sessionId));
+    final expected = summary?.value?.expectedAmount;
 
     final Widget trailing;
     final String subtitle;
@@ -113,6 +114,12 @@ class _CashCard extends ConsumerWidget {
       subtitle = session.hasError ? 'Caisse indisponible' : 'Caisse fermée';
       trailing = const SizedBox.shrink();
       semanticsLabel = '$subtitle. Ouvrir la caisse';
+    } else if (expected == null && summary!.hasError) {
+      // Résumé illisible : pas de squelette sans fin, la carte mène à l'écran
+      // de caisse.
+      subtitle = 'Solde indisponible';
+      trailing = const SizedBox.shrink();
+      semanticsLabel = 'Caisse ouverte, solde indisponible';
     } else {
       subtitle = 'Solde théorique';
       trailing = expected == null

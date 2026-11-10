@@ -7,13 +7,15 @@ import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
 import '../../domain/entities/sale.dart' as domain;
 
-/// Convertit PaymentMethodDto (API) → domain.PaymentMethod.
+/// Moyen de paiement lu de l'API ou de drift. Une vente créée sur
+/// l'appareil stocke le nom du domaine (`wave`), une vente reçue au pull la
+/// valeur de l'API (`mobile_money_wave`) : les deux sont acceptées.
 domain.PaymentMethod _paymentMethodFromString(String method) {
   return switch (method) {
     'cash' => domain.PaymentMethod.cash,
-    'mobile_money_orange' => domain.PaymentMethod.orangeMoney,
-    'mobile_money_mtn' => domain.PaymentMethod.mtn,
-    'mobile_money_wave' => domain.PaymentMethod.wave,
+    'orangeMoney' || 'mobile_money_orange' => domain.PaymentMethod.orangeMoney,
+    'mtn' || 'mobile_money_mtn' => domain.PaymentMethod.mtn,
+    'wave' || 'mobile_money_wave' => domain.PaymentMethod.wave,
     'mixed' => domain.PaymentMethod.mixed,
     _ => domain.PaymentMethod.cash,
   };

@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/network/api_models/cash_session_dto.dart';
+import 'package:mobile/core/network/api_models/sync_responses_dto.dart';
 import 'package:mobile/core/storage/device_id_storage.dart';
 import 'package:mobile/core/sync/cash_sync_closure.dart';
 import 'package:mobile/core/sync/push_service.dart';
@@ -16,6 +17,9 @@ import 'package:mobile/features/cash_register/data/repositories/cash_register_re
 import 'package:mobile/features/cash_register/domain/entities/cash_movement.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
 import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/sales/data/repositories/sales_repository_impl.dart';
+import 'package:mobile/features/sales/domain/entities/cart_item.dart';
+import 'package:mobile/features/sales/domain/entities/sale.dart' as sale_entity;
 import 'package:mocktail/mocktail.dart';
 
 class _MockDeviceIdStorage extends Mock implements DeviceIdStorage {}
@@ -87,6 +91,7 @@ void main() {
   late AppDatabase db;
   late SyncQueueRepository queue;
   late _MockCashRemote cashRemote;
+  late _MockSyncRemote syncRemote;
   late CashRegisterRepository repository;
   late PushService push;
 
@@ -110,6 +115,7 @@ void main() {
         createdAt: '',
       ),
     );
+    registerFallbackValue(const SalesSyncBatchRequestDto(sales: []));
     registerFallbackValue(
       const CashSessionCloseRequestDto(
         countedAmount: '0',
@@ -131,8 +137,9 @@ void main() {
       deviceIdStorage: deviceId,
       remote: cashRemote,
     );
+    syncRemote = _MockSyncRemote();
     push = PushService(
-      remoteDataSource: _MockSyncRemote(),
+      remoteDataSource: syncRemote,
       cashRemoteDataSource: cashRemote,
       queueRepository: queue,
       db: db,
@@ -881,6 +888,244 @@ void main() {
       await push.pushPendingCashSessionCloses();
 
       verify(() => cashRemote.closeSession(session.id, any())).called(1);
+    });
+  });
+
+  group('sortie retenue tant que le solde serveur est incomplet', () {
+    /// Vente en espèces de la session, créée par le vrai repository (payload
+    /// de file complet).
+    Future<String> sessionSale(String sessionId) async {
+      final sale =
+          await SalesRepositoryImpl(
+            db: db,
+            syncQueue: queue,
+            dio: Dio(),
+          ).createSale(
+            items: [
+              CartItem(
+                productId: 'p1',
+                productName: 'Riz 5kg',
+                unitPrice: d('5000'),
+                quantity: 1,
+              ),
+            ],
+            totalAmount: d('5000'),
+            vatAmount: Decimal.zero,
+            paymentMethod: sale_entity.PaymentMethod.cash,
+            cashSessionId: sessionId,
+          );
+      return sale.id;
+    }
+
+    void movementAccepted() {
+      when(() => cashRemote.createMovement(any(), any())).thenAnswer((
+        inv,
+      ) async {
+        final body = inv.positionalArguments[1] as CashMovementCreateRequestDto;
+        return CashMovementDto(
+          id: body.id,
+          sessionId: inv.positionalArguments[0] as String,
+          type: body.type,
+          reason: body.reason,
+          amount: body.amount,
+          createdAt: body.createdAt,
+          syncedAt: body.createdAt,
+        );
+      });
+    }
+
+    test(
+      'cash_out held while a session sale fails to sync, sent once synced',
+      () async {
+        final session = await openSynced();
+        final saleId = await sessionSale(session.id);
+        final cashOut = await repository.recordMovement(
+          sessionId: session.id,
+          type: CashMovementType.cashOut,
+          reason: CashMovementReason.expense,
+          amount: d('28000'),
+        );
+        when(() => syncRemote.pushSales(any())).thenThrow(networkError());
+        movementAccepted();
+
+        await push.pushPendingSales();
+        await push.pushPendingCashMovements();
+
+        verifyNever(() => cashRemote.createMovement(any(), any()));
+        final held = await entryOf('cash_movement', cashOut.id);
+        expect(held.status, 'pending');
+        expect(held.retryCount, 0);
+        expect(
+          (await movementOf(session.id)).syncStatus,
+          CashSyncStatus.pending,
+        );
+
+        when(() => syncRemote.pushSales(any())).thenAnswer(
+          (_) async => SalesSyncBatchResponseDto(
+            processed: 1,
+            results: [
+              SaleSyncResultDto(
+                id: saleId,
+                status: 'created',
+                receiptNumber: 1,
+              ),
+            ],
+          ),
+        );
+        await push.pushPendingSales();
+        await push.pushPendingCashMovements();
+
+        verify(() => cashRemote.createMovement(session.id, any())).called(1);
+        expect((await entryOf('cash_movement', cashOut.id)).status, 'synced');
+        expect(
+          (await movementOf(session.id)).syncStatus,
+          CashSyncStatus.synced,
+        );
+      },
+    );
+
+    test('cash_out held while an earlier movement is queued', () async {
+      final session = await openSynced();
+      final cashIn = await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('5000'),
+      );
+      final cashOut = await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashOut,
+        reason: CashMovementReason.expense,
+        amount: d('28000'),
+      );
+      when(
+        () => cashRemote.createMovement(any(), any()),
+      ).thenThrow(networkError());
+
+      await push.pushPendingCashMovements();
+
+      final sent = verify(
+        () => cashRemote.createMovement(any(), captureAny()),
+      ).captured.cast<CashMovementCreateRequestDto>();
+      expect(sent.map((b) => b.id), [cashIn.id]);
+      final held = await entryOf('cash_movement', cashOut.id);
+      expect(held.status, 'pending');
+      expect(held.retryCount, 0);
+    });
+
+    test('cash_in is not held by a pending session sale', () async {
+      final session = await openSynced();
+      await sessionSale(session.id);
+      final cashIn = await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('5000'),
+      );
+      movementAccepted();
+
+      await push.pushPendingCashMovements();
+
+      expect((await entryOf('cash_movement', cashIn.id)).status, 'synced');
+    });
+  });
+
+  group('horloge de l\'appareil en avance', () {
+    test(
+      'open: VALIDATION_ERROR on opened_at is retried, not rejected',
+      () async {
+        final session = await repository.openSession(openingAmount: d('1000'));
+        when(
+          () => cashRemote.openSession(any()),
+        ).thenThrow(apiError(422, 'VALIDATION_ERROR', field: 'opened_at'));
+
+        await push.pushPendingCashSessionOpens();
+
+        final entry = await entryOf('cash_session_open', session.id);
+        expect(entry.status, 'pending');
+        expect(entry.retryCount, 1);
+        final local = await sessionOf(session.id);
+        expect(local.syncStatus, CashSyncStatus.pending);
+        expect(local.rejectionCode, isNull);
+
+        when(() => cashRemote.openSession(any())).thenAnswer(
+          (_) async =>
+              sessionDto(id: session.id, status: 'open', closedAt: null),
+        );
+        await push.pushPendingCashSessionOpens();
+
+        final bodies = verify(
+          () => cashRemote.openSession(captureAny()),
+        ).captured.cast<CashSessionOpenRequestDto>();
+        expect(bodies, hasLength(2));
+        expect(bodies[1].openedAt, bodies[0].openedAt);
+        expect((await sessionOf(session.id)).syncStatus, CashSyncStatus.synced);
+      },
+    );
+
+    test(
+      'movement: VALIDATION_ERROR on created_at is retried, not rejected',
+      () async {
+        final session = await openSynced();
+        final movement = await repository.recordMovement(
+          sessionId: session.id,
+          type: CashMovementType.cashIn,
+          reason: CashMovementReason.topUp,
+          amount: d('500'),
+        );
+        when(
+          () => cashRemote.createMovement(any(), any()),
+        ).thenThrow(apiError(422, 'VALIDATION_ERROR', field: 'created_at'));
+
+        await push.pushPendingCashMovements();
+
+        final entry = await entryOf('cash_movement', movement.id);
+        expect(entry.status, 'pending');
+        expect(entry.retryCount, 1);
+        final local = await movementOf(session.id);
+        expect(local.syncStatus, CashSyncStatus.pending);
+        expect(local.rejectionCode, isNull);
+      },
+    );
+
+    test(
+      'close: VALIDATION_ERROR on closed_at is retried, not rejected',
+      () async {
+        final session = await openSynced();
+        await repository.closeSession(
+          sessionId: session.id,
+          countedAmount: d('25000'),
+        );
+        when(
+          () => cashRemote.closeSession(any(), any()),
+        ).thenThrow(apiError(422, 'VALIDATION_ERROR', field: 'closed_at'));
+
+        await push.pushPendingCashSessionCloses();
+
+        final entry = await entryOf('cash_session_close', session.id);
+        expect(entry.status, 'pending');
+        expect(entry.retryCount, 1);
+        final local = await sessionOf(session.id);
+        expect(local.syncStatus, CashSyncStatus.pending);
+        expect(local.rejectionCode, isNull);
+      },
+    );
+
+    test('VALIDATION_ERROR on another field is still rejected', () async {
+      final session = await openSynced();
+      final movement = await repository.recordMovement(
+        sessionId: session.id,
+        type: CashMovementType.cashIn,
+        reason: CashMovementReason.topUp,
+        amount: d('500'),
+      );
+      when(
+        () => cashRemote.createMovement(any(), any()),
+      ).thenThrow(apiError(422, 'VALIDATION_ERROR', field: 'amount'));
+
+      await push.pushPendingCashMovements();
+
+      expect((await entryOf('cash_movement', movement.id)).status, 'rejected');
     });
   });
 }

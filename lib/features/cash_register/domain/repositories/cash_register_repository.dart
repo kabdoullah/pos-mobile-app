@@ -69,6 +69,11 @@ abstract class CashRegisterRepository {
   /// ou `failed`. Une déconnexion suivie d'un changement de compte l'effacerait.
   Future<bool> hasPendingCashOperations();
 
+  /// Vrai si une clôture refusée faute de commentaire
+  /// ([CashRegisterException.closingNoteRequired]) attend d'être renvoyée :
+  /// la session reste ouverte côté serveur.
+  Future<bool> hasCloseAwaitingNote();
+
   /// Observe le récapitulatif du tiroir d'une session — réémet à chaque
   /// vente, retour ou mouvement.
   Stream<CashSummary> watchSummary(String sessionId);

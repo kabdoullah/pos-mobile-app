@@ -594,8 +594,7 @@ void main() {
     expect(find.text('Voir les sessions plus anciennes'), findsNothing);
   });
 
-  testWidgets('home card navigates to /cash', (tester) async {
-    stubActive(openSession(), summary());
+  Future<void> pumpHome(WidgetTester tester) async {
     tester.view.physicalSize = const Size(400, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -629,6 +628,7 @@ void main() {
           ),
           recentSalesProvider.overrideWith((ref) => Stream.value(const [])),
         ],
+        retry: (_, _) => null,
         child: MaterialApp.router(
           theme: AppTheme.light(),
           routerConfig: router,
@@ -636,6 +636,28 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  testWidgets('home card shows an unavailable balance on summary error', (
+    tester,
+  ) async {
+    stubActive(openSession(), null);
+    when(
+      () => repo.watchSummary('s1'),
+    ).thenAnswer((_) => Stream.error(StateError('drift')));
+    await pumpHome(tester);
+
+    expect(
+      find.bySemanticsLabel('Caisse ouverte, solde indisponible'),
+      findsOneWidget,
+    );
+    expect(find.byType(SkeletonBox), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('home card navigates to /cash', (tester) async {
+    stubActive(openSession(), summary());
+    await pumpHome(tester);
 
     final card = find.bySemanticsLabel(
       'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',

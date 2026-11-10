@@ -95,6 +95,22 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
   }
 
   @override
+  Future<bool> hasCloseAwaitingNote() async {
+    final query = db.selectOnly(db.cashSessions)
+      ..addColumns([db.cashSessions.id])
+      ..where(
+        db.cashSessions.status.equals(
+              cashSessionStatusToString(CashSessionStatus.closed),
+            ) &
+            db.cashSessions.rejectionCode.equals(
+              CashRegisterException.closingNoteRequired,
+            ),
+      )
+      ..limit(1);
+    return (await query.get()).isNotEmpty;
+  }
+
+  @override
   Stream<CashSummary> watchSummary(String sessionId) {
     // Requête témoin : réémet dès qu'une des quatre tables change, puis le
     // récapitulatif est recalculé en entier.

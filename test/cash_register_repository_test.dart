@@ -571,4 +571,38 @@ void main() {
       expect(await repository.hasPendingCashOperations(), isFalse);
     },
   );
+
+  test(
+    'hasCloseAwaitingNote: closed session refused for a missing note',
+    () async {
+      expect(await repository.hasCloseAwaitingNote(), isFalse);
+
+      final session = await repository.openSession(openingAmount: d('1000'));
+      await repository.closeSession(
+        sessionId: session.id,
+        countedAmount: d('1000'),
+      );
+      expect(await repository.hasCloseAwaitingNote(), isFalse);
+
+      // Autre refus : pas concerné.
+      await (db.update(
+        db.cashSessions,
+      )..where((s) => s.id.equals(session.id))).write(
+        const CashSessionsCompanion(
+          syncStatus: drift.Value('rejected'),
+          rejectionCode: drift.Value('IDEMPOTENCY_CONFLICT'),
+        ),
+      );
+      expect(await repository.hasCloseAwaitingNote(), isFalse);
+
+      await (db.update(
+        db.cashSessions,
+      )..where((s) => s.id.equals(session.id))).write(
+        const CashSessionsCompanion(
+          rejectionCode: drift.Value('closing_note_required'),
+        ),
+      );
+      expect(await repository.hasCloseAwaitingNote(), isTrue);
+    },
+  );
 }
