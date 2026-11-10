@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
@@ -15,6 +16,8 @@ import 'package:mobile/features/auth/presentation/providers/auth_providers.dart'
 import 'package:mobile/features/auth/providers/account_email_provider.dart';
 import 'package:mobile/features/auth/providers/seller_profile_provider.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/settings/presentation/pages/settings_page.dart';
 import 'package:mobile/features/settings/presentation/widgets/receipt_settings_sheet.dart';
 
@@ -58,7 +61,13 @@ class _Store extends StoreConfig {
   Future<Store?> build() async => _store;
 }
 
+class _MockCashRegister extends Mock implements CashRegisterRepository {}
+
 Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
+  // Caisse fermée : la déconnexion reste possible
+  // (`cash_register_guards_test.dart` couvre le refus).
+  final cash = _MockCashRegister();
+  when(cash.getActiveSession).thenAnswer((_) async => null);
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -77,6 +86,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
         syncOrchestratorProvider.overrideWith(_IdleSync.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(3)),
+        cashRegisterRepositoryProvider.overrideWithValue(cash),
       ],
       child: MaterialApp(theme: theme, home: home),
     ),

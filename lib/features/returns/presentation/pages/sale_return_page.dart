@@ -6,6 +6,8 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/widgets/index.dart';
+import '../../../cash_register/domain/repositories/cash_register_repository.dart';
+import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/return_labels.dart';
 import '../../domain/entities/returnable_line.dart';
@@ -119,21 +121,41 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
     if (!confirmed || !mounted) return;
 
     setState(() => _saving = true);
+    var cashRegisterClosed = false;
     try {
       final saved = await ref
           .read(saleReturnSubmissionProvider.notifier)
           .submit(sale: widget.sale, lines: widget.lines, draft: draft);
       if (mounted) _draft.markSaved(saved);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Retour non enregistré : ${errorToFrench(e)}'),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+      if (e is CashRegisterException &&
+          e.code == CashRegisterException.noOpenSession) {
+        cashRegisterClosed = true;
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Retour non enregistré : ${errorToFrench(e)}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+    if (cashRegisterClosed && mounted) await _openCashSession();
+  }
+
+  /// Remboursement en espèces caisse fermée : rien n'est enregistré et la
+  /// saisie est conservée. Le commerçant ouvre la caisse puis valide de
+  /// nouveau lui-même.
+  Future<void> _openCashSession() async {
+    final opened = await showOpenCashSessionSheet(context);
+    if (opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Caisse ouverte. Validez de nouveau le retour.'),
+        ),
+      );
     }
   }
 

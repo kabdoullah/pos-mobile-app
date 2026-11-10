@@ -59,7 +59,7 @@ final class SaleSubmissionProvider
   }
 }
 
-String _$saleSubmissionHash() => r'645d51bacba8c983f98fc304986c156763cf32d7';
+String _$saleSubmissionHash() => r'dfe0ad6df4e70897cf76382c71221c26b292b7e0';
 
 /// Encaisse le panier courant avec le brouillon de paiement de la caisse.
 ///

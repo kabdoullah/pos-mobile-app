@@ -7,11 +7,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/category.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/catalog/domain/entities/product_page.dart';
@@ -40,6 +43,8 @@ class _Store extends StoreConfig {
 }
 
 class _MockCatalog extends Mock implements CatalogRepository {}
+
+class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
 Product product(
   String name, {
@@ -98,10 +103,15 @@ Future<ProviderContainer> pumpPage(WidgetTester tester) async {
     );
   });
 
+  // Caisse fermée : l'encaissement propose de l'ouvrir.
+  final cash = _MockCashRegister();
+  when(cash.getActiveSession).thenAnswer((_) async => null);
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         authProvider.overrideWith(_NoAuth.new),
+        cashRegisterRepositoryProvider.overrideWithValue(cash),
         storeConfigProvider.overrideWith(_Store.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(0)),
@@ -268,6 +278,38 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  testWidgets('caisse fermée : Encaisser propose l’ouverture, panier gardé', (
+    tester,
+  ) async {
+    final container = await pumpPage(tester);
+    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
+    await settleToast(tester);
+    container
+        .read(checkoutProvider.notifier)
+        .setCashReceived(Decimal.parse('5000'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SaleCheckoutPanel),
+        matching: find.byType(PrimaryButton),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Fond de caisse'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+      findsOneWidget,
+    );
+    expect(container.read(cartProvider).unitCount, 1);
+    expect(
+      container.read(checkoutProvider).cashReceived,
+      Decimal.parse('5000'),
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('le panier reste accessible et modifiable', (tester) async {

@@ -6,6 +6,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
+import '../../../cash_register/domain/repositories/cash_register_repository.dart';
+import '../../../cash_register/providers/cash_register_di_providers.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
@@ -37,9 +39,12 @@ class SaleSubmission extends _$SaleSubmission {
 
   /// Enregistre la vente (appelle CreateSaleUseCase), vide le panier et le
   /// brouillon de paiement, puis lance une synchro si l'appareil est en
-  /// ligne. Retourne `null` sans rien faire si un encaissement est déjà en
-  /// cours, si le panier est vide ou si le paiement est incomplet ; lève
-  /// l'erreur du use case sinon.
+  /// ligne. La vente est rattachée à la session de caisse ouverte. Retourne
+  /// `null` sans rien faire si un encaissement est déjà en cours, si le panier
+  /// est vide ou si le paiement est incomplet. Lève
+  /// [CashRegisterException] (`no_open_session`) sans session ouverte : rien
+  /// n'est enregistré, panier et paiement sont conservés. Lève l'erreur du use
+  /// case sinon.
   Future<CompletedSale?> submit() async {
     final cart = ref.read(cartProvider);
     final checkout = ref.read(checkoutProvider);
@@ -48,6 +53,12 @@ class SaleSubmission extends _$SaleSubmission {
 
     state = true;
     try {
+      final session = await ref
+          .read(cashRegisterRepositoryProvider)
+          .getActiveSession();
+      if (session == null) {
+        throw const CashRegisterException(CashRegisterException.noOpenSession);
+      }
       final isMixed = checkout.method == sale_entity.PaymentMethod.mixed;
       final sale = await ref.read(createSaleUseCaseProvider)(
         items: cart.items,
@@ -58,6 +69,7 @@ class SaleSubmission extends _$SaleSubmission {
         paymentMethod: checkout.method,
         cashAmount: isMixed ? checkout.cashReceived : null,
         mobileMoneyAmount: isMixed ? checkout.mobileMoney : null,
+        cashSessionId: session.id,
       );
 
       ref.read(cartProvider.notifier).clear();

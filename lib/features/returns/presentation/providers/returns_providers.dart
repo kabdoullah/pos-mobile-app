@@ -3,6 +3,8 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../cash_register/domain/repositories/cash_register_repository.dart';
+import '../../../cash_register/providers/cash_register_di_providers.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/returnable_line.dart';
 import '../../domain/entities/sale_return.dart';
@@ -126,16 +128,26 @@ class SaleReturnSubmission extends _$SaleReturnSubmission {
   @override
   void build() {}
 
-  /// Enregistre le retour décrit par [draft] ; lève
-  /// [CreateSaleReturnException] si une règle n'est pas respectée.
+  /// Enregistre le retour décrit par [draft], rattaché à la session de caisse
+  /// ouverte (aucune pour un remboursement mobile money hors session).
+  ///
+  /// Lève [CreateSaleReturnException] si une règle n'est pas respectée, et
+  /// [CashRegisterException] (`no_open_session`) pour un remboursement en
+  /// espèces sans session ouverte : rien n'est enregistré.
   Future<SaleReturn> submit({
     required Sale sale,
     required List<ReturnableLine> lines,
     required ReturnDraftState draft,
-  }) {
+  }) async {
     final reason = draft.reason;
     if (reason == null) {
       throw CreateSaleReturnException('Choisissez le motif du retour');
+    }
+    final session = await ref
+        .read(cashRegisterRepositoryProvider)
+        .getActiveSession();
+    if (session == null && draft.refundMethod == RefundMethod.cash) {
+      throw const CashRegisterException(CashRegisterException.noOpenSession);
     }
     return ref.read(createSaleReturnUseCaseProvider)(
       returnId: draft.returnId,
@@ -144,6 +156,7 @@ class SaleReturnSubmission extends _$SaleReturnSubmission {
       reason: reason,
       note: draft.note,
       refundMethod: draft.refundMethod,
+      cashSessionId: session?.id,
     );
   }
 }

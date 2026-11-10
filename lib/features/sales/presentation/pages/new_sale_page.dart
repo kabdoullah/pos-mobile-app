@@ -12,6 +12,8 @@ import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
+import '../../../cash_register/domain/repositories/cash_register_repository.dart';
+import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
 import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
@@ -412,11 +414,30 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
         ),
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
+      if (!mounted) return;
+      if (e is CashRegisterException &&
+          e.code == CashRegisterException.noOpenSession) {
+        await _openCashSession();
+        return;
       }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
+    }
+  }
+
+  /// Caisse fermée à l'encaissement : rien n'a été enregistré et le panier est
+  /// conservé. Le commerçant ouvre la caisse puis valide de nouveau lui-même.
+  Future<void> _openCashSession() async {
+    final opened = await _withCameraPaused(
+      () => showOpenCashSessionSheet(context),
+    );
+    if ((opened ?? false) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Caisse ouverte. Validez de nouveau la vente.'),
+        ),
+      );
     }
   }
 

@@ -5,7 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/returns/domain/entities/returnable_line.dart';
 import 'package:mobile/features/returns/domain/entities/sale_return.dart';
 import 'package:mobile/features/returns/domain/repositories/returns_repository.dart';
@@ -13,6 +17,7 @@ import 'package:mobile/features/returns/presentation/pages/sale_return_page.dart
 import 'package:mobile/features/returns/presentation/widgets/sale_returns_section.dart';
 import 'package:mobile/features/returns/providers/returns_di_providers.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
+import 'package:mocktail/mocktail.dart';
 
 /// Évite l'initialisation de la vraie authentification.
 class _NoAuth extends Auth {
@@ -75,6 +80,19 @@ class _FakeReturns implements ReturnsRepository {
   }
 }
 
+class _MockCashRegister extends Mock implements CashRegisterRepository {}
+
+/// Caisse ouverte : un remboursement en espèces l'exige.
+final _openSession = CashSession(
+  id: 'session-1',
+  deviceId: 'device-1',
+  status: CashSessionStatus.open,
+  openingAmount: Decimal.zero,
+  openedAt: DateTime.utc(2026),
+  syncStatus: CashSyncStatus.synced,
+  serverRecalculated: false,
+);
+
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
 
@@ -131,7 +149,12 @@ void main() {
     _FakeReturns repository, {
     ThemeData? theme,
     double height = 640,
+    bool sessionOpen = true,
   }) async {
+    final cash = _MockCashRegister();
+    when(
+      cash.getActiveSession,
+    ).thenAnswer((_) async => sessionOpen ? _openSession : null);
     tester.view.physicalSize = Size(360, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -140,6 +163,7 @@ void main() {
         overrides: [
           authProvider.overrideWith(_NoAuth.new),
           returnsRepositoryProvider.overrideWithValue(repository),
+          cashRegisterRepositoryProvider.overrideWithValue(cash),
           isOnlineProvider.overrideWith((ref) => Stream.value(false)),
         ],
         child: MaterialApp(
@@ -266,6 +290,37 @@ void main() {
         expect(saved.lines.single.condition, ItemCondition.resellable);
       });
     }
+
+    testWidgets('espèces caisse fermée : ouverture proposée, rien enregistré', (
+      tester,
+    ) async {
+      final repository = _FakeReturns(lines: [coca()]);
+      await pump(
+        tester,
+        SaleReturnPage(sale: sale()),
+        repository,
+        sessionOpen: false,
+      );
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
+      await tester.tap(find.text('Produit défectueux'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enregistrer le retour'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Fond de caisse'), findsOneWidget);
+      expect(
+        find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+        findsOneWidget,
+      );
+      expect(repository.created, isEmpty);
+      expect(tester.takeException(), isNull);
+    });
 
     testWidgets('quantité bornée à la quantité retournable', (tester) async {
       await pump(

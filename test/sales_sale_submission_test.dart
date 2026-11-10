@@ -4,6 +4,9 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
+import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
@@ -15,6 +18,19 @@ import 'package:mobile/features/sales/providers/sales_di_providers.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCreateSaleUseCase extends Mock implements CreateSaleUseCase {}
+
+class _MockCashRegister extends Mock implements CashRegisterRepository {}
+
+/// Caisse ouverte : l'encaissement l'exige (`cash_register_guards_test.dart`).
+final _openSession = CashSession(
+  id: 'session-1',
+  deviceId: 'device-1',
+  status: CashSessionStatus.open,
+  openingAmount: Decimal.zero,
+  openedAt: DateTime.utc(2026),
+  syncStatus: CashSyncStatus.synced,
+  serverRecalculated: false,
+);
 
 Decimal d(String value) => Decimal.parse(value);
 
@@ -54,14 +70,18 @@ void main() {
       paymentMethod: any(named: 'paymentMethod'),
       cashAmount: any(named: 'cashAmount'),
       mobileMoneyAmount: any(named: 'mobileMoneyAmount'),
+      cashSessionId: any(named: 'cashSessionId'),
     ),
   );
 
   setUp(() {
     useCase = _MockCreateSaleUseCase();
+    final cash = _MockCashRegister();
+    when(cash.getActiveSession).thenAnswer((_) async => _openSession);
     container = ProviderContainer(
       overrides: [
         createSaleUseCaseProvider.overrideWithValue(useCase),
+        cashRegisterRepositoryProvider.overrideWithValue(cash),
         isOnlineProvider.overrideWith((ref) => Stream.value(false)),
       ],
     );
@@ -98,6 +118,7 @@ void main() {
         // Hors paiement mixte, pas de ventilation des montants.
         cashAmount: null,
         mobileMoneyAmount: null,
+        cashSessionId: 'session-1',
       ),
     ).called(1);
   });
@@ -136,6 +157,7 @@ void main() {
         paymentMethod: any(named: 'paymentMethod'),
         cashAmount: any(named: 'cashAmount'),
         mobileMoneyAmount: any(named: 'mobileMoneyAmount'),
+        cashSessionId: any(named: 'cashSessionId'),
       ),
     ).called(1);
   });
