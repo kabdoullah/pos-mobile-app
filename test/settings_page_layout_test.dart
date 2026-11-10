@@ -68,6 +68,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
   // (`cash_register_guards_test.dart` couvre le refus).
   final cash = _MockCashRegister();
   when(cash.getActiveSession).thenAnswer((_) async => null);
+  when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

@@ -79,6 +79,22 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
       (await _activeSessionQuery().getSingleOrNull())?.toDomain();
 
   @override
+  Future<bool> hasPendingCashOperations() async {
+    final query = db.selectOnly(db.syncQueue)
+      ..addColumns([db.syncQueue.id])
+      ..where(
+        db.syncQueue.entityType.isIn(const [
+              'cash_session_open',
+              'cash_movement',
+              'cash_session_close',
+            ]) &
+            db.syncQueue.status.isIn(const ['pending', 'syncing', 'failed']),
+      )
+      ..limit(1);
+    return (await query.get()).isNotEmpty;
+  }
+
+  @override
   Stream<CashSummary> watchSummary(String sessionId) {
     // Requête témoin : réémet dès qu'une des quatre tables change, puis le
     // récapitulatif est recalculé en entier.

@@ -7,6 +7,7 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/sync/sync_providers.dart';
 import '../../../../core/widgets/index.dart';
+import '../../../cash_register/presentation/cash_logout_guard.dart';
 import '../../domain/entities/pin_failure.dart';
 import '../../providers/store_provider.dart';
 import '../providers/auth_providers.dart';
@@ -116,6 +117,21 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
   }
 
   Future<void> _confirmSwitchAccount() async {
+    // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
+    // perdues au changement de compte.
+    final blockReason = await cashLogoutBlockReason(ref);
+    if (!mounted) return;
+    if (blockReason != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(blockReason),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
     final pending = await _pendingSalesCount();
     if (!mounted) return;
     final confirmed = await showConfirmDialog(

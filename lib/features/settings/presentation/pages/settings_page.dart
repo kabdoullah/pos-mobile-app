@@ -22,7 +22,7 @@ import '../../../../core/widgets/index.dart';
 import '../../../auth/presentation/pages/store_setup_page.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/providers/store_provider.dart';
-import '../../../cash_register/providers/cash_register_di_providers.dart';
+import '../../../cash_register/presentation/cash_logout_guard.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
 import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/providers/sales_di_providers.dart';
@@ -282,14 +282,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _confirmLogout() async {
-    // Une caisse ouverte appartient à ce compte : la déconnexion attend sa
-    // clôture.
-    final session = await ref
-        .read(cashRegisterRepositoryProvider)
-        .getActiveSession();
+    // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
+    // perdues au changement de compte.
+    final blockReason = await cashLogoutBlockReason(ref);
     if (!mounted) return;
-    if (session != null) {
-      _showMessage('Clôturez la caisse avant de vous déconnecter.');
+    if (blockReason != null) {
+      _showMessage(blockReason);
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;

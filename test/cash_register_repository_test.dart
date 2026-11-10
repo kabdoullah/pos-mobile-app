@@ -524,4 +524,51 @@ void main() {
     final history = await repository.watchLocalHistory().first;
     expect(history.map((s) => s.id), [first.id, 'older']);
   });
+
+  test(
+    'hasPendingCashOperations: pending, syncing or failed cash entries only',
+    () async {
+      expect(await repository.hasPendingCashOperations(), isFalse);
+
+      // Une vente en attente ne compte pas.
+      await queue.enqueueSale(saleId: 's1', salePayload: const {});
+      expect(await repository.hasPendingCashOperations(), isFalse);
+
+      final close = await queue.enqueueCashSessionClose(
+        sessionId: 'c1',
+        payload: const {},
+      );
+      expect(await repository.hasPendingCashOperations(), isTrue);
+
+      await queue.markSyncing(close);
+      expect(await repository.hasPendingCashOperations(), isTrue);
+
+      for (var i = 0; i < 10; i++) {
+        if (await queue.incrementRetry(close, 'réseau')) break;
+      }
+      final failed = await (db.select(
+        db.syncQueue,
+      )..where((t) => t.id.equals(close))).getSingle();
+      expect(failed.status, 'failed');
+      expect(await repository.hasPendingCashOperations(), isTrue);
+
+      await queue.markRejected(close, 'refus');
+      expect(await repository.hasPendingCashOperations(), isFalse);
+
+      final movement = await queue.enqueueCashMovement(
+        movementId: 'm1',
+        payload: const {},
+      );
+      expect(await repository.hasPendingCashOperations(), isTrue);
+      await queue.markSynced(movement);
+
+      final open = await queue.enqueueCashSessionOpen(
+        sessionId: 'o1',
+        payload: const {},
+      );
+      expect(await repository.hasPendingCashOperations(), isTrue);
+      await queue.markSynced(open);
+      expect(await repository.hasPendingCashOperations(), isFalse);
+    },
+  );
 }

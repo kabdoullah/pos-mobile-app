@@ -1,6 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
@@ -13,6 +15,9 @@ import 'package:mobile/features/auth/presentation/pages/register_page.dart';
 import 'package:mobile/features/auth/presentation/pages/store_setup_page.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
+import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 
 /// Auth pilotable : état initial fixé, erreurs de connexion / PIN simulées.
 class _FakeAuth extends Auth {
@@ -69,6 +74,8 @@ class _FakeAuth extends Auth {
   void clearError() {}
 }
 
+class _MockCashRegister extends Mock implements CashRegisterRepository {}
+
 class _Store extends StoreConfig {
   @override
   Future<Store?> build() async =>
@@ -85,12 +92,16 @@ Future<_FakeAuth> _pump(
   bool dark = false,
   double keyboard = 0,
   int pendingSales = 0,
+  CashSession? cashSession,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
   addTearDown(tester.view.reset);
 
+  final cash = _MockCashRegister();
+  when(cash.getActiveSession).thenAnswer((_) async => cashSession);
+  when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
   final auth = _FakeAuth(
     status,
     pinFailures: pinFailures,
@@ -101,6 +112,7 @@ Future<_FakeAuth> _pump(
       overrides: [
         authProvider.overrideWith(() => auth),
         storeConfigProvider.overrideWith(_Store.new),
+        cashRegisterRepositoryProvider.overrideWithValue(cash),
         pendingSyncCountProvider.overrideWith(
           (ref) => Stream.value(pendingSales),
         ),
@@ -391,6 +403,35 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(auth.loggedOut, isTrue);
+    });
+
+    testWidgets('changer de compte : refusé tant que la caisse est ouverte', (
+      tester,
+    ) async {
+      final auth = await _pump(
+        tester,
+        const PinLoginPage(),
+        status: const AuthPinRequired(),
+        cashSession: CashSession(
+          id: 'session-1',
+          deviceId: 'device-1',
+          status: CashSessionStatus.open,
+          openingAmount: Decimal.zero,
+          openedAt: DateTime.utc(2026),
+          syncStatus: CashSyncStatus.synced,
+          serverRecalculated: false,
+        ),
+      );
+
+      await tester.tap(find.text('Changer de compte'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Clôturez la caisse avant de vous déconnecter.'),
+        findsOneWidget,
+      );
+      expect(find.text('Changer de compte ?'), findsNothing);
+      expect(auth.loggedOut, isFalse);
     });
   });
 }

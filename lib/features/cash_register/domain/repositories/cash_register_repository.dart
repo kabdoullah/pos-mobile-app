@@ -64,6 +64,11 @@ abstract class CashRegisterRepository {
   /// La session ouverte sur l'appareil, null si aucune.
   Future<CashSession?> getActiveSession();
 
+  /// Vrai si une opération de caisse (ouverture, mouvement ou clôture) attend
+  /// encore d'être envoyée au serveur : entrée de file `pending`, `syncing`
+  /// ou `failed`. Une déconnexion suivie d'un changement de compte l'effacerait.
+  Future<bool> hasPendingCashOperations();
+
   /// Observe le récapitulatif du tiroir d'une session — réémet à chaque
   /// vente, retour ou mouvement.
   Stream<CashSummary> watchSummary(String sessionId);

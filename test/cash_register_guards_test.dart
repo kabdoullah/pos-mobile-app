@@ -362,8 +362,28 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('logout blocked while a cash close is queued', (tester) async {
+      // Session clôturée sur l'appareil, clôture pas encore envoyée.
+      when(cash.getActiveSession).thenAnswer((_) async => null);
+      when(cash.hasPendingCashOperations).thenAnswer((_) async => true);
+
+      await pumpSettings(tester);
+
+      expect(
+        find.text(
+          'Des opérations de caisse ne sont pas encore synchronisées. '
+          'Connectez-vous à internet et synchronisez avant de vous '
+          'déconnecter.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Se déconnecter ?'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('logout confirm shown without open session', (tester) async {
       when(cash.getActiveSession).thenAnswer((_) async => null);
+      when(cash.hasPendingCashOperations).thenAnswer((_) async => false);
 
       await pumpSettings(tester);
 
@@ -408,7 +428,10 @@ void main() {
       expect(sync.calls, 1);
     });
 
-    Future<Future<bool>> pumpSheet(WidgetTester tester) async {
+    Future<Future<bool>> pumpSheet(
+      WidgetTester tester, {
+      bool dark = false,
+    }) async {
       late Future<bool> result;
       await tester.pumpWidget(
         ProviderScope(
@@ -417,7 +440,7 @@ void main() {
             isOnlineProvider.overrideWith((ref) => Stream.value(false)),
           ],
           child: MaterialApp(
-            theme: AppTheme.light(),
+            theme: dark ? AppTheme.dark() : AppTheme.light(),
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
@@ -473,6 +496,17 @@ void main() {
           note: any(named: 'note'),
         ),
       );
+    });
+
+    testWidgets('la feuille s’affiche en thème sombre', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpSheet(tester, dark: true);
+
+      expect(find.text('Fond de caisse'), findsOneWidget);
+      expect(find.text('Commentaire (facultatif)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 }
