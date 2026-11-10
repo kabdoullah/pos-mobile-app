@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/cash_register/domain/cash_balance_calculator.dart';
+import 'package:mobile/features/cash_register/domain/entities/cash_labels.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_movement.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_summary.dart';
@@ -74,6 +75,63 @@ void main() {
     );
     expect(s.expectedAmount, d('13000'));
     expect(s.cashSalesCount, 1);
+  });
+
+  test('mixed 8000 (cash 3000) adds 5000 to mobileMoneySales', () {
+    final s = run(
+      sales: [
+        CashSaleLine(
+          paymentMethod: PaymentMethod.mixed,
+          totalAmount: d('8000'),
+          cashAmount: d('3000'),
+        ),
+      ],
+    );
+    expect(s.mobileMoneySales, d('5000'));
+    expect(s.cashSales, d('3000'));
+  });
+
+  test('several lines of each kind give exact sums', () {
+    final s = run(
+      sales: [
+        CashSaleLine(paymentMethod: PaymentMethod.cash, totalAmount: d('1000')),
+        CashSaleLine(paymentMethod: PaymentMethod.cash, totalAmount: d('2500')),
+        CashSaleLine(
+          paymentMethod: PaymentMethod.mixed,
+          totalAmount: d('8000'),
+          cashAmount: d('3000'),
+        ),
+        CashSaleLine(paymentMethod: PaymentMethod.mtn, totalAmount: d('700')),
+      ],
+      refunds: [
+        CashRefundLine(
+          refundMethod: RefundMethod.cash,
+          refundAmount: d('400'),
+          rejected: false,
+        ),
+        CashRefundLine(
+          refundMethod: RefundMethod.cash,
+          refundAmount: d('600'),
+          rejected: false,
+        ),
+      ],
+    );
+    expect(s.cashSales, d('6500'));
+    expect(s.cashSalesCount, 3);
+    expect(s.mobileMoneySales, d('5700'));
+    expect(s.cashRefunds, d('1000'));
+    expect(s.expectedAmount, d('15500'));
+  });
+
+  test('API mapping round-trips and rejects unknown values', () {
+    for (final t in CashMovementType.values) {
+      expect(cashMovementTypeFromApi(cashMovementTypeToApi(t)), t);
+    }
+    for (final r in CashMovementReason.values) {
+      expect(cashMovementReasonFromApi(cashMovementReasonToApi(r)), r);
+    }
+    expect(() => cashMovementTypeFromApi('nope'), throwsArgumentError);
+    expect(() => cashMovementReasonFromApi('nope'), throwsArgumentError);
   });
 
   test('in 5000 / out 3500 -> 11500', () {

@@ -40,4 +40,16 @@ void main() {
     final second = await DeviceIdStorage(secureStorage: secure).getOrCreate();
     expect(second, first);
   });
+
+  test('returns a pre-seeded id without writing', () async {
+    store['cash_device_id'] = 'existing-id';
+    final id = await DeviceIdStorage(secureStorage: secure).getOrCreate();
+    expect(id, 'existing-id');
+    verifyNever(
+      () => secure.write(
+        key: any(named: 'key'),
+        value: any(named: 'value'),
+      ),
+    );
+  });
 }

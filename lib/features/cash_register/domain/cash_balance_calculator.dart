@@ -66,7 +66,9 @@ class CashBalanceCalculator {
           cashSales += sale.totalAmount;
           cashSalesCount++;
         case PaymentMethod.mixed:
-          cashSales += sale.cashAmount ?? Decimal.zero;
+          final cashPart = sale.cashAmount ?? Decimal.zero;
+          cashSales += cashPart;
+          mobileMoneySales += sale.totalAmount - cashPart;
           cashSalesCount++;
         case PaymentMethod.orangeMoney:
         case PaymentMethod.mtn:
