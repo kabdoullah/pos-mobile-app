@@ -1221,6 +1221,40 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     requiredDuringInsert: false,
     defaultValue: const Constant('0'),
   );
+  static const VerificationMeta _cashAmountMeta = const VerificationMeta(
+    'cashAmount',
+  );
+  @override
+  late final GeneratedColumn<String> cashAmount = GeneratedColumn<String>(
+    'cash_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mobileMoneyAmountMeta = const VerificationMeta(
+    'mobileMoneyAmount',
+  );
+  @override
+  late final GeneratedColumn<String> mobileMoneyAmount =
+      GeneratedColumn<String>(
+        'mobile_money_amount',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cashSessionIdMeta = const VerificationMeta(
+    'cashSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> cashSessionId = GeneratedColumn<String>(
+    'cash_session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1242,6 +1276,9 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
     discountType,
     discountValue,
     discountAmount,
+    cashAmount,
+    mobileMoneyAmount,
+    cashSessionId,
     createdAt,
   ];
   @override
@@ -1329,6 +1366,30 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         ),
       );
     }
+    if (data.containsKey('cash_amount')) {
+      context.handle(
+        _cashAmountMeta,
+        cashAmount.isAcceptableOrUnknown(data['cash_amount']!, _cashAmountMeta),
+      );
+    }
+    if (data.containsKey('mobile_money_amount')) {
+      context.handle(
+        _mobileMoneyAmountMeta,
+        mobileMoneyAmount.isAcceptableOrUnknown(
+          data['mobile_money_amount']!,
+          _mobileMoneyAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cash_session_id')) {
+      context.handle(
+        _cashSessionIdMeta,
+        cashSessionId.isAcceptableOrUnknown(
+          data['cash_session_id']!,
+          _cashSessionIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -1378,6 +1439,18 @@ class $SalesTable extends Sales with TableInfo<$SalesTable, Sale> {
         DriftSqlType.string,
         data['${effectivePrefix}discount_amount'],
       )!,
+      cashAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cash_amount'],
+      ),
+      mobileMoneyAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mobile_money_amount'],
+      ),
+      cashSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cash_session_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1416,6 +1489,16 @@ class Sale extends DataClass implements Insertable<Sale> {
   /// Montant de la remise globale en FCFA ; `total_amount` l'a déjà déduit.
   final String discountAmount;
 
+  /// Part payée en espèces en FCFA (paiement mixte), null si non renseignée.
+  final String? cashAmount;
+
+  /// Part payée en mobile money en FCFA (paiement mixte), null si non
+  /// renseignée.
+  final String? mobileMoneyAmount;
+
+  /// Session de caisse de la vente, null si vendue hors session.
+  final String? cashSessionId;
+
   /// Date de création.
   final DateTime createdAt;
   const Sale({
@@ -1427,6 +1510,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     this.discountType,
     this.discountValue,
     required this.discountAmount,
+    this.cashAmount,
+    this.mobileMoneyAmount,
+    this.cashSessionId,
     required this.createdAt,
   });
   @override
@@ -1444,6 +1530,15 @@ class Sale extends DataClass implements Insertable<Sale> {
       map['discount_value'] = Variable<String>(discountValue);
     }
     map['discount_amount'] = Variable<String>(discountAmount);
+    if (!nullToAbsent || cashAmount != null) {
+      map['cash_amount'] = Variable<String>(cashAmount);
+    }
+    if (!nullToAbsent || mobileMoneyAmount != null) {
+      map['mobile_money_amount'] = Variable<String>(mobileMoneyAmount);
+    }
+    if (!nullToAbsent || cashSessionId != null) {
+      map['cash_session_id'] = Variable<String>(cashSessionId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -1462,6 +1557,15 @@ class Sale extends DataClass implements Insertable<Sale> {
           ? const Value.absent()
           : Value(discountValue),
       discountAmount: Value(discountAmount),
+      cashAmount: cashAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cashAmount),
+      mobileMoneyAmount: mobileMoneyAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mobileMoneyAmount),
+      cashSessionId: cashSessionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cashSessionId),
       createdAt: Value(createdAt),
     );
   }
@@ -1480,6 +1584,11 @@ class Sale extends DataClass implements Insertable<Sale> {
       discountType: serializer.fromJson<String?>(json['discountType']),
       discountValue: serializer.fromJson<String?>(json['discountValue']),
       discountAmount: serializer.fromJson<String>(json['discountAmount']),
+      cashAmount: serializer.fromJson<String?>(json['cashAmount']),
+      mobileMoneyAmount: serializer.fromJson<String?>(
+        json['mobileMoneyAmount'],
+      ),
+      cashSessionId: serializer.fromJson<String?>(json['cashSessionId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -1495,6 +1604,9 @@ class Sale extends DataClass implements Insertable<Sale> {
       'discountType': serializer.toJson<String?>(discountType),
       'discountValue': serializer.toJson<String?>(discountValue),
       'discountAmount': serializer.toJson<String>(discountAmount),
+      'cashAmount': serializer.toJson<String?>(cashAmount),
+      'mobileMoneyAmount': serializer.toJson<String?>(mobileMoneyAmount),
+      'cashSessionId': serializer.toJson<String?>(cashSessionId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -1508,6 +1620,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     Value<String?> discountType = const Value.absent(),
     Value<String?> discountValue = const Value.absent(),
     String? discountAmount,
+    Value<String?> cashAmount = const Value.absent(),
+    Value<String?> mobileMoneyAmount = const Value.absent(),
+    Value<String?> cashSessionId = const Value.absent(),
     DateTime? createdAt,
   }) => Sale(
     id: id ?? this.id,
@@ -1520,6 +1635,13 @@ class Sale extends DataClass implements Insertable<Sale> {
         ? discountValue.value
         : this.discountValue,
     discountAmount: discountAmount ?? this.discountAmount,
+    cashAmount: cashAmount.present ? cashAmount.value : this.cashAmount,
+    mobileMoneyAmount: mobileMoneyAmount.present
+        ? mobileMoneyAmount.value
+        : this.mobileMoneyAmount,
+    cashSessionId: cashSessionId.present
+        ? cashSessionId.value
+        : this.cashSessionId,
     createdAt: createdAt ?? this.createdAt,
   );
   Sale copyWithCompanion(SalesCompanion data) {
@@ -1544,6 +1666,15 @@ class Sale extends DataClass implements Insertable<Sale> {
       discountAmount: data.discountAmount.present
           ? data.discountAmount.value
           : this.discountAmount,
+      cashAmount: data.cashAmount.present
+          ? data.cashAmount.value
+          : this.cashAmount,
+      mobileMoneyAmount: data.mobileMoneyAmount.present
+          ? data.mobileMoneyAmount.value
+          : this.mobileMoneyAmount,
+      cashSessionId: data.cashSessionId.present
+          ? data.cashSessionId.value
+          : this.cashSessionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -1559,6 +1690,9 @@ class Sale extends DataClass implements Insertable<Sale> {
           ..write('discountType: $discountType, ')
           ..write('discountValue: $discountValue, ')
           ..write('discountAmount: $discountAmount, ')
+          ..write('cashAmount: $cashAmount, ')
+          ..write('mobileMoneyAmount: $mobileMoneyAmount, ')
+          ..write('cashSessionId: $cashSessionId, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -1574,6 +1708,9 @@ class Sale extends DataClass implements Insertable<Sale> {
     discountType,
     discountValue,
     discountAmount,
+    cashAmount,
+    mobileMoneyAmount,
+    cashSessionId,
     createdAt,
   );
   @override
@@ -1588,6 +1725,9 @@ class Sale extends DataClass implements Insertable<Sale> {
           other.discountType == this.discountType &&
           other.discountValue == this.discountValue &&
           other.discountAmount == this.discountAmount &&
+          other.cashAmount == this.cashAmount &&
+          other.mobileMoneyAmount == this.mobileMoneyAmount &&
+          other.cashSessionId == this.cashSessionId &&
           other.createdAt == this.createdAt);
 }
 
@@ -1600,6 +1740,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
   final Value<String?> discountType;
   final Value<String?> discountValue;
   final Value<String> discountAmount;
+  final Value<String?> cashAmount;
+  final Value<String?> mobileMoneyAmount;
+  final Value<String?> cashSessionId;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
   const SalesCompanion({
@@ -1611,6 +1754,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.discountType = const Value.absent(),
     this.discountValue = const Value.absent(),
     this.discountAmount = const Value.absent(),
+    this.cashAmount = const Value.absent(),
+    this.mobileMoneyAmount = const Value.absent(),
+    this.cashSessionId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1623,6 +1769,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     this.discountType = const Value.absent(),
     this.discountValue = const Value.absent(),
     this.discountAmount = const Value.absent(),
+    this.cashAmount = const Value.absent(),
+    this.mobileMoneyAmount = const Value.absent(),
+    this.cashSessionId = const Value.absent(),
     required DateTime createdAt,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -1640,6 +1789,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Expression<String>? discountType,
     Expression<String>? discountValue,
     Expression<String>? discountAmount,
+    Expression<String>? cashAmount,
+    Expression<String>? mobileMoneyAmount,
+    Expression<String>? cashSessionId,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
   }) {
@@ -1652,6 +1804,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       if (discountType != null) 'discount_type': discountType,
       if (discountValue != null) 'discount_value': discountValue,
       if (discountAmount != null) 'discount_amount': discountAmount,
+      if (cashAmount != null) 'cash_amount': cashAmount,
+      if (mobileMoneyAmount != null) 'mobile_money_amount': mobileMoneyAmount,
+      if (cashSessionId != null) 'cash_session_id': cashSessionId,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1666,6 +1821,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     Value<String?>? discountType,
     Value<String?>? discountValue,
     Value<String>? discountAmount,
+    Value<String?>? cashAmount,
+    Value<String?>? mobileMoneyAmount,
+    Value<String?>? cashSessionId,
     Value<DateTime>? createdAt,
     Value<int>? rowid,
   }) {
@@ -1678,6 +1836,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
       discountType: discountType ?? this.discountType,
       discountValue: discountValue ?? this.discountValue,
       discountAmount: discountAmount ?? this.discountAmount,
+      cashAmount: cashAmount ?? this.cashAmount,
+      mobileMoneyAmount: mobileMoneyAmount ?? this.mobileMoneyAmount,
+      cashSessionId: cashSessionId ?? this.cashSessionId,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
     );
@@ -1710,6 +1871,15 @@ class SalesCompanion extends UpdateCompanion<Sale> {
     if (discountAmount.present) {
       map['discount_amount'] = Variable<String>(discountAmount.value);
     }
+    if (cashAmount.present) {
+      map['cash_amount'] = Variable<String>(cashAmount.value);
+    }
+    if (mobileMoneyAmount.present) {
+      map['mobile_money_amount'] = Variable<String>(mobileMoneyAmount.value);
+    }
+    if (cashSessionId.present) {
+      map['cash_session_id'] = Variable<String>(cashSessionId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1730,6 +1900,9 @@ class SalesCompanion extends UpdateCompanion<Sale> {
           ..write('discountType: $discountType, ')
           ..write('discountValue: $discountValue, ')
           ..write('discountAmount: $discountAmount, ')
+          ..write('cashAmount: $cashAmount, ')
+          ..write('mobileMoneyAmount: $mobileMoneyAmount, ')
+          ..write('cashSessionId: $cashSessionId, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2555,6 +2728,17 @@ class $SaleReturnsTable extends SaleReturns
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _cashSessionIdMeta = const VerificationMeta(
+    'cashSessionId',
+  );
+  @override
+  late final GeneratedColumn<String> cashSessionId = GeneratedColumn<String>(
+    'cash_session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2567,6 +2751,7 @@ class $SaleReturnsTable extends SaleReturns
     createdAt,
     syncStatus,
     rejectionCode,
+    cashSessionId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2661,6 +2846,15 @@ class $SaleReturnsTable extends SaleReturns
         ),
       );
     }
+    if (data.containsKey('cash_session_id')) {
+      context.handle(
+        _cashSessionIdMeta,
+        cashSessionId.isAcceptableOrUnknown(
+          data['cash_session_id']!,
+          _cashSessionIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2710,6 +2904,10 @@ class $SaleReturnsTable extends SaleReturns
         DriftSqlType.string,
         data['${effectivePrefix}rejection_code'],
       ),
+      cashSessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cash_session_id'],
+      ),
     );
   }
 
@@ -2749,6 +2947,9 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
 
   /// Code du refus serveur (`quantity_exceeded`…), null sinon.
   final String? rejectionCode;
+
+  /// Session de caisse du retour, null si enregistré hors session.
+  final String? cashSessionId;
   const SaleReturn({
     required this.id,
     required this.saleId,
@@ -2760,6 +2961,7 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
     required this.createdAt,
     required this.syncStatus,
     this.rejectionCode,
+    this.cashSessionId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2778,6 +2980,9 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
     if (!nullToAbsent || rejectionCode != null) {
       map['rejection_code'] = Variable<String>(rejectionCode);
     }
+    if (!nullToAbsent || cashSessionId != null) {
+      map['cash_session_id'] = Variable<String>(cashSessionId);
+    }
     return map;
   }
 
@@ -2795,6 +3000,9 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
       rejectionCode: rejectionCode == null && nullToAbsent
           ? const Value.absent()
           : Value(rejectionCode),
+      cashSessionId: cashSessionId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cashSessionId),
     );
   }
 
@@ -2814,6 +3022,7 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       syncStatus: serializer.fromJson<String>(json['syncStatus']),
       rejectionCode: serializer.fromJson<String?>(json['rejectionCode']),
+      cashSessionId: serializer.fromJson<String?>(json['cashSessionId']),
     );
   }
   @override
@@ -2830,6 +3039,7 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'syncStatus': serializer.toJson<String>(syncStatus),
       'rejectionCode': serializer.toJson<String?>(rejectionCode),
+      'cashSessionId': serializer.toJson<String?>(cashSessionId),
     };
   }
 
@@ -2844,6 +3054,7 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
     DateTime? createdAt,
     String? syncStatus,
     Value<String?> rejectionCode = const Value.absent(),
+    Value<String?> cashSessionId = const Value.absent(),
   }) => SaleReturn(
     id: id ?? this.id,
     saleId: saleId ?? this.saleId,
@@ -2857,6 +3068,9 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
     rejectionCode: rejectionCode.present
         ? rejectionCode.value
         : this.rejectionCode,
+    cashSessionId: cashSessionId.present
+        ? cashSessionId.value
+        : this.cashSessionId,
   );
   SaleReturn copyWithCompanion(SaleReturnsCompanion data) {
     return SaleReturn(
@@ -2880,6 +3094,9 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
       rejectionCode: data.rejectionCode.present
           ? data.rejectionCode.value
           : this.rejectionCode,
+      cashSessionId: data.cashSessionId.present
+          ? data.cashSessionId.value
+          : this.cashSessionId,
     );
   }
 
@@ -2895,7 +3112,8 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
           ..write('refundAmount: $refundAmount, ')
           ..write('createdAt: $createdAt, ')
           ..write('syncStatus: $syncStatus, ')
-          ..write('rejectionCode: $rejectionCode')
+          ..write('rejectionCode: $rejectionCode, ')
+          ..write('cashSessionId: $cashSessionId')
           ..write(')'))
         .toString();
   }
@@ -2912,6 +3130,7 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
     createdAt,
     syncStatus,
     rejectionCode,
+    cashSessionId,
   );
   @override
   bool operator ==(Object other) =>
@@ -2926,7 +3145,8 @@ class SaleReturn extends DataClass implements Insertable<SaleReturn> {
           other.refundAmount == this.refundAmount &&
           other.createdAt == this.createdAt &&
           other.syncStatus == this.syncStatus &&
-          other.rejectionCode == this.rejectionCode);
+          other.rejectionCode == this.rejectionCode &&
+          other.cashSessionId == this.cashSessionId);
 }
 
 class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
@@ -2940,6 +3160,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
   final Value<DateTime> createdAt;
   final Value<String> syncStatus;
   final Value<String?> rejectionCode;
+  final Value<String?> cashSessionId;
   final Value<int> rowid;
   const SaleReturnsCompanion({
     this.id = const Value.absent(),
@@ -2952,6 +3173,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
     this.createdAt = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.rejectionCode = const Value.absent(),
+    this.cashSessionId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   SaleReturnsCompanion.insert({
@@ -2965,6 +3187,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
     required DateTime createdAt,
     this.syncStatus = const Value.absent(),
     this.rejectionCode = const Value.absent(),
+    this.cashSessionId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        saleId = Value(saleId),
@@ -2983,6 +3206,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
     Expression<DateTime>? createdAt,
     Expression<String>? syncStatus,
     Expression<String>? rejectionCode,
+    Expression<String>? cashSessionId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2996,6 +3220,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
       if (createdAt != null) 'created_at': createdAt,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (rejectionCode != null) 'rejection_code': rejectionCode,
+      if (cashSessionId != null) 'cash_session_id': cashSessionId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3011,6 +3236,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
     Value<DateTime>? createdAt,
     Value<String>? syncStatus,
     Value<String?>? rejectionCode,
+    Value<String?>? cashSessionId,
     Value<int>? rowid,
   }) {
     return SaleReturnsCompanion(
@@ -3024,6 +3250,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
       createdAt: createdAt ?? this.createdAt,
       syncStatus: syncStatus ?? this.syncStatus,
       rejectionCode: rejectionCode ?? this.rejectionCode,
+      cashSessionId: cashSessionId ?? this.cashSessionId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3061,6 +3288,9 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
     if (rejectionCode.present) {
       map['rejection_code'] = Variable<String>(rejectionCode.value);
     }
+    if (cashSessionId.present) {
+      map['cash_session_id'] = Variable<String>(cashSessionId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3080,6 +3310,7 @@ class SaleReturnsCompanion extends UpdateCompanion<SaleReturn> {
           ..write('createdAt: $createdAt, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('rejectionCode: $rejectionCode, ')
+          ..write('cashSessionId: $cashSessionId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3621,6 +3852,1531 @@ class SaleReturnItemsCompanion extends UpdateCompanion<SaleReturnItem> {
           ..write('condition: $condition, ')
           ..write('restocked: $restocked, ')
           ..write('refundAmount: $refundAmount, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CashSessionsTable extends CashSessions
+    with TableInfo<$CashSessionsTable, CashSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CashSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openingAmountMeta = const VerificationMeta(
+    'openingAmount',
+  );
+  @override
+  late final GeneratedColumn<String> openingAmount = GeneratedColumn<String>(
+    'opening_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openingNoteMeta = const VerificationMeta(
+    'openingNote',
+  );
+  @override
+  late final GeneratedColumn<String> openingNote = GeneratedColumn<String>(
+    'opening_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expectedAmountMeta = const VerificationMeta(
+    'expectedAmount',
+  );
+  @override
+  late final GeneratedColumn<String> expectedAmount = GeneratedColumn<String>(
+    'expected_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _clientExpectedAmountMeta =
+      const VerificationMeta('clientExpectedAmount');
+  @override
+  late final GeneratedColumn<String> clientExpectedAmount =
+      GeneratedColumn<String>(
+        'client_expected_amount',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _countedAmountMeta = const VerificationMeta(
+    'countedAmount',
+  );
+  @override
+  late final GeneratedColumn<String> countedAmount = GeneratedColumn<String>(
+    'counted_amount',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _discrepancyAmountMeta = const VerificationMeta(
+    'discrepancyAmount',
+  );
+  @override
+  late final GeneratedColumn<String> discrepancyAmount =
+      GeneratedColumn<String>(
+        'discrepancy_amount',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _closingNoteMeta = const VerificationMeta(
+    'closingNote',
+  );
+  @override
+  late final GeneratedColumn<String> closingNote = GeneratedColumn<String>(
+    'closing_note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> closedAt = GeneratedColumn<DateTime>(
+    'closed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverRecalculatedMeta =
+      const VerificationMeta('serverRecalculated');
+  @override
+  late final GeneratedColumn<bool> serverRecalculated = GeneratedColumn<bool>(
+    'server_recalculated',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("server_recalculated" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
+  static const VerificationMeta _rejectionCodeMeta = const VerificationMeta(
+    'rejectionCode',
+  );
+  @override
+  late final GeneratedColumn<String> rejectionCode = GeneratedColumn<String>(
+    'rejection_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    deviceId,
+    status,
+    openingAmount,
+    openingNote,
+    openedAt,
+    expectedAmount,
+    clientExpectedAmount,
+    countedAmount,
+    discrepancyAmount,
+    closingNote,
+    closedAt,
+    serverRecalculated,
+    syncStatus,
+    rejectionCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cash_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CashSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deviceIdMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('opening_amount')) {
+      context.handle(
+        _openingAmountMeta,
+        openingAmount.isAcceptableOrUnknown(
+          data['opening_amount']!,
+          _openingAmountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_openingAmountMeta);
+    }
+    if (data.containsKey('opening_note')) {
+      context.handle(
+        _openingNoteMeta,
+        openingNote.isAcceptableOrUnknown(
+          data['opening_note']!,
+          _openingNoteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_openedAtMeta);
+    }
+    if (data.containsKey('expected_amount')) {
+      context.handle(
+        _expectedAmountMeta,
+        expectedAmount.isAcceptableOrUnknown(
+          data['expected_amount']!,
+          _expectedAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('client_expected_amount')) {
+      context.handle(
+        _clientExpectedAmountMeta,
+        clientExpectedAmount.isAcceptableOrUnknown(
+          data['client_expected_amount']!,
+          _clientExpectedAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('counted_amount')) {
+      context.handle(
+        _countedAmountMeta,
+        countedAmount.isAcceptableOrUnknown(
+          data['counted_amount']!,
+          _countedAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discrepancy_amount')) {
+      context.handle(
+        _discrepancyAmountMeta,
+        discrepancyAmount.isAcceptableOrUnknown(
+          data['discrepancy_amount']!,
+          _discrepancyAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closing_note')) {
+      context.handle(
+        _closingNoteMeta,
+        closingNote.isAcceptableOrUnknown(
+          data['closing_note']!,
+          _closingNoteMeta,
+        ),
+      );
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    }
+    if (data.containsKey('server_recalculated')) {
+      context.handle(
+        _serverRecalculatedMeta,
+        serverRecalculated.isAcceptableOrUnknown(
+          data['server_recalculated']!,
+          _serverRecalculatedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    }
+    if (data.containsKey('rejection_code')) {
+      context.handle(
+        _rejectionCodeMeta,
+        rejectionCode.isAcceptableOrUnknown(
+          data['rejection_code']!,
+          _rejectionCodeMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CashSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CashSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      openingAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opening_amount'],
+      )!,
+      openingNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}opening_note'],
+      ),
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      )!,
+      expectedAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}expected_amount'],
+      ),
+      clientExpectedAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_expected_amount'],
+      ),
+      countedAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}counted_amount'],
+      ),
+      discrepancyAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}discrepancy_amount'],
+      ),
+      closingNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closing_note'],
+      ),
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}closed_at'],
+      ),
+      serverRecalculated: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}server_recalculated'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      rejectionCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rejection_code'],
+      ),
+    );
+  }
+
+  @override
+  $CashSessionsTable createAlias(String alias) {
+    return $CashSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class CashSession extends DataClass implements Insertable<CashSession> {
+  /// UUID v4 généré côté client (idempotence sync).
+  final String id;
+
+  /// Appareil qui a ouvert la session.
+  final String deviceId;
+
+  /// `open` ou `closed`.
+  final String status;
+
+  /// Fond de caisse à l'ouverture en FCFA (string).
+  final String openingAmount;
+
+  /// Commentaire d'ouverture.
+  final String? openingNote;
+
+  /// Date d'ouverture (UTC).
+  final DateTime openedAt;
+
+  /// Solde théorique retenu par le serveur en FCFA, null avant clôture.
+  final String? expectedAmount;
+
+  /// Solde théorique calculé sur l'appareil à la clôture en FCFA.
+  final String? clientExpectedAmount;
+
+  /// Montant compté à la clôture en FCFA.
+  final String? countedAmount;
+
+  /// Écart (compté − théorique) en FCFA.
+  final String? discrepancyAmount;
+
+  /// Commentaire de clôture.
+  final String? closingNote;
+
+  /// Date de clôture (UTC), renvoyée à l'identique à chaque retry.
+  final DateTime? closedAt;
+
+  /// Le serveur a recalculé le solde théorique (différent de celui de
+  /// l'appareil).
+  final bool serverRecalculated;
+
+  /// `pending` (à envoyer), `synced`, `rejected` (refus définitif).
+  final String syncStatus;
+
+  /// Code du refus serveur, null sinon.
+  final String? rejectionCode;
+  const CashSession({
+    required this.id,
+    required this.deviceId,
+    required this.status,
+    required this.openingAmount,
+    this.openingNote,
+    required this.openedAt,
+    this.expectedAmount,
+    this.clientExpectedAmount,
+    this.countedAmount,
+    this.discrepancyAmount,
+    this.closingNote,
+    this.closedAt,
+    required this.serverRecalculated,
+    required this.syncStatus,
+    this.rejectionCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['device_id'] = Variable<String>(deviceId);
+    map['status'] = Variable<String>(status);
+    map['opening_amount'] = Variable<String>(openingAmount);
+    if (!nullToAbsent || openingNote != null) {
+      map['opening_note'] = Variable<String>(openingNote);
+    }
+    map['opened_at'] = Variable<DateTime>(openedAt);
+    if (!nullToAbsent || expectedAmount != null) {
+      map['expected_amount'] = Variable<String>(expectedAmount);
+    }
+    if (!nullToAbsent || clientExpectedAmount != null) {
+      map['client_expected_amount'] = Variable<String>(clientExpectedAmount);
+    }
+    if (!nullToAbsent || countedAmount != null) {
+      map['counted_amount'] = Variable<String>(countedAmount);
+    }
+    if (!nullToAbsent || discrepancyAmount != null) {
+      map['discrepancy_amount'] = Variable<String>(discrepancyAmount);
+    }
+    if (!nullToAbsent || closingNote != null) {
+      map['closing_note'] = Variable<String>(closingNote);
+    }
+    if (!nullToAbsent || closedAt != null) {
+      map['closed_at'] = Variable<DateTime>(closedAt);
+    }
+    map['server_recalculated'] = Variable<bool>(serverRecalculated);
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || rejectionCode != null) {
+      map['rejection_code'] = Variable<String>(rejectionCode);
+    }
+    return map;
+  }
+
+  CashSessionsCompanion toCompanion(bool nullToAbsent) {
+    return CashSessionsCompanion(
+      id: Value(id),
+      deviceId: Value(deviceId),
+      status: Value(status),
+      openingAmount: Value(openingAmount),
+      openingNote: openingNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openingNote),
+      openedAt: Value(openedAt),
+      expectedAmount: expectedAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expectedAmount),
+      clientExpectedAmount: clientExpectedAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientExpectedAmount),
+      countedAmount: countedAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(countedAmount),
+      discrepancyAmount: discrepancyAmount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discrepancyAmount),
+      closingNote: closingNote == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closingNote),
+      closedAt: closedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(closedAt),
+      serverRecalculated: Value(serverRecalculated),
+      syncStatus: Value(syncStatus),
+      rejectionCode: rejectionCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectionCode),
+    );
+  }
+
+  factory CashSession.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CashSession(
+      id: serializer.fromJson<String>(json['id']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      status: serializer.fromJson<String>(json['status']),
+      openingAmount: serializer.fromJson<String>(json['openingAmount']),
+      openingNote: serializer.fromJson<String?>(json['openingNote']),
+      openedAt: serializer.fromJson<DateTime>(json['openedAt']),
+      expectedAmount: serializer.fromJson<String?>(json['expectedAmount']),
+      clientExpectedAmount: serializer.fromJson<String?>(
+        json['clientExpectedAmount'],
+      ),
+      countedAmount: serializer.fromJson<String?>(json['countedAmount']),
+      discrepancyAmount: serializer.fromJson<String?>(
+        json['discrepancyAmount'],
+      ),
+      closingNote: serializer.fromJson<String?>(json['closingNote']),
+      closedAt: serializer.fromJson<DateTime?>(json['closedAt']),
+      serverRecalculated: serializer.fromJson<bool>(json['serverRecalculated']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      rejectionCode: serializer.fromJson<String?>(json['rejectionCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'status': serializer.toJson<String>(status),
+      'openingAmount': serializer.toJson<String>(openingAmount),
+      'openingNote': serializer.toJson<String?>(openingNote),
+      'openedAt': serializer.toJson<DateTime>(openedAt),
+      'expectedAmount': serializer.toJson<String?>(expectedAmount),
+      'clientExpectedAmount': serializer.toJson<String?>(clientExpectedAmount),
+      'countedAmount': serializer.toJson<String?>(countedAmount),
+      'discrepancyAmount': serializer.toJson<String?>(discrepancyAmount),
+      'closingNote': serializer.toJson<String?>(closingNote),
+      'closedAt': serializer.toJson<DateTime?>(closedAt),
+      'serverRecalculated': serializer.toJson<bool>(serverRecalculated),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'rejectionCode': serializer.toJson<String?>(rejectionCode),
+    };
+  }
+
+  CashSession copyWith({
+    String? id,
+    String? deviceId,
+    String? status,
+    String? openingAmount,
+    Value<String?> openingNote = const Value.absent(),
+    DateTime? openedAt,
+    Value<String?> expectedAmount = const Value.absent(),
+    Value<String?> clientExpectedAmount = const Value.absent(),
+    Value<String?> countedAmount = const Value.absent(),
+    Value<String?> discrepancyAmount = const Value.absent(),
+    Value<String?> closingNote = const Value.absent(),
+    Value<DateTime?> closedAt = const Value.absent(),
+    bool? serverRecalculated,
+    String? syncStatus,
+    Value<String?> rejectionCode = const Value.absent(),
+  }) => CashSession(
+    id: id ?? this.id,
+    deviceId: deviceId ?? this.deviceId,
+    status: status ?? this.status,
+    openingAmount: openingAmount ?? this.openingAmount,
+    openingNote: openingNote.present ? openingNote.value : this.openingNote,
+    openedAt: openedAt ?? this.openedAt,
+    expectedAmount: expectedAmount.present
+        ? expectedAmount.value
+        : this.expectedAmount,
+    clientExpectedAmount: clientExpectedAmount.present
+        ? clientExpectedAmount.value
+        : this.clientExpectedAmount,
+    countedAmount: countedAmount.present
+        ? countedAmount.value
+        : this.countedAmount,
+    discrepancyAmount: discrepancyAmount.present
+        ? discrepancyAmount.value
+        : this.discrepancyAmount,
+    closingNote: closingNote.present ? closingNote.value : this.closingNote,
+    closedAt: closedAt.present ? closedAt.value : this.closedAt,
+    serverRecalculated: serverRecalculated ?? this.serverRecalculated,
+    syncStatus: syncStatus ?? this.syncStatus,
+    rejectionCode: rejectionCode.present
+        ? rejectionCode.value
+        : this.rejectionCode,
+  );
+  CashSession copyWithCompanion(CashSessionsCompanion data) {
+    return CashSession(
+      id: data.id.present ? data.id.value : this.id,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      status: data.status.present ? data.status.value : this.status,
+      openingAmount: data.openingAmount.present
+          ? data.openingAmount.value
+          : this.openingAmount,
+      openingNote: data.openingNote.present
+          ? data.openingNote.value
+          : this.openingNote,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      expectedAmount: data.expectedAmount.present
+          ? data.expectedAmount.value
+          : this.expectedAmount,
+      clientExpectedAmount: data.clientExpectedAmount.present
+          ? data.clientExpectedAmount.value
+          : this.clientExpectedAmount,
+      countedAmount: data.countedAmount.present
+          ? data.countedAmount.value
+          : this.countedAmount,
+      discrepancyAmount: data.discrepancyAmount.present
+          ? data.discrepancyAmount.value
+          : this.discrepancyAmount,
+      closingNote: data.closingNote.present
+          ? data.closingNote.value
+          : this.closingNote,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      serverRecalculated: data.serverRecalculated.present
+          ? data.serverRecalculated.value
+          : this.serverRecalculated,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      rejectionCode: data.rejectionCode.present
+          ? data.rejectionCode.value
+          : this.rejectionCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashSession(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('status: $status, ')
+          ..write('openingAmount: $openingAmount, ')
+          ..write('openingNote: $openingNote, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('expectedAmount: $expectedAmount, ')
+          ..write('clientExpectedAmount: $clientExpectedAmount, ')
+          ..write('countedAmount: $countedAmount, ')
+          ..write('discrepancyAmount: $discrepancyAmount, ')
+          ..write('closingNote: $closingNote, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('serverRecalculated: $serverRecalculated, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rejectionCode: $rejectionCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    deviceId,
+    status,
+    openingAmount,
+    openingNote,
+    openedAt,
+    expectedAmount,
+    clientExpectedAmount,
+    countedAmount,
+    discrepancyAmount,
+    closingNote,
+    closedAt,
+    serverRecalculated,
+    syncStatus,
+    rejectionCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CashSession &&
+          other.id == this.id &&
+          other.deviceId == this.deviceId &&
+          other.status == this.status &&
+          other.openingAmount == this.openingAmount &&
+          other.openingNote == this.openingNote &&
+          other.openedAt == this.openedAt &&
+          other.expectedAmount == this.expectedAmount &&
+          other.clientExpectedAmount == this.clientExpectedAmount &&
+          other.countedAmount == this.countedAmount &&
+          other.discrepancyAmount == this.discrepancyAmount &&
+          other.closingNote == this.closingNote &&
+          other.closedAt == this.closedAt &&
+          other.serverRecalculated == this.serverRecalculated &&
+          other.syncStatus == this.syncStatus &&
+          other.rejectionCode == this.rejectionCode);
+}
+
+class CashSessionsCompanion extends UpdateCompanion<CashSession> {
+  final Value<String> id;
+  final Value<String> deviceId;
+  final Value<String> status;
+  final Value<String> openingAmount;
+  final Value<String?> openingNote;
+  final Value<DateTime> openedAt;
+  final Value<String?> expectedAmount;
+  final Value<String?> clientExpectedAmount;
+  final Value<String?> countedAmount;
+  final Value<String?> discrepancyAmount;
+  final Value<String?> closingNote;
+  final Value<DateTime?> closedAt;
+  final Value<bool> serverRecalculated;
+  final Value<String> syncStatus;
+  final Value<String?> rejectionCode;
+  final Value<int> rowid;
+  const CashSessionsCompanion({
+    this.id = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.status = const Value.absent(),
+    this.openingAmount = const Value.absent(),
+    this.openingNote = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.expectedAmount = const Value.absent(),
+    this.clientExpectedAmount = const Value.absent(),
+    this.countedAmount = const Value.absent(),
+    this.discrepancyAmount = const Value.absent(),
+    this.closingNote = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.serverRecalculated = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rejectionCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CashSessionsCompanion.insert({
+    required String id,
+    required String deviceId,
+    required String status,
+    required String openingAmount,
+    this.openingNote = const Value.absent(),
+    required DateTime openedAt,
+    this.expectedAmount = const Value.absent(),
+    this.clientExpectedAmount = const Value.absent(),
+    this.countedAmount = const Value.absent(),
+    this.discrepancyAmount = const Value.absent(),
+    this.closingNote = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.serverRecalculated = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rejectionCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       deviceId = Value(deviceId),
+       status = Value(status),
+       openingAmount = Value(openingAmount),
+       openedAt = Value(openedAt);
+  static Insertable<CashSession> custom({
+    Expression<String>? id,
+    Expression<String>? deviceId,
+    Expression<String>? status,
+    Expression<String>? openingAmount,
+    Expression<String>? openingNote,
+    Expression<DateTime>? openedAt,
+    Expression<String>? expectedAmount,
+    Expression<String>? clientExpectedAmount,
+    Expression<String>? countedAmount,
+    Expression<String>? discrepancyAmount,
+    Expression<String>? closingNote,
+    Expression<DateTime>? closedAt,
+    Expression<bool>? serverRecalculated,
+    Expression<String>? syncStatus,
+    Expression<String>? rejectionCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (deviceId != null) 'device_id': deviceId,
+      if (status != null) 'status': status,
+      if (openingAmount != null) 'opening_amount': openingAmount,
+      if (openingNote != null) 'opening_note': openingNote,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (expectedAmount != null) 'expected_amount': expectedAmount,
+      if (clientExpectedAmount != null)
+        'client_expected_amount': clientExpectedAmount,
+      if (countedAmount != null) 'counted_amount': countedAmount,
+      if (discrepancyAmount != null) 'discrepancy_amount': discrepancyAmount,
+      if (closingNote != null) 'closing_note': closingNote,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (serverRecalculated != null) 'server_recalculated': serverRecalculated,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (rejectionCode != null) 'rejection_code': rejectionCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CashSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? deviceId,
+    Value<String>? status,
+    Value<String>? openingAmount,
+    Value<String?>? openingNote,
+    Value<DateTime>? openedAt,
+    Value<String?>? expectedAmount,
+    Value<String?>? clientExpectedAmount,
+    Value<String?>? countedAmount,
+    Value<String?>? discrepancyAmount,
+    Value<String?>? closingNote,
+    Value<DateTime?>? closedAt,
+    Value<bool>? serverRecalculated,
+    Value<String>? syncStatus,
+    Value<String?>? rejectionCode,
+    Value<int>? rowid,
+  }) {
+    return CashSessionsCompanion(
+      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
+      status: status ?? this.status,
+      openingAmount: openingAmount ?? this.openingAmount,
+      openingNote: openingNote ?? this.openingNote,
+      openedAt: openedAt ?? this.openedAt,
+      expectedAmount: expectedAmount ?? this.expectedAmount,
+      clientExpectedAmount: clientExpectedAmount ?? this.clientExpectedAmount,
+      countedAmount: countedAmount ?? this.countedAmount,
+      discrepancyAmount: discrepancyAmount ?? this.discrepancyAmount,
+      closingNote: closingNote ?? this.closingNote,
+      closedAt: closedAt ?? this.closedAt,
+      serverRecalculated: serverRecalculated ?? this.serverRecalculated,
+      syncStatus: syncStatus ?? this.syncStatus,
+      rejectionCode: rejectionCode ?? this.rejectionCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (openingAmount.present) {
+      map['opening_amount'] = Variable<String>(openingAmount.value);
+    }
+    if (openingNote.present) {
+      map['opening_note'] = Variable<String>(openingNote.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
+    }
+    if (expectedAmount.present) {
+      map['expected_amount'] = Variable<String>(expectedAmount.value);
+    }
+    if (clientExpectedAmount.present) {
+      map['client_expected_amount'] = Variable<String>(
+        clientExpectedAmount.value,
+      );
+    }
+    if (countedAmount.present) {
+      map['counted_amount'] = Variable<String>(countedAmount.value);
+    }
+    if (discrepancyAmount.present) {
+      map['discrepancy_amount'] = Variable<String>(discrepancyAmount.value);
+    }
+    if (closingNote.present) {
+      map['closing_note'] = Variable<String>(closingNote.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<DateTime>(closedAt.value);
+    }
+    if (serverRecalculated.present) {
+      map['server_recalculated'] = Variable<bool>(serverRecalculated.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (rejectionCode.present) {
+      map['rejection_code'] = Variable<String>(rejectionCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('status: $status, ')
+          ..write('openingAmount: $openingAmount, ')
+          ..write('openingNote: $openingNote, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('expectedAmount: $expectedAmount, ')
+          ..write('clientExpectedAmount: $clientExpectedAmount, ')
+          ..write('countedAmount: $countedAmount, ')
+          ..write('discrepancyAmount: $discrepancyAmount, ')
+          ..write('closingNote: $closingNote, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('serverRecalculated: $serverRecalculated, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rejectionCode: $rejectionCode, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CashMovementsTable extends CashMovements
+    with TableInfo<$CashMovementsTable, CashMovement> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CashMovementsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<String> amount = GeneratedColumn<String>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _syncStatusMeta = const VerificationMeta(
+    'syncStatus',
+  );
+  @override
+  late final GeneratedColumn<String> syncStatus = GeneratedColumn<String>(
+    'sync_status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rejectionCodeMeta = const VerificationMeta(
+    'rejectionCode',
+  );
+  @override
+  late final GeneratedColumn<String> rejectionCode = GeneratedColumn<String>(
+    'rejection_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sessionId,
+    type,
+    reason,
+    amount,
+    note,
+    createdAt,
+    syncStatus,
+    rejectionCode,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cash_movements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CashMovement> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('sync_status')) {
+      context.handle(
+        _syncStatusMeta,
+        syncStatus.isAcceptableOrUnknown(data['sync_status']!, _syncStatusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_syncStatusMeta);
+    }
+    if (data.containsKey('rejection_code')) {
+      context.handle(
+        _rejectionCodeMeta,
+        rejectionCode.isAcceptableOrUnknown(
+          data['rejection_code']!,
+          _rejectionCodeMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CashMovement map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CashMovement(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}amount'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      syncStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sync_status'],
+      )!,
+      rejectionCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rejection_code'],
+      ),
+    );
+  }
+
+  @override
+  $CashMovementsTable createAlias(String alias) {
+    return $CashMovementsTable(attachedDatabase, alias);
+  }
+}
+
+class CashMovement extends DataClass implements Insertable<CashMovement> {
+  /// UUID v4 généré côté client (idempotence sync).
+  final String id;
+
+  /// Session de caisse parente.
+  final String sessionId;
+
+  /// `cash_in` ou `cash_out`.
+  final String type;
+
+  /// Motif, valeur de l'API.
+  final String reason;
+
+  /// Montant en FCFA (string).
+  final String amount;
+
+  /// Commentaire.
+  final String? note;
+
+  /// Date du mouvement (UTC).
+  final DateTime createdAt;
+
+  /// `pending` (à envoyer), `synced`, `rejected` (refus définitif).
+  final String syncStatus;
+
+  /// Code du refus serveur, null sinon.
+  final String? rejectionCode;
+  const CashMovement({
+    required this.id,
+    required this.sessionId,
+    required this.type,
+    required this.reason,
+    required this.amount,
+    this.note,
+    required this.createdAt,
+    required this.syncStatus,
+    this.rejectionCode,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['type'] = Variable<String>(type);
+    map['reason'] = Variable<String>(reason);
+    map['amount'] = Variable<String>(amount);
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['sync_status'] = Variable<String>(syncStatus);
+    if (!nullToAbsent || rejectionCode != null) {
+      map['rejection_code'] = Variable<String>(rejectionCode);
+    }
+    return map;
+  }
+
+  CashMovementsCompanion toCompanion(bool nullToAbsent) {
+    return CashMovementsCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      type: Value(type),
+      reason: Value(reason),
+      amount: Value(amount),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      createdAt: Value(createdAt),
+      syncStatus: Value(syncStatus),
+      rejectionCode: rejectionCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rejectionCode),
+    );
+  }
+
+  factory CashMovement.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CashMovement(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      type: serializer.fromJson<String>(json['type']),
+      reason: serializer.fromJson<String>(json['reason']),
+      amount: serializer.fromJson<String>(json['amount']),
+      note: serializer.fromJson<String?>(json['note']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      syncStatus: serializer.fromJson<String>(json['syncStatus']),
+      rejectionCode: serializer.fromJson<String?>(json['rejectionCode']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'type': serializer.toJson<String>(type),
+      'reason': serializer.toJson<String>(reason),
+      'amount': serializer.toJson<String>(amount),
+      'note': serializer.toJson<String?>(note),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'syncStatus': serializer.toJson<String>(syncStatus),
+      'rejectionCode': serializer.toJson<String?>(rejectionCode),
+    };
+  }
+
+  CashMovement copyWith({
+    String? id,
+    String? sessionId,
+    String? type,
+    String? reason,
+    String? amount,
+    Value<String?> note = const Value.absent(),
+    DateTime? createdAt,
+    String? syncStatus,
+    Value<String?> rejectionCode = const Value.absent(),
+  }) => CashMovement(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    type: type ?? this.type,
+    reason: reason ?? this.reason,
+    amount: amount ?? this.amount,
+    note: note.present ? note.value : this.note,
+    createdAt: createdAt ?? this.createdAt,
+    syncStatus: syncStatus ?? this.syncStatus,
+    rejectionCode: rejectionCode.present
+        ? rejectionCode.value
+        : this.rejectionCode,
+  );
+  CashMovement copyWithCompanion(CashMovementsCompanion data) {
+    return CashMovement(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      type: data.type.present ? data.type.value : this.type,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      note: data.note.present ? data.note.value : this.note,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+      rejectionCode: data.rejectionCode.present
+          ? data.rejectionCode.value
+          : this.rejectionCode,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashMovement(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('type: $type, ')
+          ..write('reason: $reason, ')
+          ..write('amount: $amount, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rejectionCode: $rejectionCode')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sessionId,
+    type,
+    reason,
+    amount,
+    note,
+    createdAt,
+    syncStatus,
+    rejectionCode,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CashMovement &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.type == this.type &&
+          other.reason == this.reason &&
+          other.amount == this.amount &&
+          other.note == this.note &&
+          other.createdAt == this.createdAt &&
+          other.syncStatus == this.syncStatus &&
+          other.rejectionCode == this.rejectionCode);
+}
+
+class CashMovementsCompanion extends UpdateCompanion<CashMovement> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> type;
+  final Value<String> reason;
+  final Value<String> amount;
+  final Value<String?> note;
+  final Value<DateTime> createdAt;
+  final Value<String> syncStatus;
+  final Value<String?> rejectionCode;
+  final Value<int> rowid;
+  const CashMovementsCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.type = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.note = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+    this.rejectionCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CashMovementsCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String type,
+    required String reason,
+    required String amount,
+    this.note = const Value.absent(),
+    required DateTime createdAt,
+    required String syncStatus,
+    this.rejectionCode = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sessionId = Value(sessionId),
+       type = Value(type),
+       reason = Value(reason),
+       amount = Value(amount),
+       createdAt = Value(createdAt),
+       syncStatus = Value(syncStatus);
+  static Insertable<CashMovement> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? type,
+    Expression<String>? reason,
+    Expression<String>? amount,
+    Expression<String>? note,
+    Expression<DateTime>? createdAt,
+    Expression<String>? syncStatus,
+    Expression<String>? rejectionCode,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (type != null) 'type': type,
+      if (reason != null) 'reason': reason,
+      if (amount != null) 'amount': amount,
+      if (note != null) 'note': note,
+      if (createdAt != null) 'created_at': createdAt,
+      if (syncStatus != null) 'sync_status': syncStatus,
+      if (rejectionCode != null) 'rejection_code': rejectionCode,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CashMovementsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sessionId,
+    Value<String>? type,
+    Value<String>? reason,
+    Value<String>? amount,
+    Value<String?>? note,
+    Value<DateTime>? createdAt,
+    Value<String>? syncStatus,
+    Value<String?>? rejectionCode,
+    Value<int>? rowid,
+  }) {
+    return CashMovementsCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      type: type ?? this.type,
+      reason: reason ?? this.reason,
+      amount: amount ?? this.amount,
+      note: note ?? this.note,
+      createdAt: createdAt ?? this.createdAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      rejectionCode: rejectionCode ?? this.rejectionCode,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<String>(amount.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(syncStatus.value);
+    }
+    if (rejectionCode.present) {
+      map['rejection_code'] = Variable<String>(rejectionCode.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashMovementsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('type: $type, ')
+          ..write('reason: $reason, ')
+          ..write('amount: $amount, ')
+          ..write('note: $note, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('syncStatus: $syncStatus, ')
+          ..write('rejectionCode: $rejectionCode, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4482,6 +6238,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SaleReturnItemsTable saleReturnItems = $SaleReturnItemsTable(
     this,
   );
+  late final $CashSessionsTable cashSessions = $CashSessionsTable(this);
+  late final $CashMovementsTable cashMovements = $CashMovementsTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
   late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
   @override
@@ -4495,6 +6253,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     saleItems,
     saleReturns,
     saleReturnItems,
+    cashSessions,
+    cashMovements,
     syncQueue,
     syncMetadata,
   ];
@@ -5059,6 +6819,9 @@ typedef $$SalesTableCreateCompanionBuilder =
       Value<String?> discountType,
       Value<String?> discountValue,
       Value<String> discountAmount,
+      Value<String?> cashAmount,
+      Value<String?> mobileMoneyAmount,
+      Value<String?> cashSessionId,
       required DateTime createdAt,
       Value<int> rowid,
     });
@@ -5072,6 +6835,9 @@ typedef $$SalesTableUpdateCompanionBuilder =
       Value<String?> discountType,
       Value<String?> discountValue,
       Value<String> discountAmount,
+      Value<String?> cashAmount,
+      Value<String?> mobileMoneyAmount,
+      Value<String?> cashSessionId,
       Value<DateTime> createdAt,
       Value<int> rowid,
     });
@@ -5121,6 +6887,21 @@ class $$SalesTableFilterComposer extends Composer<_$AppDatabase, $SalesTable> {
 
   ColumnFilters<String> get discountAmount => $composableBuilder(
     column: $table.discountAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cashAmount => $composableBuilder(
+    column: $table.cashAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mobileMoneyAmount => $composableBuilder(
+    column: $table.mobileMoneyAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5179,6 +6960,21 @@ class $$SalesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get cashAmount => $composableBuilder(
+    column: $table.cashAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mobileMoneyAmount => $composableBuilder(
+    column: $table.mobileMoneyAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5230,6 +7026,21 @@ class $$SalesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get cashAmount => $composableBuilder(
+    column: $table.cashAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mobileMoneyAmount => $composableBuilder(
+    column: $table.mobileMoneyAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 }
@@ -5270,6 +7081,9 @@ class $$SalesTableTableManager
                 Value<String?> discountType = const Value.absent(),
                 Value<String?> discountValue = const Value.absent(),
                 Value<String> discountAmount = const Value.absent(),
+                Value<String?> cashAmount = const Value.absent(),
+                Value<String?> mobileMoneyAmount = const Value.absent(),
+                Value<String?> cashSessionId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion(
@@ -5281,6 +7095,9 @@ class $$SalesTableTableManager
                 discountType: discountType,
                 discountValue: discountValue,
                 discountAmount: discountAmount,
+                cashAmount: cashAmount,
+                mobileMoneyAmount: mobileMoneyAmount,
+                cashSessionId: cashSessionId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -5294,6 +7111,9 @@ class $$SalesTableTableManager
                 Value<String?> discountType = const Value.absent(),
                 Value<String?> discountValue = const Value.absent(),
                 Value<String> discountAmount = const Value.absent(),
+                Value<String?> cashAmount = const Value.absent(),
+                Value<String?> mobileMoneyAmount = const Value.absent(),
+                Value<String?> cashSessionId = const Value.absent(),
                 required DateTime createdAt,
                 Value<int> rowid = const Value.absent(),
               }) => SalesCompanion.insert(
@@ -5305,6 +7125,9 @@ class $$SalesTableTableManager
                 discountType: discountType,
                 discountValue: discountValue,
                 discountAmount: discountAmount,
+                cashAmount: cashAmount,
+                mobileMoneyAmount: mobileMoneyAmount,
+                cashSessionId: cashSessionId,
                 createdAt: createdAt,
                 rowid: rowid,
               ),
@@ -5678,6 +7501,7 @@ typedef $$SaleReturnsTableCreateCompanionBuilder =
       required DateTime createdAt,
       Value<String> syncStatus,
       Value<String?> rejectionCode,
+      Value<String?> cashSessionId,
       Value<int> rowid,
     });
 typedef $$SaleReturnsTableUpdateCompanionBuilder =
@@ -5692,6 +7516,7 @@ typedef $$SaleReturnsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<String> syncStatus,
       Value<String?> rejectionCode,
+      Value<String?> cashSessionId,
       Value<int> rowid,
     });
 
@@ -5751,6 +7576,11 @@ class $$SaleReturnsTableFilterComposer
 
   ColumnFilters<String> get rejectionCode => $composableBuilder(
     column: $table.rejectionCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5813,6 +7643,11 @@ class $$SaleReturnsTableOrderingComposer
     column: $table.rejectionCode,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SaleReturnsTableAnnotationComposer
@@ -5863,6 +7698,11 @@ class $$SaleReturnsTableAnnotationComposer
     column: $table.rejectionCode,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get cashSessionId => $composableBuilder(
+    column: $table.cashSessionId,
+    builder: (column) => column,
+  );
 }
 
 class $$SaleReturnsTableTableManager
@@ -5906,6 +7746,7 @@ class $$SaleReturnsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> rejectionCode = const Value.absent(),
+                Value<String?> cashSessionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleReturnsCompanion(
                 id: id,
@@ -5918,6 +7759,7 @@ class $$SaleReturnsTableTableManager
                 createdAt: createdAt,
                 syncStatus: syncStatus,
                 rejectionCode: rejectionCode,
+                cashSessionId: cashSessionId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5932,6 +7774,7 @@ class $$SaleReturnsTableTableManager
                 required DateTime createdAt,
                 Value<String> syncStatus = const Value.absent(),
                 Value<String?> rejectionCode = const Value.absent(),
+                Value<String?> cashSessionId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SaleReturnsCompanion.insert(
                 id: id,
@@ -5944,6 +7787,7 @@ class $$SaleReturnsTableTableManager
                 createdAt: createdAt,
                 syncStatus: syncStatus,
                 rejectionCode: rejectionCode,
+                cashSessionId: cashSessionId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -6254,6 +8098,714 @@ typedef $$SaleReturnItemsTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $SaleReturnItemsTable, SaleReturnItem>,
       ),
       SaleReturnItem,
+      PrefetchHooks Function()
+    >;
+typedef $$CashSessionsTableCreateCompanionBuilder =
+    CashSessionsCompanion Function({
+      required String id,
+      required String deviceId,
+      required String status,
+      required String openingAmount,
+      Value<String?> openingNote,
+      required DateTime openedAt,
+      Value<String?> expectedAmount,
+      Value<String?> clientExpectedAmount,
+      Value<String?> countedAmount,
+      Value<String?> discrepancyAmount,
+      Value<String?> closingNote,
+      Value<DateTime?> closedAt,
+      Value<bool> serverRecalculated,
+      Value<String> syncStatus,
+      Value<String?> rejectionCode,
+      Value<int> rowid,
+    });
+typedef $$CashSessionsTableUpdateCompanionBuilder =
+    CashSessionsCompanion Function({
+      Value<String> id,
+      Value<String> deviceId,
+      Value<String> status,
+      Value<String> openingAmount,
+      Value<String?> openingNote,
+      Value<DateTime> openedAt,
+      Value<String?> expectedAmount,
+      Value<String?> clientExpectedAmount,
+      Value<String?> countedAmount,
+      Value<String?> discrepancyAmount,
+      Value<String?> closingNote,
+      Value<DateTime?> closedAt,
+      Value<bool> serverRecalculated,
+      Value<String> syncStatus,
+      Value<String?> rejectionCode,
+      Value<int> rowid,
+    });
+
+class $$CashSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $CashSessionsTable> {
+  $$CashSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openingAmount => $composableBuilder(
+    column: $table.openingAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get expectedAmount => $composableBuilder(
+    column: $table.expectedAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientExpectedAmount => $composableBuilder(
+    column: $table.clientExpectedAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get countedAmount => $composableBuilder(
+    column: $table.countedAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get discrepancyAmount => $composableBuilder(
+    column: $table.discrepancyAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get serverRecalculated => $composableBuilder(
+    column: $table.serverRecalculated,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CashSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CashSessionsTable> {
+  $$CashSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openingAmount => $composableBuilder(
+    column: $table.openingAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get expectedAmount => $composableBuilder(
+    column: $table.expectedAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get clientExpectedAmount => $composableBuilder(
+    column: $table.clientExpectedAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get countedAmount => $composableBuilder(
+    column: $table.countedAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get discrepancyAmount => $composableBuilder(
+    column: $table.discrepancyAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get serverRecalculated => $composableBuilder(
+    column: $table.serverRecalculated,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CashSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CashSessionsTable> {
+  $$CashSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get openingAmount => $composableBuilder(
+    column: $table.openingAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get openingNote => $composableBuilder(
+    column: $table.openingNote,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get expectedAmount => $composableBuilder(
+    column: $table.expectedAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get clientExpectedAmount => $composableBuilder(
+    column: $table.clientExpectedAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get countedAmount => $composableBuilder(
+    column: $table.countedAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get discrepancyAmount => $composableBuilder(
+    column: $table.discrepancyAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get closingNote => $composableBuilder(
+    column: $table.closingNote,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get serverRecalculated => $composableBuilder(
+    column: $table.serverRecalculated,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => column,
+  );
+}
+
+class $$CashSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CashSessionsTable,
+          CashSession,
+          $$CashSessionsTableFilterComposer,
+          $$CashSessionsTableOrderingComposer,
+          $$CashSessionsTableAnnotationComposer,
+          $$CashSessionsTableCreateCompanionBuilder,
+          $$CashSessionsTableUpdateCompanionBuilder,
+          (
+            CashSession,
+            BaseReferences<_$AppDatabase, $CashSessionsTable, CashSession>,
+          ),
+          CashSession,
+          PrefetchHooks Function()
+        > {
+  $$CashSessionsTableTableManager(_$AppDatabase db, $CashSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CashSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CashSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CashSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> openingAmount = const Value.absent(),
+                Value<String?> openingNote = const Value.absent(),
+                Value<DateTime> openedAt = const Value.absent(),
+                Value<String?> expectedAmount = const Value.absent(),
+                Value<String?> clientExpectedAmount = const Value.absent(),
+                Value<String?> countedAmount = const Value.absent(),
+                Value<String?> discrepancyAmount = const Value.absent(),
+                Value<String?> closingNote = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<bool> serverRecalculated = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> rejectionCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashSessionsCompanion(
+                id: id,
+                deviceId: deviceId,
+                status: status,
+                openingAmount: openingAmount,
+                openingNote: openingNote,
+                openedAt: openedAt,
+                expectedAmount: expectedAmount,
+                clientExpectedAmount: clientExpectedAmount,
+                countedAmount: countedAmount,
+                discrepancyAmount: discrepancyAmount,
+                closingNote: closingNote,
+                closedAt: closedAt,
+                serverRecalculated: serverRecalculated,
+                syncStatus: syncStatus,
+                rejectionCode: rejectionCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String deviceId,
+                required String status,
+                required String openingAmount,
+                Value<String?> openingNote = const Value.absent(),
+                required DateTime openedAt,
+                Value<String?> expectedAmount = const Value.absent(),
+                Value<String?> clientExpectedAmount = const Value.absent(),
+                Value<String?> countedAmount = const Value.absent(),
+                Value<String?> discrepancyAmount = const Value.absent(),
+                Value<String?> closingNote = const Value.absent(),
+                Value<DateTime?> closedAt = const Value.absent(),
+                Value<bool> serverRecalculated = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> rejectionCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashSessionsCompanion.insert(
+                id: id,
+                deviceId: deviceId,
+                status: status,
+                openingAmount: openingAmount,
+                openingNote: openingNote,
+                openedAt: openedAt,
+                expectedAmount: expectedAmount,
+                clientExpectedAmount: clientExpectedAmount,
+                countedAmount: countedAmount,
+                discrepancyAmount: discrepancyAmount,
+                closingNote: closingNote,
+                closedAt: closedAt,
+                serverRecalculated: serverRecalculated,
+                syncStatus: syncStatus,
+                rejectionCode: rejectionCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CashSessionsTable, CashSession>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CashSessionsTable,
+                    CashSession
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CashSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CashSessionsTable,
+      CashSession,
+      $$CashSessionsTableFilterComposer,
+      $$CashSessionsTableOrderingComposer,
+      $$CashSessionsTableAnnotationComposer,
+      $$CashSessionsTableCreateCompanionBuilder,
+      $$CashSessionsTableUpdateCompanionBuilder,
+      (
+        CashSession,
+        BaseReferences<_$AppDatabase, $CashSessionsTable, CashSession>,
+      ),
+      CashSession,
+      PrefetchHooks Function()
+    >;
+typedef $$CashMovementsTableCreateCompanionBuilder =
+    CashMovementsCompanion Function({
+      required String id,
+      required String sessionId,
+      required String type,
+      required String reason,
+      required String amount,
+      Value<String?> note,
+      required DateTime createdAt,
+      required String syncStatus,
+      Value<String?> rejectionCode,
+      Value<int> rowid,
+    });
+typedef $$CashMovementsTableUpdateCompanionBuilder =
+    CashMovementsCompanion Function({
+      Value<String> id,
+      Value<String> sessionId,
+      Value<String> type,
+      Value<String> reason,
+      Value<String> amount,
+      Value<String?> note,
+      Value<DateTime> createdAt,
+      Value<String> syncStatus,
+      Value<String?> rejectionCode,
+      Value<int> rowid,
+    });
+
+class $$CashMovementsTableFilterComposer
+    extends Composer<_$AppDatabase, $CashMovementsTable> {
+  $$CashMovementsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CashMovementsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CashMovementsTable> {
+  $$CashMovementsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CashMovementsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CashMovementsTable> {
+  $$CashMovementsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rejectionCode => $composableBuilder(
+    column: $table.rejectionCode,
+    builder: (column) => column,
+  );
+}
+
+class $$CashMovementsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CashMovementsTable,
+          CashMovement,
+          $$CashMovementsTableFilterComposer,
+          $$CashMovementsTableOrderingComposer,
+          $$CashMovementsTableAnnotationComposer,
+          $$CashMovementsTableCreateCompanionBuilder,
+          $$CashMovementsTableUpdateCompanionBuilder,
+          (
+            CashMovement,
+            BaseReferences<_$AppDatabase, $CashMovementsTable, CashMovement>,
+          ),
+          CashMovement,
+          PrefetchHooks Function()
+        > {
+  $$CashMovementsTableTableManager(_$AppDatabase db, $CashMovementsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CashMovementsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CashMovementsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CashMovementsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> amount = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<String> syncStatus = const Value.absent(),
+                Value<String?> rejectionCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashMovementsCompanion(
+                id: id,
+                sessionId: sessionId,
+                type: type,
+                reason: reason,
+                amount: amount,
+                note: note,
+                createdAt: createdAt,
+                syncStatus: syncStatus,
+                rejectionCode: rejectionCode,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sessionId,
+                required String type,
+                required String reason,
+                required String amount,
+                Value<String?> note = const Value.absent(),
+                required DateTime createdAt,
+                required String syncStatus,
+                Value<String?> rejectionCode = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashMovementsCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                type: type,
+                reason: reason,
+                amount: amount,
+                note: note,
+                createdAt: createdAt,
+                syncStatus: syncStatus,
+                rejectionCode: rejectionCode,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CashMovementsTable, CashMovement>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CashMovementsTable,
+                    CashMovement
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CashMovementsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CashMovementsTable,
+      CashMovement,
+      $$CashMovementsTableFilterComposer,
+      $$CashMovementsTableOrderingComposer,
+      $$CashMovementsTableAnnotationComposer,
+      $$CashMovementsTableCreateCompanionBuilder,
+      $$CashMovementsTableUpdateCompanionBuilder,
+      (
+        CashMovement,
+        BaseReferences<_$AppDatabase, $CashMovementsTable, CashMovement>,
+      ),
+      CashMovement,
       PrefetchHooks Function()
     >;
 typedef $$SyncQueueTableCreateCompanionBuilder =
@@ -6728,6 +9280,10 @@ class $AppDatabaseManager {
       $$SaleReturnsTableTableManager(_db, _db.saleReturns);
   $$SaleReturnItemsTableTableManager get saleReturnItems =>
       $$SaleReturnItemsTableTableManager(_db, _db.saleReturnItems);
+  $$CashSessionsTableTableManager get cashSessions =>
+      $$CashSessionsTableTableManager(_db, _db.cashSessions);
+  $$CashMovementsTableTableManager get cashMovements =>
+      $$CashMovementsTableTableManager(_db, _db.cashMovements);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
   $$SyncMetadataTableTableManager get syncMetadata =>

@@ -31,6 +31,8 @@ sealed class SaleReturnCreateDto with _$SaleReturnCreateDto {
     @JsonKey(name: 'refund_method') required String refundMethod,
     @JsonKey(name: 'refund_amount') required String refundAmount,
     @JsonKey(name: 'created_at') required String createdAt,
+    // Session de caisse du retour ; null hors session.
+    @JsonKey(name: 'cash_session_id') String? cashSessionId,
     required List<SaleReturnItemCreateDto> items,
   }) = _SaleReturnCreateDto;
 
@@ -70,6 +72,8 @@ sealed class SaleReturnDto with _$SaleReturnDto {
     @JsonKey(name: 'refund_method') required String refundMethod,
     @JsonKey(name: 'refund_amount') required String refundAmount,
     @JsonKey(name: 'created_at') required String createdAt,
+    // Session de caisse ; absente d'un retour hors session ou antérieur.
+    @JsonKey(name: 'cash_session_id') String? cashSessionId,
     required List<SaleReturnItemDto> items,
   }) = _SaleReturnDto;
 

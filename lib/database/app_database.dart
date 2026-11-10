@@ -94,6 +94,16 @@ class Sales extends Table {
   /// Montant de la remise globale en FCFA ; `total_amount` l'a déjà déduit.
   TextColumn get discountAmount => text().withDefault(const Constant('0'))();
 
+  /// Part payée en espèces en FCFA (paiement mixte), null si non renseignée.
+  TextColumn get cashAmount => text().nullable()();
+
+  /// Part payée en mobile money en FCFA (paiement mixte), null si non
+  /// renseignée.
+  TextColumn get mobileMoneyAmount => text().nullable()();
+
+  /// Session de caisse de la vente, null si vendue hors session.
+  TextColumn get cashSessionId => text().nullable()();
+
   /// Date de création.
   DateTimeColumn get createdAt => dateTime()();
 
@@ -173,6 +183,9 @@ class SaleReturns extends Table {
   /// Code du refus serveur (`quantity_exceeded`…), null sinon.
   TextColumn get rejectionCode => text().nullable()();
 
+  /// Session de caisse du retour, null si enregistré hors session.
+  TextColumn get cashSessionId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -202,6 +215,92 @@ class SaleReturnItems extends Table {
 
   /// Montant remboursé pour cette ligne en FCFA (string).
   TextColumn get refundAmount => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Sessions de caisse : ouverture avec un fond, clôture avec un comptage.
+class CashSessions extends Table {
+  /// UUID v4 généré côté client (idempotence sync).
+  TextColumn get id => text()();
+
+  /// Appareil qui a ouvert la session.
+  TextColumn get deviceId => text()();
+
+  /// `open` ou `closed`.
+  TextColumn get status => text()();
+
+  /// Fond de caisse à l'ouverture en FCFA (string).
+  TextColumn get openingAmount => text()();
+
+  /// Commentaire d'ouverture.
+  TextColumn get openingNote => text().nullable()();
+
+  /// Date d'ouverture (UTC).
+  DateTimeColumn get openedAt => dateTime()();
+
+  /// Solde théorique retenu par le serveur en FCFA, null avant clôture.
+  TextColumn get expectedAmount => text().nullable()();
+
+  /// Solde théorique calculé sur l'appareil à la clôture en FCFA.
+  TextColumn get clientExpectedAmount => text().nullable()();
+
+  /// Montant compté à la clôture en FCFA.
+  TextColumn get countedAmount => text().nullable()();
+
+  /// Écart (compté − théorique) en FCFA.
+  TextColumn get discrepancyAmount => text().nullable()();
+
+  /// Commentaire de clôture.
+  TextColumn get closingNote => text().nullable()();
+
+  /// Date de clôture (UTC), renvoyée à l'identique à chaque retry.
+  DateTimeColumn get closedAt => dateTime().nullable()();
+
+  /// Le serveur a recalculé le solde théorique (différent de celui de
+  /// l'appareil).
+  BoolColumn get serverRecalculated =>
+      boolean().withDefault(const Constant(false))();
+
+  /// `pending` (à envoyer), `synced`, `rejected` (refus définitif).
+  TextColumn get syncStatus => text().withDefault(const Constant('pending'))();
+
+  /// Code du refus serveur, null sinon.
+  TextColumn get rejectionCode => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Entrées et sorties d'espèces d'une session de caisse.
+class CashMovements extends Table {
+  /// UUID v4 généré côté client (idempotence sync).
+  TextColumn get id => text()();
+
+  /// Session de caisse parente.
+  TextColumn get sessionId => text()();
+
+  /// `cash_in` ou `cash_out`.
+  TextColumn get type => text()();
+
+  /// Motif, valeur de l'API.
+  TextColumn get reason => text()();
+
+  /// Montant en FCFA (string).
+  TextColumn get amount => text()();
+
+  /// Commentaire.
+  TextColumn get note => text().nullable()();
+
+  /// Date du mouvement (UTC).
+  DateTimeColumn get createdAt => dateTime()();
+
+  /// `pending` (à envoyer), `synced`, `rejected` (refus définitif).
+  TextColumn get syncStatus => text()();
+
+  /// Code du refus serveur, null sinon.
+  TextColumn get rejectionCode => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -261,6 +360,8 @@ class SyncQueue extends Table {
     SaleItems,
     SaleReturns,
     SaleReturnItems,
+    CashSessions,
+    CashMovements,
     SyncQueue,
     SyncMetadata,
   ],
@@ -274,7 +375,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -354,6 +455,21 @@ class AppDatabase extends _$AppDatabase {
         // existante modifiée.
         await m.createTable(saleReturns);
         await m.createTable(saleReturnItems);
+      }
+      if (from < 10) {
+        // v9 → v10 : sessions de caisse. Tables nouvelles ; les ventes et
+        // retours existants gardent une session et une ventilation nulles.
+        await m.createTable(cashSessions);
+        await m.createTable(cashMovements);
+        await m.addColumn(sales, sales.cashAmount);
+        await m.addColumn(sales, sales.mobileMoneyAmount);
+        await m.addColumn(sales, sales.cashSessionId);
+        // Ajout seulement si la table date d'avant v10 : en partant d'une
+        // version < 9, le bloc v9 vient de la créer avec le schéma courant,
+        // colonne comprise.
+        if (from >= 9) {
+          await m.addColumn(saleReturns, saleReturns.cashSessionId);
+        }
       }
     },
   );

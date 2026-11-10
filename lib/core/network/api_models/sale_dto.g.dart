@@ -49,6 +49,7 @@ _SaleDto _$SaleDtoFromJson(Map<String, dynamic> json) => _SaleDto(
   discountType: json['discount_type'] as String?,
   discountValue: json['discount_value'] as String?,
   discountAmount: json['discount_amount'] as String? ?? '0',
+  cashSessionId: json['cash_session_id'] as String?,
   items: (json['items'] as List<dynamic>)
       .map((e) => SaleItemDto.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -68,6 +69,7 @@ Map<String, dynamic> _$SaleDtoToJson(_SaleDto instance) => <String, dynamic>{
   'discount_type': instance.discountType,
   'discount_value': instance.discountValue,
   'discount_amount': instance.discountAmount,
+  'cash_session_id': instance.cashSessionId,
   'items': instance.items,
 };
 

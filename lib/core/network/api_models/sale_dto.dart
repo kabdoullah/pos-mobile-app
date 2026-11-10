@@ -69,6 +69,8 @@ sealed class SaleDto with _$SaleDto {
     @JsonKey(name: 'discount_type') String? discountType,
     @JsonKey(name: 'discount_value') String? discountValue,
     @JsonKey(name: 'discount_amount') @Default('0') String discountAmount,
+    // Session de caisse ; absente d'une vente hors session ou antérieure.
+    @JsonKey(name: 'cash_session_id') String? cashSessionId,
     required List<SaleItemDto> items,
   }) = _SaleDto;
 

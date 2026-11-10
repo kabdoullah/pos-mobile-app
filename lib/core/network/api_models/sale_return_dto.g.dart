@@ -35,6 +35,7 @@ _SaleReturnCreateDto _$SaleReturnCreateDtoFromJson(Map<String, dynamic> json) =>
       refundMethod: json['refund_method'] as String,
       refundAmount: json['refund_amount'] as String,
       createdAt: json['created_at'] as String,
+      cashSessionId: json['cash_session_id'] as String?,
       items: (json['items'] as List<dynamic>)
           .map(
             (e) => SaleReturnItemCreateDto.fromJson(e as Map<String, dynamic>),
@@ -52,6 +53,7 @@ Map<String, dynamic> _$SaleReturnCreateDtoToJson(
   'refund_method': instance.refundMethod,
   'refund_amount': instance.refundAmount,
   'created_at': instance.createdAt,
+  'cash_session_id': instance.cashSessionId,
   'items': instance.items,
 };
 
@@ -89,6 +91,7 @@ _SaleReturnDto _$SaleReturnDtoFromJson(Map<String, dynamic> json) =>
       refundMethod: json['refund_method'] as String,
       refundAmount: json['refund_amount'] as String,
       createdAt: json['created_at'] as String,
+      cashSessionId: json['cash_session_id'] as String?,
       items: (json['items'] as List<dynamic>)
           .map((e) => SaleReturnItemDto.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -104,6 +107,7 @@ Map<String, dynamic> _$SaleReturnDtoToJson(_SaleReturnDto instance) =>
       'refund_method': instance.refundMethod,
       'refund_amount': instance.refundAmount,
       'created_at': instance.createdAt,
+      'cash_session_id': instance.cashSessionId,
       'items': instance.items,
     };
 

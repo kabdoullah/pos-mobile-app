@@ -147,6 +147,9 @@ class PullService {
                   discountType: drift.Value(saleDto.discountType),
                   discountValue: drift.Value(saleDto.discountValue),
                   discountAmount: drift.Value(saleDto.discountAmount),
+                  cashAmount: drift.Value(saleDto.cashAmount),
+                  mobileMoneyAmount: drift.Value(saleDto.mobileMoneyAmount),
+                  cashSessionId: drift.Value(saleDto.cashSessionId),
                 ),
                 mode: drift.InsertMode.insertOrReplace,
               );
@@ -200,6 +203,7 @@ class PullService {
                   createdAt: DateTime.parse(dto.createdAt),
                   syncStatus: const drift.Value('synced'),
                   rejectionCode: const drift.Value(null),
+                  cashSessionId: drift.Value(dto.cashSessionId),
                 ),
                 mode: drift.InsertMode.insertOrReplace,
               );
