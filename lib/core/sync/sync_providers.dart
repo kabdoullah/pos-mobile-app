@@ -2,6 +2,7 @@ import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/database_provider.dart';
+import '../../features/cash_register/providers/cash_register_di_providers.dart';
 import '../network/network_providers.dart';
 import 'local_data_reset_service.dart';
 import 'pull_service.dart';
@@ -45,6 +46,8 @@ SyncQueueRepository syncQueueRepository(Ref ref) {
 PushService pushService(Ref ref) {
   return PushService(
     remoteDataSource: ref.read(syncRemoteDataSourceProvider),
+    cashRemoteDataSource: ref.read(cashRegisterRemoteDataSourceProvider),
+    cashRegisterRepository: ref.read(cashRegisterRepositoryProvider),
     queueRepository: ref.read(syncQueueRepositoryProvider),
     db: ref.read(databaseProvider),
     logger: Logger(),

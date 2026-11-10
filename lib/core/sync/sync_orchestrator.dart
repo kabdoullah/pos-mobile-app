@@ -177,8 +177,8 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
     });
   }
 
-  /// Orchestre une synchro complète : envoi des ventes, envoi des produits,
-  /// puis récupération.
+  /// Orchestre une synchro complète : envoi des opérations de caisse, des
+  /// ventes, des retours et du catalogue, puis récupération.
   /// Protégé contre les synchros concurrentes (une seule à la fois). L'envoi
   /// passe en premier pour que les changements locaux non envoyés soient
   /// remontés avant la récupération.
@@ -230,12 +230,29 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
       final pushService = ref.read(pushServiceProvider);
       final pullService = ref.read(pullServiceProvider);
 
-      _logger.d('Starting sync: push sales');
+      // Ordre d'envoi : ouvertures de caisse → ventes → retours → mouvements
+      // de caisse → clôtures → catégories → produits, puis pull.
+      // Ouvertures d'abord : une vente rattachée à une session inconnue du
+      // serveur échoue.
+      _logger.d('Starting sync: push cash session opens');
+      await pushService.pushPendingCashSessionOpens();
+
+      _logger.d('Sync step: push sales');
       await pushService.pushPendingSales();
 
       // Après les ventes : un retour référence une vente connue du serveur.
       _logger.d('Sync step: push returns');
       await pushService.pushPendingReturns();
+
+      // Après ventes et retours : une sortie est contrôlée contre le solde
+      // serveur, qui les inclut.
+      _logger.d('Sync step: push cash movements');
+      await pushService.pushPendingCashMovements();
+
+      // Clôtures en dernier : le serveur fige le solde théorique, toutes les
+      // opérations de la session doivent l'avoir atteint.
+      _logger.d('Sync step: push cash session closes');
+      await pushService.pushPendingCashSessionCloses();
 
       // Catégories avant produits : le serveur refuse un produit dont la
       // catégorie lui est inconnue.

@@ -210,7 +210,7 @@ final class PushServiceProvider
   }
 }
 
-String _$pushServiceHash() => r'102b902cafbed57811474d6d7f02ff4a3405a4f4';
+String _$pushServiceHash() => r'45c83e156bdaf986c02ea846d61706c8df4e2c86';
 
 /// Nombre en direct des entrées de la file de synchro en attente ou en échec.
 

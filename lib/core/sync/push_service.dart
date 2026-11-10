@@ -5,6 +5,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:logger/logger.dart';
 
 import '../../core/network/api_exception.dart';
+import '../../core/network/api_models/cash_session_dto.dart';
 import '../../core/network/api_models/category_dto.dart';
 import '../../core/network/api_models/product_dto.dart';
 import '../utils/barcode_utils.dart';
@@ -13,23 +14,33 @@ import '../../core/network/api_models/sale_return_dto.dart';
 import '../../core/network/api_models/sync_changes_dto.dart';
 import '../../core/network/api_models/sync_responses_dto.dart';
 import '../../database/app_database.dart';
+import '../../features/cash_register/data/datasources/cash_register_remote_datasource.dart';
+import '../../features/cash_register/data/models/cash_mappers.dart';
+import '../../features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'sync_queue_repository.dart';
 import 'sync_remote_datasource.dart';
 
-/// Service qui envoie les changements locaux (ventes, produits) au serveur.
+/// Service qui envoie les changements locaux (ventes, retours, caisse,
+/// catalogue) au serveur.
 class PushService {
   /// Constructeur.
   PushService({
     required SyncRemoteDataSource remoteDataSource,
+    required CashRegisterRemoteDataSource cashRemoteDataSource,
+    required CashRegisterRepository cashRegisterRepository,
     required SyncQueueRepository queueRepository,
     required AppDatabase db,
     Logger? logger,
   }) : _remoteDataSource = remoteDataSource,
+       _cashRemote = cashRemoteDataSource,
+       _cashRepository = cashRegisterRepository,
        _queueRepository = queueRepository,
        _db = db,
        _logger = logger;
 
   final SyncRemoteDataSource _remoteDataSource;
+  final CashRegisterRemoteDataSource _cashRemote;
+  final CashRegisterRepository _cashRepository;
   final SyncQueueRepository _queueRepository;
   final AppDatabase _db;
   final Logger? _logger;
@@ -244,6 +255,293 @@ class PushService {
     });
     _logger?.w('Return ${entry.entityId} rejected by server: $code $error');
   }
+
+  // ---------------------------------------------------------------------
+  // Sessions de caisse (api.md, « Sessions de caisse »). Une requête par
+  // entrée : un refus n'en bloque pas d'autres. Les payloads en file portent
+  // `session_id` pour construire l'URL ; il est retiré du corps.
+  // ---------------------------------------------------------------------
+
+  /// Envoie les ouvertures de session en attente. À appeler avant les
+  /// ventes : une vente rattachée à une session inconnue du serveur échoue.
+  Future<void> pushPendingCashSessionOpens() async {
+    try {
+      final entries = await _queueRepository.getEntriesByType(
+        'cash_session_open',
+      );
+      for (final entry in entries) {
+        await _pushCashSessionOpen(entry);
+      }
+    } catch (e, st) {
+      _logger?.e('Push pending cash opens failed', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _pushCashSessionOpen(SyncQueueData entry) async {
+    await _queueRepository.markSyncing(entry.id);
+    try {
+      final body = CashSessionOpenRequestDto.fromJson(_cashBody(entry));
+      await _cashRemote.openSession(body);
+      await _db.transaction(() async {
+        await _writeCashSession(
+          entry.entityId,
+          const CashSessionsCompanion(syncStatus: drift.Value('synced')),
+        );
+        await _queueRepository.markSynced(entry.id);
+      });
+    } catch (e) {
+      final code = await _definitiveCashError(e, [entry]);
+      if (code == null) return;
+      // CASH_SESSION_ALREADY_OPEN, IDEMPOTENCY_CONFLICT, VALIDATION_ERROR…
+      await _db.transaction(() async {
+        await _writeCashSession(
+          entry.entityId,
+          CashSessionsCompanion(
+            syncStatus: const drift.Value('rejected'),
+            rejectionCode: drift.Value(code),
+          ),
+        );
+        await _queueRepository.markRejected(entry.id, code);
+      });
+      _logger?.w('Cash session ${entry.entityId} open rejected: $code');
+    }
+  }
+
+  /// Envoie les mouvements d'espèces en attente. À appeler après les
+  /// ouvertures, les ventes et les retours (le solde serveur en dépend).
+  Future<void> pushPendingCashMovements() async {
+    try {
+      final entries = await _queueRepository.getEntriesByType('cash_movement');
+      for (final entry in entries) {
+        await _pushCashMovement(entry);
+      }
+    } catch (e, st) {
+      _logger?.e(
+        'Push pending cash movements failed',
+        error: e,
+        stackTrace: st,
+      );
+    }
+  }
+
+  Future<void> _pushCashMovement(SyncQueueData entry) async {
+    await _queueRepository.markSyncing(entry.id);
+    try {
+      final payload = jsonDecode(entry.payload) as Map<String, dynamic>;
+      final sessionId = payload['session_id'] as String;
+      final body = CashMovementCreateRequestDto.fromJson(_cashBody(entry));
+      await _cashRemote.createMovement(sessionId, body);
+      await _db.transaction(() async {
+        await _writeCashMovement(
+          entry.entityId,
+          const CashMovementsCompanion(syncStatus: drift.Value('synced')),
+        );
+        await _queueRepository.markSynced(entry.id);
+      });
+    } catch (e) {
+      // 404 : l'ouverture n'est pas encore connue du serveur, réessayé.
+      final code = await _definitiveCashError(e, [entry]);
+      if (code == null) return;
+      // INSUFFICIENT_CASH, CASH_SESSION_CLOSED, IDEMPOTENCY_CONFLICT… Le
+      // mouvement refusé sort du solde théorique local.
+      await _db.transaction(() async {
+        await _writeCashMovement(
+          entry.entityId,
+          CashMovementsCompanion(
+            syncStatus: const drift.Value('rejected'),
+            rejectionCode: drift.Value(code),
+          ),
+        );
+        await _queueRepository.markRejected(entry.id, code);
+      });
+      _logger?.w('Cash movement ${entry.entityId} rejected: $code');
+    }
+  }
+
+  /// Envoie les clôtures en attente, en dernier parmi les opérations de
+  /// caisse. Une clôture attend que l'ouverture, les ventes, les retours et
+  /// les mouvements de sa session soient acceptés ou refusés : le serveur
+  /// fige le solde théorique à la clôture.
+  Future<void> pushPendingCashSessionCloses() async {
+    try {
+      final entries = await _queueRepository.getEntriesByType(
+        'cash_session_close',
+      );
+      for (final entry in entries) {
+        if (await _hasUnsyncedSessionOperations(entry.entityId)) {
+          // Reste en attente, sans essai compté.
+          _logger?.d('Cash session ${entry.entityId} close waits');
+          continue;
+        }
+        await _pushCashSessionClose(entry);
+      }
+    } catch (e, st) {
+      _logger?.e('Push pending cash closes failed', error: e, stackTrace: st);
+    }
+  }
+
+  /// Vrai s'il reste en file (en attente, en cours ou en échec) l'ouverture
+  /// de la session, ou une vente, un retour ou un mouvement qui s'y
+  /// rattache.
+  Future<bool> _hasUnsyncedSessionOperations(String sessionId) async {
+    final row = await _db
+        .customSelect(
+          'SELECT EXISTS ('
+          '  SELECT 1 FROM sync_queue q'
+          "  WHERE q.status IN ('pending', 'syncing', 'failed') AND ("
+          "    (q.entity_type = 'cash_session_open' AND q.entity_id = ?1)"
+          "    OR (q.entity_type = 'sale' AND q.entity_id IN"
+          '      (SELECT id FROM sales WHERE cash_session_id = ?1))'
+          "    OR (q.entity_type = 'sale_return' AND q.entity_id IN"
+          '      (SELECT id FROM sale_returns WHERE cash_session_id = ?1))'
+          "    OR (q.entity_type = 'cash_movement' AND q.entity_id IN"
+          '      (SELECT id FROM cash_movements WHERE session_id = ?1))'
+          '  )'
+          ') AS waiting',
+          variables: [drift.Variable.withString(sessionId)],
+          readsFrom: {
+            _db.syncQueue,
+            _db.sales,
+            _db.saleReturns,
+            _db.cashMovements,
+          },
+        )
+        .getSingle();
+    return row.read<bool>('waiting');
+  }
+
+  Future<void> _pushCashSessionClose(SyncQueueData entry) async {
+    await _queueRepository.markSyncing(entry.id);
+    final sessionId = entry.entityId;
+    try {
+      // Payload figé à la clôture locale : même closed_at à chaque retry.
+      final body = CashSessionCloseRequestDto.fromJson(_cashBody(entry));
+      final detail = await _cashRemote.closeSession(sessionId, body);
+      await _db.transaction(() async {
+        await _cashRepository.applyServerClosure(sessionId, detail.toDomain());
+        await _writeCashSession(
+          sessionId,
+          const CashSessionsCompanion(
+            syncStatus: drift.Value('synced'),
+            rejectionCode: drift.Value(null),
+          ),
+        );
+        await _queueRepository.markSynced(entry.id);
+      });
+    } catch (e) {
+      final error = _cashApiError(e);
+      if (error != null &&
+          error.statusCode == 409 &&
+          error.code == 'CASH_SESSION_CLOSED') {
+        await _alignOnServerClosure(entry, error.code);
+        return;
+      }
+      final code = await _definitiveCashError(e, [entry]);
+      if (code == null) return;
+      // Le serveur a recalculé un autre solde et exige un commentaire : la
+      // clôture ne peut plus aboutir telle quelle, le commerçant en est
+      // averti via le code de refus.
+      final rejection =
+          error?.code == 'VALIDATION_ERROR' && error?.field == 'closing_note'
+          ? CashRegisterException.closingNoteRequired
+          : code;
+      await _db.transaction(() async {
+        await _writeCashSession(
+          sessionId,
+          CashSessionsCompanion(
+            syncStatus: const drift.Value('rejected'),
+            rejectionCode: drift.Value(rejection),
+          ),
+        );
+        await _queueRepository.markRejected(entry.id, rejection);
+      });
+      _logger?.w('Cash session $sessionId close rejected: $rejection');
+    }
+  }
+
+  /// La session est déjà clôturée côté serveur avec d'autres valeurs : la
+  /// clôture serveur fait foi pour le solde figé et l'écart, l'entrée est
+  /// refusée et la session porte [code].
+  Future<void> _alignOnServerClosure(SyncQueueData entry, String code) async {
+    final sessionId = entry.entityId;
+    try {
+      final detail = await _cashRemote.getSession(sessionId);
+      await _db.transaction(() async {
+        await _cashRepository.applyServerClosure(sessionId, detail.toDomain());
+        await _writeCashSession(
+          sessionId,
+          CashSessionsCompanion(
+            syncStatus: const drift.Value('rejected'),
+            rejectionCode: drift.Value(code),
+          ),
+        );
+        await _queueRepository.markRejected(entry.id, code);
+      });
+      _logger?.w('Cash session $sessionId already closed on server');
+    } catch (e) {
+      // Lecture impossible : la clôture est renvoyée au prochain cycle et
+      // obtiendra de nouveau 409, puis cette lecture.
+      if (await _keepIfSuspended(e, [entry])) return;
+      await _queueRepository.incrementRetry(entry.id, 'Push failed: $e');
+    }
+  }
+
+  /// Corps JSON d'une requête de caisse : le payload en file sans
+  /// `session_id`, qui ne sert qu'à l'URL.
+  static Map<String, dynamic> _cashBody(SyncQueueData entry) =>
+      Map<String, dynamic>.from(
+        jsonDecode(entry.payload) as Map<String, dynamic>,
+      )..remove('session_id');
+
+  /// L'erreur API (statut, `code`, `field` du corps) portée par [error], null
+  /// sans réponse HTTP (réseau) ou pour une autre exception.
+  static ApiException? _cashApiError(Object error) {
+    if (error is! DioException) return null;
+    final status = error.response?.statusCode;
+    if (status == null) return null;
+    if (error.response?.data is! Map<String, dynamic>?) {
+      return ApiException(
+        statusCode: status,
+        code: 'UNKNOWN',
+        detail: '${error.response?.data}',
+      );
+    }
+    final parsed = parseException(error);
+    return parsed is ApiException ? parsed : null;
+  }
+
+  /// Traite l'échec d'une requête de caisse. Retourne le code du refus
+  /// définitif (4xx), ou null après avoir laissé [entries] en attente :
+  /// boutique suspendue (sans essai compté), réseau, 5xx, 404 (session pas
+  /// encore connue du serveur), 401, 408 et 429 (essai compté).
+  Future<String?> _definitiveCashError(
+    Object error,
+    List<SyncQueueData> entries,
+  ) async {
+    if (await _keepIfSuspended(error, entries)) return null;
+    final api = _cashApiError(error);
+    if (api != null &&
+        api.statusCode >= 400 &&
+        api.statusCode < 500 &&
+        !const {401, 404, 408, 429}.contains(api.statusCode)) {
+      return api.code;
+    }
+    for (final entry in entries) {
+      await _queueRepository.incrementRetry(entry.id, 'Push failed: $error');
+    }
+    _logger?.i('Cash push failed (will retry): $error');
+    return null;
+  }
+
+  Future<void> _writeCashSession(String id, CashSessionsCompanion values) =>
+      (_db.update(
+        _db.cashSessions,
+      )..where((s) => s.id.equals(id))).write(values);
+
+  Future<void> _writeCashMovement(String id, CashMovementsCompanion values) =>
+      (_db.update(
+        _db.cashMovements,
+      )..where((m) => m.id.equals(id))).write(values);
 
   /// Envoie tous les changements de produits en attente au serveur.
   /// Synchro par état avec résolution de conflit (le serveur gagne).

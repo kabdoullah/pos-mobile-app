@@ -1,11 +1,13 @@
 import 'package:decimal/decimal.dart';
 
+import '../../../../core/network/api_models/cash_session_dto.dart';
 import '../../../../database/app_database.dart' as drift_db;
 import '../../../returns/domain/entities/sale_return.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/cash_labels.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
+import '../../domain/entities/cash_session_detail.dart';
 
 /// Valeur drift d'un [CashSessionStatus].
 String cashSessionStatusToString(CashSessionStatus status) => switch (status) {
@@ -133,3 +135,87 @@ Map<String, dynamic> cashSessionClosePayload({
   'closing_note': closingNote,
   'closed_at': closedAt.toUtc().toIso8601String(),
 };
+
+/// Convertit une session serveur → domaine.
+extension CashSessionDtoToDomain on CashSessionDto {
+  /// Convertit le DTO en [CashSession] synchronisée. Sans [serverRecalculated]
+  /// explicite (historique, sans résumé), il vaut true si le montant figé
+  /// diffère du solde affiché par l'app — même règle que le serveur.
+  CashSession toDomain({bool? serverRecalculated}) {
+    final expected = _parseOrNull(expectedAmount);
+    final clientExpected = _parseOrNull(clientExpectedAmount);
+    return CashSession(
+      id: id,
+      deviceId: deviceId,
+      status: cashSessionStatusFromString(status),
+      openingAmount: Decimal.parse(openingAmount),
+      openedAt: DateTime.parse(openedAt).toUtc(),
+      syncStatus: CashSyncStatus.synced,
+      serverRecalculated:
+          serverRecalculated ??
+          (expected != null &&
+              clientExpected != null &&
+              expected != clientExpected),
+      openingNote: openingNote,
+      expectedAmount: expected,
+      clientExpectedAmount: clientExpected,
+      countedAmount: _parseOrNull(countedAmount),
+      discrepancyAmount: _parseOrNull(discrepancyAmount),
+      closingNote: closingNote,
+      closedAt: closedAt == null ? null : DateTime.parse(closedAt!).toUtc(),
+    );
+  }
+}
+
+/// Convertit un mouvement serveur → domaine.
+extension CashMovementDtoToDomain on CashMovementDto {
+  /// Convertit le DTO en [CashMovement] synchronisé.
+  CashMovement toDomain() => CashMovement(
+    id: id,
+    sessionId: sessionId,
+    type: cashMovementTypeFromApi(type),
+    reason: cashMovementReasonFromApi(reason),
+    amount: Decimal.parse(amount),
+    createdAt: DateTime.parse(createdAt).toUtc(),
+    syncStatus: CashSyncStatus.synced,
+    note: note,
+  );
+}
+
+/// Convertit un récapitulatif serveur → domaine.
+extension CashSummaryDtoToDomain on CashSummaryDto {
+  /// Convertit le DTO en [CashServerSummary].
+  CashServerSummary toDomain() => CashServerSummary(
+    openingAmount: Decimal.parse(openingAmount),
+    cashSales: Decimal.parse(cashSales),
+    cashSalesCount: cashSalesCount,
+    mobileMoneySales: Decimal.parse(mobileMoneySales),
+    cashIn: Decimal.parse(cashIn),
+    cashOut: Decimal.parse(cashOut),
+    cashRefunds: Decimal.parse(cashRefunds),
+    expectedAmount: Decimal.parse(expectedAmount),
+    lateImpact: Decimal.parse(lateImpact),
+    serverRecalculated: serverRecalculated,
+  );
+}
+
+/// Convertit un détail de session serveur → domaine.
+extension CashSessionDetailDtoToDomain on CashSessionDetailDto {
+  /// Convertit le DTO en [CashSessionDetail] ; le recalcul serveur de la
+  /// session est celui du résumé.
+  CashSessionDetail toDomain() => CashSessionDetail(
+    session: session.toDomain(serverRecalculated: summary.serverRecalculated),
+    summary: summary.toDomain(),
+    movements: [for (final m in movements) m.toDomain()],
+  );
+}
+
+/// Convertit une page d'historique serveur → domaine.
+extension CashSessionPageDtoToDomain on CashSessionPageDto {
+  /// Convertit le DTO en [CashSessionPage].
+  CashSessionPage toDomain() => CashSessionPage(
+    items: [for (final s in items) s.toDomain()],
+    nextCursor: nextCursor,
+    hasMore: hasMore,
+  );
+}

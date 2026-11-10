@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 
 import '../entities/cash_movement.dart';
 import '../entities/cash_session.dart';
+import '../entities/cash_session_detail.dart';
 import '../entities/cash_summary.dart';
 
 /// Refus d'une opération de caisse, identifié par un [code] stable.
@@ -32,6 +33,11 @@ class CashRegisterException implements Exception {
 
   /// Motif incompatible avec le sens du mouvement.
   static const reasonTypeMismatch = 'reason_type_mismatch';
+
+  /// Clôture refusée par le serveur : son solde recalculé diffère de celui
+  /// de l'appareil et aucun commentaire n'a été envoyé. Refus définitif,
+  /// porté par `CashSession.rejectionCode`.
+  static const closingNoteRequired = 'closing_note_required';
 
   /// Code du refus.
   final String code;
@@ -95,4 +101,22 @@ abstract class CashRegisterRepository {
   /// Observe toutes les sessions de l'appareil, de la plus récente à la plus
   /// ancienne.
   Stream<List<CashSession>> watchLocalHistory();
+
+  /// Reporte sur la session locale le résultat de la clôture serveur :
+  /// solde théorique figé, écart et recalcul serveur. Le montant compté, le
+  /// commentaire et la date de clôture locaux ne changent pas. Sans effet si
+  /// la session n'existe pas sur l'appareil (rien n'est inséré).
+  Future<void> applyServerClosure(String sessionId, CashSessionDetail detail);
+
+  /// Historique distant des sessions de la boutique, tous appareils
+  /// confondus. Lecture en ligne : rien n'est écrit sur l'appareil.
+  ///
+  /// Lève une `NetworkException` si le serveur est injoignable ou refuse.
+  Future<CashSessionPage> fetchRemoteHistory({String? cursor});
+
+  /// Détail distant d'une session. Lecture en ligne : rien n'est écrit sur
+  /// l'appareil.
+  ///
+  /// Lève une `NetworkException` si le serveur est injoignable ou refuse.
+  Future<CashSessionDetail> fetchRemoteDetail(String id);
 }

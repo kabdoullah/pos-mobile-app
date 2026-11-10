@@ -1,7 +1,9 @@
 import 'package:decimal/decimal.dart';
+import 'package:dio/dio.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/device_id_storage.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../database/app_database.dart' as drift_db;
@@ -9,8 +11,10 @@ import '../../domain/cash_balance_calculator.dart';
 import '../../domain/entities/cash_labels.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
+import '../../domain/entities/cash_session_detail.dart';
 import '../../domain/entities/cash_summary.dart';
 import '../../domain/repositories/cash_register_repository.dart';
+import '../datasources/cash_register_remote_datasource.dart';
 import '../models/cash_mappers.dart';
 
 /// Implémentation drift de [CashRegisterRepository].
@@ -25,6 +29,7 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
     required this.db,
     required this.syncQueue,
     required this.deviceIdStorage,
+    required this.remote,
     this.calculator = const CashBalanceCalculator(),
   });
 
@@ -36,6 +41,9 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
 
   /// Identifiant de l'appareil, envoyé à l'ouverture.
   final DeviceIdStorage deviceIdStorage;
+
+  /// API des sessions de caisse, pour les lectures en ligne.
+  final CashRegisterRemoteDataSource remote;
 
   /// Calcul du solde théorique (mêmes règles que le serveur).
   final CashBalanceCalculator calculator;
@@ -319,6 +327,48 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           ..orderBy([(s) => drift.OrderingTerm.desc(s.openedAt)]))
         .watch()
         .map((rows) => [for (final row in rows) row.toDomain()]);
+  }
+
+  @override
+  Future<void> applyServerClosure(
+    String sessionId,
+    CashSessionDetail detail,
+  ) async {
+    // Session clôturée : le montant figé est le même dans la session et
+    // dans le résumé ; celui du résumé sert si la session ne le porte pas.
+    final expected =
+        detail.session.expectedAmount ?? detail.summary.expectedAmount;
+    final discrepancy = detail.session.discrepancyAmount;
+    // Update seul : une session inconnue de l'appareil n'est jamais insérée.
+    await (db.update(
+      db.cashSessions,
+    )..where((s) => s.id.equals(sessionId))).write(
+      drift_db.CashSessionsCompanion(
+        expectedAmount: drift.Value(expected.toString()),
+        discrepancyAmount: discrepancy == null
+            ? const drift.Value.absent()
+            : drift.Value(discrepancy.toString()),
+        serverRecalculated: drift.Value(detail.summary.serverRecalculated),
+      ),
+    );
+  }
+
+  @override
+  Future<CashSessionPage> fetchRemoteHistory({String? cursor}) async {
+    try {
+      return (await remote.listSessions(cursor: cursor)).toDomain();
+    } on DioException catch (e) {
+      throw parseException(e);
+    }
+  }
+
+  @override
+  Future<CashSessionDetail> fetchRemoteDetail(String id) async {
+    try {
+      return (await remote.getSession(id)).toDomain();
+    } on DioException catch (e) {
+      throw parseException(e);
+    }
   }
 
   Future<drift_db.CashSession?> _sessionRow(String sessionId) => (db.select(

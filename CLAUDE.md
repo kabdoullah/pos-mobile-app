@@ -104,7 +104,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Secure storage:** JWT and PBKDF2-hashed PIN in `flutter_secure_storage`. PIN never sent to backend. 5 attempts → 5-minute lockout.
 
-**Sync:** Sales append-only via `SyncQueue` (UUID v4 client-side, idempotent). Catalog and categories (ADR-0008): `dirty=true` flag, push full state — push order is sales → returns → categories → products (a product is held while its category is not yet accepted by the server). Pull on app start + connectivity restored; it merges a locally-created category into a server one with the same name, and stores pulled sale items.
+**Sync:** Sales append-only via `SyncQueue` (UUID v4 client-side, idempotent). Catalog and categories (ADR-0008): `dirty=true` flag, push full state — push order is cash session opens → sales → returns → cash movements → cash session closes → categories → products (a product is held while its category is not yet accepted by the server; a cash close is held while its session's open, sales, returns or movements are still queued). Pull on app start + connectivity restored; it merges a locally-created category into a server one with the same name, and stores pulled sale items.
 
 **Theme:** "Cacao & Or" — primary brun cacao `#92400E`, secondary or `#CA8A04`. `textOnSecondary` is dark (never white on gold — fails WCAG AA). Use `AppSemanticColors` extension for dark-mode and stock-status colors.
 
@@ -122,7 +122,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 - **Tabs:** `ShellBranch` enum (`core/router/main_shell.dart`) must stay in the same order as the `StatefulShellRoute` branches in `app_router.dart` and the `NavigationBar` destinations. Use `goBranch(ShellBranch.x.index)`, never a literal index.
 - **Low-stock rule** exists twice: `Product.stockLevel` (Dart) and the SQL in `CatalogRepositoryImpl.watchLowStockProducts()`. Change both together.
 - **"Today"-scoped providers** must watch `todayProvider` (`home_providers.dart`), which rebuilds at local midnight; `watchTodayStats()` fixes the day at subscription.
-- **Known inversion:** `core/sync/sync_orchestrator.dart` imports `features/auth` (sync waits for `AuthAuthenticated`). Don't add more core → feature imports.
+- **Known inversions:** `core/sync/sync_orchestrator.dart` imports `features/auth` (sync waits for `AuthAuthenticated`); `core/sync/push_service.dart` and `sync_providers.dart` import `features/cash_register` (its datasource, mappers, repository and DI providers, to push cash sessions). Don't add more core → feature imports.
 - **Testing `SyncOrchestrator`:** `syncNow()` is a no-op unless `authProvider` is `AuthAuthenticated`, and it reads `tokenStorageProvider` + `databaseProvider` — override all three (see `test/sync_orchestrator_test.dart`). Tests use `package:clock` + `fake_async` for time.
 
 ## App initialization

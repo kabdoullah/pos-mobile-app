@@ -49,6 +49,15 @@ void main() {
         () => mockPushService.pushPendingReturns(),
       ).thenAnswer((_) async => {});
       when(
+        () => mockPushService.pushPendingCashSessionOpens(),
+      ).thenAnswer((_) async => {});
+      when(
+        () => mockPushService.pushPendingCashMovements(),
+      ).thenAnswer((_) async => {});
+      when(
+        () => mockPushService.pushPendingCashSessionCloses(),
+      ).thenAnswer((_) async => {});
+      when(
         () => mockPushService.pushPendingCategoryChanges(),
       ).thenAnswer((_) async => {});
       when(
@@ -98,11 +107,13 @@ void main() {
         final orchestrator = container.read(syncOrchestratorProvider.notifier);
 
         // Appelle syncNow deux fois sans attendre
-        unawaited(orchestrator.syncNow());
+        final first = orchestrator.syncNow();
         unawaited(orchestrator.syncNow());
 
-        // Attend la fin de la première synchro
-        await Future<void>.delayed(const Duration(milliseconds: 200));
+        // Attend la fin de la première synchro (pas de délai fixe : sous
+        // charge, elle peut dépasser 200 ms et le container serait libéré
+        // avant sa fin).
+        await first;
 
         // Vérifie que pushPendingSales n'a été appelé qu'une fois (le second
         // appel a été ignoré)
@@ -110,16 +121,25 @@ void main() {
       },
     );
 
-    test('syncNow calls push before pull '
-        '(sales, returns, categories, products, then pull)', () async {
+    test('syncNow calls push before pull (cash opens, sales, returns, cash '
+        'movements, cash closes, categories, products, then pull)', () async {
       final callOrder = <String>[];
 
       when(() => mockPushService.pushPendingSales()).thenAnswer((_) async {
         callOrder.add('pushSales');
       });
+      when(
+        () => mockPushService.pushPendingCashSessionOpens(),
+      ).thenAnswer((_) async => callOrder.add('pushCashOpens'));
       when(() => mockPushService.pushPendingReturns()).thenAnswer((_) async {
         callOrder.add('pushReturns');
       });
+      when(
+        () => mockPushService.pushPendingCashMovements(),
+      ).thenAnswer((_) async => callOrder.add('pushCashMovements'));
+      when(
+        () => mockPushService.pushPendingCashSessionCloses(),
+      ).thenAnswer((_) async => callOrder.add('pushCashCloses'));
       when(() => mockPushService.pushPendingCategoryChanges()).thenAnswer((
         _,
       ) async {
@@ -148,8 +168,11 @@ void main() {
       expect(
         callOrder,
         equals([
+          'pushCashOpens',
           'pushSales',
           'pushReturns',
+          'pushCashMovements',
+          'pushCashCloses',
           'pushCategories',
           'pushProducts',
           'pull',
@@ -197,6 +220,9 @@ void main() {
 
     test('syncNow on error sets SyncStatusError', () async {
       final errorMockPushService = MockPushService();
+      when(
+        errorMockPushService.pushPendingCashSessionOpens,
+      ).thenAnswer((_) async => {});
       when(
         errorMockPushService.pushPendingSales,
       ).thenThrow(Exception('Network error'));

@@ -1,9 +1,11 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/network/network_providers.dart';
 import '../../../core/storage/device_id_storage.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../database/database_provider.dart';
 import '../data/repositories/cash_register_repository_impl.dart';
+import '../data/datasources/cash_register_remote_datasource.dart';
 import '../domain/repositories/cash_register_repository.dart';
 import '../domain/usecases/close_cash_session_usecase.dart';
 import '../domain/usecases/open_cash_session_usecase.dart';
@@ -15,6 +17,12 @@ part 'cash_register_di_providers.g.dart';
 @Riverpod(keepAlive: true)
 DeviceIdStorage deviceIdStorage(Ref ref) => DeviceIdStorage();
 
+/// Fournit la data source distante des sessions de caisse.
+@Riverpod(keepAlive: true)
+CashRegisterRemoteDataSource cashRegisterRemoteDataSource(Ref ref) {
+  return CashRegisterRemoteDataSource(ref.watch(dioProvider));
+}
+
 /// Fournit le repository des sessions de caisse (local d'abord, via drift).
 @riverpod
 CashRegisterRepository cashRegisterRepository(Ref ref) {
@@ -22,6 +30,7 @@ CashRegisterRepository cashRegisterRepository(Ref ref) {
     db: ref.read(databaseProvider),
     syncQueue: ref.read(syncQueueRepositoryProvider),
     deviceIdStorage: ref.read(deviceIdStorageProvider),
+    remote: ref.read(cashRegisterRemoteDataSourceProvider),
   );
 }
 

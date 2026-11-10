@@ -22,8 +22,11 @@ import 'package:mobile/features/sales/domain/entities/cart_item.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart' as domain;
 import 'package:mobile/features/sales/domain/usecases/create_sale_usecase.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
 
 class _MockDeviceIdStorage extends Mock implements DeviceIdStorage {}
+
+class _MockCashRemote extends Mock implements CashRegisterRemoteDataSource {}
 
 void main() {
   late AppDatabase db;
@@ -41,6 +44,7 @@ void main() {
       db: db,
       syncQueue: queue,
       deviceIdStorage: deviceId,
+      remote: _MockCashRemote(),
     );
   });
 

@@ -11,11 +11,14 @@ import 'package:mobile/features/cash_register/domain/usecases/close_cash_session
 import 'package:mobile/features/cash_register/domain/usecases/open_cash_session_usecase.dart';
 import 'package:mobile/features/cash_register/domain/usecases/record_cash_movement_usecase.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
 
 class _MockDeviceIdStorage extends Mock implements DeviceIdStorage {}
 
 Matcher _refused(String code) =>
     throwsA(isA<CashRegisterException>().having((e) => e.code, 'code', code));
+
+class _MockCashRemote extends Mock implements CashRegisterRemoteDataSource {}
 
 void main() {
   late AppDatabase db;
@@ -34,6 +37,7 @@ void main() {
       db: db,
       syncQueue: SyncQueueRepository(db: db),
       deviceIdStorage: deviceId,
+      remote: _MockCashRemote(),
     );
     open = OpenCashSessionUseCase(repository: repository);
     record = RecordCashMovementUseCase(repository: repository);

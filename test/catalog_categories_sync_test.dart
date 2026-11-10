@@ -15,11 +15,17 @@ import 'package:mobile/core/sync/sync_remote_datasource.dart';
 import 'package:mobile/database/app_database.dart' hide Category;
 import 'package:mobile/features/catalog/data/repositories/catalog_repository_impl.dart';
 import 'package:mobile/features/catalog/domain/entities/category.dart';
+import 'package:mobile/features/cash_register/data/datasources/cash_register_remote_datasource.dart';
+import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockRemote extends Mock implements SyncRemoteDataSource {}
 
 const _now = '2026-09-27T10:00:00Z';
+
+class _UnusedCashRemote extends Mock implements CashRegisterRemoteDataSource {}
+
+class _UnusedCashRepository extends Mock implements CashRegisterRepository {}
 
 void main() {
   late AppDatabase db;
@@ -50,6 +56,8 @@ void main() {
     remote = _MockRemote();
     push = PushService(
       remoteDataSource: remote,
+      cashRemoteDataSource: _UnusedCashRemote(),
+      cashRegisterRepository: _UnusedCashRepository(),
       queueRepository: queue,
       db: db,
     );
