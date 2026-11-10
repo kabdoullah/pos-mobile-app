@@ -93,6 +93,7 @@ class ReturnsRepositoryImpl implements ReturnsRepository {
     String? note,
     required RefundMethod refundMethod,
     required List<NewReturnLine> lines,
+    String? cashSessionId,
   }) async {
     const uuid = Uuid();
     final now = DateTime.now().toUtc();
@@ -135,6 +136,7 @@ class ReturnsRepositoryImpl implements ReturnsRepository {
               refundMethod: refundMethodToString(refundMethod),
               refundAmount: total.toString(),
               createdAt: now,
+              cashSessionId: drift.Value(cashSessionId),
             ),
           );
       for (final row in rows) {
@@ -155,6 +157,7 @@ class ReturnsRepositoryImpl implements ReturnsRepository {
           refundMethod: refundMethodToString(refundMethod),
           refundAmount: total.toString(),
           createdAt: now.toIso8601String(),
+          cashSessionId: cashSessionId,
           items: [
             for (final row in rows)
               SaleReturnItemCreateDto(

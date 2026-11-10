@@ -40,7 +40,8 @@ class CreateSaleReturnUseCase {
   ///
   /// Le montant de chaque ligne est calculé sur les valeurs figées à la vente
   /// (voir [ReturnableLine.refundFor]). [returnId] est généré une fois par
-  /// écran : un double appui n'enregistre qu'un retour.
+  /// écran : un double appui n'enregistre qu'un retour. [cashSessionId]
+  /// rattache le retour à la session de caisse ouverte (null = hors session).
   Future<SaleReturn> call({
     required String returnId,
     required Sale sale,
@@ -48,6 +49,7 @@ class CreateSaleReturnUseCase {
     required ReturnReason reason,
     String? note,
     required RefundMethod refundMethod,
+    String? cashSessionId,
   }) async {
     if (sale.receiptNumber <= 0) {
       throw CreateSaleReturnException(
@@ -83,6 +85,7 @@ class CreateSaleReturnUseCase {
       reason: reason,
       note: cleanNote,
       refundMethod: refundMethod,
+      cashSessionId: cashSessionId,
       lines: [
         for (final s in chosen)
           (

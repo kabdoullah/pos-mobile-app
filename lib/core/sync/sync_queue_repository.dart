@@ -60,6 +60,44 @@ class SyncQueueRepository {
         );
   }
 
+  /// Ajoute l'ouverture d'une session de caisse à la file de synchro.
+  Future<int> enqueueCashSessionOpen({
+    required String sessionId,
+    required Map<String, dynamic> payload,
+  }) => _enqueue('cash_session_open', sessionId, payload);
+
+  /// Ajoute un mouvement d'espèces à la file de synchro.
+  Future<int> enqueueCashMovement({
+    required String movementId,
+    required Map<String, dynamic> payload,
+  }) => _enqueue('cash_movement', movementId, payload);
+
+  /// Ajoute la clôture d'une session de caisse à la file de synchro. Le
+  /// payload est figé ici : chaque retry renvoie exactement le même
+  /// `closed_at`.
+  Future<int> enqueueCashSessionClose({
+    required String sessionId,
+    required Map<String, dynamic> payload,
+  }) => _enqueue('cash_session_close', sessionId, payload);
+
+  Future<int> _enqueue(
+    String entityType,
+    String entityId,
+    Map<String, dynamic> payload,
+  ) {
+    return _db
+        .into(_db.syncQueue)
+        .insert(
+          SyncQueueCompanion(
+            entityType: drift.Value(entityType),
+            entityId: drift.Value(entityId),
+            payload: drift.Value(jsonEncode(payload)),
+            status: const drift.Value('pending'),
+            createdAt: drift.Value(DateTime.now()),
+          ),
+        );
+  }
+
   /// Ajoute un changement de produit à la file de synchro.
   /// Retourne l'ID de l'entrée dans la file.
   Future<int> enqueueProductChange({

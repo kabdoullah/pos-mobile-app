@@ -45,6 +45,7 @@ class _FakeReturns implements ReturnsRepository {
     String? note,
     required RefundMethod refundMethod,
     required List<NewReturnLine> lines,
+    String? cashSessionId,
   }) async {
     final saleReturn = SaleReturn(
       id: id,

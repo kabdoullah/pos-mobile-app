@@ -36,6 +36,9 @@ class CreateSaleUseCase {
   /// - aucun montant n'est négatif
   /// - chaque réduction (ligne et remise globale [discount]) est valide
   ///
+  /// [cashSessionId] rattache la vente à la session de caisse ouverte (null =
+  /// hors session).
+  ///
   /// Génère un UUID côté client pour une synchro idempotente.
   /// Enregistre la vente et ses articles de façon atomique via le repository.
   Future<Sale> call({
@@ -46,6 +49,7 @@ class CreateSaleUseCase {
     Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
+    String? cashSessionId,
   }) async {
     // Validation : panier non vide
     if (items.isEmpty) {
@@ -118,6 +122,7 @@ class CreateSaleUseCase {
       discount: discount,
       cashAmount: cashAmount,
       mobileMoneyAmount: mobileMoneyAmount,
+      cashSessionId: cashSessionId,
     );
   }
 }

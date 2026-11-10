@@ -26,6 +26,7 @@ abstract class SalesRepository {
   /// prix, réductions et prix d'achat de chaque ligne (ADR-0009).
   ///
   /// [discount] : remise globale, appliquée au sous-total des lignes.
+  /// [cashSessionId] : session de caisse ouverte, null si vendue hors session.
   Future<Sale> createSale({
     required List<CartItem> items,
     required Decimal totalAmount,
@@ -34,6 +35,7 @@ abstract class SalesRepository {
     Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
+    String? cashSessionId,
   });
 
   /// Récupère l'historique des ventes, paginé en option.

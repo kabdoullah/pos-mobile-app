@@ -46,6 +46,7 @@ class SalesRepositoryImpl implements SalesRepository {
     Discount? discount,
     Decimal? cashAmount,
     Decimal? mobileMoneyAmount,
+    String? cashSessionId,
   }) async {
     const uuid = Uuid();
     final saleId = uuid.v4();
@@ -92,6 +93,7 @@ class SalesRepositoryImpl implements SalesRepository {
           : discountTypeToString(discount.type),
       'discount_value': discount?.value.toString(),
       'discount_amount': discountAmount.toString(),
+      'cash_session_id': ?cashSessionId,
     };
 
     // Transaction : insertion atomique de la vente + articles + entrée de file
@@ -112,6 +114,12 @@ class SalesRepositoryImpl implements SalesRepository {
               ),
               discountValue: drift.Value(discount?.value.toString()),
               discountAmount: drift.Value(discountAmount.toString()),
+              // Mêmes parts que le payload : renseignées pour un paiement
+              // mixte seulement (le calcul du tiroir déduit la part espèces
+              // des autres moyens).
+              cashAmount: drift.Value(cashAmount?.toString()),
+              mobileMoneyAmount: drift.Value(mobileMoneyAmount?.toString()),
+              cashSessionId: drift.Value(cashSessionId),
             ),
           );
 

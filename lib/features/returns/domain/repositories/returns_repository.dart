@@ -25,6 +25,9 @@ abstract class ReturnsRepository {
   /// Enregistre un retour de façon atomique (retour, lignes, remise en stock,
   /// file de synchro). Idempotent : un [id] déjà enregistré renvoie le retour
   /// existant sans rien réécrire (double appui, nouvel essai).
+  ///
+  /// [cashSessionId] : session de caisse ouverte, null si enregistré hors
+  /// session.
   Future<SaleReturn> createReturn({
     required String id,
     required String saleId,
@@ -32,5 +35,6 @@ abstract class ReturnsRepository {
     String? note,
     required RefundMethod refundMethod,
     required List<NewReturnLine> lines,
+    String? cashSessionId,
   });
 }
