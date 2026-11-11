@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../../core/providers/connectivity_provider.dart';
+import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../cash_register/domain/repositories/cash_register_repository.dart';
 import '../../../cash_register/providers/cash_register_di_providers.dart';
 import '../../../sales/domain/entities/sale.dart';
@@ -149,7 +153,7 @@ class SaleReturnSubmission extends _$SaleReturnSubmission {
     if (session == null && draft.refundMethod == RefundMethod.cash) {
       throw const CashRegisterException(CashRegisterException.noOpenSession);
     }
-    return ref.read(createSaleReturnUseCaseProvider)(
+    final saved = await ref.read(createSaleReturnUseCaseProvider)(
       returnId: draft.returnId,
       sale: sale,
       selections: draft.selections(lines),
@@ -158,5 +162,12 @@ class SaleReturnSubmission extends _$SaleReturnSubmission {
       refundMethod: draft.refundMethod,
       cashSessionId: session?.id,
     );
+
+    // Synchro immédiate si en ligne, comme pour une vente : le serveur
+    // attribue le numéro de retour sans attendre le cycle périodique.
+    if (ref.read(isOnlineProvider).value ?? false) {
+      unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow());
+    }
+    return saved;
   }
 }

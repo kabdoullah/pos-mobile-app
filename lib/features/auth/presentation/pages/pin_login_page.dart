@@ -141,13 +141,13 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
         'Vous devrez vous reconnecter avec les identifiants du nouveau '
             'compte. Le PIN de cet appareil sera supprimé.',
         // Si un autre compte se connecte, la synchro efface les données
-        // locales de l'ancien compte (y compris les ventes non envoyées).
+        // locales de l'ancien compte (ventes, retours, produits non envoyés).
         if (pending == 1)
-          '1 vente pas encore synchronisée : déverrouillez et synchronisez '
-              'd\'abord, sinon elle sera effacée si un autre compte se '
-              'connecte.',
+          '1 modification pas encore synchronisée : déverrouillez et '
+              'synchronisez d\'abord, sinon elle sera effacée si un autre '
+              'compte se connecte.',
         if (pending > 1)
-          '$pending ventes pas encore synchronisées : déverrouillez et '
+          '$pending modifications pas encore synchronisées : déverrouillez et '
               'synchronisez d\'abord, sinon elles seront effacées si un autre '
               'compte se connecte.',
       ].join('\n\n'),

@@ -107,7 +107,8 @@ void main() {
       await pump(tester, const SettingsPage(), theme);
       expect(tester.takeException(), isNull);
       expect(find.text('Commerce'), findsOneWidget);
-      expect(find.text('3 ventes en attente'), findsOneWidget);
+      // La file mêle ventes, retours, produits et caisse.
+      expect(find.text('3 modifications en attente'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Se déconnecter'), 200);
       expect(
         find.text('+225 07 00 00 00 00 · Vendeur : Awa Koné'),

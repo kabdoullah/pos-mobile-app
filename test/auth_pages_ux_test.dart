@@ -391,7 +391,7 @@ void main() {
       await tester.tap(find.text('Changer de compte'));
       await tester.pumpAndSettle();
       expect(find.text('Changer de compte ?'), findsOneWidget);
-      expect(find.textContaining('2 ventes pas encore'), findsOneWidget);
+      expect(find.textContaining('2 modifications pas encore'), findsOneWidget);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();

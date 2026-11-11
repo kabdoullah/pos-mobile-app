@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/utils/fcfa_amount_input.dart';
 import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/sales/domain/entities/discount.dart';
 import 'package:mobile/features/sales/presentation/widgets/discount_sheet.dart';
@@ -115,6 +116,23 @@ void main() {
       result()?.discount,
       Discount(type: DiscountType.amount, value: d('350')),
     );
+  });
+
+  testWidgets('« Autre » en montant : une virgule est refusée, pas recollée', (
+    tester,
+  ) async {
+    await openSheet(tester, gross: '10000');
+    await tester.tap(find.text('Montant'));
+    await tester.pump();
+    await tester.tap(find.text('Autre'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '50,5');
+    await tester.pump();
+    expect(find.text(fcfaWholeAmountError), findsOneWidget);
+    expect(applyButton(tester).onPressed, isNull);
+    // Jamais « 505 » : la remise n'est pas appliquée à l'aperçu.
+    expect(find.text('−${formatFcfa(d('505'))}'), findsNothing);
   });
 
   testWidgets('réduction existante : choix présélectionné', (tester) async {

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/utils/fcfa_amount_input.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/discount.dart';
 
@@ -98,9 +99,13 @@ class _DiscountSheetState extends State<_DiscountSheet> {
   /// Réduction choisie, ou `null` si rien n'est choisi / la saisie est
   /// invalide.
   Discount? get _discount {
-    final value = _isCustom
-        ? Decimal.tryParse(_controller.text.trim())
-        : _preset;
+    final text = _controller.text.trim();
+    final value = !_isCustom
+        ? _preset
+        // Montant FCFA : francs entiers, une virgule rend la saisie invalide.
+        : _type == DiscountType.amount
+        ? parseFcfaAmount(text)
+        : Decimal.tryParse(text);
     return value == null ? null : Discount(type: _type, value: value);
   }
 
@@ -122,6 +127,8 @@ class _DiscountSheetState extends State<_DiscountSheet> {
     final customText = _controller.text.trim();
     final error = !_isCustom || customText.isEmpty
         ? null
+        : _type == DiscountType.amount && hasDecimalSeparator(customText)
+        ? fcfaWholeAmountError
         : discount == null
         ? 'Entrez un nombre valide'
         : discount.validate(widget.gross);
@@ -200,20 +207,23 @@ class _DiscountSheetState extends State<_DiscountSheet> {
                   keyboardType: TextInputType.numberWithOptions(
                     decimal: isPercent,
                   ),
-                  inputFormatters: [
-                    isPercent
-                        // Jusqu'à 2 décimales pour un pourcentage (ex. 12,5).
-                        ? FilteringTextInputFormatter.allow(
+                  inputFormatters: isPercent
+                      ? [
+                          // Jusqu'à 2 décimales pour un pourcentage (ex. 12,5).
+                          FilteringTextInputFormatter.allow(
                             RegExp(r'^\d{0,3}([.,]\d{0,2})?'),
-                          )
-                        : FilteringTextInputFormatter.digitsOnly,
-                    // Virgule française → point décimal.
-                    TextInputFormatter.withFunction(
-                      (_, next) =>
-                          next.copyWith(text: next.text.replaceAll(',', '.')),
-                    ),
-                    LengthLimitingTextInputFormatter(10),
-                  ],
+                          ),
+                          // Virgule française → point décimal.
+                          TextInputFormatter.withFunction(
+                            (_, next) => next.copyWith(
+                              text: next.text.replaceAll(',', '.'),
+                            ),
+                          ),
+                          LengthLimitingTextInputFormatter(10),
+                        ]
+                      // Montant : virgule gardée visible pour être refusée,
+                      // jamais recollée aux chiffres (« 50,5 » ≠ 505).
+                      : fcfaAmountInputFormatters,
                   onChanged: (_) => setState(() {}),
                 ),
               ],

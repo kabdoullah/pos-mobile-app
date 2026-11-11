@@ -249,7 +249,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       SyncStatusSyncing() => 'Synchronisation…',
       SyncStatusError() => 'Échec — touchez pour réessayer',
       SyncStatusIdle() when pending > 0 =>
-        pending == 1 ? '1 vente en attente' : '$pending ventes en attente',
+        // La file mêle ventes, retours, produits et caisse : terme neutre,
+        // comme la bannière de synchro.
+        pending == 1
+            ? '1 modification en attente'
+            : '$pending modifications en attente',
       SyncStatusIdle(lastSyncAt: final at?) =>
         'Synchronisé à ${DateFormat.Hm('fr_FR').format(at)}',
       SyncStatusIdle() => 'Synchronisé',
@@ -300,12 +304,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ? 'Vous devrez saisir votre numéro et votre mot de passe pour vous '
                 'reconnecter.'
           : pending == 1
-          ? '1 vente pas encore synchronisée. Synchronisez avant de vous '
-                'déconnecter : si un autre compte se connecte sur ce '
-                'téléphone, elle sera effacée.'
-          : '$pending ventes pas encore synchronisées. Synchronisez avant de '
+          ? '1 modification pas encore synchronisée. Synchronisez avant de '
                 'vous déconnecter : si un autre compte se connecte sur ce '
-                'téléphone, elles seront effacées.',
+                'téléphone, elle sera effacée.'
+          : '$pending modifications pas encore synchronisées. Synchronisez '
+                'avant de vous déconnecter : si un autre compte se connecte '
+                'sur ce téléphone, elles seront effacées.',
       confirmLabel: 'Se déconnecter',
       isDangerous: true,
     );
@@ -327,7 +331,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           'Votre compte, votre boutique, votre catalogue et tout l’historique '
           'des ventes et retours seront effacés définitivement, sur ce '
           'téléphone et sur le serveur.'
-          '${pending > 0 ? ' Les ventes non synchronisées seront perdues.' : ''}'
+          '${pending > 0 ? ' Les modifications non synchronisées seront perdues.' : ''}'
           ' Pensez à exporter vos ventes avant.',
       confirmLabel: 'Continuer',
       isDangerous: true,

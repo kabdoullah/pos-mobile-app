@@ -253,6 +253,8 @@ void main() {
         overrides: [
           createSaleReturnUseCaseProvider.overrideWithValue(useCase),
           cashRegisterRepositoryProvider.overrideWithValue(cash),
+          // Hors ligne : pas de synchro (pas de plugin de connectivité en test).
+          isOnlineProvider.overrideWith((ref) => Stream.value(false)),
         ],
       );
       addTearDown(container.dispose);
@@ -300,6 +302,71 @@ void main() {
           cashSessionId: null,
         ),
       ).called(1);
+    });
+
+    test('a saved return is synced right away when online', () async {
+      when(cash.getActiveSession).thenAnswer((_) async => _openSession);
+      final sync = _CountingSync();
+      final online = ProviderContainer(
+        overrides: [
+          createSaleReturnUseCaseProvider.overrideWithValue(useCase),
+          cashRegisterRepositoryProvider.overrideWithValue(cash),
+          isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+          syncOrchestratorProvider.overrideWith(() => sync),
+        ],
+      );
+      addTearDown(online.dispose);
+      // Écouté comme dans l'app : un provider sans écouteur reste en pause.
+      online.listen(isOnlineProvider, (_, _) {});
+      await online.read(isOnlineProvider.future);
+
+      await online
+          .read(saleReturnSubmissionProvider.notifier)
+          .submit(
+            sale: _sale(),
+            lines: [_line],
+            draft: const ReturnDraftState(
+              returnId: 'r1',
+              quantities: {'coca': 1},
+              reason: ReturnReason.defective,
+              refundMethod: RefundMethod.cash,
+            ),
+          );
+
+      expect(sync.calls, 1);
+    });
+
+    test('a refused return does not trigger a sync', () async {
+      when(cash.getActiveSession).thenAnswer((_) async => null);
+      final sync = _CountingSync();
+      final online = ProviderContainer(
+        overrides: [
+          createSaleReturnUseCaseProvider.overrideWithValue(useCase),
+          cashRegisterRepositoryProvider.overrideWithValue(cash),
+          isOnlineProvider.overrideWith((ref) => Stream.value(true)),
+          syncOrchestratorProvider.overrideWith(() => sync),
+        ],
+      );
+      addTearDown(online.dispose);
+      online.listen(isOnlineProvider, (_, _) {});
+      await online.read(isOnlineProvider.future);
+
+      await expectLater(
+        online
+            .read(saleReturnSubmissionProvider.notifier)
+            .submit(
+              sale: _sale(),
+              lines: [_line],
+              draft: const ReturnDraftState(
+                returnId: 'r1',
+                quantities: {'coca': 1},
+                reason: ReturnReason.defective,
+                refundMethod: RefundMethod.cash,
+              ),
+            ),
+        throwsA(isA<CashRegisterException>()),
+      );
+      expect(sync.calls, 0);
     });
 
     test('cash refund with session attaches it', () async {

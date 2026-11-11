@@ -1,7 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
+import '../../../../core/utils/fcfa_amount_input.dart';
 import '../../../../core/widgets/index.dart';
 
 /// Champ de saisie d'un montant FCFA (entier, clavier numérique).
@@ -41,14 +40,29 @@ class AmountInput extends StatefulWidget {
 class _AmountInputState extends State<AmountInput> {
   late final _controller = TextEditingController(text: _textOf(widget.value));
 
+  /// Vrai si la saisie contient une virgule ou un point (montant refusé).
+  bool _hasSeparator = false;
+
   static String _textOf(Decimal? value) => value?.toString() ?? '';
 
   @override
   void didUpdateWidget(AmountInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (Decimal.tryParse(_controller.text) != widget.value) {
+    // Une saisie refusée (virgule) vaut `null` chez l'appelant : ne pas
+    // l'effacer, sinon le commerçant ne voit plus ce qu'il a tapé.
+    final keepRefused = _hasSeparator && widget.value == null;
+    if (!keepRefused && parseFcfaAmount(_controller.text) != widget.value) {
       _controller.text = _textOf(widget.value);
+      _hasSeparator = false;
     }
+  }
+
+  void _onTextChanged(String text) {
+    final hasSeparator = hasDecimalSeparator(text);
+    if (hasSeparator != _hasSeparator) {
+      setState(() => _hasSeparator = hasSeparator);
+    }
+    widget.onChanged(parseFcfaAmount(text));
   }
 
   @override
@@ -62,16 +76,14 @@ class _AmountInputState extends State<AmountInput> {
     return AppTextField(
       label: widget.label,
       hint: widget.hint,
-      errorText: widget.errorText,
+      // Le refus de la virgule prime : c'est la cause de la saisie invalide.
+      errorText: _hasSeparator ? fcfaWholeAmountError : widget.errorText,
       suffixText: 'FCFA',
       controller: _controller,
       keyboardType: TextInputType.number,
-      inputFormatters: [
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(10),
-      ],
+      inputFormatters: fcfaAmountInputFormatters,
       textInputAction: TextInputAction.done,
-      onChanged: (text) => widget.onChanged(Decimal.tryParse(text)),
+      onChanged: _onTextChanged,
     );
   }
 }
