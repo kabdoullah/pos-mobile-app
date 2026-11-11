@@ -8,7 +8,8 @@ Entrée attendue : première feuille, en-têtes en ligne 2, colonne B = nom de
 l'article, colonne D = code-barres. Le reste (stocks, fournisseurs,
 références internes) est volontairement ignoré.
 
-Seuls les GTIN au chiffre de contrôle valide (EAN-8, UPC-A, EAN-13, GTIN-14)
+Seuls les GTIN au chiffre de contrôle valide (EAN-8, UPC-A, EAN-13 ; pas de
+GTIN-14, codes de carton jamais scannés en caisse)
 et hors plages GS1 à diffusion restreinte sont conservés : les codes internes
 d'une boutique (« SB », « 660 », « 2000… ») désigneraient un autre article
 chez un autre commerçant. En cas de doublon,
@@ -31,7 +32,7 @@ _PLACEHOLDERS = {"1234567890128"}
 
 def is_valid_gtin(code: str) -> bool:
     """Vérifie longueur et chiffre de contrôle GS1 (modulo 10, poids 3/1)."""
-    if not code.isdigit() or len(code) not in (8, 12, 13, 14):
+    if not code.isdigit() or len(code) not in (8, 12, 13):
         return False
     digits = [int(c) for c in code]
     body = digits[:-1][::-1]

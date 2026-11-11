@@ -21,7 +21,16 @@ class BarcodeReferenceRepositoryImpl implements BarcodeReferenceRepository {
   Future<String?> suggestName(String barcode) async {
     final normalized = normalizeBarcode(barcode);
     if (normalized == null) return null;
-    final reference = await (_reference ??= _load());
+    final loading = _reference ??= _load();
+    final Map<String, String> reference;
+    try {
+      reference = await loading;
+    } catch (_) {
+      // Échec de lecture : on permet un nouvel essai au prochain scan. Remis
+      // à zéro ici (et non dans _load) pour couvrir aussi un échec synchrone.
+      if (identical(_reference, loading)) _reference = null;
+      rethrow;
+    }
     for (final candidate in barcodeLookupCandidates(normalized)) {
       final name = reference[candidate];
       if (name != null) return name;
@@ -30,16 +39,10 @@ class BarcodeReferenceRepositoryImpl implements BarcodeReferenceRepository {
   }
 
   Future<Map<String, String>> _load() async {
-    try {
-      final decoded = jsonDecode(await _loadJson()) as Map<String, Object?>;
-      return {
-        for (final entry in decoded.entries)
-          if (entry.value case final String name) entry.key: name,
-      };
-    } catch (_) {
-      // Échec de lecture : on permet un nouvel essai au prochain scan.
-      _reference = null;
-      rethrow;
-    }
+    final decoded = jsonDecode(await _loadJson()) as Map<String, Object?>;
+    return {
+      for (final entry in decoded.entries)
+        if (entry.value case final String name) entry.key: name,
+    };
   }
 }

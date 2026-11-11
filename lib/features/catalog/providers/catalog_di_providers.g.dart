@@ -115,4 +115,4 @@ final class BarcodeReferenceRepositoryProvider
 }
 
 String _$barcodeReferenceRepositoryHash() =>
-    r'834787245d7bef23e4bb8f8f9e9874c58bdec12a';
+    r'0b7fef8c1481e5cc00abc0fffcec220de0c66d11';

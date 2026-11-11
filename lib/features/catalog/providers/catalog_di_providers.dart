@@ -26,7 +26,11 @@ CatalogRepository catalogRepository(Ref ref) {
 @Riverpod(keepAlive: true)
 BarcodeReferenceRepository barcodeReferenceRepository(Ref ref) {
   return BarcodeReferenceRepositoryImpl(
-    loadJson: () =>
-        rootBundle.loadString(BarcodeReferenceRepositoryImpl.assetPath),
+    // cache: false : la Map décodée suffit, inutile de garder aussi la chaîne
+    // (~230 Ko) — ni un échec de lecture — dans le cache du bundle.
+    loadJson: () => rootBundle.loadString(
+      BarcodeReferenceRepositoryImpl.assetPath,
+      cache: false,
+    ),
   );
 }

@@ -52,8 +52,13 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _barcodeError;
   bool _isLoading = false;
   bool _prefilled = false;
-  // Nom rempli depuis le référentiel de codes-barres, pas encore retouché.
-  bool _nameSuggested = false;
+  static final _logger = Logger();
+
+  // Code-barres (normalisé) dont vient le nom affiché, tant que l'utilisateur
+  // n'a pas retouché ce nom ; null sinon. Un nom suggéré peut être remplacé
+  // par un nouveau scan, un nom saisi jamais.
+  String? _nameSuggestedFor;
+  bool get _nameSuggested => _nameSuggestedFor != null;
   String? _categoryId;
   String? _initialCategoryId;
 
@@ -100,27 +105,61 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     }
   }
 
-  /// Pré-remplit le nom depuis le référentiel embarqué, sans jamais écraser
-  /// un nom déjà saisi (y compris pendant la recherche).
+  /// Le nom peut être (re)rempli : vide, ou encore tel que suggéré.
+  bool get _nameReplaceable =>
+      _nameController.text.trim().isEmpty || _nameSuggested;
+
+  /// Pré-remplit le nom depuis le référentiel embarqué (création seulement).
+  ///
+  /// Ne remplace jamais un nom saisi, même pendant la recherche, et ignore une
+  /// réponse arrivée alors que le champ code-barres a changé entre-temps.
   Future<void> _suggestName(String barcode) async {
-    if (_nameController.text.trim().isNotEmpty) return;
+    if (widget.productId != null || !_nameReplaceable) return;
+    final code = normalizeBarcode(barcode);
     String? name;
-    try {
-      name = await ref
-          .read(barcodeReferenceRepositoryProvider)
-          .suggestName(barcode);
-    } catch (e) {
-      // Suggestion facultative : la saisie manuelle reste possible.
-      Logger().w('Référentiel de codes-barres illisible', error: e);
+    if (code != null) {
+      try {
+        name = await ref
+            .read(barcodeReferenceRepositoryProvider)
+            .suggestName(code);
+      } catch (e, st) {
+        // Suggestion facultative : la saisie manuelle reste possible.
+        _logger.w(
+          'Référentiel de codes-barres illisible',
+          error: e,
+          stackTrace: st,
+        );
+      }
     }
-    if (name == null || !mounted || _nameController.text.trim().isNotEmpty) {
+    if (!mounted ||
+        normalizeBarcode(_barcodeController.text) != code ||
+        !_nameReplaceable) {
       return;
     }
+    if (name != null) {
+      setState(() {
+        _nameController.text = name!;
+        _nameSuggestedFor = code;
+        _nameError = null;
+      });
+    } else {
+      _dropSuggestedName();
+    }
+  }
+
+  /// Retire un nom suggéré qui ne correspond plus au code-barres affiché.
+  void _dropSuggestedName() {
+    if (!_nameSuggested) return;
     setState(() {
-      _nameController.text = name!;
-      _nameSuggested = true;
-      _nameError = null;
+      _nameController.clear();
+      _nameSuggestedFor = null;
     });
+  }
+
+  void _onBarcodeEdited(String text) {
+    if (_nameSuggested && normalizeBarcode(text) != _nameSuggestedFor) {
+      _dropSuggestedName();
+    }
   }
 
   bool _validate() {
@@ -364,7 +403,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   controller: _nameController,
                   errorText: _nameError,
                   onChanged: (_) {
-                    if (_nameSuggested) setState(() => _nameSuggested = false);
+                    if (_nameSuggested) {
+                      setState(() => _nameSuggestedFor = null);
+                    }
                   },
                   helper: _nameSuggested ? const _SuggestedNameHint() : null,
                 ),
@@ -426,6 +467,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                         hint: 'Optionnel',
                         controller: _barcodeController,
                         errorText: _barcodeError,
+                        onChanged: _onBarcodeEdited,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -562,17 +604,29 @@ class _SuggestedNameHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Icon(Icons.auto_awesome_outlined, size: 16, color: cs.primary),
-        const SizedBox(width: AppSpacing.xs),
-        Expanded(
-          child: Text(
-            'Nom suggéré d\'après le code-barres. Vérifiez-le.',
-            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+    // Annoncé par le lecteur d'écran : le nom se remplit sans action directe.
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              Icons.auto_awesome_outlined,
+              size: 16,
+              color: cs.primary,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              'Nom suggéré d\'après le code-barres. Vérifiez-le.',
+              style: AppTypography.bodySmall.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
