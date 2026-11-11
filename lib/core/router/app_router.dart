@@ -327,10 +327,15 @@ GoRouter appRouter(Ref ref) {
       // restent ceux d'origine (/catalog/new…), seule la déclaration change.
       GoRoute(
         path: Routes.productNew,
-        // extra : code-barres scanné en caisse, pré-rempli dans le formulaire.
-        builder: (context, state) => ProductFormPage(
-          initialBarcode: state.extra is String ? state.extra! as String : null,
-        ),
+        // extra : code-barres scanné (String) ou nom recherché
+        // (ProductNamePrefill) en caisse, pré-rempli dans le formulaire.
+        builder: (context, state) {
+          final extra = state.extra;
+          return ProductFormPage(
+            initialBarcode: extra is String ? extra : null,
+            initialName: extra is ProductNamePrefill ? extra.name : null,
+          );
+        },
       ),
       GoRoute(
         path: Routes.productImport,

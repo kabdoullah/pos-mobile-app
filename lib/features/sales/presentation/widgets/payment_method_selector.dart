@@ -4,13 +4,13 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../domain/entities/sale.dart';
 
-// Pastilles aux couleurs des opérateurs : repère visuel immédiat, gardé petit
-// pour ne pas charger l'interface.
-const _orangeMoneyColor = Color(0xFFFF7900);
-const _mtnColor = Color(0xFFFFCC00);
-const _waveColor = Color(0xFF1DC8FF);
-
-/// Sélecteur de moyen de paiement : 5 tuiles égales, toutes visibles.
+/// Sélecteur de moyen de paiement : « Espèces » en tuile pleine largeur (le
+/// cas le plus fréquent), puis Orange Money, MTN Mobile Money, Wave et Mixte
+/// en grille 2 × 2.
+///
+/// Libellés en toutes lettres, sans logo ni pastille de couleur : au soleil,
+/// la couleur seule ne suffit pas (le jaune MTN se confond avec l'or). La
+/// sélection se lit au fond, à la bordure de 2 dp et à la coche.
 class PaymentMethodSelector extends StatelessWidget {
   /// Crée le sélecteur.
   const PaymentMethodSelector({
@@ -27,19 +27,30 @@ class PaymentMethodSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final method in PaymentMethod.values) ...[
-          if (method != PaymentMethod.values.first)
-            const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: _MethodTile(
-              method: method,
-              isSelected: method == selected,
-              onTap: () => onSelected(method),
-            ),
-          ),
+    Widget tile(PaymentMethod method) => _MethodTile(
+      method: method,
+      isSelected: method == selected,
+      onTap: () => onSelected(method),
+    );
+    Widget pair(PaymentMethod a, PaymentMethod b) => IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: tile(a)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: tile(b)),
         ],
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        tile(PaymentMethod.cash),
+        const SizedBox(height: AppSpacing.sm),
+        pair(PaymentMethod.orangeMoney, PaymentMethod.mtn),
+        const SizedBox(height: AppSpacing.sm),
+        pair(PaymentMethod.wave, PaymentMethod.mixed),
       ],
     );
   }
@@ -60,62 +71,66 @@ class _MethodTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final foreground = isSelected ? cs.onPrimaryContainer : cs.onSurface;
-    final (label, leading) = switch (method) {
-      PaymentMethod.cash => (
-        'Espèces',
-        _icon(Icons.payments_outlined, foreground),
-      ),
-      PaymentMethod.orangeMoney => ('Orange', _dot(_orangeMoneyColor)),
-      PaymentMethod.mtn => ('MTN', _dot(_mtnColor)),
-      PaymentMethod.wave => ('Wave', _dot(_waveColor)),
-      PaymentMethod.mixed => ('Mixte', _icon(Icons.call_split, foreground)),
+    final (label, icon) = switch (method) {
+      PaymentMethod.cash => ('Espèces', Icons.payments_outlined),
+      PaymentMethod.orangeMoney => ('Orange Money', null),
+      PaymentMethod.mtn => ('MTN Mobile Money', null),
+      PaymentMethod.wave => ('Wave', null),
+      PaymentMethod.mixed => ('Mixte', null),
     };
 
     return Semantics(
       selected: isSelected,
       button: true,
+      inMutuallyExclusiveGroup: true,
+      excludeSemantics: true,
+      label: label,
       child: Material(
-        color: isSelected ? cs.primaryContainer : cs.surfaceContainerHigh,
+        color: isSelected ? cs.primaryContainer : cs.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          side: BorderSide(
-            color: isSelected ? cs.primary : Colors.transparent,
-            width: 2,
-          ),
+          side: isSelected
+              ? BorderSide(color: cs.primary, width: 2)
+              : BorderSide(color: cs.outline),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: 20, child: Center(child: leading)),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: foreground,
-                    fontWeight: isSelected ? FontWeight.w700 : null,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, color: foreground),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      style: AppTypography.labelLarge.copyWith(
+                        color: foreground,
+                        height: 1.2,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  if (isSelected) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Icon(Icons.check, color: foreground),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-
-  static Widget _icon(IconData icon, Color color) =>
-      Icon(icon, size: 20, color: color);
-
-  static Widget _dot(Color color) => DecoratedBox(
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-    child: const SizedBox.square(dimension: 14),
-  );
 }

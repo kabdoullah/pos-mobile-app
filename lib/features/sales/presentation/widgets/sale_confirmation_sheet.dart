@@ -1,14 +1,16 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/sync/sync_orchestrator.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
@@ -17,7 +19,7 @@ import '../../domain/entities/sale.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
-import 'receipt_ticket.dart';
+import 'payment_result_box.dart';
 
 /// Affiche la confirmation d'une vente enregistrée par-dessus la caisse.
 ///
@@ -31,17 +33,18 @@ Future<void> showSaleConfirmationSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
-    // Fond de page ivoire : le ticket blanc se détache comme du papier.
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     builder: (_) =>
         SaleConfirmationSheet(sale: sale, items: items, change: change),
   );
 }
 
-/// Confirmation de vente : montant, monnaie à rendre, état de synchro et
-/// actions reçu (secondaires) ; « Nouvelle vente » est l'action principale.
+/// Confirmation de vente : coche, « Vente enregistrée », monnaie à rendre
+/// rappelée, puis « Imprimer le reçu », « Partager le reçu » et « Pas de reçu ·
+/// vente suivante ». Un échec d'impression remplace le contenu par trois
+/// choix, sans blocage : la vente reste enregistrée.
 class SaleConfirmationSheet extends ConsumerStatefulWidget {
   /// Crée la feuille de confirmation.
   const SaleConfirmationSheet({
@@ -65,49 +68,43 @@ class SaleConfirmationSheet extends ConsumerStatefulWidget {
       _SaleConfirmationSheetState();
 }
 
-/// Retour de l'action d'impression, affiché dans la feuille (un SnackBar
-/// serait masqué par la feuille modale).
-sealed class _PrintFeedback {
-  const _PrintFeedback();
+/// État de l'impression, affiché dans la feuille (un SnackBar serait masqué
+/// par la feuille modale).
+sealed class _PrintState {
+  const _PrintState();
 }
 
-class _Printing extends _PrintFeedback {
+class _Printing extends _PrintState {
   const _Printing();
 }
 
-class _Printed extends _PrintFeedback {
+class _Printed extends _PrintState {
   const _Printed();
 }
 
-class _NoPrinter extends _PrintFeedback {
-  const _NoPrinter();
-}
-
-class _PrintFailed extends _PrintFeedback {
-  const _PrintFailed(this.message);
-  final String message;
+class _PrintFailed extends _PrintState {
+  const _PrintFailed(this.reason);
+  final PrintFailureReason reason;
 }
 
 class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
-  _PrintFeedback? _printFeedback;
+  _PrintState? _printState;
   String? _pdfError;
 
   Future<void> _print(Sale sale) async {
-    setState(() => _printFeedback = const _Printing());
-    _PrintFeedback feedback;
+    setState(() => _printState = const _Printing());
+    _PrintState next;
     try {
       await ref
           .read(printerProvider.notifier)
           .print(sale: sale, items: widget.items);
-      feedback = const _Printed();
+      next = const _Printed();
     } on PrintException catch (e) {
-      feedback = e.reason == PrintFailureReason.noPrinterConfigured
-          ? const _NoPrinter()
-          : _PrintFailed(e.userMessage);
-    } catch (e) {
-      feedback = _PrintFailed(errorToFrench(e));
+      next = _PrintFailed(e.reason);
+    } catch (_) {
+      next = const _PrintFailed(PrintFailureReason.sendFailed);
     }
-    if (mounted) setState(() => _printFeedback = feedback);
+    if (mounted) setState(() => _printState = next);
   }
 
   Future<void> _sharePdf(Sale sale) async {
@@ -119,16 +116,15 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
     }
   }
 
+  void _close() => Navigator.of(context).pop();
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     // Version drift en direct : le numéro de reçu apparaît dès la synchro.
     final sale =
         ref.watch(saleByIdProvider(widget.sale.id)).value ?? widget.sale;
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
-    final isSyncing = ref.watch(syncOrchestratorProvider) is SyncStatusSyncing;
-    final isSynced = sale.receiptNumber > 0;
-    final units = widget.items.fold(0, (sum, item) => sum + item.quantity);
+    final printState = _printState;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -138,258 +134,251 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
           AppSpacing.md,
           AppSpacing.md,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Center(child: _SuccessBadge()),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              isSynced ? 'Vente synchronisée' : 'Vente enregistrée',
-              textAlign: TextAlign.center,
-              style: AppTypography.titleLarge,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ReceiptTicket(
-              lines: [
-                for (final item in widget.items)
-                  ReceiptTicketLine(
-                    name: item.productName,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    amount: item.grossTotal,
-                    discount: item.discountAmount,
+        child: printState is _PrintFailed
+            ? _PrintFailure(
+                reason: printState.reason,
+                receiptNumber: sale.receiptNumber,
+                onRetry: () => _print(sale),
+                onConfigure: () {
+                  _close();
+                  unawaited(context.push(Routes.bluetoothSetup));
+                },
+                onClose: _close,
+              )
+            : _confirmation(sale, isOnline, printState),
+      ),
+    );
+  }
+
+  Widget _confirmation(Sale sale, bool isOnline, _PrintState? printState) {
+    final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final isSynced = sale.receiptNumber > 0;
+    final muted = AppTypography.bodyMedium.copyWith(
+      color: cs.onSurfaceVariant,
+      height: 1.4,
+    );
+    // receiptNumber = 0 tant que le serveur n'a pas attribué de numéro : on
+    // ne l'affiche jamais comme un vrai numéro.
+    final summary = [
+      if (isSynced) 'Reçu n° ${sale.receiptNumber}',
+      sale.paymentMethod.label,
+      formatFcfa(sale.totalAmount),
+    ].join(' · ');
+    final pdfHint = switch ((isSynced, isOnline)) {
+      (_, false) => 'Reçu PDF disponible lorsque la connexion sera rétablie.',
+      (false, true) => 'Reçu PDF disponible après synchronisation.',
+      _ => null,
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Ring(
+          background: semantic.successContainer,
+          foreground: semantic.onSuccessContainer,
+          icon: Icons.check_rounded,
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'Vente enregistrée',
+          textAlign: TextAlign.center,
+          style: AppTypography.titleLarge,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          summary,
+          textAlign: TextAlign.center,
+          style: muted.copyWith(fontFeatures: AppTypography.tabularFigures),
+        ),
+        if (widget.change > Decimal.zero) ...[
+          const SizedBox(height: 14),
+          PaymentResultBox.change(widget.change, centered: true),
+        ],
+        const SizedBox(height: 14),
+        PrimaryButton(
+          label: printState is _Printed
+              ? 'Réimprimer le reçu'
+              : 'Imprimer le reçu',
+          icon: Icons.print_outlined,
+          isLoading: printState is _Printing,
+          loadingLabel: 'Impression…',
+          onPressed: () => _print(sale),
+        ),
+        if (printState is _Printed) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text('Reçu imprimé', textAlign: TextAlign.center, style: muted),
+        ],
+        const SizedBox(height: 14),
+        // Le PDF est généré par le serveur : il faut le réseau et une vente
+        // déjà synchronisée.
+        SecondaryButton(
+          label: 'Partager le reçu',
+          icon: Icons.ios_share,
+          onPressed: isSynced && isOnline ? () => _sharePdf(sale) : null,
+        ),
+        if (_pdfError != null || pdfHint != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _pdfError ?? pdfHint!,
+            textAlign: TextAlign.center,
+            style: _pdfError != null ? muted.copyWith(color: cs.error) : muted,
+          ),
+        ],
+        const SizedBox(height: AppSpacing.xs),
+        Center(
+          child: TextButton(
+            onPressed: _close,
+            child: const Text('Pas de reçu · vente suivante'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Échec d'impression : la vente est confirmée enregistrée, puis Réessayer ·
+/// Imprimer plus tard · Pas de reçu.
+class _PrintFailure extends StatelessWidget {
+  const _PrintFailure({
+    required this.reason,
+    required this.receiptNumber,
+    required this.onRetry,
+    required this.onConfigure,
+    required this.onClose,
+  });
+
+  final PrintFailureReason reason;
+  final int receiptNumber;
+  final VoidCallback onRetry;
+  final VoidCallback onConfigure;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final noPrinter = reason == PrintFailureReason.noPrinterConfigured;
+    final message = switch (reason) {
+      PrintFailureReason.noPrinterConfigured =>
+        'Aucune imprimante appairée. Configurez-la une fois dans les '
+            'paramètres.',
+      PrintFailureReason.connectionFailed =>
+        'L’imprimante ne répond pas. Vérifiez qu’elle est allumée, chargée '
+            'et près du téléphone.',
+      PrintFailureReason.sendFailed =>
+        'L’impression a échoué. Réessayez dans un instant.',
+    };
+    final saved = receiptNumber > 0
+        ? 'La vente n° $receiptNumber est bien enregistrée.'
+        : 'La vente est bien enregistrée.';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _Ring(
+          background: cs.errorContainer,
+          foreground: cs.onErrorContainer,
+          icon: Icons.print_disabled_outlined,
+        ),
+        const SizedBox(height: 14),
+        const Text(
+          'Reçu non imprimé',
+          textAlign: TextAlign.center,
+          style: AppTypography.titleLarge,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: AppTypography.bodyMedium.copyWith(
+            color: cs.onSurfaceVariant,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: semantic.successContainer,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                color: semantic.onSuccessContainer,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  saved,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: semantic.onSuccessContainer,
                   ),
-              ],
-              total: sale.totalAmount,
-              discount: sale.discountAmount,
-              footer: [
-                ('Articles', '$units'),
-                ('Paiement', sale.paymentMethod.label),
-              ],
-            ),
-            if (widget.change > Decimal.zero) ...[
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                ),
-                child: Row(
-                  children: [
-                    Text(
-                      'Monnaie à rendre',
-                      style: AppTypography.titleMedium.copyWith(
-                        color: cs.onPrimaryContainer,
-                      ),
-                    ),
-                    const Spacer(),
-                    AmountDisplay(
-                      amount: widget.change,
-                      size: AmountSize.large,
-                      color: cs.onPrimaryContainer,
-                    ),
-                  ],
                 ),
               ),
             ],
-            const SizedBox(height: AppSpacing.md),
-            _SyncStatusLine(
-              receiptNumber: sale.receiptNumber,
-              isOnline: isOnline,
-              isSyncing: isSyncing,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _printFeedback is _Printing
-                        ? null
-                        : () => _print(sale),
-                    icon: const Icon(Icons.print_outlined),
-                    label: const Text('Imprimer'),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    // Le PDF est généré par le serveur : il faut le réseau et
-                    // une vente déjà synchronisée.
-                    onPressed: isSynced && isOnline
-                        ? () => _sharePdf(sale)
-                        : null,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Reçu PDF'),
-                  ),
-                ),
-              ],
-            ),
-            _ActionFeedback(
-              printFeedback: _printFeedback,
-              pdfError: _pdfError,
-              pdfHint: switch ((isSynced, isOnline)) {
-                (_, false) =>
-                  'Reçu PDF disponible lorsque la connexion sera rétablie.',
-                (false, true) => 'Reçu PDF disponible après synchronisation.',
-                _ => null,
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            PrimaryButton(
-              label: 'Nouvelle vente',
-              icon: Icons.add,
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Coche animée (≈ 250 ms).
-class _SuccessBadge extends StatelessWidget {
-  const _SuccessBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.4, end: 1),
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOutBack,
-      builder: (context, scale, child) =>
-          Transform.scale(scale: scale, child: child),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: cs.primaryContainer,
-          shape: BoxShape.circle,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: Icon(Icons.check_rounded, size: 40, color: cs.primary),
-        ),
-      ),
-    );
-  }
-}
-
-class _SyncStatusLine extends StatelessWidget {
-  const _SyncStatusLine({
-    required this.receiptNumber,
-    required this.isOnline,
-    required this.isSyncing,
-  });
-
-  final int receiptNumber;
-  final bool isOnline;
-  final bool isSyncing;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    // receiptNumber = 0 tant que le serveur n'a pas attribué de numéro : on
-    // ne l'affiche jamais comme un vrai numéro.
-    final (Widget leading, String text) = switch ((
-      receiptNumber > 0,
-      isOnline,
-    )) {
-      (true, _) => (
-        Icon(Icons.cloud_done_outlined, size: 18, color: cs.primary),
-        'Reçu #$receiptNumber',
-      ),
-      (false, false) => (
-        Icon(Icons.cloud_off_outlined, size: 18, color: cs.tertiary),
-        'Hors ligne · la synchronisation se fera automatiquement',
-      ),
-      (false, true) => (
-        isSyncing
-            ? SizedBox.square(
-                dimension: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: cs.onSurfaceVariant,
-                ),
-              )
-            : Icon(
-                Icons.cloud_upload_outlined,
-                size: 18,
-                color: cs.onSurfaceVariant,
-              ),
-        'Reçu : en attente de synchronisation',
-      ),
-    };
-
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 150),
-      child: Row(
-        key: ValueKey(text),
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          leading,
-          const SizedBox(width: AppSpacing.sm),
-          Flexible(
-            child: Text(
-              text,
-              style: AppTypography.bodySmall.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 14),
+        if (noPrinter)
+          PrimaryButton(
+            label: 'Configurer l’imprimante',
+            icon: Icons.settings_bluetooth,
+            onPressed: onConfigure,
+          )
+        else
+          PrimaryButton(
+            label: 'Réessayer',
+            icon: Icons.refresh,
+            onPressed: onRetry,
+          ),
+        const SizedBox(height: 14),
+        SecondaryButton(label: 'Imprimer plus tard', onPressed: onClose),
+        const SizedBox(height: AppSpacing.xs),
+        Center(
+          child: TextButton(
+            onPressed: onClose,
+            child: const Text('Pas de reçu'),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _ActionFeedback extends StatelessWidget {
-  const _ActionFeedback({
-    required this.printFeedback,
-    required this.pdfError,
-    required this.pdfHint,
+/// Pastille d'icône 72 dp ; apparaît en 200 ms (0,8 → 1).
+class _Ring extends StatelessWidget {
+  const _Ring({
+    required this.background,
+    required this.foreground,
+    required this.icon,
   });
 
-  final _PrintFeedback? printFeedback;
-  final String? pdfError;
-  final String? pdfHint;
+  final Color background;
+  final Color foreground;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
-    final error = AppTypography.bodySmall.copyWith(color: cs.error);
-
-    final lines = <Widget>[
-      switch (printFeedback) {
-        null => const SizedBox.shrink(),
-        _Printing() => Text('Impression…', style: muted),
-        _Printed() => Text('Reçu imprimé', style: muted),
-        _NoPrinter() => Row(
-          children: [
-            Expanded(child: Text('Imprimante non configurée', style: muted)),
-            TextButton(
-              onPressed: () => context.push(Routes.bluetoothSetup),
-              child: const Text('Configurer'),
-            ),
-          ],
+    return Center(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.8, end: 1),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        builder: (context, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+          child: Icon(icon, size: 40, color: foreground),
         ),
-        _PrintFailed(:final message) => Text(message, style: error),
-      },
-      if (pdfError != null)
-        Text(pdfError!, style: error)
-      else if (pdfHint != null)
-        Text(pdfHint!, style: muted),
-    ];
-
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: lines,
       ),
     );
   }

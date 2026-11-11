@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
-import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 import '../providers/sales_providers.dart';
+import 'sale_product_row.dart';
 
-/// Résultats de recherche de la caisse, affichés à la place du panier pendant
-/// la saisie.
+/// Résultats de recherche de la caisse, affichés à la place du catalogue
+/// pendant la saisie : mêmes lignes que le catalogue (toucher = +1).
 class ProductSearchResults extends ConsumerWidget {
   /// Crée la liste de résultats pour [query].
   const ProductSearchResults({
     required this.query,
-    required this.onQuickAdd,
+    required this.onAdd,
+    required this.onDecrease,
     required this.onOpen,
-    this.onScan,
+    required this.onCreate,
+    this.cartQuantities = const {},
     super.key,
   });
 
@@ -25,13 +24,19 @@ class ProductSearchResults extends ConsumerWidget {
   final String query;
 
   /// Ajoute une unité du produit.
-  final ValueChanged<Product> onQuickAdd;
+  final ValueChanged<Product> onAdd;
 
-  /// Ouvre le choix de quantité du produit.
+  /// Retire une unité du produit (stepper).
+  final ValueChanged<Product> onDecrease;
+
+  /// Ouvre le choix de quantité du produit (appui long).
   final ValueChanged<Product> onOpen;
 
-  /// Propose le scanner quand aucun produit ne correspond ; masqué si `null`.
-  final VoidCallback? onScan;
+  /// Crée un produit à partir du texte recherché, sans quitter la vente.
+  final ValueChanged<String> onCreate;
+
+  /// Quantité déjà au panier, par id de produit.
+  final Map<String, int> cartQuantities;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,66 +46,48 @@ class ProductSearchResults extends ConsumerWidget {
     return results.when(
       loading: () => const Center(child: AppLoadingIndicator()),
       error: (_, _) => const EmptyState(
-        icon: Icons.error_outline,
+        icon: Icons.warning_amber_rounded,
+        tone: EmptyStateTone.error,
         title: 'Recherche impossible',
-        message: 'Réessayez dans un instant',
+        message: 'Réessayez dans un instant.',
       ),
       data: (products) {
         if (products.isEmpty) {
           return EmptyState(
-            icon: Icons.search_off,
-            title: 'Aucun produit trouvé',
-            message: 'Essayez un autre nom ou un autre code-barres.',
-            actionLabel: onScan == null ? null : 'Scanner un code-barres',
-            onAction: onScan,
+            icon: Icons.search,
+            tone: EmptyStateTone.neutral,
+            title: 'Aucun produit « $query »',
+            message:
+                'Vérifiez l’orthographe ou créez-le maintenant, sans quitter '
+                'la vente.',
+            secondaryActions: [
+              SecondaryButton(
+                label: 'Créer « $query »',
+                icon: Icons.add,
+                onPressed: () => onCreate(query),
+              ),
+            ],
           );
         }
-        return ListView.separated(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          itemCount: products.length,
-          separatorBuilder: (_, _) => Divider(
-            height: 1,
-            indent: AppSpacing.md,
-            endIndent: AppSpacing.md,
-            color: cs.outlineVariant,
+        return ColoredBox(
+          color: cs.surface,
+          child: ListView.separated(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            itemCount: products.length,
+            separatorBuilder: (_, _) =>
+                Divider(height: 1, thickness: 1, color: cs.outlineVariant),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return SaleProductRow(
+                key: ValueKey(product.id),
+                product: product,
+                quantityInCart: cartQuantities[product.id] ?? 0,
+                onAdd: onAdd,
+                onDecrease: onDecrease,
+                onOpen: onOpen,
+              );
+            },
           ),
-          itemBuilder: (context, index) {
-            final product = products[index];
-            final stock = product.currentStock;
-            final outOfStock = stock != null && stock <= 0;
-            return ListTile(
-              enabled: !outOfStock,
-              onTap: () => onOpen(product),
-              leading: ProductThumbnail(product: product),
-              title: Text(
-                product.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.titleMedium,
-              ),
-              subtitle: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      formatFcfa(product.sellingPrice),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: outOfStock ? cs.onSurfaceVariant : cs.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  StockStatusBadge(product: product, showQuantity: true),
-                ],
-              ),
-              trailing: IconButton.filledTonal(
-                tooltip: 'Ajouter ${product.name}',
-                icon: const Icon(Icons.add),
-                onPressed: outOfStock ? null : () => onQuickAdd(product),
-              ),
-            );
-          },
         );
       },
     );

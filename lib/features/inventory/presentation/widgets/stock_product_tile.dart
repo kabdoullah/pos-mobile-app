@@ -81,7 +81,7 @@ class StockProductTile extends StatelessWidget {
                           ),
                         ),
                         // Stock suivi : la quantité dans le badge
-                        // (« Stock : 24 », « Faible : 3 », « Rupture ») ;
+                        // (« Stock : 24 », « Stock bas : 3 », « Rupture ») ;
                         // sinon « Non suivi ».
                         StockStatusBadge(
                           product: product,

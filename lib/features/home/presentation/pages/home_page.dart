@@ -155,7 +155,7 @@ class _CashCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Caisse', style: AppTypography.titleMedium),
+                    const Text('Ma caisse', style: AppTypography.titleMedium),
                     Text(
                       sessionId == null ? '$subtitle · Ouvrir' : subtitle,
                       style: muted,

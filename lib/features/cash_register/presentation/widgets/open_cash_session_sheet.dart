@@ -15,6 +15,7 @@ import '../providers/cash_register_providers.dart';
 Future<bool> showOpenCashSessionSheet(BuildContext context) async {
   final opened = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) => const OpenCashSessionSheet(),

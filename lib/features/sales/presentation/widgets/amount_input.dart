@@ -15,6 +15,7 @@ class AmountInput extends StatefulWidget {
     required this.onChanged,
     this.hint,
     this.errorText,
+    this.large = false,
     super.key,
   });
 
@@ -32,6 +33,9 @@ class AmountInput extends StatefulWidget {
 
   /// Erreur affichée sous le champ.
   final String? errorText;
+
+  /// Montant mis en avant (34 sp).
+  final bool large;
 
   @override
   State<AmountInput> createState() => _AmountInputState();
@@ -79,6 +83,7 @@ class _AmountInputState extends State<AmountInput> {
       // Le refus de la virgule prime : c'est la cause de la saisie invalide.
       errorText: _hasSeparator ? fcfaWholeAmountError : widget.errorText,
       suffixText: 'FCFA',
+      large: widget.large,
       controller: _controller,
       keyboardType: TextInputType.number,
       inputFormatters: fcfaAmountInputFormatters,

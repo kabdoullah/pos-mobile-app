@@ -30,7 +30,7 @@ class _SkeletonBoxState extends State<SkeletonBox>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: const Duration(milliseconds: 1200),
     lowerBound: 0.5,
   )..repeat(reverse: true);
 

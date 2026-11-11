@@ -7,13 +7,16 @@ import '../../domain/entities/product.dart';
 
 /// Badge d'état du stock : Disponible, Stock faible, Rupture ou Non suivi.
 ///
-/// Avec [showQuantity] (caisse), le badge porte la quantité — « Stock : 24 »,
-/// « Faible : 3 », « Rupture » — et disparaît si le stock n'est pas suivi.
+/// Avec [showQuantity], le badge porte la quantité — « Stock : 24 »,
+/// « Stock bas : 3 », « Rupture » — et disparaît si le stock n'est pas suivi.
+/// Avec [alertsOnly] (caisse), seuls « Stock bas » et « Rupture » restent :
+/// un stock normal n'ajoute rien à la ligne.
 class StockStatusBadge extends StatelessWidget {
   /// Crée le badge pour [product].
   const StockStatusBadge({
     required this.product,
     this.showQuantity = false,
+    this.alertsOnly = false,
     super.key,
   });
 
@@ -22,6 +25,10 @@ class StockStatusBadge extends StatelessWidget {
 
   /// Affiche la quantité en stock plutôt qu'un libellé d'état.
   final bool showQuantity;
+
+  /// N'affiche rien pour un stock normal (caisse : badge seulement si bas ou
+  /// en rupture).
+  final bool alertsOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +40,12 @@ class StockStatusBadge extends StatelessWidget {
     final level = showQuantity && stock != null && stock < 0
         ? StockLevel.outOfStock
         : product.stockLevel;
-    if (showQuantity && level == null) return const SizedBox.shrink();
+    if ((showQuantity || alertsOnly) && level == null) {
+      return const SizedBox.shrink();
+    }
+    if (alertsOnly && level == StockLevel.normal) {
+      return const SizedBox.shrink();
+    }
 
     final (label, background, foreground) = switch (level) {
       StockLevel.outOfStock => (
@@ -42,7 +54,7 @@ class StockStatusBadge extends StatelessWidget {
         cs.onErrorContainer,
       ),
       StockLevel.low => (
-        showQuantity ? 'Faible : $stock' : 'Stock faible',
+        showQuantity ? 'Stock bas : $stock' : 'Stock faible',
         cs.tertiaryContainer,
         cs.onTertiaryContainer,
       ),
@@ -57,18 +69,18 @@ class StockStatusBadge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.sm,
-          vertical: 2,
+          vertical: 3,
         ),
         child: Text(
           label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.labelSmall.copyWith(color: foreground),
+          style: AppTypography.labelMedium.copyWith(color: foreground),
         ),
       ),
     );

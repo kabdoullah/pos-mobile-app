@@ -31,7 +31,7 @@ class CashRegisterPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeCashSessionProvider);
     return AppScaffold(
-      title: 'Caisse',
+      title: 'Ma caisse',
       actions: [
         IconButton(
           tooltip: 'Historique des caisses',

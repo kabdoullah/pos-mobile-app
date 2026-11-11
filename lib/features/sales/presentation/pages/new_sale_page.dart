@@ -8,40 +8,41 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../core/network/error_mapper.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../auth/providers/store_provider.dart';
-import '../../../cash_register/domain/repositories/cash_register_repository.dart';
 import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
 import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
+import '../../../catalog/presentation/pages/product_form_page.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
-import '../providers/sales_providers.dart';
 import '../providers/scan_provider.dart';
 import '../widgets/discount_sheet.dart';
 import '../widgets/product_browser.dart';
 import '../widgets/product_search_results.dart';
 import '../widgets/quantity_sheet.dart';
-import '../widgets/sale_cart.dart';
-import '../widgets/sale_checkout_panel.dart';
+import '../widgets/sale_cart_sheet.dart';
+import '../widgets/sale_checkout_bar.dart';
 import '../widgets/sale_confirmation_sheet.dart';
-import '../widgets/sale_payment_section.dart';
 import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
+import 'sale_payment_page.dart';
 
-/// Écran de caisse (onglet Caisse) : recherche/scan et catégories en haut,
-/// puis un seul défilement catalogue → panier → paiement, et le total avec le
-/// bouton d'encaissement fixés en bas. La confirmation s'affiche en
-/// bottom sheet, puis la caisse est immédiatement prête pour la vente suivante.
+/// Écran « Vendre » : recherche/scan et catégories en haut, catalogue (toucher
+/// une ligne = +1), puis une seule barre fixe « N articles ▴ · Encaisser ».
+/// Le panier s'ouvre en bottom sheet, « Encaisser » ouvre l'écran Paiement ;
+/// la confirmation s'affiche en bottom sheet et la caisse est aussitôt prête
+/// pour la vente suivante.
 ///
+/// Caisse fermée : annoncée par un bandeau avant d'encaisser, panier gardé.
 /// La page reste montée quand on change d'onglet : le panier est conservé.
 class NewSalePage extends ConsumerStatefulWidget {
   /// Crée l'écran de caisse.
@@ -67,7 +68,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   Timer? _searchDebounce;
   String _query = '';
   String? _categoryId;
-  final _cartHeaderKey = GlobalKey();
 
   SaleToastData? _toast;
   Timer? _toastTimer;
@@ -113,12 +113,6 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       _searchFocus.unfocus();
       if (!_hasRequestedPermission) unawaited(_checkPermission());
     }
-  }
-
-  /// Aucun résultat de recherche : on propose de scanner le code à la place.
-  void _scanInsteadOfSearch() {
-    _clearSearch();
-    if (!_isScannerOpen) _toggleScanner();
   }
 
   Future<void> _toggleTorch() async {
@@ -364,79 +358,71 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
-  /// Fait défiler jusqu'au panier (depuis le compteur d'articles du panneau
-  /// d'encaissement) ; une recherche en cours est d'abord refermée.
-  void _scrollToCart() {
-    if (_query.isNotEmpty) _clearSearch();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final target = _cartHeaderKey.currentContext;
-      if (target == null || !target.mounted) return;
-      unawaited(
-        Scrollable.ensureVisible(
-          target,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        ),
-      );
-    });
+  /// Retire une unité depuis le stepper d'une ligne du catalogue ; à 1, la
+  /// ligne quitte le panier (avec « Annuler »).
+  void _decreaseProduct(Product product) {
+    final quantity = ref.read(cartProvider.notifier).quantityOf(product.id);
+    if (quantity <= 1) {
+      _removeCartItem(product.id);
+    } else {
+      ref.read(cartProvider.notifier).updateQuantity(product.id, quantity - 1);
+    }
   }
 
-  Future<void> _clearCart() async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Vider le panier ?',
-      message: 'Tous les articles seront supprimés.',
-      confirmLabel: 'Vider',
-      isDangerous: true,
+  /// Recherche sans résultat : crée le produit sans quitter la vente. Un texte
+  /// tout en chiffres est un code-barres, sinon un nom.
+  Future<void> _createFromSearch(String query) async {
+    final isBarcode = RegExp(r'^\d{6,}$').hasMatch(query);
+    await _withCameraPaused(
+      () => context.push(
+        Routes.productNew,
+        extra: isBarcode ? query : ProductNamePrefill(query),
+      ),
     );
-    if (confirmed) ref.read(cartProvider.notifier).clear();
+  }
+
+  Future<void> _showCart() async {
+    final checkout = await _withCameraPaused(
+      () => showSaleCartSheet(
+        context,
+        onEditItem: _editCartItem,
+        onEditItemDiscount: _editItemDiscount,
+        onEditDiscount: _editCartDiscount,
+      ),
+    );
+    if ((checkout ?? false) && mounted) await _checkout();
   }
 
   // ---------------------------------------------------------------------------
   // Encaissement
   // ---------------------------------------------------------------------------
 
-  Future<void> _submit() async {
+  /// Ouvre l'écran Paiement ; une fois la vente enregistrée (panier déjà
+  /// vidé), affiche la confirmation.
+  Future<void> _checkout() async {
     FocusScope.of(context).unfocus();
-    try {
-      final completed = await ref
-          .read(saleSubmissionProvider.notifier)
-          .submit();
-      if (completed == null) return;
-      unawaited(HapticFeedback.heavyImpact());
-      if (!mounted) return;
-      await _withCameraPaused(
-        () => showSaleConfirmationSheet(
-          context,
-          sale: completed.sale,
-          items: completed.items,
-          change: completed.change,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      if (e is CashRegisterException &&
-          e.code == CashRegisterException.noOpenSession) {
-        await _openCashSession();
-        return;
-      }
-      ScaffoldMessenger.of(
+    if (_query.isNotEmpty) _clearSearch();
+    await _withCameraPaused(() async {
+      final completed = await showSalePaymentPage(context);
+      if (completed == null || !mounted) return null;
+      await showSaleConfirmationSheet(
         context,
-      ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
-    }
+        sale: completed.sale,
+        items: completed.items,
+        change: completed.change,
+      );
+      return null;
+    });
   }
 
-  /// Caisse fermée à l'encaissement : rien n'a été enregistré et le panier est
-  /// conservé. Le commerçant ouvre la caisse puis valide de nouveau lui-même.
+  /// Caisse fermée : on l'ouvre sans perdre le panier, puis on encaisse.
   Future<void> _openCashSession() async {
     final opened = await _withCameraPaused(
       () => showOpenCashSessionSheet(context),
     );
     if ((opened ?? false) && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Caisse ouverte. Validez de nouveau la vente.'),
-        ),
+        const SnackBar(content: Text('Caisse ouverte. Vous pouvez encaisser.')),
       );
     }
   }
@@ -444,13 +430,19 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   @override
   Widget build(BuildContext context) {
     // Garde les contrôleurs auto-dispose en vie tant que la caisse est
-    // affichée — ils sont utilisés via ref.read pendant des awaits.
+    // affichée — ils sont utilisés via ref.read pendant des awaits, et le
+    // brouillon de paiement survit à un aller-retour panier ↔ paiement.
     ref.watch(scanControllerProvider);
     ref.watch(checkoutProvider);
+    final cs = Theme.of(context).colorScheme;
     final cart = ref.watch(cartProvider);
-    final isSubmitting = ref.watch(saleSubmissionProvider);
-    final cartNotifier = ref.read(cartProvider.notifier);
-    final storeName = ref.watch(storeConfigProvider).value?.name;
+    final cartQuantities = {
+      for (final item in cart.items) item.productId: item.quantity,
+    };
+    final session = ref.watch(activeCashSessionProvider);
+    // Tant que l'état est inconnu, pas d'alerte : la règle reste vérifiée à
+    // l'enregistrement.
+    final isCashClosed = session.hasValue && session.value == null;
     final categories = ref.watch(categoriesProvider).value ?? const [];
     // Catégorie supprimée entre-temps : le filtre retombe sur « Tous ».
     final categoryId = categories.any((c) => c.id == _categoryId)
@@ -467,17 +459,12 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
         _isScannerOpen && !keyboardOpen && !isSearchFocused && !isSearching;
     // Pendant une recherche au clavier, les résultats prennent toute la place.
     final showCheckout = !(keyboardOpen && isSearchFocused);
+    final divider = BorderSide(color: cs.outlineVariant);
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
-        // Même en-tête que l'accueil : boutique en titre, état réseau discret
-        // à droite.
-        title: Text(
-          storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: const Text('Vendre'),
         actions: [
           const OfflineStatusIndicator(),
           IconButton(
@@ -489,129 +476,173 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.xs,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: SaleSearchBar(
-                controller: _searchController,
-                focusNode: _searchFocus,
-                onChanged: _onSearchChanged,
-                isScannerOpen: _isScannerOpen,
-                onToggleScanner: _toggleScanner,
-              ),
+      body: Column(
+        children: [
+          const SyncStatusIndicator(
+            offlineTitle: 'Vous pouvez vendre normalement',
+            offlineMessage: 'Les ventes seront envoyées au retour du réseau.',
+          ),
+          if (isCashClosed) const _CashClosedBanner(),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: cs.surface,
+              border: Border(bottom: divider),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: showCamera
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        0,
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                      ),
-                      child: SaleScannerPanel(
-                        controller: _scanner,
-                        isActive: !_isCameraPaused && isTabVisible,
-                        isPermissionGranted: _isPermissionGranted,
-                        isCheckingPermission: _isCheckingPermission,
-                        isTorchOn: _isTorchOn,
-                        onDetect: _onBarcodeDetected,
-                        onToggleTorch: _toggleTorch,
-                        onOpenAppSettings: openAppSettings,
-                      ),
-                    )
-                  : const SizedBox(width: double.infinity),
-            ),
-            if (!isSearching && categories.isNotEmpty)
-              _CategoryChips(
-                categories: categories,
-                selectedId: categoryId,
-                onSelected: (id) => setState(() => _categoryId = id),
-              ),
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: isSearching
-                        ? ProductSearchResults(
-                            query: _query,
-                            onQuickAdd: _addProduct,
-                            onOpen: _openProduct,
-                            onScan: _scanInsteadOfSearch,
-                          )
-                        : CustomScrollView(
-                            keyboardDismissBehavior:
-                                ScrollViewKeyboardDismissBehavior.onDrag,
-                            slivers: [
-                              ProductBrowser(
-                                products: ref.watch(stockProductsProvider),
-                                categoryId: categoryId,
-                                cartQuantities: {
-                                  for (final item in cart.items)
-                                    item.productId: item.quantity,
-                                },
-                                onProductTap: _openProduct,
-                                onQuickAdd: _addProduct,
-                                onRetry: () =>
-                                    ref.invalidate(stockProductsProvider),
-                                onAddProduct: () => _withCameraPaused(
-                                  () => context.push(Routes.productNew),
-                                ),
-                              ),
-                              SaleCart(
-                                headerKey: _cartHeaderKey,
-                                items: cart.items,
-                                onQuantityChanged: (productId, quantity) =>
-                                    quantity <= 0
-                                    ? _removeCartItem(productId)
-                                    : cartNotifier.updateQuantity(
-                                        productId,
-                                        quantity,
-                                      ),
-                                onRemove: _removeCartItem,
-                                onItemTap: _editCartItem,
-                                onClear: _clearCart,
-                              ),
-                              const SliverToBoxAdapter(
-                                child: SalePaymentSection(),
-                              ),
-                            ],
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: SaleSearchBar(
+                    controller: _searchController,
+                    focusNode: _searchFocus,
+                    onChanged: _onSearchChanged,
+                    isScannerOpen: _isScannerOpen,
+                    onToggleScanner: _toggleScanner,
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: showCamera
+                      ? Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            AppSpacing.md,
+                            0,
+                            AppSpacing.md,
+                            AppSpacing.sm,
                           ),
+                          child: SaleScannerPanel(
+                            controller: _scanner,
+                            isActive: !_isCameraPaused && isTabVisible,
+                            isPermissionGranted: _isPermissionGranted,
+                            isCheckingPermission: _isCheckingPermission,
+                            isTorchOn: _isTorchOn,
+                            onDetect: _onBarcodeDetected,
+                            onToggleTorch: _toggleTorch,
+                            onOpenAppSettings: openAppSettings,
+                          ),
+                        )
+                      : const SizedBox(width: double.infinity),
+                ),
+                if (!isSearching && categories.isNotEmpty)
+                  _CategoryChips(
+                    categories: categories,
+                    selectedId: categoryId,
+                    onSelected: (id) => setState(() => _categoryId = id),
                   ),
-                  Positioned(
-                    top: AppSpacing.xs,
-                    left: AppSpacing.md,
-                    right: AppSpacing.md,
-                    child: SaleToast(data: _toast, onDismiss: _dismissToast),
-                  ),
-                ],
+              ],
+            ),
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: isSearching
+                      ? ProductSearchResults(
+                          query: _query,
+                          cartQuantities: cartQuantities,
+                          onAdd: _addProduct,
+                          onDecrease: _decreaseProduct,
+                          onOpen: _openProduct,
+                          onCreate: _createFromSearch,
+                        )
+                      : CustomScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          slivers: [
+                            ProductBrowser(
+                              products: ref.watch(stockProductsProvider),
+                              categoryId: categoryId,
+                              cartQuantities: cartQuantities,
+                              onAdd: _addProduct,
+                              onDecrease: _decreaseProduct,
+                              onOpen: _openProduct,
+                              onRetry: () =>
+                                  ref.invalidate(stockProductsProvider),
+                              onAddProduct: () => _withCameraPaused(
+                                () => context.push(Routes.productNew),
+                              ),
+                              // Scanner de la caisse : un code inconnu propose
+                              // « Créer ».
+                              onScanProduct: () {
+                                if (!_isScannerOpen) _toggleScanner();
+                              },
+                              onImportProducts: () => _withCameraPaused(
+                                () => context.push(Routes.productImport),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                // Retour d'ajout juste au-dessus de la barre : il ne masque
+                // pas le produit suivant.
+                Positioned(
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  bottom: AppSpacing.sm,
+                  child: SaleToast(data: _toast, onDismiss: _dismissToast),
+                ),
+              ],
+            ),
+          ),
+          if (showCheckout)
+            SaleCheckoutBar(
+              isCashClosed: isCashClosed,
+              onShowCart: _showCart,
+              onCheckout: _checkout,
+              onOpenCash: _openCashSession,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bandeau fixe « Caisse fermée » : annoncé avant d'encaisser, panier gardé.
+class _CashClosedBanner extends StatelessWidget {
+  const _CashClosedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        color: cs.tertiaryContainer,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + 4,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.lock_outline, color: cs.onTertiaryContainer),
+            const SizedBox(width: AppSpacing.sm + 2),
+            Expanded(
+              child: Text.rich(
+                const TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Caisse fermée\n',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(
+                      text: 'Ouvrez-la pour encaisser. Votre panier est gardé.',
+                    ),
+                  ],
+                ),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: cs.onTertiaryContainer,
+                  height: 1.35,
+                ),
               ),
             ),
-            if (showCheckout)
-              ConstrainedBox(
-                // Clavier ouvert : le panneau défile au lieu de déborder.
-                constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight * 0.75,
-                ),
-                child: SingleChildScrollView(
-                  clipBehavior: Clip.none,
-                  child: SaleCheckoutPanel(
-                    onSubmit: _submit,
-                    onEditDiscount: _editCartDiscount,
-                    onShowCart: _scrollToCart,
-                    isSubmitting: isSubmitting,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -640,7 +671,7 @@ class _CategoryChips extends StatelessWidget {
         AppSpacing.md,
         0,
         AppSpacing.md,
-        AppSpacing.sm,
+        AppSpacing.sm + 4,
       ),
       child: Row(
         children: [

@@ -14,99 +14,112 @@ class AppTheme {
   static ThemeData light() {
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
-      primary: Color(0xFF92400E), // brun cacao — WCAG 7,1:1 sur blanc
+      primary: Color(0xFF92400E), // cacao — 7,1:1 sur blanc
       onPrimary: Color(0xFFFFFFFF),
-      primaryContainer: Color(0xFFFEF3C7), // amber-100
-      onPrimaryContainer: Color(0xFF451A03), // brown-950
-      secondary: Color(0xFFCA8A04), // or/doré — ≠ jaune MTN #FFCC00
-      onSecondary: Color(0xFF1C1107), // jamais blanc sur or (3.4:1 insuffisant)
-      secondaryContainer: Color(0xFFFEFCE8), // yellow-50
-      onSecondaryContainer: Color(0xFF713F12), // amber-800
-      tertiary: Color(0xFFC2410C), // orange-rouge — warning/offline banner
+      primaryContainer: Color(0xFFFEF3C7),
+      onPrimaryContainer: Color(0xFF78350F),
+      // Or : jamais en couleur de texte (2,9:1), seulement en fond.
+      secondary: Color(0xFFCA8A04),
+      onSecondary: Color(0xFF1C1107),
+      secondaryContainer: Color(0xFFFEFCE8),
+      onSecondaryContainer: Color(0xFF8A5A00),
+      // Alerte / stock bas : #C2410C (l'ancien #EA580C échouait à 3,6:1).
+      tertiary: Color(0xFFC2410C),
       onTertiary: Color(0xFFFFFFFF),
-      tertiaryContainer: Color(0xFFFFEDD5), // orange-100
-      onTertiaryContainer: Color(0xFF7C2D12), // orange-950
+      tertiaryContainer: Color(0xFFFFEDD5),
+      onTertiaryContainer: Color(0xFF9A3412),
       error: Color(0xFFBA1A1A),
       onError: Color(0xFFFFFFFF),
       errorContainer: Color(0xFFFFDAD6),
-      onErrorContainer: Color(0xFF410002),
+      onErrorContainer: Color(0xFF93000A),
       surface: Color(0xFFFFFFFF),
-      onSurface: Color(0xFF1C1107), // warm near-black
-      surfaceContainerHighest: Color(0xFFFEF9EE), // ivory-warm tint
-      onSurfaceVariant: Color(0xFF57534E), // stone-600
-      outline: Color(0xFFA8A29E), // stone-400
-      outlineVariant: Color(0xFFE7E5E4), // stone-200
-      scrim: Color(0x991C1107),
+      onSurface: Color(0xFF1C1107),
+      surfaceContainerLowest: Color(0xFFFFFFFF),
+      surfaceContainerLow: Color(0xFFFEF9EE), // surfaceVariant
+      surfaceContainer: Color(0xFFFEF9EE),
+      // Squelettes, fonds désactivés.
+      surfaceContainerHigh: Color(0xFFF0EBE3),
+      surfaceContainerHighest: Color(0xFFF0EBE3),
+      onSurfaceVariant: Color(0xFF57534E), // 7,5:1 sur ivoire
+      outline: Color(0xFF8A817C), // bordures de champ ≥ 3:1
+      outlineVariant: Color(0xFFF0EBE3), // séparateurs
+      inverseSurface: Color(0xFF1C1107),
+      onInverseSurface: Color(0xFFFFFBF5),
+      inversePrimary: Color(0xFFF5C99B),
+      scrim: Color(0x801C1107),
       shadow: Color(0xFF000000),
+      surfaceTint: Colors.transparent,
     );
 
-    return ThemeData(
-      useMaterial3: true,
-      fontFamily: AppTypography.fontFamily,
-      colorScheme: colorScheme,
-      extensions: const [AppSemanticColors.light],
-      scaffoldBackgroundColor: const Color(0xFFFFFBF5), // ivory-warm
-      textTheme: _buildTextTheme(colorScheme),
-      appBarTheme: _buildAppBarTheme(colorScheme),
-      cardTheme: _buildCardTheme(colorScheme),
-      inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
-      elevatedButtonTheme: _buildElevatedButtonTheme(colorScheme),
-      outlinedButtonTheme: _buildOutlinedButtonTheme(colorScheme),
-      textButtonTheme: _buildTextButtonTheme(colorScheme),
-      chipTheme: _buildChipTheme(colorScheme),
-      dividerTheme: _buildDividerTheme(colorScheme),
-      snackBarTheme: _buildSnackBarTheme(colorScheme),
-      dialogTheme: _buildDialogTheme(colorScheme),
-      navigationBarTheme: _buildNavigationBarTheme(colorScheme),
-      floatingActionButtonTheme: _buildFabTheme(colorScheme),
-      progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
-      switchTheme: _buildSwitchTheme(colorScheme),
-      checkboxTheme: _buildCheckboxTheme(colorScheme),
+    return _build(
+      colorScheme,
+      background: const Color(0xFFFFFBF5), // ivoire chaud
+      semantic: AppSemanticColors.light,
     );
   }
 
-  /// Construit le thème sombre Material 3 complet.
+  /// Construit le thème sombre Material 3 complet : surfaces cacao
+  /// réchauffées, primaire sable ; l'élévation se lit par le ton de surface,
+  /// pas par l'ombre.
   static ThemeData dark() {
     const colorScheme = ColorScheme(
       brightness: Brightness.dark,
-      primary: Color(0xFFFDBA74), // amber-300 — cacao clair sur fond sombre
-      onPrimary: Color(0xFF431407), // very dark cacao
-      primaryContainer: Color(0xFF78350F), // amber-900
-      onPrimaryContainer: Color(0xFFFEF3C7), // amber-100
-      secondary: Color(0xFFFDE68A), // amber-200 — or clair sur fond sombre
-      onSecondary: Color(0xFF451A03), // très sombre
-      secondaryContainer: Color(0xFF713F12), // amber-800
-      onSecondaryContainer: Color(0xFFFEFCE8), // yellow-50
-      tertiary: Color(
-        0xFFFB923C,
-      ), // orange-400 — warning/offline sur fond sombre
-      onTertiary: Color(0xFF431407),
-      tertiaryContainer: Color(0xFF7C2D12), // orange-950
-      onTertiaryContainer: Color(0xFFFFEDD5), // orange-100
+      primary: Color(0xFFF5C99B), // sable
+      onPrimary: Color(0xFF3A1A04),
+      primaryContainer: Color(0xFF5A2A0A),
+      onPrimaryContainer: Color(0xFFFFE3C2),
+      secondary: Color(0xFFEAB308),
+      onSecondary: Color(0xFF1C1107),
+      secondaryContainer: Color(0xFF3A2E0A),
+      onSecondaryContainer: Color(0xFFF5D77A),
+      tertiary: Color(0xFFFFA94D),
+      onTertiary: Color(0xFF3A1A04),
+      tertiaryContainer: Color(0xFF3D2210),
+      onTertiaryContainer: Color(0xFFFFCF9E),
       error: Color(0xFFFFB4AB),
       onError: Color(0xFF690005),
-      errorContainer: Color(0xFF93000A),
+      errorContainer: Color(0xFF5C1714),
       onErrorContainer: Color(0xFFFFDAD6),
-      surface: Color(0xFF1C1107), // near-black warm brown
-      onSurface: Color(0xFFF5F0E8), // warm white
-      surfaceContainerHighest: Color(0xFF3D2A14), // dark warm brown
-      onSurfaceVariant: Color(0xFFD6C7B8), // warm light gray
-      outline: Color(0xFF9D8E81),
-      outlineVariant: Color(0xFF4A3728),
-      scrim: Color(0x990C0906),
+      surface: Color(0xFF211912),
+      onSurface: Color(0xFFF7EFE6),
+      surfaceContainerLowest: Color(0xFF17110C),
+      surfaceContainerLow: Color(0xFF2C2219), // surfaceVariant
+      surfaceContainer: Color(0xFF2C2219),
+      surfaceContainerHigh: Color(0xFF33281F),
+      surfaceContainerHighest: Color(0xFF33281F),
+      onSurfaceVariant: Color(0xFFCBBFB2),
+      outline: Color(0xFF7D6E61),
+      outlineVariant: Color(0xFF33281F),
+      inverseSurface: Color(0xFFF7EFE6),
+      onInverseSurface: Color(0xFF17110C),
+      inversePrimary: Color(0xFF92400E),
+      scrim: Color(0x99000000),
       shadow: Color(0xFF000000),
+      surfaceTint: Colors.transparent,
     );
 
+    return _build(
+      colorScheme,
+      background: const Color(0xFF17110C),
+      semantic: AppSemanticColors.dark,
+    );
+  }
+
+  static ThemeData _build(
+    ColorScheme colorScheme, {
+    required Color background,
+    required AppSemanticColors semantic,
+  }) {
     return ThemeData(
       useMaterial3: true,
       fontFamily: AppTypography.fontFamily,
       colorScheme: colorScheme,
-      extensions: const [AppSemanticColors.dark],
-      scaffoldBackgroundColor: const Color(0xFF0C0906), // near-black warm cacao
+      extensions: [semantic],
+      scaffoldBackgroundColor: background,
       textTheme: _buildTextTheme(colorScheme),
       appBarTheme: _buildAppBarTheme(colorScheme),
       cardTheme: _buildCardTheme(colorScheme),
-      inputDecorationTheme: _buildInputDecorationTheme(colorScheme),
+      inputDecorationTheme: _buildInputDecorationTheme(colorScheme, background),
       elevatedButtonTheme: _buildElevatedButtonTheme(colorScheme),
       outlinedButtonTheme: _buildOutlinedButtonTheme(colorScheme),
       textButtonTheme: _buildTextButtonTheme(colorScheme),
@@ -114,6 +127,7 @@ class AppTheme {
       dividerTheme: _buildDividerTheme(colorScheme),
       snackBarTheme: _buildSnackBarTheme(colorScheme),
       dialogTheme: _buildDialogTheme(colorScheme),
+      bottomSheetTheme: _buildBottomSheetTheme(colorScheme),
       navigationBarTheme: _buildNavigationBarTheme(colorScheme),
       floatingActionButtonTheme: _buildFabTheme(colorScheme),
       progressIndicatorTheme: _buildProgressIndicatorTheme(colorScheme),
@@ -146,7 +160,8 @@ class AppTheme {
       backgroundColor: cs.surface,
       foregroundColor: cs.onSurface,
       elevation: 0,
-      scrolledUnderElevation: 1,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
       titleTextStyle: AppTypography.appBarTitle.copyWith(color: cs.onSurface),
       toolbarTextStyle: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
       centerTitle: false,
@@ -165,11 +180,14 @@ class AppTheme {
     );
   }
 
-  static InputDecorationTheme _buildInputDecorationTheme(ColorScheme cs) {
-    final fillColor = cs.surfaceContainer;
+  static InputDecorationTheme _buildInputDecorationTheme(
+    ColorScheme cs,
+    Color background,
+  ) {
     return InputDecorationTheme(
       filled: true,
-      fillColor: fillColor,
+      // Champ sur le fond de l'écran, bordure outline ≥ 3:1.
+      fillColor: background,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: 18,
@@ -188,7 +206,7 @@ class AppTheme {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        borderSide: BorderSide(color: cs.error),
+        borderSide: BorderSide(color: cs.error, width: 2),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -205,7 +223,9 @@ class AppTheme {
       helperStyle: AppTypography.captionText.copyWith(
         color: cs.onSurfaceVariant,
       ),
-      errorStyle: AppTypography.errorText.copyWith(color: cs.error),
+      // Erreur sous le champ en 16 sp : c'est elle qui débloque la saisie.
+      errorStyle: AppTypography.bodyMedium.copyWith(color: cs.error),
+      errorMaxLines: 2,
     );
   }
 
@@ -233,7 +253,7 @@ class AppTheme {
       style:
           OutlinedButton.styleFrom(
             foregroundColor: cs.primary,
-            minimumSize: const Size(double.infinity, AppSpacing.buttonHeight),
+            minimumSize: const Size(double.infinity, AppSpacing.buttonHeightSm),
             padding: const EdgeInsets.symmetric(
               horizontal: AppSpacing.md,
               vertical: 12,
@@ -248,9 +268,14 @@ class AppTheme {
               (states) => BorderSide(
                 color: states.contains(WidgetState.disabled)
                     ? cs.outlineVariant
-                    : cs.primary,
-                width: 2,
+                    : cs.outline,
               ),
+            ),
+            // Pressé : fond primaryContainer plutôt qu'une simple encre.
+            overlayColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.pressed)
+                  ? cs.primaryContainer
+                  : null,
             ),
           ),
     );
@@ -265,23 +290,40 @@ class AppTheme {
     );
   }
 
+  /// Chips de filtre et de montant : 40 dp visibles (48 dp de cible),
+  /// bordure outline ; sélection = fond primaryContainer, sans bordure.
   static ChipThemeData _buildChipTheme(ColorScheme cs) {
     return ChipThemeData(
-      backgroundColor: cs.surfaceContainer,
+      backgroundColor: Colors.transparent,
       selectedColor: cs.primaryContainer,
+      checkmarkColor: cs.onPrimaryContainer,
       deleteIconColor: cs.onSurfaceVariant,
-      disabledColor: cs.outlineVariant,
-      labelStyle: AppTypography.labelMedium.copyWith(color: cs.onSurface),
-      secondaryLabelStyle: AppTypography.labelMedium.copyWith(
-        color: cs.onSurface,
+      disabledColor: cs.surfaceContainerHigh,
+      labelStyle: WidgetStateTextStyle.resolveWith(
+        (states) => AppTypography.bodyMedium.copyWith(
+          fontWeight: states.contains(WidgetState.selected)
+              ? FontWeight.w600
+              : FontWeight.w500,
+          fontFeatures: AppTypography.tabularFigures,
+          color: states.contains(WidgetState.selected)
+              ? cs.onPrimaryContainer
+              : cs.onSurface,
+        ),
+      ),
+      secondaryLabelStyle: AppTypography.bodyMedium.copyWith(
+        color: cs.onPrimaryContainer,
       ),
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
+        horizontal: AppSpacing.xs,
         vertical: AppSpacing.xs,
+      ),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? BorderSide(color: cs.primaryContainer)
+            : BorderSide(color: cs.outline),
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-        side: BorderSide(color: cs.outline),
       ),
     );
   }
@@ -294,13 +336,14 @@ class AppTheme {
     );
   }
 
-  /// Boîtes de dialogue : coins des surfaces élevées (16) plutôt que les 28
-  /// de Material 3, titre en gras comme les titres de l'app.
+  /// Boîtes de dialogue (actions destructrices ou bloquantes seulement) :
+  /// coins 24, titre en gras comme les titres de l'app.
   static DialogThemeData _buildDialogTheme(ColorScheme cs) {
     return DialogThemeData(
       backgroundColor: cs.surface,
+      surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
       ),
       titleTextStyle: AppTypography.titleMedium.copyWith(
         color: cs.onSurface,
@@ -322,16 +365,37 @@ class AppTheme {
     );
   }
 
+  /// Panier, paiement, ouverture de caisse, confirmation de vente : surface,
+  /// coins hauts 24, poignée visible.
+  static BottomSheetThemeData _buildBottomSheetTheme(ColorScheme cs) {
+    return BottomSheetThemeData(
+      backgroundColor: cs.surface,
+      modalBackgroundColor: cs.surface,
+      surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
+      dragHandleColor: cs.outline,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSpacing.radiusXl),
+        ),
+      ),
+    );
+  }
+
   static NavigationBarThemeData _buildNavigationBarTheme(ColorScheme cs) {
     return NavigationBarThemeData(
       backgroundColor: cs.surface,
+      surfaceTintColor: Colors.transparent,
       indicatorColor: cs.primaryContainer,
       elevation: 0,
+      height: 80,
+      // Libellés toujours visibles : pas d'icône seule pour naviguer.
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final selected = states.contains(WidgetState.selected);
         return AppTypography.labelSmall.copyWith(
           color: selected ? cs.onSurface : cs.onSurfaceVariant,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
         );
       }),
       iconTheme: WidgetStateProperty.resolveWith((states) {

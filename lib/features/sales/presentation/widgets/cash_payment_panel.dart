@@ -2,12 +2,13 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/checkout_provider.dart';
 import 'amount_input.dart';
+import 'payment_result_box.dart';
 
-/// Paiement en espèces : montant reçu, raccourcis et monnaie à rendre.
+/// Paiement en espèces : montant reçu en grand, montants rapides, puis
+/// « À rendre au client » (ou « Il manque … ») recalculé à chaque frappe.
 ///
 /// Champ vide = montant exact : une vente sans rendu de monnaie se valide
 /// sans saisie.
@@ -31,65 +32,42 @@ class CashPaymentPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final received = checkout.cashReceived;
-    final change = checkout.changeFor(total);
+    final missing = received == null ? Decimal.zero : total - received;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        AmountInput(
+          label: 'Montant reçu',
+          hint: formatAmount(total),
+          value: received,
+          large: true,
+          onChanged: onCashChanged,
+        ),
+        const SizedBox(height: AppSpacing.sm + 4),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
-            Expanded(
-              child: AmountInput(
-                label: 'Montant reçu',
-                hint: 'Exact : ${formatAmount(total)}',
-                value: received,
-                errorText: checkout.cashErrorFor(total),
-                onChanged: onCashChanged,
+            _QuickAmountChip(
+              label: 'Exact',
+              isSelected: received == null || received == total,
+              onTap: () => onCashChanged(null),
+            ),
+            for (final amount in quickCashAmounts(total))
+              _QuickAmountChip(
+                label: formatAmount(amount),
+                isSelected: received == amount,
+                onTap: () => onCashChanged(amount),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'Monnaie',
-                  style: AppTypography.labelSmall.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                AmountDisplay(
-                  amount: change,
-                  size: AmountSize.medium,
-                  color: change > Decimal.zero ? cs.primary : null,
-                ),
-              ],
-            ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _QuickAmountChip(
-                label: 'Exact',
-                isSelected: received == null || received == total,
-                onTap: () => onCashChanged(null),
-              ),
-              for (final amount in quickCashAmounts(total)) ...[
-                const SizedBox(width: AppSpacing.sm),
-                _QuickAmountChip(
-                  label: formatAmount(amount),
-                  isSelected: received == amount,
-                  onTap: () => onCashChanged(amount),
-                ),
-              ],
-            ],
-          ),
-        ),
+        const SizedBox(height: AppSpacing.md),
+        if (missing > Decimal.zero)
+          PaymentResultBox.missing(missing)
+        else
+          PaymentResultBox.change(checkout.changeFor(total)),
       ],
     );
   }
@@ -112,6 +90,8 @@ class _QuickAmountChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       showCheckmark: false,
+      // Cible de 48 dp autour d'une puce de 40.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
       onSelected: (_) => onTap(),
     );
   }

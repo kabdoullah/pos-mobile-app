@@ -144,7 +144,7 @@ void main() {
         find.text('1 en rupture · 3 sous le seuil', findRichText: true),
         findsOneWidget,
       );
-      expect(find.text('Faible : 3'), findsOneWidget);
+      expect(find.text('Stock bas : 3'), findsOneWidget);
       expect(tester.takeException(), isNull);
       // Aperçu limité à 3 produits.
       expect(find.text('Sucre'), findsNothing);

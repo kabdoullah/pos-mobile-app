@@ -116,11 +116,11 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Libellé moyen. 14 sp, w500. Texte de chip, libellés de bouton secondaire.
+  /// Libellé moyen. 14 sp, w600. Badges, pastilles d'état.
   static const TextStyle labelMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
     height: 1.4,
     letterSpacing: 0,
   );
@@ -157,11 +157,12 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Texte de légende. 13 sp, w400. Métadonnées, horodatages.
+  /// Texte de légende. 13 sp, w500. Métadonnées secondaires seulement
+  /// (« il y a 2 min ») : toute info utile est en 16 sp minimum.
   static const TextStyle captionText = TextStyle(
     fontFamily: fontFamily,
     fontSize: 13,
-    fontWeight: FontWeight.w400,
+    fontWeight: FontWeight.w500,
     height: 1.4,
     letterSpacing: 0,
   );

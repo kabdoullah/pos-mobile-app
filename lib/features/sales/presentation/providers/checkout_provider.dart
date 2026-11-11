@@ -54,11 +54,29 @@ class CheckoutState {
     return null;
   }
 
+  /// Raison qui bloque un paiement mixte, sinon `null` : les deux parts
+  /// doivent couvrir exactement le total, et chacune être positive.
+  String? mixedErrorFor(Decimal total) {
+    if (method != PaymentMethod.mixed) return null;
+    final cash = cashReceived ?? Decimal.zero;
+    final mobile = mobileMoney ?? Decimal.zero;
+    final remaining = remainingFor(total);
+    if (remaining < Decimal.zero) {
+      return 'Les espèces dépassent le total à payer';
+    }
+    if (cash <= Decimal.zero) return 'Saisissez les espèces reçues';
+    if (mobile <= Decimal.zero) {
+      return 'Tout est payé en espèces : choisissez Espèces';
+    }
+    if (remaining > Decimal.zero) return 'Le paiement ne couvre pas le total';
+    return null;
+  }
+
   /// Indique si la vente peut être encaissée pour ce [total].
   bool canSubmitFor(Decimal total) {
     return switch (method) {
       PaymentMethod.cash => cashErrorFor(total) == null,
-      PaymentMethod.mixed => remainingFor(total) == Decimal.zero,
+      PaymentMethod.mixed => mixedErrorFor(total) == null,
       PaymentMethod.orangeMoney ||
       PaymentMethod.mtn ||
       PaymentMethod.wave => true,
@@ -98,6 +116,17 @@ class Checkout extends _$Checkout {
       method: state.method,
       cashReceived: amount,
       mobileMoney: state.mobileMoney,
+    );
+  }
+
+  /// Paiement mixte : saisit la part espèces, la part mobile money devient
+  /// le reste du [total] (jamais négative).
+  void setMixedCash(Decimal? cash, {required Decimal total}) {
+    final rest = cash == null ? null : total - cash;
+    state = CheckoutState(
+      method: state.method,
+      cashReceived: cash,
+      mobileMoney: rest == null || rest < Decimal.zero ? null : rest,
     );
   }
 

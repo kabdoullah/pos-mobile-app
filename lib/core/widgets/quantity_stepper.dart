@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
-/// Sélecteur de quantité ( − n + ) dans une pilule bordée ; la valeur s'anime
-/// à chaque changement.
+/// Sélecteur de quantité ( − n + ) dans un cadre bordé de 48 dp ; la valeur
+/// s'anime à chaque changement.
 class QuantityStepper extends StatelessWidget {
   /// Crée un sélecteur de quantité. Un callback `null` désactive le bouton.
   const QuantityStepper({
@@ -43,12 +43,13 @@ class QuantityStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final valueWidth = large ? 96.0 : 32.0;
+    final valueWidth = large ? 96.0 : 28.0;
     final removes = removeTooltip != null && quantity <= 1;
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: cs.surface,
         border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -74,8 +75,10 @@ class QuantityStepper extends StatelessWidget {
                     style:
                         (large
                                 ? AppTypography.titleLarge
-                                : AppTypography.labelLarge)
+                                : AppTypography.bodyLarge)
                             .copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: cs.onSurface,
                               fontFeatures: AppTypography.tabularFigures,
                             ),
                   ),
@@ -92,6 +95,8 @@ class QuantityStepper extends StatelessWidget {
     );
   }
 }
+
+const double _buttonSize = 46;
 
 class _StepButton extends StatelessWidget {
   const _StepButton({
@@ -112,20 +117,17 @@ class _StepButton extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       color: Theme.of(context).colorScheme.primary,
-      icon: Icon(icon, size: large ? 20 : 18),
-      // Compact (lignes de panier) : boutons de 44 dp, la cible tactile
-      // minimale. Sans shrinkWrap, Material 3 les porte à 48 dp.
+      icon: Icon(icon, size: large ? 24 : 22),
+      // Boutons de 46 dp dans un cadre de 48 : la cible tactile reste ≥ 44
+      // sans agrandir la ligne.
       style: IconButton.styleFrom(
         padding: EdgeInsets.zero,
-        tapTargetSize: large
-            ? MaterialTapTargetSize.padded
-            : MaterialTapTargetSize.shrinkWrap,
-        fixedSize: large
-            ? const Size.square(AppSpacing.minTapTarget)
-            : const Size.square(AppSpacing.minTapTarget),
-        minimumSize: large
-            ? const Size.square(AppSpacing.minTapTarget)
-            : const Size.square(AppSpacing.minTapTarget),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        fixedSize: const Size.square(_buttonSize),
+        minimumSize: const Size.square(_buttonSize),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
       ),
       onPressed: onPressed == null
           ? null

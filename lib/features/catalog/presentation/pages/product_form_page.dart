@@ -19,10 +19,26 @@ import '../providers/catalog_providers.dart';
 import '../providers/category_providers.dart';
 import '../widgets/category_picker.dart';
 
+/// Nom pré-rempli à la création d'un produit (extra de la route
+/// `Routes.productNew`) : recherche sans résultat en caisse. Un code-barres
+/// scanné passe, lui, en `String`.
+class ProductNamePrefill {
+  /// Crée le pré-remplissage.
+  const ProductNamePrefill(this.name);
+
+  /// Nom tapé dans la recherche.
+  final String name;
+}
+
 /// Page de création ou de modification d'un produit.
 class ProductFormPage extends ConsumerStatefulWidget {
   /// Crée une [ProductFormPage].
-  const ProductFormPage({super.key, this.productId, this.initialBarcode});
+  const ProductFormPage({
+    super.key,
+    this.productId,
+    this.initialBarcode,
+    this.initialName,
+  });
 
   /// ID du produit en mode édition, null en mode création.
   final String? productId;
@@ -30,6 +46,9 @@ class ProductFormPage extends ConsumerStatefulWidget {
   /// Code-barres pré-rempli quand on arrive d'une recherche par scan
   /// infructueuse.
   final String? initialBarcode;
+
+  /// Nom pré-rempli quand on arrive d'une recherche sans résultat en caisse.
+  final String? initialName;
 
   @override
   ConsumerState<ProductFormPage> createState() => _ProductFormPageState();
@@ -65,7 +84,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
+    _nameController = TextEditingController(text: widget.initialName ?? '');
     _priceController = TextEditingController();
     _purchasePriceController = TextEditingController();
     _barcodeController = TextEditingController(

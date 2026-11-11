@@ -255,6 +255,10 @@ void main() {
         expect(find.text('Choisissez le motif'), findsOneWidget);
 
         await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
+
+        await tester.ensureVisible(find.text('Produit défectueux'));
+
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Produit défectueux'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Continuer'));
@@ -304,6 +308,8 @@ void main() {
       await tester.tap(find.byTooltip('Augmenter'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
+      await tester.ensureVisible(find.text('Produit défectueux'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Produit défectueux'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continuer'));

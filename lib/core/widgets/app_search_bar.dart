@@ -47,27 +47,45 @@ class AppSearchBar extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: TextInputAction.search,
       elevation: const WidgetStatePropertyAll(0),
-      backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
+      // Comme les champs : fond de l'écran, bordure outline, 2 dp au focus.
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.focused)
+            ? cs.surface
+            : Theme.of(context).scaffoldBackgroundColor,
+      ),
+      side: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.focused)
+            ? BorderSide(color: cs.primary, width: 2)
+            : BorderSide(color: cs.outline),
+      ),
+      shape: WidgetStatePropertyAll(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+      ),
       constraints: const BoxConstraints(minHeight: AppSpacing.inputHeight),
       padding: const WidgetStatePropertyAll(
         EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.xs),
       ),
       leading: Icon(Icons.search, color: cs.onSurfaceVariant),
+      // Pendant une saisie, « Effacer » remplace les actions : les deux ne
+      // tiennent pas ensemble sur 360 dp.
       trailing: [
         ListenableBuilder(
           listenable: controller,
           builder: (context, _) => controller.text.isEmpty
-              ? const SizedBox.shrink()
-              : IconButton(
-                  tooltip: 'Effacer',
-                  icon: const Icon(Icons.close),
+              ? Row(mainAxisSize: MainAxisSize.min, children: actions)
+              : TextButton(
                   onPressed: () {
                     controller.clear();
                     onChanged('');
                   },
+                  style: TextButton.styleFrom(
+                    foregroundColor: cs.onSurfaceVariant,
+                  ),
+                  child: const Text('Effacer'),
                 ),
         ),
-        ...actions,
       ],
     );
   }
