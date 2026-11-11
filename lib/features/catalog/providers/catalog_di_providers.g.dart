@@ -59,3 +59,60 @@ final class CatalogRepositoryProvider
 }
 
 String _$catalogRepositoryHash() => r'bf20f53760fe9a376d3ecb87eb1b1edfbb956e54';
+
+/// Fournit le référentiel de codes-barres embarqué. Gardé en vie : le
+/// référentiel (~5 000 entrées) n'est décodé qu'une fois par session.
+
+@ProviderFor(barcodeReferenceRepository)
+final barcodeReferenceRepositoryProvider =
+    BarcodeReferenceRepositoryProvider._();
+
+/// Fournit le référentiel de codes-barres embarqué. Gardé en vie : le
+/// référentiel (~5 000 entrées) n'est décodé qu'une fois par session.
+
+final class BarcodeReferenceRepositoryProvider
+    extends
+        $FunctionalProvider<
+          BarcodeReferenceRepository,
+          BarcodeReferenceRepository,
+          BarcodeReferenceRepository
+        >
+    with $Provider<BarcodeReferenceRepository> {
+  /// Fournit le référentiel de codes-barres embarqué. Gardé en vie : le
+  /// référentiel (~5 000 entrées) n'est décodé qu'une fois par session.
+  BarcodeReferenceRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'barcodeReferenceRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$barcodeReferenceRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<BarcodeReferenceRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BarcodeReferenceRepository create(Ref ref) {
+    return barcodeReferenceRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BarcodeReferenceRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BarcodeReferenceRepository>(value),
+    );
+  }
+}
+
+String _$barcodeReferenceRepositoryHash() =>
+    r'834787245d7bef23e4bb8f8f9e9874c58bdec12a';

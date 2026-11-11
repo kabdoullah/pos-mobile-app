@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -13,6 +14,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/barcode_utils.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
+import '../../providers/catalog_di_providers.dart';
 import '../providers/catalog_providers.dart';
 import '../providers/category_providers.dart';
 import '../widgets/category_picker.dart';
@@ -50,6 +52,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _barcodeError;
   bool _isLoading = false;
   bool _prefilled = false;
+  // Nom rempli depuis le référentiel de codes-barres, pas encore retouché.
+  bool _nameSuggested = false;
   String? _categoryId;
   String? _initialCategoryId;
 
@@ -70,6 +74,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       vsync: this,
     );
     unawaited(_formAnimationController.forward());
+    final initialBarcode = widget.initialBarcode;
+    if (widget.productId == null && initialBarcode != null) {
+      unawaited(_suggestName(initialBarcode));
+    }
   }
 
   @override
@@ -88,7 +96,31 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     final code = await context.push<String>(Routes.barcodeScanner);
     if (code != null && mounted) {
       _barcodeController.text = code;
+      await _suggestName(code);
     }
+  }
+
+  /// Pré-remplit le nom depuis le référentiel embarqué, sans jamais écraser
+  /// un nom déjà saisi (y compris pendant la recherche).
+  Future<void> _suggestName(String barcode) async {
+    if (_nameController.text.trim().isNotEmpty) return;
+    String? name;
+    try {
+      name = await ref
+          .read(barcodeReferenceRepositoryProvider)
+          .suggestName(barcode);
+    } catch (e) {
+      // Suggestion facultative : la saisie manuelle reste possible.
+      Logger().w('Référentiel de codes-barres illisible', error: e);
+    }
+    if (name == null || !mounted || _nameController.text.trim().isNotEmpty) {
+      return;
+    }
+    setState(() {
+      _nameController.text = name!;
+      _nameSuggested = true;
+      _nameError = null;
+    });
   }
 
   bool _validate() {
@@ -331,6 +363,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   hint: 'ex: Riz blanc',
                   controller: _nameController,
                   errorText: _nameError,
+                  onChanged: (_) {
+                    if (_nameSuggested) setState(() => _nameSuggested = false);
+                  },
+                  helper: _nameSuggested ? const _SuggestedNameHint() : null,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -514,6 +550,29 @@ class _EstimatedMargin extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Signale un nom venu du référentiel de codes-barres : souvent abrégé, à
+/// relire avant d'enregistrer.
+class _SuggestedNameHint extends StatelessWidget {
+  const _SuggestedNameHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(Icons.auto_awesome_outlined, size: 16, color: cs.primary),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            'Nom suggéré d\'après le code-barres. Vérifiez-le.',
+            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ),
+      ],
     );
   }
 }
