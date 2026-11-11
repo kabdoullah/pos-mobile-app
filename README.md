@@ -96,6 +96,8 @@ Un seul test : `flutter test test/inventory_stock_adjustment_test.dart` ou `flut
 make build-aab   # flutter build appbundle --release --flavor prod -t lib/main_prod.dart
 ```
 
+- **Obfuscation** : seul `make build-apk` (sideload) obfusque le code Dart (−16 % sur `libapp.so`) ; l'AAB Play Store ne l'est pas, ses traces de pile restent lisibles. Les symboles de chaque version sont écrits dans `symbols/<version>/` (non versionné, hors de `build/` pour survivre à `make clean`) : **les archiver pour chaque version publiée**, sinon les traces de pile remontées par les utilisateurs restent illisibles. Décodage : `make symbolize TRACE=trace.txt V=<version>` (`ARCH=arm` pour un appareil 32 bits).
+
 - **Signature** : `android/app/build.gradle.kts` lit `android/key.properties` (non versionné, comme le keystore `*.jks`). Sans ce fichier, le build retombe sur la clé debug. Procédure : `docs/build-apk-prod.md`.
 - **ABI** : seulement `arm64-v8a` et `armeabi-v7a` (`x86_64` ne correspond à aucun appareil vendu en Côte d'Ivoire). Le Play Store découpe l'AAB par ABI.
 - **MLKit unbundled** : `dev.steenbakker.mobile_scanner.useUnbundled=true` dans `android/gradle.properties`. Les modèles de scan viennent de Google Play Services (-0,7 Mo).
