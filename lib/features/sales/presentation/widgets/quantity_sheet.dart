@@ -1,9 +1,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/utils/whole_number_input.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/discount.dart';
 
@@ -100,9 +100,15 @@ class _QuantitySheetState extends State<_QuantitySheet> {
     super.dispose();
   }
 
+  /// Vrai si la saisie contient une virgule ou un point (quantité refusée).
+  bool _hasSeparator = false;
+
   void _onTyped(String text) {
-    final value = int.tryParse(text);
-    setState(() => _quantity = value == null || value <= 0 ? null : value);
+    final value = parseWholeQuantity(text);
+    setState(() {
+      _hasSeparator = hasDecimalSeparator(text);
+      _quantity = value == null || value <= 0 ? null : value;
+    });
   }
 
   /// Applique une quantité venant des boutons [-]/[+] au champ.
@@ -111,11 +117,15 @@ class _QuantitySheetState extends State<_QuantitySheet> {
       text: '$quantity',
       selection: TextSelection.collapsed(offset: '$quantity'.length),
     );
-    setState(() => _quantity = quantity);
+    setState(() {
+      _hasSeparator = false;
+      _quantity = quantity;
+    });
   }
 
   /// Message sous la quantité, sinon `null`.
   String? _errorFor(int? quantity, int? max) {
+    if (_hasSeparator) return wholeQuantityError;
     if (quantity == null) return 'Saisissez une quantité';
     if (max != null && quantity > max) return 'Stock disponible : $max';
     return null;
@@ -194,10 +204,9 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                       style: AppTypography.titleLarge.copyWith(
                         fontFeatures: AppTypography.tabularFigures,
                       ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(5),
-                      ],
+                      // Virgule gardée visible pour être refusée, jamais
+                      // recollée aux chiffres (« 2,5 » ≠ 25).
+                      inputFormatters: wholeNumberInputFormatters(maxLength: 5),
                       // Un appui sélectionne tout : la saisie remplace la valeur.
                       onTap: () => _controller.selection = TextSelection(
                         baseOffset: 0,

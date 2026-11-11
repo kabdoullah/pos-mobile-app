@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/utils/whole_number_input.dart';
 import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/sales/presentation/widgets/quantity_sheet.dart';
 
@@ -102,11 +103,18 @@ void main() {
     }
   });
 
-  testWidgets('seuls les chiffres sont acceptés', (tester) async {
+  testWidgets('une virgule est refusée, jamais recollée (« 3,5 » ≠ 35)', (
+    tester,
+  ) async {
     await openSheet(tester);
     await tester.enterText(find.byType(TextField), '3,5a');
     await tester.pump();
-    expect(fieldText(tester), '35');
+    // Lettres retirées, virgule gardée visible pour être refusée.
+    expect(fieldText(tester), '3,5');
+    expect(find.text(wholeQuantityError), findsOneWidget);
+    await tester.tap(find.textContaining('Ajouter · '));
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsOneWidget);
   });
 
   testWidgets('les boutons [-]/[+] mettent le champ à jour', (tester) async {

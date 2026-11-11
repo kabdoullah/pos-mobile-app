@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/utils/whole_number_input.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -70,9 +70,14 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
   }
 
   Future<void> _submit() async {
-    final quantity = int.tryParse(_quantityController.text.trim());
+    final text = _quantityController.text.trim();
+    final quantity = parseWholeQuantity(text);
     if (quantity == null || quantity <= 0) {
-      setState(() => _quantityError = 'Entrez une quantité valide');
+      setState(
+        () => _quantityError = hasDecimalSeparator(text)
+            ? wholeQuantityError
+            : 'Entrez une quantité valide',
+      );
       return;
     }
     setState(() {
@@ -179,7 +184,9 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                   hint: 'ex: 10',
                   controller: _quantityController,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  // Virgule gardée visible pour être refusée, jamais
+                  // recollée aux chiffres (« 2,5 » ≠ 25).
+                  inputFormatters: wholeNumberInputFormatters(maxLength: 6),
                   errorText: _quantityError,
                 ),
                 const SizedBox(height: AppSpacing.lg),
