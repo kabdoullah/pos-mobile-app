@@ -1,8 +1,10 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/utils/whole_number_input.dart';
+import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/inventory/domain/entities/stock_movement.dart';
 import 'package:mobile/features/inventory/domain/entities/stock_movement_page.dart';
 import 'package:mobile/features/inventory/domain/repositories/inventory_repository.dart';
@@ -77,8 +79,8 @@ void main() {
     );
     await tester.enterText(find.byType(TextField).first, '2,5');
     await tester.pump();
-    await tester.ensureVisible(find.text('Valider l\'ajustement'));
-    await tester.tap(find.text('Valider l\'ajustement'));
+    await tester.ensureVisible(find.text('Ajouter au stock'));
+    await tester.tap(find.text('Ajouter au stock'));
     await tester.pump();
 
     expect(find.text(wholeQuantityError), findsOneWidget);
@@ -89,6 +91,48 @@ void main() {
         note: any(named: 'note'),
       ),
     );
+  });
+
+  testWidgets('shows the resulting stock and says what the button does', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inventoryRepositoryProvider.overrideWithValue(repo),
+          stockProductProvider('p1').overrideWith(
+            (ref) => Stream.value(
+              Product(
+                id: 'p1',
+                name: 'Eau Awa 1.5L',
+                sellingPrice: Decimal.fromInt(325),
+                currentStock: 60,
+                updatedAt: DateTime(2026),
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: StockAdjustmentSheet(productId: 'p1')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, '10');
+    await tester.pump();
+    expect(find.text('60 → 70'), findsOneWidget);
+    expect(find.text('Ajouter 10 au stock'), findsOneWidget);
+
+    await tester.tap(find.text('Sortie'));
+    await tester.pump();
+    expect(find.text('60 → 50'), findsOneWidget);
+    expect(find.text('Retirer 10 du stock'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Plus'));
+    await tester.pump();
+    expect(find.text('Retirer 11 du stock'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   test('reloads an open history once the adjustment is recorded', () async {

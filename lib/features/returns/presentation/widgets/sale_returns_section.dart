@@ -16,10 +16,18 @@ import '../providers/returns_providers.dart';
 /// action « Retourner des articles » quand il reste une quantité retournable.
 class SaleReturnsSection extends ConsumerWidget {
   /// Crée une [SaleReturnsSection].
-  const SaleReturnsSection({required this.sale, super.key});
+  const SaleReturnsSection({
+    required this.sale,
+    this.showReturnAction = true,
+    super.key,
+  });
 
   /// Vente concernée.
   final Sale sale;
+
+  /// Affiche le bouton « Retourner des articles » ; à masquer quand l'écran
+  /// porte déjà l'action (barre du bas du détail de vente).
+  final bool showReturnAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,7 +51,9 @@ class SaleReturnsSection extends ConsumerWidget {
               child: _ReturnTile(saleReturn: saleReturn, names: names),
             ),
         ],
-        if (canReturn)
+        if (!showReturnAction)
+          const SizedBox.shrink()
+        else if (canReturn)
           OutlinedButton.icon(
             onPressed: () => context.push(Routes.saleReturn, extra: sale),
             icon: const Icon(Icons.assignment_return_outlined),

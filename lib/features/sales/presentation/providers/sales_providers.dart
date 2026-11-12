@@ -13,6 +13,7 @@ import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
+import '../../domain/repositories/sales_repository.dart';
 import 'cart_provider.dart';
 import 'checkout_provider.dart';
 
@@ -100,6 +101,18 @@ Stream<List<sale_entity.Sale>> salesHistory(
       .watchSalesByDateRange(startDate, endDate);
 }
 
+/// Observe les lignes des ventes d'une plage de dates (incluse), par vente.
+@riverpod
+Stream<Map<String, List<SaleLinePreview>>> salesHistoryLines(
+  Ref ref, {
+  required DateTime startDate,
+  required DateTime endDate,
+}) {
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSaleLinesByDateRange(startDate, endDate);
+}
+
 /// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
 /// dès que la synchro l'attribue.
 @riverpod
@@ -137,21 +150,38 @@ List<({DateTime day, List<sale_entity.Sale> sales})> groupSalesByDay(
   return groups;
 }
 
-/// Recherche par numéro de reçu (préfixe « # » accepté). Une vente pas encore
-/// synchronisée n'a pas de numéro : elle ne correspond à aucune recherche.
-List<sale_entity.Sale> searchSalesByReceipt(
+/// Aperçu des articles d'une vente : « Riz ×21, Lotus ×2 » jusqu'à trois
+/// lignes, sinon « Huile ×4 + 3 autres ». Vide sans ligne connue.
+String saleLinesPreview(List<SaleLinePreview> lines) {
+  String label(SaleLinePreview line) => line.quantity == 1
+      ? line.productName
+      : '${line.productName} ×${line.quantity}';
+  if (lines.length <= 3) return lines.map(label).join(', ');
+  return '${label(lines.first)} + ${lines.length - 1} autres';
+}
+
+/// Recherche dans l'historique : par produit vendu (nom, sans tenir compte
+/// de la casse) ou, pour une saisie numérique, par n° de reçu (préfixe « # »
+/// accepté) ou montant. Une vente pas encore synchronisée n'a pas de numéro.
+List<sale_entity.Sale> searchSales(
   List<sale_entity.Sale> sales,
-  String query,
-) {
-  final digits = query.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.isEmpty) return sales;
-  return sales
-      .where(
-        (sale) =>
-            sale.receiptNumber > 0 &&
-            sale.receiptNumber.toString().contains(digits),
-      )
-      .toList();
+  String query, {
+  Map<String, List<SaleLinePreview>> lines = const {},
+}) {
+  final text = query.trim().toLowerCase();
+  if (text.isEmpty || text == '#') return sales;
+  final isNumeric = RegExp(r'^[#\s  0-9]+$').hasMatch(text);
+  final digits = text.replaceAll(RegExp('[^0-9]'), '');
+  return sales.where((sale) {
+    if (isNumeric) {
+      return (sale.receiptNumber > 0 &&
+              sale.receiptNumber.toString().contains(digits)) ||
+          sale.totalAmount.toString().contains(digits);
+    }
+    return (lines[sale.id] ?? const []).any(
+      (line) => line.productName.toLowerCase().contains(text),
+    );
+  }).toList();
 }
 
 /// Télécharge le reçu PDF d'une vente.

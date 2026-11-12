@@ -8,7 +8,7 @@ import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
 /// Ligne produit de l'onglet Stock (même schéma que la caisse) : nom, puis
-/// prix et badge de stock ; accès à l'ajustement à droite.
+/// prix et badge de stock ; bouton « Ajuster » à droite.
 class StockProductTile extends StatelessWidget {
   /// Crée la carte.
   const StockProductTile({
@@ -46,13 +46,13 @@ class StockProductTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm + 2,
             AppSpacing.xs,
-            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm + 2,
           ),
           child: Row(
             children: [
-              ProductThumbnail(product: product, size: 48),
+              ProductThumbnail(product: product, size: 44),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
@@ -62,9 +62,9 @@ class StockProductTile extends StatelessWidget {
                       product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyLarge.copyWith(
+                      style: AppTypography.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
-                        height: 1.3,
+                        height: 1.25,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -75,8 +75,9 @@ class StockProductTile extends StatelessWidget {
                       children: [
                         Text(
                           price,
-                          style: AppTypography.bodySmall.copyWith(
+                          style: AppTypography.bodyMedium.copyWith(
                             color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
                             fontFeatures: AppTypography.tabularFigures,
                           ),
                         ),
@@ -92,15 +93,27 @@ class StockProductTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onAdjust != null)
-                IconButton(
-                  tooltip: 'Ajuster le stock de ${product.name}',
-                  // Saisie d'une entrée ou d'une sortie : distinct des
-                  // filtres et du crayon « Modifier » de la fiche produit.
-                  icon: Icon(Icons.edit_note, color: cs.primary),
-                  onPressed: onAdjust,
-                )
-              else
+              if (onAdjust != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                // Libellé en toutes lettres : distinct du crayon « Modifier »
+                // de la fiche produit.
+                Semantics(
+                  button: true,
+                  label: 'Ajuster le stock de ${product.name}',
+                  excludeSemantics: true,
+                  child: OutlinedButton(
+                    onPressed: onAdjust,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, AppSpacing.buttonHeightSm),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                    ),
+                    child: const Text('Ajuster'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ] else
                 const SizedBox(width: AppSpacing.sm),
             ],
           ),

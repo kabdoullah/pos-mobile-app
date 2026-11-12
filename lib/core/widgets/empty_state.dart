@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 import 'primary_button.dart';
@@ -14,6 +15,9 @@ enum EmptyStateTone {
 
   /// Action attendue avant de continuer (caisse fermée).
   warning,
+
+  /// Bonne nouvelle (aucune rupture).
+  success,
 
   /// Erreur (chargement impossible).
   error,
@@ -66,10 +70,15 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final (ringColor, iconColor) = switch (tone) {
       EmptyStateTone.primary => (cs.primaryContainer, cs.onPrimaryContainer),
       EmptyStateTone.neutral => (cs.surfaceContainerLow, cs.onSurfaceVariant),
       EmptyStateTone.warning => (cs.tertiaryContainer, cs.onTertiaryContainer),
+      EmptyStateTone.success => (
+        semantic.successContainer,
+        semantic.onSuccessContainer,
+      ),
       EmptyStateTone.error => (cs.errorContainer, cs.onErrorContainer),
     };
     return Center(

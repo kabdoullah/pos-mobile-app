@@ -20,6 +20,9 @@ typedef DailyStats = ({
   Decimal refundTotal,
 });
 
+/// Ligne de vente réduite à ce que montre l'historique.
+typedef SaleLinePreview = ({String productName, int quantity});
+
 /// Repository abstrait pour les opérations de vente.
 abstract class SalesRepository {
   /// Crée et enregistre une nouvelle vente avec ses articles, en figeant les
@@ -66,6 +69,15 @@ abstract class SalesRepository {
   /// Observe toutes les ventes créées dans [startDate, endDate] inclus — réémet
   /// à chaque changement.
   Stream<List<Sale>> watchSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Observe les lignes (nom du produit figé à la vente, quantité) des ventes
+  /// créées dans [startDate, endDate] inclus, par identifiant de vente —
+  /// aperçu des articles et recherche par produit dans l'historique. Une
+  /// vente venue du serveur sans lignes locales est absente.
+  Stream<Map<String, List<SaleLinePreview>>> watchSaleLinesByDateRange(
     DateTime startDate,
     DateTime endDate,
   );

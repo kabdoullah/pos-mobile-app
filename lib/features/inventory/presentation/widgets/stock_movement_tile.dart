@@ -36,10 +36,10 @@ class StockMovementTile extends StatelessWidget {
     final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final delta = movement.quantityDelta;
     final isPositive = (delta ?? 0) >= 0;
-    final color = isPositive ? semantic.success : cs.error;
+    final color = isPositive ? semantic.onSuccessContainer : cs.error;
     final deltaLabel = delta == null
         ? '—'
-        : (isPositive ? '+$delta' : '$delta');
+        : (isPositive ? '+ $delta' : '− ${delta.abs()}');
     final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
     final note = movement.note;
     final productName = this.productName;
@@ -80,7 +80,9 @@ class StockMovementTile extends StatelessWidget {
                   productName ?? _reasonLabel(movement.reason),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.titleMedium,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 Text(details, style: muted),
               ],
@@ -92,10 +94,14 @@ class StockMovementTile extends StatelessWidget {
             children: [
               Text(
                 deltaLabel,
-                style: AppTypography.titleMedium.copyWith(color: color),
+                style: AppTypography.bodyMedium.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
               ),
               if (movement.resultingStock != null)
-                Text('Stock : ${movement.resultingStock}', style: muted),
+                Text('stock ${movement.resultingStock}', style: muted),
             ],
           ),
         ],
