@@ -9,6 +9,7 @@ import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/auth/domain/entities/account_email.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/domain/entities/user.dart';
@@ -19,6 +20,7 @@ import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/settings/presentation/pages/settings_page.dart';
+import 'package:mobile/features/settings/presentation/pages/sync_status_page.dart';
 import 'package:mobile/features/settings/presentation/widgets/receipt_settings_sheet.dart';
 
 class _Authenticated extends Auth {
@@ -61,9 +63,24 @@ class _Store extends StoreConfig {
   Future<Store?> build() async => _store;
 }
 
+/// Envoi échoué après une synchro réussie le matin.
+class _FailedSync extends SyncOrchestrator {
+  @override
+  SyncStatus build() => SyncStatusError(
+    message: 'Erreur de sauvegarde',
+    failedAt: DateTime(2026, 9, 27, 12, 2),
+    lastSyncAt: DateTime(2026, 9, 27, 11, 35),
+  );
+}
+
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
-Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
+Future<void> pump(
+  WidgetTester tester,
+  Widget home,
+  ThemeData theme, {
+  SyncOrchestrator Function() sync = _IdleSync.new,
+}) async {
   // Caisse fermée : la déconnexion reste possible
   // (`cash_register_guards_test.dart` couvre le refus).
   final cash = _MockCashRegister();
@@ -85,7 +102,7 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
         storeConfigProvider.overrideWith(_Store.new),
         sellerProfileProvider.overrideWith(_Seller.new),
         accountEmailStatusProvider.overrideWith(_UnverifiedEmail.new),
-        syncOrchestratorProvider.overrideWith(_IdleSync.new),
+        syncOrchestratorProvider.overrideWith(sync),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(3)),
         cashRegisterRepositoryProvider.overrideWithValue(cash),
@@ -123,6 +140,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('elles seront effacées'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('synchronisation en échec, thème $name', (tester) async {
+      await pump(tester, const SyncStatusPage(), theme, sync: _FailedSync.new);
+      expect(tester.takeException(), isNull);
+      expect(find.text('3 modifications'), findsOneWidget);
+      expect(
+        find.text('Gardées sur ce téléphone, rien n’est perdu.'),
+        findsOne,
+      );
+      expect(find.text('Envoi échoué à 12:02'), findsOneWidget);
+      expect(find.text('Dernier envoi réussi'), findsOneWidget);
+      expect(find.text('OK'), findsOneWidget);
+      expect(
+        find.widgetWithText(PrimaryButton, 'Envoyer maintenant'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('feuille Reçus avec aperçu, thème $name', (tester) async {

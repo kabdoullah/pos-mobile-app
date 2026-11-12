@@ -234,6 +234,29 @@ void main() {
   });
 
   group('écran de retour', () {
+    /// Étape 1 : coche l'article (quantité 1) et passe à l'étape 2.
+    Future<void> selectAndContinue(WidgetTester tester) async {
+      await tester.tap(find.byType(Checkbox));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
+    }
+
+    /// Étape 2 : choisit le motif « Produit défectueux » puis valide.
+    Future<void> pickReasonAndConfirm(WidgetTester tester) async {
+      await tester.scrollUntilVisible(
+        find.text('Produit défectueux'),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.text('Produit défectueux'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Produit défectueux'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirmer le remboursement'));
+      await tester.pumpAndSettle();
+    }
+
     for (final (name, theme) in [
       ('clair', AppTheme.light()),
       ('sombre', AppTheme.dark()),
@@ -248,21 +271,13 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         expect(find.text('Choisissez au moins un article'), findsOneWidget);
+        expect(find.text('Étape 1 sur 2 · Que rapporte le client ?'), findsOne);
 
-        await tester.tap(find.byTooltip('Augmenter'));
-        await tester.pumpAndSettle();
+        await selectAndContinue(tester);
         expect(find.text('Sera remis en stock'), findsOneWidget);
         expect(find.text('Choisissez le motif'), findsOneWidget);
 
-        await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
-
-        await tester.ensureVisible(find.text('Produit défectueux'));
-
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Produit défectueux'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Continuer'));
-        await tester.pumpAndSettle();
+        await pickReasonAndConfirm(tester);
 
         // Récapitulatif : enregistrement impossible sans attester le
         // remboursement.
@@ -305,15 +320,8 @@ void main() {
         repository,
         sessionOpen: false,
       );
-      await tester.tap(find.byTooltip('Augmenter'));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
-      await tester.ensureVisible(find.text('Produit défectueux'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Produit défectueux'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Continuer'));
-      await tester.pumpAndSettle();
+      await selectAndContinue(tester);
+      await pickReasonAndConfirm(tester);
       await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Enregistrer le retour'));
@@ -334,7 +342,7 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca(returned: 1)]),
       );
-      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.tap(find.byType(Checkbox));
       await tester.pumpAndSettle();
       final increase = tester.widget<IconButton>(
         find.ancestor(
@@ -355,8 +363,7 @@ void main() {
         _FakeReturns(lines: [coca()]),
         height: 1400,
       );
-      await tester.tap(find.byTooltip('Augmenter'));
-      await tester.pumpAndSettle();
+      await selectAndContinue(tester);
       await tester.tap(find.text('Autre'));
       await tester.pumpAndSettle();
 
@@ -375,6 +382,7 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca()]),
       );
+      await selectAndContinue(tester);
       await tester.scrollUntilVisible(
         find.textContaining('Vente payée en mixte'),
         100,
@@ -384,6 +392,33 @@ void main() {
         find.widgetWithText(ChoiceChip, 'Espèces'),
       );
       expect(cash.selected, isTrue);
+    });
+
+    testWidgets('état « Endommagé » : motif pré-rempli, hors stock', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        SaleReturnPage(sale: sale()),
+        _FakeReturns(lines: [coca()]),
+        height: 1400,
+      );
+      await selectAndContinue(tester);
+      await tester.tap(find.text('Endommagé'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Ne sera pas remis en stock'), findsOneWidget);
+      expect(find.text('Rendez au client, en espèces'), findsOneWidget);
+      final reason = tester.widget<ChoiceChip>(
+        find.widgetWithText(ChoiceChip, 'Produit endommagé'),
+      );
+      expect(reason.selected, isTrue);
+
+      // Retour à l'étape 1 sans quitter l'écran, quantité gardée.
+      await tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+      await tester.pumpAndSettle();
+      expect(find.text('Étape 1 sur 2 · Que rapporte le client ?'), findsOne);
+      expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
     });
 
     testWidgets('plus rien à retourner : écran explicite', (tester) async {

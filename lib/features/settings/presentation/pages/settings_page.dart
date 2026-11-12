@@ -46,7 +46,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   // Protection contre le double tap sur les actions asynchrones.
   bool _exporting = false;
-  bool _syncing = false;
 
   void _showMessage(String message, {bool isError = false}) {
     final cs = Theme.of(context).colorScheme;
@@ -155,9 +154,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 icon: Icons.cloud_sync_outlined,
                 title: 'Synchronisation',
                 subtitle: Text(_syncLabel()),
-                busy: _syncing,
-                onTap: _syncNow,
-                trailing: const Icon(Icons.refresh),
+                showChevron: true,
+                onTap: () => context.push(Routes.syncStatus),
               ),
               const _AppearanceTile(),
               SettingsTile(
@@ -243,7 +241,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
     return switch (status) {
       SyncStatusSyncing() => 'Envoi en cours…',
-      SyncStatusError() => 'Envoi échoué · touchez pour réessayer',
+      SyncStatusError() => 'Envoi échoué · voir le détail',
       SyncStatusIdle() when pending > 0 =>
         // La file mêle ventes, retours, produits et caisse : terme neutre,
         // comme la pastille de synchro.
@@ -254,31 +252,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         'Tout est envoyé · ${DateFormat.Hm('fr_FR').format(at)}',
       SyncStatusIdle() => 'Tout est envoyé',
     };
-  }
-
-  Future<void> _syncNow() async {
-    if (!(ref.read(isOnlineProvider).value ?? false)) {
-      _showMessage(
-        'Hors ligne : la synchronisation reprendra au retour du réseau.',
-      );
-      return;
-    }
-    setState(() => _syncing = true);
-    // syncNow() ne lève pas : le résultat se lit dans l'état de l'orchestrateur.
-    await ref.read(syncOrchestratorProvider.notifier).syncNow();
-    if (!mounted) return;
-    setState(() => _syncing = false);
-    switch (ref.read(syncOrchestratorProvider)) {
-      case SyncStatusError():
-        _showMessage(
-          'La synchronisation a échoué. Réessayez dans un instant.',
-          isError: true,
-        );
-      case SyncStatusSyncing():
-        _showMessage('Synchronisation déjà en cours…');
-      case SyncStatusIdle():
-        _showMessage('Tout est synchronisé');
-    }
   }
 
   Future<void> _confirmLogout() async {

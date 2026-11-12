@@ -32,6 +32,7 @@ import '../../features/returns/presentation/pages/sale_return_page.dart';
 import '../../features/sales/presentation/pages/sale_detail_page.dart';
 import '../../features/sales/domain/entities/sale.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
+import '../../features/settings/presentation/pages/sync_status_page.dart';
 import '../../features/printing/presentation/pages/bluetooth_setup_page.dart';
 import 'main_shell.dart';
 
@@ -124,6 +125,9 @@ abstract class Routes {
 
   /// Configuration de l'imprimante Bluetooth.
   static const String bluetoothSetup = '/settings/printer';
+
+  /// État de la synchronisation : ce qui attend, ce qui a échoué.
+  static const String syncStatus = '/settings/sync';
 
   /// Caisse : session ouverte (solde, mouvements) ou invitation à ouvrir.
   static const String cashRegister = '/cash';
@@ -354,6 +358,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: Routes.bluetoothSetup,
         builder: (context, state) => const BluetoothSetupPage(),
+      ),
+      GoRoute(
+        path: Routes.syncStatus,
+        builder: (context, state) => const SyncStatusPage(),
       ),
       GoRoute(
         path: Routes.categories,
