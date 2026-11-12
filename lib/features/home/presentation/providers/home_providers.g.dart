@@ -157,107 +157,55 @@ final class TodayMarginSummaryProvider
 String _$todayMarginSummaryHash() =>
     r'd78c80db9ed3d54371eab8ada6b3ed5924486e44';
 
-/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
-/// ancienne — pour la mini-liste « activité récente » de l'accueil.
+/// Diffuse la vente la plus récente du jour, null avant la première —
+/// l'heure de la dernière vente s'affiche sur l'accueil.
 
-@ProviderFor(recentSales)
-final recentSalesProvider = RecentSalesProvider._();
+@ProviderFor(lastSaleToday)
+final lastSaleTodayProvider = LastSaleTodayProvider._();
 
-/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
-/// ancienne — pour la mini-liste « activité récente » de l'accueil.
+/// Diffuse la vente la plus récente du jour, null avant la première —
+/// l'heure de la dernière vente s'affiche sur l'accueil.
 
-final class RecentSalesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<Sale>>,
-          List<Sale>,
-          Stream<List<Sale>>
-        >
-    with $FutureModifier<List<Sale>>, $StreamProvider<List<Sale>> {
-  /// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
-  /// ancienne — pour la mini-liste « activité récente » de l'accueil.
-  RecentSalesProvider._()
+final class LastSaleTodayProvider
+    extends $FunctionalProvider<AsyncValue<Sale?>, Sale?, Stream<Sale?>>
+    with $FutureModifier<Sale?>, $StreamProvider<Sale?> {
+  /// Diffuse la vente la plus récente du jour, null avant la première —
+  /// l'heure de la dernière vente s'affiche sur l'accueil.
+  LastSaleTodayProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'recentSalesProvider',
+        name: r'lastSaleTodayProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$recentSalesHash();
+  String debugGetCreateSourceHash() => _$lastSaleTodayHash();
 
   @$internal
   @override
-  $StreamProviderElement<List<Sale>> $createElement($ProviderPointer pointer) =>
+  $StreamProviderElement<Sale?> $createElement($ProviderPointer pointer) =>
       $StreamProviderElement(pointer);
 
   @override
-  Stream<List<Sale>> create(Ref ref) {
-    return recentSales(ref);
+  Stream<Sale?> create(Ref ref) {
+    return lastSaleToday(ref);
   }
 }
 
-String _$recentSalesHash() => r'873d362435a91ec85a763315a8a91ba61d9da61d';
-
-/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
-
-@ProviderFor(todayHourlySales)
-final todayHourlySalesProvider = TodayHourlySalesProvider._();
-
-/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
-
-final class TodayHourlySalesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<Decimal>>,
-          List<Decimal>,
-          Stream<List<Decimal>>
-        >
-    with $FutureModifier<List<Decimal>>, $StreamProvider<List<Decimal>> {
-  /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-  /// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
-  TodayHourlySalesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'todayHourlySalesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$todayHourlySalesHash();
-
-  @$internal
-  @override
-  $StreamProviderElement<List<Decimal>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<List<Decimal>> create(Ref ref) {
-    return todayHourlySales(ref);
-  }
-}
-
-String _$todayHourlySalesHash() => r'f21d5e305c74dba9e5ba56e2f01ae8c602487e12';
+String _$lastSaleTodayHash() => r'b39306d40f127bf9c3b9f5d2760626ed8dd315e1';
 
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
-/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
+/// alimente les « Alertes de stock » de l'accueil.
 
 @ProviderFor(homeLowStock)
 final homeLowStockProvider = HomeLowStockProvider._();
 
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
-/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
+/// alimente les « Alertes de stock » de l'accueil.
 
 final class HomeLowStockProvider
     extends
@@ -268,7 +216,7 @@ final class HomeLowStockProvider
         >
     with $FutureModifier<List<Product>>, $StreamProvider<List<Product>> {
   /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
-  /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
+  /// alimente les « Alertes de stock » de l'accueil.
   HomeLowStockProvider._()
     : super(
         from: null,

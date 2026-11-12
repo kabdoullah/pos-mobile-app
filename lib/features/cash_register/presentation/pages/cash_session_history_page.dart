@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +26,7 @@ class CashSessionHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final online = ref.watch(isOnlineProvider);
     return AppScaffold(
-      title: 'Historique des caisses',
+      title: 'Sessions de caisse',
       body: online.when(
         loading: () => const _HistorySkeleton(),
         // Connectivité inconnue : on montre ce qui est sur le téléphone.
@@ -154,15 +155,20 @@ class _SessionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppListGroup(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final session in sessions) _SessionTile(session: session),
+        for (final (i, session) in sessions.indexed) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.sm + 4),
+          _SessionTile(session: session),
+        ],
       ],
     );
   }
 }
 
-/// Une session : dates, statut et écart de clôture.
+/// Une session : jour, état de clôture, heures, fond de caisse et montant
+/// compté — l'écart se lit sans ouvrir le détail.
 class _SessionTile extends StatelessWidget {
   const _SessionTile({required this.session});
 
@@ -171,57 +177,138 @@ class _SessionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
-    final dateFormat = DateFormat('d MMM yyyy à HH:mm', 'fr_FR');
-    final closedAt = session.closedAt;
+    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
+    final hour = DateFormat.Hm('fr_FR');
+    final openedAt = session.openedAt.toLocal();
+    final closedAt = session.closedAt?.toLocal();
     final discrepancy = session.discrepancyAmount;
+    final counted = session.countedAmount;
     final isOpen = session.status == CashSessionStatus.open;
-    final subtitle = isOpen
-        ? 'En cours'
-        : closedAt == null
-        ? 'Clôturée'
-        : 'Clôturée le ${dateFormat.format(closedAt.toLocal())}';
-    return InkWell(
+    final day = toBeginningOfSentenceCase(
+      DateFormat('EEE d MMM', 'fr_FR').format(openedAt),
+      'fr_FR',
+    );
+    final hours = closedAt == null
+        ? '${hour.format(openedAt)} → …'
+        : '${hour.format(openedAt)} → ${hour.format(closedAt)}';
+    final amounts = counted == null
+        ? formatAmount(session.openingAmount)
+        : '${formatAmount(session.openingAmount)} · ${formatAmount(counted)}';
+
+    return AppCard(
       onTap: () => context.push(
         Routes.cashSessionDetail.replaceFirst(':id', session.id),
       ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ouverte le ${dateFormat.format(session.openedAt.toLocal())}',
-                      style: AppTypography.titleMedium,
-                    ),
-                    Text(subtitle, style: muted),
-                    if (session.rejectionCode != null)
-                      Text(
-                        'Refusée par le serveur',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: cs.error,
-                        ),
-                      )
-                    else if (session.syncStatus == CashSyncStatus.pending)
-                      Text('En attente de synchro', style: muted),
-                    if (!isOpen && discrepancy != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      DiscrepancyBadge(discrepancy: discrepancy),
-                    ],
-                  ],
+                child: Text(
+                  day,
+                  style: AppTypography.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              if (isOpen)
+                _Tag(
+                  label: 'En cours',
+                  background: cs.primaryContainer,
+                  foreground: cs.onPrimaryContainer,
+                )
+              else if (discrepancy != null)
+                _DiscrepancyTag(discrepancy: discrepancy),
             ],
           ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(hours, style: muted),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  counted == null ? 'Fond' : 'Fond · Compté',
+                  style: muted,
+                ),
+              ),
+              Text(
+                amounts,
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              ),
+            ],
+          ),
+          if (session.rejectionCode != null)
+            Text(
+              'Refusée par le serveur',
+              style: AppTypography.bodyMedium.copyWith(color: cs.error),
+            )
+          else if (session.syncStatus == CashSyncStatus.pending)
+            Text('En attente de synchro', style: muted),
+        ],
+      ),
+    );
+  }
+}
+
+/// « Équilibrée » ou « Écart − 1 175 » sur la couleur de l'état.
+class _DiscrepancyTag extends StatelessWidget {
+  const _DiscrepancyTag({required this.discrepancy});
+
+  final Decimal discrepancy;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = discrepancyColors(context, discrepancy);
+    final label = switch (DiscrepancyKind.of(discrepancy)) {
+      DiscrepancyKind.balanced => 'Équilibrée',
+      DiscrepancyKind.surplus => 'Écart + ${formatAmount(discrepancy)}',
+      DiscrepancyKind.deficit => 'Écart − ${formatAmount(discrepancy.abs())}',
+    };
+    return Semantics(
+      label: discrepancyLabel(discrepancy),
+      excludeSemantics: true,
+      child: _Tag(
+        label: label,
+        background: colors.background,
+        foreground: colors.foreground,
+      ),
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag({
+    required this.label,
+    required this.background,
+    required this.foreground,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.labelMedium.copyWith(
+          color: foreground,
+          fontWeight: FontWeight.w700,
+          fontFeatures: AppTypography.tabularFigures,
         ),
       ),
     );
@@ -267,7 +354,7 @@ class _HistorySkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         for (var i = 0; i < 5; i++) ...const [
-          SkeletonBox(height: 72),
+          SkeletonBox(height: 108, radius: AppSpacing.radiusMd),
           SizedBox(height: AppSpacing.sm),
         ],
       ],

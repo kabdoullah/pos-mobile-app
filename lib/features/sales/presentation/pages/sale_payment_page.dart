@@ -163,28 +163,15 @@ class _SalePaymentPageState extends ConsumerState<SalePaymentPage> {
               ],
             ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: cs.surface,
-              border: Border(top: BorderSide(color: cs.outlineVariant)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.sm + 4,
-                  AppSpacing.md,
-                  AppSpacing.sm + 4,
-                ),
-                child: PrimaryButton(
-                  label: 'Valider la vente',
-                  loadingLabel: 'Enregistrement…',
-                  isLoading: isSubmitting,
-                  onPressed: canSubmit ? _validate : null,
-                ),
+          BottomActionBar(
+            children: [
+              PrimaryButton(
+                label: 'Valider la vente',
+                loadingLabel: 'Enregistrement…',
+                isLoading: isSubmitting,
+                onPressed: canSubmit ? _validate : null,
               ),
-            ),
+            ],
           ),
         ],
       ),

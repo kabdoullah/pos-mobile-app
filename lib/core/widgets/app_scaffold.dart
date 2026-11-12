@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'bottom_action_bar.dart';
 import 'sync_status_indicator.dart';
 
 /// Scaffold standard de l'app avec bandeau hors ligne optionnel.
@@ -16,6 +17,7 @@ class AppScaffold extends ConsumerWidget {
     required this.body,
     this.actions,
     this.floatingActionButton,
+    this.bottomActions,
     this.showOfflineBanner = true,
     super.key,
   });
@@ -32,11 +34,16 @@ class AppScaffold extends ConsumerWidget {
   /// Bouton d'action flottant.
   final Widget? floatingActionButton;
 
+  /// Actions fixées en bas de l'écran ([BottomActionBar]), au-dessus de la
+  /// barre de navigation.
+  final List<Widget>? bottomActions;
+
   /// Affiche ou non le bandeau hors ligne en cas de déconnexion.
   final bool showOfflineBanner;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final bottomActions = this.bottomActions;
     return Scaffold(
       appBar: AppBar(title: Text(title), actions: actions),
       body: Column(
@@ -46,6 +53,9 @@ class AppScaffold extends ConsumerWidget {
         ],
       ),
       floatingActionButton: floatingActionButton,
+      bottomNavigationBar: bottomActions == null
+          ? null
+          : BottomActionBar(children: bottomActions),
     );
   }
 }

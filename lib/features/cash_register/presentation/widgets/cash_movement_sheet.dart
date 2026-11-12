@@ -20,6 +20,7 @@ Future<bool> showCashMovementSheet(
 ) async {
   final saved = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) => CashMovementSheet(type: type),
@@ -27,13 +28,17 @@ Future<bool> showCashMovementSheet(
   return saved ?? false;
 }
 
-/// Feuille d'un mouvement d'espèces : montant, motif et commentaire
-/// (obligatoire pour le motif « Autre »).
+/// Feuille d'un mouvement d'espèces : sens (modifiable), montant, motif et
+/// commentaire (obligatoire pour le motif « Autre »).
+///
+/// Une sortie supérieure au solde théorique du tiroir est refusée dès la
+/// saisie : le message est sous le champ et le bouton est inactif (le use
+/// case la refuse de toute façon).
 class CashMovementSheet extends ConsumerStatefulWidget {
   /// Crée la feuille pour un mouvement de sens [type].
   const CashMovementSheet({required this.type, super.key});
 
-  /// Entrée ou sortie.
+  /// Sens présélectionné : entrée ou sortie.
   final CashMovementType type;
 
   @override
@@ -42,6 +47,7 @@ class CashMovementSheet extends ConsumerStatefulWidget {
 
 class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
   final _noteController = TextEditingController();
+  late CashMovementType _type = widget.type;
   Decimal? _amount;
   CashMovementReason? _reason;
   String? _amountError;
@@ -50,7 +56,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
   String? _formError;
   bool _isLoading = false;
 
-  bool get _isIn => widget.type == CashMovementType.cashIn;
+  bool get _isIn => _type == CashMovementType.cashIn;
 
   @override
   void dispose() {
@@ -80,7 +86,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
       await ref
           .read(cashRegisterControllerProvider.notifier)
           .recordMovement(
-            type: widget.type,
+            type: _type,
             reason: reason!,
             amount: amount!,
             note: _noteController.text,
@@ -109,37 +115,88 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
     }
   }
 
+  /// Solde théorique du tiroir, null tant qu'il n'est pas connu.
+  Decimal? _drawerBalance() {
+    final session = ref.watch(activeCashSessionProvider).value;
+    if (session == null) return null;
+    return ref.watch(cashSummaryProvider(session.id)).value?.expectedAmount;
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final reasons = CashMovementReason.allowedFor(widget.type);
+    final reasons = CashMovementReason.allowedFor(_type);
     final noteRequired = _reason == CashMovementReason.other;
     final formError = _formError;
     final reasonError = _reasonError;
+    final amount = _amount;
+    final balance = _drawerBalance();
+    final exceedsDrawer =
+        !_isIn && amount != null && balance != null && amount > balance;
+    final amountError = exceedsDrawer
+        ? 'Le tiroir ne contient que ${formatFcfa(balance)}.'
+        : _amountError;
+    final hasAmount = amount != null && amount > Decimal.zero;
+    final submitLabel = switch ((_isIn, hasAmount)) {
+      (true, true) => 'Ajouter ${formatFcfa(amount!)}',
+      (false, true) => 'Retirer ${formatFcfa(amount!)}',
+      (true, false) => "Enregistrer l'entrée",
+      (false, false) => 'Enregistrer la sortie',
+    };
+
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppSpacing.radiusXl),
         ),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
           padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
+            left: AppSpacing.md,
+            right: AppSpacing.md,
             top: AppSpacing.lg,
-            bottom: AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
+            bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
           ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  _isIn ? "Entrée d'espèces" : "Sortie d'espèces",
-                  style: AppTypography.titleMedium,
+                const Text(
+                  "Mouvement d'espèces",
+                  style: AppTypography.appBarTitle,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                SegmentedButton<CashMovementType>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: CashMovementType.cashIn,
+                      label: Text('Entrée'),
+                      icon: Icon(Icons.south_west),
+                    ),
+                    ButtonSegment(
+                      value: CashMovementType.cashOut,
+                      label: Text('Sortie'),
+                      icon: Icon(Icons.north_east),
+                    ),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (selection) => setState(() {
+                    _type = selection.single;
+                    // Les motifs dépendent du sens.
+                    if (!CashMovementReason.allowedFor(
+                      _type,
+                    ).contains(_reason)) {
+                      _reason = null;
+                    }
+                    _amountError = null;
+                    _reasonError = null;
+                    _formError = null;
+                  }),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -150,12 +207,13 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                     color: cs.onSurfaceVariant,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
                 AmountInput(
                   label: 'Montant',
                   hint: '0',
-                  value: _amount,
-                  errorText: _amountError,
+                  large: true,
+                  value: amount,
+                  errorText: amountError,
                   onChanged: (value) => setState(() {
                     _amount = value;
                     _amountError = null;
@@ -191,8 +249,8 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
                   label: noteRequired
-                      ? 'Commentaire (obligatoire)'
-                      : 'Commentaire (facultatif)',
+                      ? 'Préciser (obligatoire)'
+                      : 'Préciser (facultatif)',
                   controller: _noteController,
                   errorText: _noteError,
                   maxLines: 2,
@@ -208,14 +266,12 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                     style: AppTypography.errorText.copyWith(color: cs.error),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
                 PrimaryButton(
-                  label: _isIn
-                      ? "Enregistrer l'entrée"
-                      : 'Enregistrer la sortie',
+                  label: submitLabel,
                   icon: _isIn ? Icons.south_west : Icons.north_east,
                   isLoading: _isLoading,
-                  onPressed: _isLoading ? null : _submit,
+                  onPressed: _isLoading || exceedsDrawer ? null : _submit,
                 ),
               ],
             ),

@@ -79,8 +79,8 @@ void main() {
       await _pump(tester, profile, const AccountEmailBanner());
       await tester.pumpAndSettle();
 
-      expect(find.text('Ajoutez un email'), findsOneWidget);
-      await tester.tap(find.text('Ajouter mon email'));
+      expect(find.text('Ajoutez un email de récupération'), findsOneWidget);
+      await tester.tap(find.text('Ajouter'));
       await tester.pumpAndSettle();
 
       final fields = find.byType(TextField);
@@ -115,7 +115,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Card), findsNothing);
-      expect(find.text('Ajoutez un email'), findsNothing);
+      expect(find.text('Ajoutez un email de récupération'), findsNothing);
     });
 
     testWidgets('email confirmé : pas de rappel', (tester) async {
@@ -174,7 +174,7 @@ void main() {
     await _pump(tester, _OfflineProfile(), const AccountEmailBanner());
     await tester.pump();
 
-    expect(find.text('Ajoutez un email'), findsNothing);
+    expect(find.text('Ajoutez un email de récupération'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

@@ -12,6 +12,9 @@ enum EmptyStateTone {
   /// Information neutre (recherche sans résultat).
   neutral,
 
+  /// Action attendue avant de continuer (caisse fermée).
+  warning,
+
   /// Erreur (chargement impossible).
   error,
 }
@@ -66,6 +69,7 @@ class EmptyState extends StatelessWidget {
     final (ringColor, iconColor) = switch (tone) {
       EmptyStateTone.primary => (cs.primaryContainer, cs.onPrimaryContainer),
       EmptyStateTone.neutral => (cs.surfaceContainerLow, cs.onSurfaceVariant),
+      EmptyStateTone.warning => (cs.tertiaryContainer, cs.onTertiaryContainer),
       EmptyStateTone.error => (cs.errorContainer, cs.onErrorContainer),
     };
     return Center(
