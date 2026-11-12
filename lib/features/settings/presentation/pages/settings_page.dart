@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../app/theme/theme_mode_provider.dart';
 import '../../../../core/config.dart';
 import '../../../../core/network/error_mapper.dart';
@@ -69,8 +70,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final storeAddress = store?.address;
     final footer = store?.receiptFooterText;
 
+    final printer = ref.watch(printerProvider);
     return AppScaffold(
       title: 'Paramètres',
+      actions: const [
+        Padding(
+          padding: EdgeInsets.only(right: AppSpacing.md),
+          child: OfflineStatusIndicator(),
+        ),
+      ],
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
@@ -121,7 +129,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               SettingsTile(
                 icon: Icons.print_outlined,
                 title: 'Imprimante',
-                subtitle: Text(_printerLabel(ref.watch(printerProvider))),
+                // Ce qui demande une action est signalé, pas seulement écrit.
+                subtitle: switch (printer) {
+                  PrinterDisconnected(savedName: null) => const Align(
+                    alignment: Alignment.centerLeft,
+                    child: _ActionBadge(label: 'À configurer'),
+                  ),
+                  PrinterError() => const Align(
+                    alignment: Alignment.centerLeft,
+                    child: _ActionBadge(
+                      label: 'Erreur · touchez pour vérifier',
+                    ),
+                  ),
+                  _ => Text(_printerLabel(printer)),
+                },
                 showChevron: true,
                 onTap: () => context.push(Routes.bluetoothSetup),
               ),
@@ -138,36 +159,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 onTap: _syncNow,
                 trailing: const Icon(Icons.refresh),
               ),
-              SettingsTile(
-                icon: Icons.palette_outlined,
-                title: 'Apparence',
-                trailing: SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined, size: 18),
-                      tooltip: 'Clair',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                      tooltip: 'Système',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined, size: 18),
-                      tooltip: 'Sombre',
-                    ),
-                  ],
-                  selected: {ref.watch(themeModeProvider)},
-                  onSelectionChanged: (modes) =>
-                      ref.read(themeModeProvider.notifier).setMode(modes.first),
-                  showSelectedIcon: false,
-                  style: SegmentedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ),
-              ),
+              const _AppearanceTile(),
               SettingsTile(
                 icon: Icons.file_download_outlined,
                 title: 'Exporter les ventes',
@@ -235,8 +227,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     PrinterConnected(:final name) => 'Connectée : $name',
     PrinterConnecting() => 'Connexion…',
     PrinterDisconnected(savedName: final name?) => name,
-    PrinterDisconnected() => 'Aucune imprimante configurée',
-    PrinterError() => 'Erreur de connexion — touchez pour vérifier',
+    PrinterDisconnected() => 'À configurer',
+    PrinterError() => 'Erreur · touchez pour vérifier',
   };
 
   /// État de synchro en mots simples (jamais de jargon technique).
@@ -244,19 +236,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
     final status = ref.watch(syncOrchestratorProvider);
     final pending = ref.watch(pendingSyncCountProvider).value ?? 0;
-    if (!isOnline) return 'Hors ligne — reprise automatique';
+    if (!isOnline) {
+      return pending == 0
+          ? 'Hors ligne · tout est envoyé'
+          : 'Hors ligne · $pending en attente d’envoi';
+    }
     return switch (status) {
-      SyncStatusSyncing() => 'Synchronisation…',
-      SyncStatusError() => 'Échec — touchez pour réessayer',
+      SyncStatusSyncing() => 'Envoi en cours…',
+      SyncStatusError() => 'Envoi échoué · touchez pour réessayer',
       SyncStatusIdle() when pending > 0 =>
         // La file mêle ventes, retours, produits et caisse : terme neutre,
-        // comme la bannière de synchro.
+        // comme la pastille de synchro.
         pending == 1
             ? '1 modification en attente'
             : '$pending modifications en attente',
       SyncStatusIdle(lastSyncAt: final at?) =>
-        'Synchronisé à ${DateFormat.Hm('fr_FR').format(at)}',
-      SyncStatusIdle() => 'Synchronisé',
+        'Tout est envoyé · ${DateFormat.Hm('fr_FR').format(at)}',
+      SyncStatusIdle() => 'Tout est envoyé',
     };
   }
 
@@ -291,7 +287,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final blockReason = await cashLogoutBlockReason(ref);
     if (!mounted) return;
     if (blockReason != null) {
-      _showMessage(blockReason);
+      await _showLogoutBlocked(blockReason);
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;
@@ -315,6 +311,56 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
     if (confirmed && mounted) {
       unawaited(ref.read(authProvider.notifier).logout());
+    }
+  }
+
+  /// Déconnexion refusée : la règle est expliquée et l'action utile
+  /// proposée (clôturer la caisse ouverte).
+  Future<void> _showLogoutBlocked(String reason) async {
+    final cs = Theme.of(context).colorScheme;
+    final isOpen = reason == cashLogoutOpenSessionMessage;
+    final closeCash = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: CircleAvatar(
+          radius: 36,
+          backgroundColor: cs.tertiaryContainer,
+          child: Icon(
+            Icons.lock_outline,
+            size: 36,
+            color: cs.onTertiaryContainer,
+          ),
+        ),
+        title: Text(
+          isOpen ? 'Clôturez d’abord la caisse' : 'Déconnexion impossible',
+          textAlign: TextAlign.center,
+        ),
+        content: Text(reason, textAlign: TextAlign.center),
+        actionsOverflowDirection: VerticalDirection.down,
+        actionsOverflowButtonSpacing: AppSpacing.sm,
+        actions: [
+          if (isOpen) ...[
+            PrimaryButton(
+              label: 'Clôturer la caisse',
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Annuler'),
+              ),
+            ),
+          ] else
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Compris'),
+            ),
+        ],
+      ),
+    );
+    if ((closeCash ?? false) && mounted) {
+      unawaited(context.push(Routes.cashClose));
     }
   }
 
@@ -398,5 +444,77 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
+  }
+}
+
+/// Badge d'action attendue (« À configurer »).
+class _ActionBadge extends StatelessWidget {
+  const _ActionBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 3,
+      ),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.labelMedium.copyWith(
+          color: cs.onTertiaryContainer,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+/// Apparence en toutes lettres : Clair, Système, Sombre.
+class _AppearanceTile extends ConsumerWidget {
+  const _AppearanceTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm + 4,
+        AppSpacing.md,
+        AppSpacing.sm + 4,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.palette_outlined, color: cs.onSurfaceVariant),
+              const SizedBox(width: AppSpacing.md),
+              Text('Apparence', style: Theme.of(context).textTheme.bodyLarge),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(value: ThemeMode.light, label: Text('Clair')),
+              ButtonSegment(value: ThemeMode.system, label: Text('Système')),
+              ButtonSegment(value: ThemeMode.dark, label: Text('Sombre')),
+            ],
+            selected: {ref.watch(themeModeProvider)},
+            onSelectionChanged: (modes) =>
+                ref.read(themeModeProvider.notifier).setMode(modes.first),
+            showSelectedIcon: false,
+          ),
+        ],
+      ),
+    );
   }
 }

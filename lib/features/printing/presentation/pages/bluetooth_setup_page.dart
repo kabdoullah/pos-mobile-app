@@ -200,7 +200,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     };
 
     return AppScaffold(
-      title: 'Configurer l\'imprimante',
+      title: 'Imprimante',
       actions: [
         if (!_checkingPermission && _hasPermission)
           IconButton(
@@ -224,6 +224,10 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
                 onForget: () => _forget(savedName),
               ),
               const SizedBox(height: AppSpacing.lg),
+            ],
+            if (savedName == null) ...[
+              const _BeforeYouStart(),
+              const SizedBox(height: AppSpacing.md),
             ],
             if (_checkingPermission) ...[
               const Center(child: AppLoadingIndicator()),
@@ -262,10 +266,12 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
               if (_isLoading) const LinearProgressIndicator(),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Appareils appairés (${_pairedDevices.length})',
-                style: tt.titleSmall,
+                'Appareils appairés',
+                style: AppTypography.labelLarge.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.sm),
               // Une seule surface, une ligne par appareil.
               AppListGroup(
                 dividerIndent: 56,
@@ -312,10 +318,17 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                              : Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: cs.onSurfaceVariant,
+                              : OutlinedButton(
+                                  onPressed: isAnyConnecting
+                                      ? null
+                                      : () => _connectToDevice(device),
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size(
+                                      0,
+                                      AppSpacing.buttonHeightSm,
+                                    ),
+                                  ),
+                                  child: const Text('Connecter'),
                                 ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md,
@@ -401,6 +414,30 @@ class _SavedPrinterCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Les trois gestes à faire avant de chercher l'imprimante.
+class _BeforeYouStart extends StatelessWidget {
+  const _BeforeYouStart();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Avant de commencer', style: AppTypography.labelLarge),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '1. Allumez l’imprimante.\n'
+            '2. Activez le Bluetooth du téléphone.\n'
+            '3. Posez-les l’un près de l’autre.',
+            style: AppTypography.bodyMedium.copyWith(height: 1.5),
           ),
         ],
       ),
