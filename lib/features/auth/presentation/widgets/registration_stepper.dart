@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 
-/// Indicateur d'étapes horizontal pour le parcours d'inscription en 3 étapes.
-///
-/// Affiche les étapes passées remplies avec une coche, l'étape active remplie
-/// avec son numéro, les étapes à venir en contour avec un numéro atténué.
+/// Progression du parcours d'inscription : « Étape 2 sur 3 · Boutique » et
+/// une barre de progression. Une question par écran, la progression visible.
 class RegistrationStepper extends StatelessWidget {
   /// Crée un indicateur d'étapes d'inscription.
   const RegistrationStepper({required this.currentStep, super.key});
@@ -21,107 +19,39 @@ class RegistrationStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final totalSteps = _labels.length;
+    final label =
+        'Étape $currentStep sur $totalSteps · ${_labels[currentStep - 1]}';
 
-    // ✨ [A11y] Annonce la progression à VoiceOver/TalkBack avec un label consolidé.
-    //    excludeSemantics=true évite que les cercles enfants soient lus individuellement.
     return Semantics(
-      label: 'Étape $currentStep sur $totalSteps : ${_labels[currentStep - 1]}',
+      label: label,
       excludeSemantics: true,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          for (int i = 0; i < totalSteps; i++) ...[
-            _StepCircle(
-              index: i + 1,
-              currentStep: currentStep,
-              label: _labels[i],
+          Text(
+            label,
+            style: AppTypography.labelLarge.copyWith(
+              color: cs.onSurfaceVariant,
             ),
-            if (i < totalSteps - 1)
-              Expanded(
-                // ✨ [UX] AnimatedContainer → transition fluide quand currentStep change.
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  height: 2,
-                  color: (i + 1) < currentStep ? cs.primary : cs.outlineVariant,
-                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: currentStep / totalSteps),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 4,
+                color: cs.primary,
+                backgroundColor: cs.surfaceContainerHigh,
               ),
-          ],
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-class _StepCircle extends StatelessWidget {
-  const _StepCircle({
-    required this.index,
-    required this.currentStep,
-    required this.label,
-  });
-
-  final int index;
-  final int currentStep;
-  final String label;
-
-  // ✨ [Qualité] Constante locale — évite le passage inutile en paramètre.
-  static const double _size = 28;
-
-  @override
-  Widget build(BuildContext context) {
-    // ✨ [Qualité] Accès direct au contexte — supprime le param colorScheme du parent.
-    final cs = Theme.of(context).colorScheme;
-    final isPast = index < currentStep;
-    final isActive = index == currentStep;
-    final isFilled = isPast || isActive;
-
-    final bgColor = isFilled ? cs.primary : Colors.transparent;
-    // Étapes à venir : contraste suffisant pour rester lisibles (WCAG AA),
-    // outlineVariant étant quasi invisible sur le fond clair.
-    final borderColor = isFilled ? cs.primary : cs.outline;
-    final contentColor = isFilled ? cs.onPrimary : cs.onSurfaceVariant;
-
-    // ✨ [Qualité] isPast et isActive → même couleur, factorisé.
-    final labelColor = isFilled ? cs.primary : cs.onSurfaceVariant;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // ✨ [UX] AnimatedContainer → animation fill/border lors du passage à cet étape.
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          width: _size,
-          height: _size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: bgColor,
-            border: Border.all(color: borderColor, width: 2),
-          ),
-          child: Center(
-            child: isPast
-                ? Icon(Icons.check, size: 14, color: contentColor)
-                : Text(
-                    '$index',
-                    // ✨ [Design system] AppTypography token au lieu de TextStyle inline.
-                    style: AppTypography.labelSmall.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: contentColor,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        // ✨ [UX] AnimatedDefaultTextStyle → transition couleur du label fluide.
-        AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-          style: AppTypography.labelSmall.copyWith(
-            color: labelColor,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-          ),
-          child: Text(label),
-        ),
-      ],
     );
   }
 }

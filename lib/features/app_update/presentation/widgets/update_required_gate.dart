@@ -58,16 +58,24 @@ class _UpdateRequiredDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return AlertDialog(
-      icon: Icon(Icons.system_update_outlined, size: 48, color: cs.primary),
+      icon: CircleAvatar(
+        radius: 36,
+        backgroundColor: cs.primaryContainer,
+        child: Icon(
+          Icons.system_update_outlined,
+          size: 36,
+          color: cs.onPrimaryContainer,
+        ),
+      ),
       title: Text(
-        'Mise à jour requise',
+        'Mise à jour nécessaire',
         style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
         textAlign: TextAlign.center,
       ),
       content: Text(
-        'Une nouvelle version de l’application est disponible. Mettez-la à '
-        'jour pour continuer à l’utiliser. Vos ventes et données sont '
-        'conservées.',
+        'Cette version de l’application n’est plus prise en charge. '
+        'Installez la nouvelle version pour continuer. Vos ventes et données '
+        'sont conservées.',
         style: AppTypography.bodyLarge.copyWith(color: cs.onSurface),
         textAlign: TextAlign.center,
       ),
@@ -77,7 +85,12 @@ class _UpdateRequiredDialog extends StatelessWidget {
         AppSpacing.lg,
         AppSpacing.lg,
       ),
-      actions: [PrimaryButton(label: 'Mettre à jour', onPressed: _openStore)],
+      actions: [
+        PrimaryButton(
+          label: 'Mettre à jour sur le Play Store',
+          onPressed: _openStore,
+        ),
+      ],
     );
   }
 }

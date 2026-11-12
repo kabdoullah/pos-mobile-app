@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'button_frame.dart';
-import '../../app/theme/app_colors.dart';
 
 /// Bouton d'action principal pleine largeur aux couleurs de la marque
 /// (brun cacao).
@@ -52,27 +51,16 @@ class PrimaryButton extends StatelessWidget {
       loadingLabel: loadingLabel,
       icon: icon,
       trailingIcon: trailingIcon,
-      backgroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.12)
-          : cs.primary,
+      backgroundColor: isDisabled ? cs.surfaceContainerHigh : cs.primary,
       // Désactivé : onPrimary sur le fond grisé était illisible (blanc sur
       // gris clair, brun foncé sur brun en sombre).
       foregroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.38)
+          ? cs.onSurface.withValues(alpha: 0.45)
           : cs.onPrimary,
       progressColor: cs.onPrimary,
-      boxShadow: isDisabled
-          ? const []
-          : [
-              BoxShadow(
-                color: Theme.of(context)
-                    .extension<AppSemanticColors>()!
-                    .elevationShadow
-                    .withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      // Bouton à plat : la couleur suffit à le distinguer, et une ombre cacao
+      // ferait un halo en mode sombre.
+      boxShadow: const [],
     );
   }
 }

@@ -21,8 +21,9 @@ import '../widgets/open_cash_session_sheet.dart';
 /// Nombre de mouvements affichés sur l'écran de la caisse active.
 const _recentMovementCount = 10;
 
-/// Caisse : solde théorique et mouvements de la session ouverte, ou
-/// invitation à ouvrir la caisse.
+/// Ma caisse : solde théorique du tiroir en direct, mobile money à part et
+/// mouvements du jour ; ou invitation à ouvrir la caisse. Les actions restent
+/// fixées en bas de l'écran.
 class CashRegisterPage extends ConsumerWidget {
   /// Crée l'écran de la caisse.
   const CashRegisterPage({super.key});
@@ -30,19 +31,34 @@ class CashRegisterPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeCashSessionProvider);
-    return AppScaffold(
-      title: 'Caisse',
-      actions: [
-        IconButton(
-          tooltip: 'Historique des caisses',
-          icon: const Icon(Icons.history),
-          onPressed: () => context.push(Routes.cashHistory),
+    final List<Widget>? bottomActions = switch (active) {
+      AsyncData(value: null) => [
+        PrimaryButton(
+          label: 'Ouvrir la caisse',
+          icon: Icons.lock_open_outlined,
+          onPressed: () => showOpenCashSessionSheet(context),
         ),
       ],
+      AsyncError() => null,
+      // Pendant la lecture : mêmes boutons, inactifs, pour que l'écran ne
+      // saute pas.
+      _ => _activeActions(context, enabled: active.value != null),
+    };
+    return AppScaffold(
+      title: 'Ma caisse',
+      actions: [
+        TextButton(
+          onPressed: () => context.push(Routes.cashHistory),
+          child: const Text('Sessions'),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+      ],
+      bottomActions: bottomActions,
       body: active.when(
         loading: () => const _CashSkeleton(),
         error: (_, _) => EmptyState(
           icon: Icons.error_outline,
+          tone: EmptyStateTone.error,
           title: 'Caisse indisponible',
           message: 'Impossible de lire la caisse sur ce téléphone.',
           actionLabel: 'Réessayer',
@@ -54,10 +70,44 @@ class CashRegisterPage extends ConsumerWidget {
       ),
     );
   }
+
+  List<Widget> _activeActions(
+    BuildContext context, {
+    required bool enabled,
+  }) => [
+    Row(
+      children: [
+        Expanded(
+          child: SecondaryButton(
+            label: 'Entrée',
+            icon: Icons.south_west,
+            onPressed: enabled
+                ? () => showCashMovementSheet(context, CashMovementType.cashIn)
+                : null,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: SecondaryButton(
+            label: 'Sortie',
+            icon: Icons.north_east,
+            onPressed: enabled
+                ? () => showCashMovementSheet(context, CashMovementType.cashOut)
+                : null,
+          ),
+        ),
+      ],
+    ),
+    PrimaryButton(
+      label: 'Clôturer la caisse',
+      icon: Icons.lock_outline,
+      onPressed: enabled ? () => context.push(Routes.cashClose) : null,
+    ),
+  ];
 }
 
-/// Aucune caisse ouverte : invitation à ouvrir, et rappel d'une clôture
-/// refusée par le serveur s'il y en a une.
+/// Aucune caisse ouverte : une phrase, l'action en bas ; et rappel d'une
+/// clôture refusée par le serveur s'il y en a une.
 class _ClosedCash extends ConsumerWidget {
   const _ClosedCash();
 
@@ -98,15 +148,14 @@ class _ClosedCash extends ConsumerWidget {
               ),
             ),
           ),
-        Expanded(
+        const Expanded(
           child: EmptyState(
-            icon: Icons.point_of_sale_outlined,
+            icon: Icons.lock_outline,
+            tone: EmptyStateTone.warning,
             title: 'Caisse fermée',
             message:
-                'Comptez les espèces du tiroir puis ouvrez la caisse pour '
-                'suivre le solde de la journée.',
-            actionLabel: 'Ouvrir la caisse',
-            onAction: () => showOpenCashSessionSheet(context),
+                'Ouvrez la caisse pour commencer à vendre. Comptez d\'abord '
+                'les espèces du tiroir.',
           ),
         ),
       ],
@@ -114,8 +163,8 @@ class _ClosedCash extends ConsumerWidget {
   }
 }
 
-/// Caisse ouverte : solde théorique, formule, actions et derniers
-/// mouvements.
+/// Caisse ouverte : solde théorique et sa formule, mobile money, mouvements
+/// du jour.
 class _ActiveCash extends ConsumerWidget {
   const _ActiveCash({required this.session});
 
@@ -124,23 +173,21 @@ class _ActiveCash extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
     final summary = ref.watch(cashSummaryProvider(session.id));
     final movements = ref.watch(cashMovementsProvider(session.id));
-    final openedAt = DateFormat(
-      "'Ouverte le' d MMM 'à' HH:mm",
-      'fr_FR',
-    ).format(session.openedAt.toLocal());
+    final openedAt = DateFormat.Hm('fr_FR').format(session.openedAt.toLocal());
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
+        AppSpacing.xs,
         AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xl,
+        AppSpacing.lg,
       ),
       children: [
         summary.when(
-          loading: () => const SkeletonBox(height: 280),
+          loading: () => const _SummarySkeleton(),
           error: (e, _) => CashNoticeBanner(
             level: CashNoticeLevel.error,
             message: cashRegisterErrorMessage(e),
@@ -148,7 +195,25 @@ class _ActiveCash extends ConsumerWidget {
           data: (summary) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CashSummaryCard.fromSummary(summary, caption: openedAt),
+              CashSummaryCard.fromSummary(
+                summary,
+                expectedLabel: 'Solde théorique du tiroir',
+                showMobileMoney: false,
+                header: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    const StatusPill(
+                      label: 'Ouverte',
+                      icon: Icons.lock_open_outlined,
+                      tone: StatusPillTone.success,
+                    ),
+                    Text('depuis $openedAt', style: muted),
+                  ],
+                ),
+              ),
               if (summary.rejectedCashRefunds > Decimal.zero) ...[
                 const SizedBox(height: AppSpacing.sm),
                 CashNoticeBanner(
@@ -159,38 +224,12 @@ class _ActiveCash extends ConsumerWidget {
                       'comptés',
                 ),
               ],
+              const SizedBox(height: AppSpacing.md),
+              _MobileMoneyCard(amount: summary.mobileMoneySales),
             ],
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: _MovementButton(
-                label: 'Entrée',
-                icon: Icons.south_west,
-                onPressed: () =>
-                    showCashMovementSheet(context, CashMovementType.cashIn),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _MovementButton(
-                label: 'Sortie',
-                icon: Icons.north_east,
-                onPressed: () =>
-                    showCashMovementSheet(context, CashMovementType.cashOut),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        PrimaryButton(
-          label: 'Clôturer la caisse',
-          icon: Icons.lock_outline,
-          onPressed: () => context.push(Routes.cashClose),
-        ),
-        const SizedBox(height: AppSpacing.lg),
         movements.when(
           loading: () => const SkeletonBox(height: 120),
           error: (e, _) => CashNoticeBanner(
@@ -201,22 +240,16 @@ class _ActiveCash extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SectionHeader(
-                title: 'Derniers mouvements',
+                title: 'Mouvements du jour',
                 count: movements.isEmpty ? null : movements.length,
               ),
               if (movements.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                  child: Text(
-                    "Aucune entrée ni sortie d'espèces pour l'instant.",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
+                Text(
+                  "Aucune entrée ni sortie d'espèces pour l'instant.",
+                  style: muted,
                 )
               else
                 AppListGroup(
-                  dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
                   children: [
                     for (final movement in movements.take(_recentMovementCount))
                       Padding(
@@ -235,25 +268,71 @@ class _ActiveCash extends ConsumerWidget {
   }
 }
 
-class _MovementButton extends StatelessWidget {
-  const _MovementButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
+/// Mobile money encaissé depuis l'ouverture : hors tiroir, il n'entre pas
+/// dans le solde à compter.
+class _MobileMoneyCard extends StatelessWidget {
+  const _MobileMoneyCard({required this.amount});
 
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
+  final Decimal amount;
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Mobile money', style: AppTypography.labelLarge),
+              ),
+              Text(
+                formatFcfa(amount),
+                style: AppTypography.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            'Hors tiroir : ne se compte pas à la clôture.',
+            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummarySkeleton extends StatelessWidget {
+  const _SummarySkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonBox(width: 120, height: 32, radius: AppSpacing.radiusFull),
+          SizedBox(height: AppSpacing.sm),
+          SkeletonBox(width: 180, height: 18),
+          SizedBox(height: AppSpacing.sm),
+          SkeletonBox(width: 240, height: 38),
+          SizedBox(height: AppSpacing.sm),
+          SkeletonBox(height: 18),
+          SizedBox(height: AppSpacing.sm),
+          SkeletonBox(height: 18),
+          SizedBox(height: AppSpacing.sm),
+          SkeletonBox(height: 18),
+        ],
       ),
     );
   }
@@ -268,11 +347,9 @@ class _CashSkeleton extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: const [
-        SkeletonBox(height: 280),
+        _SummarySkeleton(),
         SizedBox(height: AppSpacing.md),
-        SkeletonBox(height: AppSpacing.buttonHeightSm),
-        SizedBox(height: AppSpacing.sm),
-        SkeletonBox(height: AppSpacing.buttonHeight),
+        SkeletonBox(height: 56, radius: AppSpacing.radiusLg),
       ],
     );
   }

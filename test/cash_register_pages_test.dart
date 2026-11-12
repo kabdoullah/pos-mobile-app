@@ -32,7 +32,6 @@ import 'package:mobile/features/cash_register/presentation/widgets/discrepancy_b
 import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/home/presentation/pages/home_page.dart';
 import 'package:mobile/features/home/presentation/providers/home_providers.dart';
-import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
@@ -236,12 +235,14 @@ void main() {
     await pumpCash(tester, Routes.cashRegister);
 
     expect(
-      find.bySemanticsLabel('Solde théorique : ${formatFcfa(d('47500'))}'),
+      find.bySemanticsLabel(
+        'Solde théorique du tiroir : ${formatFcfa(d('47500'))}',
+      ),
       findsOneWidget,
     );
     for (final label in [
       'Fond de caisse',
-      'Ventes espèces (6)',
+      'Ventes en espèces (6)',
       'Entrées',
       'Sorties',
       'Remboursements espèces',
@@ -257,6 +258,62 @@ void main() {
       find.textContaining('Refusé par le serveur'),
       findsOneWidget,
       reason: 'un mouvement refusé est marqué',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('movement sheet refuses a withdrawal above the drawer', (
+    tester,
+  ) async {
+    stubActive(openSession(), summary());
+    when(
+      () => repo.watchMovements('s1'),
+    ).thenAnswer((_) => Stream.value(const []));
+    await pumpCash(tester, Routes.cashRegister);
+
+    await tester.tap(find.widgetWithText(SecondaryButton, 'Sortie'));
+    await tester.pumpAndSettle();
+    expect(find.text("Mouvement d'espèces"), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '60000');
+    await tester.pump();
+    expect(
+      find.text('Le tiroir ne contient que ${formatFcfa(d('47500'))}.'),
+      findsOneWidget,
+    );
+    final button = tester.widget<PrimaryButton>(
+      find.widgetWithText(PrimaryButton, 'Retirer ${formatFcfa(d('60000'))}'),
+    );
+    expect(button.onPressed, isNull);
+
+    // Une entrée n'est pas plafonnée par le tiroir.
+    await tester.tap(find.text('Entrée').last);
+    await tester.pump();
+    expect(find.textContaining('Le tiroir ne contient que'), findsNothing);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ajouter ${formatFcfa(d('60000'))}'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('open sheet suggests the last counted amount', (tester) async {
+    stubActive(null, null);
+    when(
+      () => repo.watchLocalHistory(),
+    ).thenAnswer((_) => Stream.value([closedSession()]));
+    await pumpCash(tester, Routes.cashRegister);
+
+    await tester.tap(find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining(': ${formatAmount(d('49000'))}'));
+    await tester.pump();
+    expect(
+      find.widgetWithText(
+        PrimaryButton,
+        'Ouvrir avec ${formatFcfa(d('49000'))}',
+      ),
+      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });
@@ -292,12 +349,18 @@ void main() {
 
     await tester.enterText(field, '12000');
     await tester.pump();
-    expect(find.text('Excédent de ${formatFcfa(d('2000'))}'), findsOneWidget);
-    expect(find.text('Commentaire (obligatoire)'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Excédent de ${formatFcfa(d('2000'))}'),
+      findsOneWidget,
+    );
+    expect(find.text("Expliquez l'écart (obligatoire)"), findsOneWidget);
 
     await tester.enterText(field, '9000');
     await tester.pump();
-    expect(find.text('Déficit de ${formatFcfa(d('1000'))}'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Déficit de ${formatFcfa(d('1000'))}'),
+      findsOneWidget,
+    );
 
     // Écart sans commentaire : refusé avant même la confirmation.
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
@@ -360,7 +423,10 @@ void main() {
     );
     await tester.enterText(find.byType(TextField).first, '0');
     await tester.pump();
-    expect(find.text('Excédent de ${formatFcfa(d('2000'))}'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Excédent de ${formatFcfa(d('2000'))}'),
+      findsOneWidget,
+    );
 
     await tester.enterText(find.byType(TextField).last, 'Solde négatif');
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
@@ -436,7 +502,7 @@ void main() {
         findsOneWidget,
       );
       // Chiffres du serveur, solde figé à la clôture.
-      expect(find.text('Ventes espèces (7)'), findsOneWidget);
+      expect(find.text('Ventes en espèces (7)'), findsOneWidget);
       expect(
         find.bySemanticsLabel(
           'Solde théorique à la clôture : ${formatFcfa(d('50000'))}',
@@ -454,7 +520,7 @@ void main() {
       await pumpCash(tester, '/cash/sessions/s1', online: false);
 
       verifyNever(() => repo.fetchRemoteDetail(any()));
-      expect(find.text('Ventes espèces (6)'), findsOneWidget);
+      expect(find.text('Ventes en espèces (6)'), findsOneWidget);
       expect(find.textContaining('Opérations arrivées'), findsNothing);
       expect(find.text('Session indisponible'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -526,7 +592,10 @@ void main() {
       find.text('Hors ligne : sessions de ce téléphone uniquement'),
       findsOneWidget,
     );
-    expect(find.text('Déficit de ${formatFcfa(d('1000'))}'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Déficit de ${formatFcfa(d('1000'))}')),
+      findsOneWidget,
+    );
     verifyNever(() => repo.fetchRemoteHistory(cursor: any(named: 'cursor')));
   });
 
@@ -623,10 +692,6 @@ void main() {
             )),
           ),
           homeLowStockProvider.overrideWith((ref) => Stream.value(const [])),
-          todayHourlySalesProvider.overrideWith(
-            (ref) => Stream.value(salesByHour(const <Sale>[])),
-          ),
-          recentSalesProvider.overrideWith((ref) => Stream.value(const [])),
         ],
         retry: (_, _) => null,
         child: MaterialApp.router(
@@ -660,14 +725,15 @@ void main() {
     await pumpHome(tester);
 
     final card = find.bySemanticsLabel(
-      'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
+      'Caisse ouverte, espèces dans le tiroir ${formatFcfa(d('47500'))}',
     );
     expect(card, findsOneWidget);
     // Action de tap exposée aux lecteurs d'écran (TalkBack, VoiceOver).
     expect(
       tester.getSemantics(card),
       matchesSemantics(
-        label: 'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
+        label:
+            'Caisse ouverte, espèces dans le tiroir ${formatFcfa(d('47500'))}',
         isButton: true,
         hasTapAction: true,
       ),
@@ -690,20 +756,14 @@ void main() {
 
         final cs = theme.colorScheme;
         // Solde négatif affiché tel quel, en couleur d'erreur du thème.
-        final hero = tester.widget<AmountDisplay>(
-          find.byWidgetPredicate(
-            (w) => w is AmountDisplay && w.amount == d('-2000'),
-          ),
-        );
-        expect(hero.color, cs.error);
+        final hero = tester.widget<Text>(find.text(formatFcfa(d('-2000'))));
+        expect(hero.style!.color, cs.error);
         expect(contrast(cs.error, cs.surface), greaterThanOrEqualTo(4.5));
 
         // Excédent : paire d'avertissement du thème.
         await tester.enterText(find.byType(TextField).first, '0');
         await tester.pump();
-        final surplus = tester.widget<Text>(
-          find.text('Excédent de ${formatFcfa(d('2000'))}'),
-        );
+        final surplus = tester.widget<Text>(find.text('Excédent'));
         expect(surplus.style!.color, cs.onTertiaryContainer);
         // Les trois états lisibles sur leur fond.
         final semantic = theme.extension<AppSemanticColors>()!;

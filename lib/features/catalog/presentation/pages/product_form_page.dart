@@ -4,6 +4,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:logger/logger.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -13,14 +14,31 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/barcode_utils.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
+import '../../providers/catalog_di_providers.dart';
 import '../providers/catalog_providers.dart';
 import '../providers/category_providers.dart';
 import '../widgets/category_picker.dart';
 
+/// Nom pré-rempli à la création d'un produit (extra de la route
+/// `Routes.productNew`) : recherche sans résultat en caisse. Un code-barres
+/// scanné passe, lui, en `String`.
+class ProductNamePrefill {
+  /// Crée le pré-remplissage.
+  const ProductNamePrefill(this.name);
+
+  /// Nom tapé dans la recherche.
+  final String name;
+}
+
 /// Page de création ou de modification d'un produit.
 class ProductFormPage extends ConsumerStatefulWidget {
   /// Crée une [ProductFormPage].
-  const ProductFormPage({super.key, this.productId, this.initialBarcode});
+  const ProductFormPage({
+    super.key,
+    this.productId,
+    this.initialBarcode,
+    this.initialName,
+  });
 
   /// ID du produit en mode édition, null en mode création.
   final String? productId;
@@ -28,6 +46,9 @@ class ProductFormPage extends ConsumerStatefulWidget {
   /// Code-barres pré-rempli quand on arrive d'une recherche par scan
   /// infructueuse.
   final String? initialBarcode;
+
+  /// Nom pré-rempli quand on arrive d'une recherche sans résultat en caisse.
+  final String? initialName;
 
   @override
   ConsumerState<ProductFormPage> createState() => _ProductFormPageState();
@@ -50,13 +71,20 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _barcodeError;
   bool _isLoading = false;
   bool _prefilled = false;
+  static final _logger = Logger();
+
+  // Code-barres (normalisé) dont vient le nom affiché, tant que l'utilisateur
+  // n'a pas retouché ce nom ; null sinon. Un nom suggéré peut être remplacé
+  // par un nouveau scan, un nom saisi jamais.
+  String? _nameSuggestedFor;
+  bool get _nameSuggested => _nameSuggestedFor != null;
   String? _categoryId;
   String? _initialCategoryId;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
+    _nameController = TextEditingController(text: widget.initialName ?? '');
     _priceController = TextEditingController();
     _purchasePriceController = TextEditingController();
     _barcodeController = TextEditingController(
@@ -70,6 +98,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       vsync: this,
     );
     unawaited(_formAnimationController.forward());
+    final initialBarcode = widget.initialBarcode;
+    if (widget.productId == null && initialBarcode != null) {
+      unawaited(_suggestName(initialBarcode));
+    }
   }
 
   @override
@@ -88,6 +120,64 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     final code = await context.push<String>(Routes.barcodeScanner);
     if (code != null && mounted) {
       _barcodeController.text = code;
+      await _suggestName(code);
+    }
+  }
+
+  /// Le nom peut être (re)rempli : vide, ou encore tel que suggéré.
+  bool get _nameReplaceable =>
+      _nameController.text.trim().isEmpty || _nameSuggested;
+
+  /// Pré-remplit le nom depuis le référentiel embarqué (création seulement).
+  ///
+  /// Ne remplace jamais un nom saisi, même pendant la recherche, et ignore une
+  /// réponse arrivée alors que le champ code-barres a changé entre-temps.
+  Future<void> _suggestName(String barcode) async {
+    if (widget.productId != null || !_nameReplaceable) return;
+    final code = normalizeBarcode(barcode);
+    String? name;
+    if (code != null) {
+      try {
+        name = await ref
+            .read(barcodeReferenceRepositoryProvider)
+            .suggestName(code);
+      } catch (e, st) {
+        // Suggestion facultative : la saisie manuelle reste possible.
+        _logger.w(
+          'Référentiel de codes-barres illisible',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }
+    if (!mounted ||
+        normalizeBarcode(_barcodeController.text) != code ||
+        !_nameReplaceable) {
+      return;
+    }
+    if (name != null) {
+      setState(() {
+        _nameController.text = name!;
+        _nameSuggestedFor = code;
+        _nameError = null;
+      });
+    } else {
+      _dropSuggestedName();
+    }
+  }
+
+  /// Retire un nom suggéré qui ne correspond plus au code-barres affiché.
+  void _dropSuggestedName() {
+    if (!_nameSuggested) return;
+    setState(() {
+      _nameController.clear();
+      _nameSuggestedFor = null;
+    });
+  }
+
+  void _onBarcodeEdited(String text) {
+    if (_nameSuggested && normalizeBarcode(text) != _nameSuggestedFor) {
+      _dropSuggestedName();
     }
   }
 
@@ -331,6 +421,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                   hint: 'ex: Riz blanc',
                   controller: _nameController,
                   errorText: _nameError,
+                  onChanged: (_) {
+                    if (_nameSuggested) {
+                      setState(() => _nameSuggestedFor = null);
+                    }
+                  },
+                  helper: _nameSuggested ? const _SuggestedNameHint() : null,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -390,6 +486,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
                         hint: 'Optionnel',
                         controller: _barcodeController,
                         errorText: _barcodeError,
+                        onChanged: _onBarcodeEdited,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -511,6 +608,41 @@ class _EstimatedMargin extends StatelessWidget {
                 ? '${formatFcfa(margin)} · vente à perte'
                 : '$sign${formatFcfa(margin)}',
             style: AppTypography.labelMedium.copyWith(color: color),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Signale un nom venu du référentiel de codes-barres : souvent abrégé, à
+/// relire avant d'enregistrer.
+class _SuggestedNameHint extends StatelessWidget {
+  const _SuggestedNameHint();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    // Annoncé par le lecteur d'écran : le nom se remplit sans action directe.
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        children: [
+          ExcludeSemantics(
+            child: Icon(
+              Icons.auto_awesome_outlined,
+              size: 16,
+              color: cs.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              'Nom suggéré d\'après le code-barres. Vérifiez-le.',
+              style: AppTypography.bodySmall.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
+            ),
           ),
         ],
       ),

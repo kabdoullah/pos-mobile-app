@@ -29,22 +29,57 @@ void main() {
     expect(salesTotals(const []).total, Decimal.zero);
   });
 
-  group('searchSalesByReceipt', () {
-    test('vide ou sans chiffre : toutes les ventes', () {
-      expect(searchSalesByReceipt(sales, ''), sales);
-      expect(searchSalesByReceipt(sales, '#'), sales);
+  group('searchSales', () {
+    final lines = {
+      's10452': [(productName: 'Riz local 1kg', quantity: 21)],
+      's10451': [(productName: 'Lotus', quantity: 2)],
+      's0': [(productName: 'Céleste', quantity: 1)],
+    };
+
+    test('vide ou « # » seul : toutes les ventes', () {
+      expect(searchSales(sales, ''), sales);
+      expect(searchSales(sales, '#'), sales);
     });
 
-    test('préfixe # accepté, correspondance partielle', () {
-      expect(searchSalesByReceipt(sales, '#10452').map((s) => s.id), [
+    test('n° de reçu : préfixe # accepté, correspondance partielle', () {
+      expect(searchSales(sales, '#10452').map((s) => s.id), ['s10452']);
+      expect(searchSales(sales, '1045'), hasLength(2));
+    });
+
+    test('montant', () {
+      expect(searchSales(sales, '8000').map((s) => s.id), ['s10451']);
+    });
+
+    test('produit vendu, sans tenir compte de la casse', () {
+      expect(searchSales(sales, 'riz', lines: lines).map((s) => s.id), [
         's10452',
       ]);
-      expect(searchSalesByReceipt(sales, '1045'), hasLength(2));
+      // La vente non envoyée se retrouve par ce qu'elle contient.
+      expect(searchSales(sales, 'CÉLESTE', lines: lines).map((s) => s.id), [
+        's0',
+      ]);
     });
+  });
 
-    test('une vente sans numéro ne correspond jamais', () {
-      expect(searchSalesByReceipt(sales, '0'), hasLength(2));
-    });
+  test('saleLinesPreview', () {
+    expect(saleLinesPreview(const []), '');
+    expect(
+      saleLinesPreview(const [
+        (productName: 'Bacteril', quantity: 2),
+        (productName: 'Céleste', quantity: 1),
+        (productName: 'Eau de Javel 1L', quantity: 1),
+      ]),
+      'Bacteril ×2, Céleste, Eau de Javel 1L',
+    );
+    expect(
+      saleLinesPreview(const [
+        (productName: 'Huile Dinor 1L', quantity: 4),
+        (productName: 'a', quantity: 1),
+        (productName: 'b', quantity: 1),
+        (productName: 'c', quantity: 1),
+      ]),
+      'Huile Dinor 1L ×4 + 3 autres',
+    );
   });
 
   test('groupSalesByDay : un groupe par jour, ordre conservé', () {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
 
 /// Barre de recherche de la caisse, avec le bouton d'ouverture du scanner.
@@ -31,19 +32,27 @@ class SaleSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return AppSearchBar(
       controller: controller,
       focusNode: focusNode,
       onChanged: onChanged,
       hintText: 'Nom ou code-barres',
       actions: [
-        IconButton.filledTonal(
-          tooltip: isScannerOpen
-              ? 'Replier le scanner'
-              : 'Scanner un code-barres',
-          isSelected: isScannerOpen,
-          icon: const Icon(Icons.qr_code_scanner),
+        // Bouton libellé intégré au champ : pas d'icône seule pour scanner.
+        TextButton.icon(
           onPressed: onToggleScanner,
+          icon: Icon(isScannerOpen ? Icons.close : Icons.qr_code_scanner),
+          label: Text(isScannerOpen ? 'Fermer' : 'Scanner'),
+          style: TextButton.styleFrom(
+            backgroundColor: cs.primaryContainer,
+            foregroundColor: cs.onPrimaryContainer,
+            minimumSize: const Size(0, AppSpacing.buttonHeightSm),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 4),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            ),
+          ),
         ),
       ],
     );

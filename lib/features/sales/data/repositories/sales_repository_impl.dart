@@ -265,6 +265,38 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
+  Stream<Map<String, List<SaleLinePreview>>> watchSaleLinesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
+    final rangeEnd = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
+
+    final query =
+        db.select(db.saleItems).join([
+          drift.innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+        ])..where(
+          db.sales.createdAt.isBiggerOrEqualValue(rangeStart) &
+              db.sales.createdAt.isSmallerThanValue(rangeEnd),
+        );
+    return query.watch().map((rows) {
+      final lines = <String, List<SaleLinePreview>>{};
+      for (final row in rows) {
+        final item = row.readTable(db.saleItems);
+        (lines[item.saleId] ??= []).add((
+          productName: item.productName,
+          quantity: item.quantity,
+        ));
+      }
+      return lines;
+    });
+  }
+
+  @override
   Future<sale_entity.Sale?> getSale(String id) async {
     final sale = await (db.select(
       db.sales,

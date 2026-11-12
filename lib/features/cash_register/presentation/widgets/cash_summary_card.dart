@@ -8,7 +8,8 @@ import '../../domain/entities/cash_session_detail.dart';
 import '../../domain/entities/cash_summary.dart';
 
 /// Solde théorique mis en avant, puis le détail de la formule : fond de
-/// caisse + ventes espèces + entrées − sorties − remboursements espèces.
+/// caisse + ventes en espèces + entrées − sorties − remboursements espèces
+/// (ligne masquée s'il n'y en a pas).
 ///
 /// Un solde négatif s'affiche tel quel, en couleur d'erreur.
 class CashSummaryCard extends StatelessWidget {
@@ -24,7 +25,9 @@ class CashSummaryCard extends StatelessWidget {
     this.mobileMoneySales,
     this.expectedLabel = 'Solde théorique',
     this.caption,
-    this.elevated = true,
+    this.header,
+    this.showMobileMoney = true,
+    this.elevated = false,
     super.key,
   });
 
@@ -34,7 +37,9 @@ class CashSummaryCard extends StatelessWidget {
     Decimal? expectedAmount,
     String expectedLabel = 'Solde théorique',
     String? caption,
-    bool elevated = true,
+    Widget? header,
+    bool showMobileMoney = true,
+    bool elevated = false,
     Key? key,
   }) => CashSummaryCard(
     expectedAmount: expectedAmount ?? summary.expectedAmount,
@@ -47,6 +52,8 @@ class CashSummaryCard extends StatelessWidget {
     mobileMoneySales: summary.mobileMoneySales,
     expectedLabel: expectedLabel,
     caption: caption,
+    header: header,
+    showMobileMoney: showMobileMoney,
     elevated: elevated,
     key: key,
   );
@@ -57,7 +64,9 @@ class CashSummaryCard extends StatelessWidget {
     Decimal? expectedAmount,
     String expectedLabel = 'Solde théorique',
     String? caption,
-    bool elevated = true,
+    Widget? header,
+    bool showMobileMoney = true,
+    bool elevated = false,
     Key? key,
   }) => CashSummaryCard(
     expectedAmount: expectedAmount ?? summary.expectedAmount,
@@ -70,6 +79,8 @@ class CashSummaryCard extends StatelessWidget {
     mobileMoneySales: summary.mobileMoneySales,
     expectedLabel: expectedLabel,
     caption: caption,
+    header: header,
+    showMobileMoney: showMobileMoney,
     elevated: elevated,
     key: key,
   );
@@ -104,36 +115,50 @@ class CashSummaryCard extends StatelessWidget {
   /// Ligne discrète sous le solde (ex. date d'ouverture).
   final String? caption;
 
+  /// Ligne d'état au-dessus du solde (pastille « Ouverte », heure).
+  final Widget? header;
+
+  /// Affiche la ligne « Mobile money (hors tiroir) » sous la formule ; à
+  /// masquer quand l'écran présente le mobile money dans sa propre carte.
+  final bool showMobileMoney;
+
   /// Surface élevée (objet principal de l'écran).
   final bool elevated;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
     final isNegative = expectedAmount < Decimal.zero;
     final count = cashSalesCount;
     final mobileMoney = mobileMoneySales;
     final caption = this.caption;
+    final header = this.header;
 
     return AppCard(
       elevated: elevated,
-      padding: AppSpacing.lg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (header != null) ...[
+            header,
+            const SizedBox(height: AppSpacing.sm),
+          ],
           Text(expectedLabel, style: muted),
-          const SizedBox(height: AppSpacing.xs),
           Semantics(
             container: true,
             label: '$expectedLabel : ${formatFcfa(expectedAmount)}',
             excludeSemantics: true,
-            child: Align(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: AmountDisplay(
-                amount: expectedAmount,
-                size: AmountSize.hero,
-                color: isNegative ? cs.error : null,
+              child: Text(
+                formatFcfa(expectedAmount),
+                maxLines: 1,
+                style: AppTypography.amountDisplay.copyWith(
+                  color: isNegative ? cs.error : cs.onSurface,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
               ),
             ),
           ),
@@ -141,33 +166,34 @@ class CashSummaryCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Solde négatif : vérifiez les sorties et les remboursements.',
-              style: AppTypography.bodySmall.copyWith(color: cs.error),
+              style: AppTypography.bodyMedium.copyWith(color: cs.error),
             ),
           ],
-          if (caption != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(caption, style: muted),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          Divider(height: 1, color: cs.outlineVariant),
-          const SizedBox(height: AppSpacing.sm),
+          if (caption != null) Text(caption, style: muted),
+          const SizedBox(height: AppSpacing.xs),
           _FormulaLine(label: 'Fond de caisse', amount: openingAmount),
           _FormulaLine(
-            label: count == null ? 'Ventes espèces' : 'Ventes espèces ($count)',
+            label: count == null
+                ? 'Ventes en espèces'
+                : 'Ventes en espèces ($count)',
             amount: cashSales,
             sign: '+',
           ),
           _FormulaLine(label: 'Entrées', amount: cashIn, sign: '+'),
           _FormulaLine(label: 'Sorties', amount: cashOut, sign: '−'),
-          _FormulaLine(
-            label: 'Remboursements espèces',
-            amount: cashRefunds,
-            sign: '−',
-          ),
-          if (mobileMoney != null && mobileMoney > Decimal.zero) ...[
-            const SizedBox(height: AppSpacing.xs),
+          // Rares : la ligne n'apparaît que s'il y a eu un remboursement.
+          if (cashRefunds != Decimal.zero)
+            _FormulaLine(
+              label: 'Remboursements espèces',
+              amount: cashRefunds,
+              sign: '−',
+            ),
+          if (showMobileMoney &&
+              mobileMoney != null &&
+              mobileMoney > Decimal.zero) ...[
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              'Mobile money : ${formatFcfa(mobileMoney)} (hors tiroir)',
+              'Mobile money (hors tiroir) : ${formatFcfa(mobileMoney)}',
               style: muted,
             ),
           ],
@@ -198,27 +224,33 @@ class _FormulaLine extends StatelessWidget {
       container: true,
       label: '$label : $spoken${formatFcfa(amount)}',
       excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: cs.outlineVariant)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
                 ),
               ),
-            ),
-            if (sign != null)
               Text(
-                '$sign ',
+                sign == null
+                    ? formatFcfa(amount)
+                    : '$sign ${formatFcfa(amount)}',
                 style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  fontFeatures: AppTypography.tabularFigures,
                 ),
               ),
-            AmountDisplay(amount: amount, size: AmountSize.small),
-          ],
+            ],
+          ),
         ),
       ),
     );

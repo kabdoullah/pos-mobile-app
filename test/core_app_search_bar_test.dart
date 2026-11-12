@@ -22,16 +22,16 @@ void main() {
         ),
       ),
     );
-    expect(find.byTooltip('Effacer'), findsNothing);
+    expect(find.widgetWithText(TextButton, 'Effacer'), findsNothing);
 
     await tester.enterText(find.byType(TextField), 'coca');
     await tester.pump();
-    expect(find.byTooltip('Effacer'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Effacer'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Effacer'));
+    await tester.tap(find.widgetWithText(TextButton, 'Effacer'));
     await tester.pump();
     expect(controller.text, isEmpty);
     expect(changes.last, '');
-    expect(find.byTooltip('Effacer'), findsNothing);
+    expect(find.widgetWithText(TextButton, 'Effacer'), findsNothing);
   });
 }

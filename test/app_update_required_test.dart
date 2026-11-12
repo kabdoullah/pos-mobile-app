@@ -202,7 +202,7 @@ void main() {
     ) async {
       await pump(tester, required: false);
 
-      expect(find.text('Mise à jour requise'), findsNothing);
+      expect(find.text('Mise à jour nécessaire'), findsNothing);
       expect(find.text('Encaisser').hitTestable(), findsOneWidget);
     });
 
@@ -211,8 +211,8 @@ void main() {
     ) async {
       await pump(tester, required: true);
 
-      expect(find.text('Mise à jour requise'), findsOneWidget);
-      expect(find.text('Mettre à jour'), findsOneWidget);
+      expect(find.text('Mise à jour nécessaire'), findsOneWidget);
+      expect(find.text('Mettre à jour sur le Play Store'), findsOneWidget);
       // L'écran dessous ne reçoit plus les touchers.
       expect(find.text('Encaisser').hitTestable(), findsNothing);
     });

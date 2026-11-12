@@ -8,16 +8,14 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 import '../providers/home_providers.dart';
 
 /// Nombre de produits en alerte affichés sur l'accueil.
 const _previewCount = 3;
 
-/// Alerte stock : ruptures (critiques) et stocks sous le seuil
-/// (avertissements) comptés séparément, puis un aperçu des produits les plus
-/// urgents — chacun ouvre sa fiche (détail et ajustement du stock).
+/// Alertes de stock : les produits en rupture puis sous leur seuil, les plus
+/// urgents d'abord — chacun ouvre sa fiche (détail et ajustement du stock).
 class LowStockSection extends ConsumerWidget {
   /// Crée la section ; [onSeeStock] ouvre l'onglet Stock.
   const LowStockSection({required this.onSeeStock, super.key});
@@ -27,7 +25,6 @@ class LowStockSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final lowStock = ref.watch(homeLowStockProvider);
 
     // Alerte secondaire : on ne réserve pas de place pendant le chargement et
@@ -35,46 +32,22 @@ class LowStockSection extends ConsumerWidget {
     final products = lowStock.value;
     if (products == null) return const SizedBox.shrink();
 
-    if (products.isEmpty) {
-      final success = Theme.of(context).extension<AppSemanticColors>()!.success;
-      return Row(
-        children: [
-          Icon(Icons.check_circle_outline, color: success, size: 20),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Aucune alerte de stock',
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final outCount = products
-        .where((p) => p.stockLevel == StockLevel.outOfStock)
-        .length;
-    final lowCount = products.length - outCount;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionHeader(
           title: 'Alertes de stock',
-          count: products.length,
-          countColor: outCount > 0 ? cs.error : cs.tertiary,
-          actionLabel: 'Voir le stock',
+          actionLabel: products.isEmpty ? null : 'Voir tout',
           onAction: onSeeStock,
         ),
-        _AlertCounts(outCount: outCount, lowCount: lowCount),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.xs),
         AppListGroup(
-          dividerIndent: AppSpacing.md + 36 + AppSpacing.sm,
           children: [
-            for (final product in products.take(_previewCount))
-              _LowStockRow(product: product),
+            if (products.isEmpty)
+              const _NoAlertRow()
+            else
+              for (final product in products.take(_previewCount))
+                _LowStockRow(product: product),
           ],
         ),
       ],
@@ -82,36 +55,31 @@ class LowStockSection extends ConsumerWidget {
   }
 }
 
-/// « 2 en rupture · 3 sous le seuil » : la gravité se lit avant la liste.
-class _AlertCounts extends StatelessWidget {
-  const _AlertCounts({required this.outCount, required this.lowCount});
-
-  final int outCount;
-  final int lowCount;
+class _NoAlertRow extends StatelessWidget {
+  const _NoAlertRow();
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    const style = AppTypography.labelMedium;
-    return Text.rich(
-      TextSpan(
-        children: [
-          if (outCount > 0)
-            TextSpan(
-              text: '$outCount en rupture',
-              style: style.copyWith(color: cs.error),
+    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Row(
+          children: [
+            Icon(
+              Icons.check_circle_outline,
+              color: semantic.onSuccessContainer,
             ),
-          if (outCount > 0 && lowCount > 0)
-            TextSpan(
-              text: ' · ',
-              style: style.copyWith(color: cs.onSurfaceVariant),
+            const SizedBox(width: AppSpacing.sm + 4),
+            const Expanded(
+              child: Text(
+                'Aucun produit en rupture',
+                style: AppTypography.bodyMedium,
+              ),
             ),
-          if (lowCount > 0)
-            TextSpan(
-              text: '$lowCount sous le seuil',
-              style: style.copyWith(color: cs.tertiary),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -124,40 +92,33 @@ class _LowStockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
         onTap: () =>
             context.push(Routes.productDetail.replaceFirst(':id', product.id)),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
+          constraints: const BoxConstraints(minHeight: 60),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.xs,
-              AppSpacing.sm,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
             child: Row(
               children: [
-                ProductThumbnail(product: product, size: 36),
-                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     product.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                // Même badge qu'en caisse : « Rupture » ou « Faible : 3 ».
+                // Même badge qu'en caisse : « Rupture » ou « Stock bas : 3 ».
                 StockStatusBadge(product: product, showQuantity: true),
-                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
               ],
             ),
           ),

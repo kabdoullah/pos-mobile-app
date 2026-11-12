@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
-import 'package:decimal/decimal.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../catalog/domain/entities/product.dart';
@@ -12,10 +11,6 @@ import '../../../sales/domain/repositories/sales_repository.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
 part 'home_providers.g.dart';
-
-/// Nombre de ventes affichées dans la mini-liste « activité récente » de
-/// l'accueil.
-const _recentSalesLimit = 3;
 
 /// Date du jour (minuit local). Se reconstruit au prochain minuit pour que
 /// chaque provider lié à « aujourd'hui » se réabonne au changement de jour —
@@ -48,58 +43,20 @@ Stream<MarginSummary> todayMarginSummary(Ref ref) {
   return ref.watch(salesRepositoryProvider).watchMarginSummary(today, today);
 }
 
-/// Diffuse les ventes les plus récentes du jour, de la plus récente à la plus
-/// ancienne — pour la mini-liste « activité récente » de l'accueil.
+/// Diffuse la vente la plus récente du jour, null avant la première —
+/// l'heure de la dernière vente s'affiche sur l'accueil.
 @riverpod
-Stream<List<Sale>> recentSales(Ref ref) {
+Stream<Sale?> lastSaleToday(Ref ref) {
   final today = ref.watch(todayProvider);
   return ref
       .watch(salesRepositoryProvider)
       .watchSalesByDateRange(today, today)
-      .map((sales) => sales.take(_recentSalesLimit).toList());
-}
-
-/// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
-@riverpod
-Stream<List<Decimal>> todayHourlySales(Ref ref) {
-  final today = ref.watch(todayProvider);
-  return ref
-      .watch(salesRepositoryProvider)
-      .watchSalesByDateRange(today, today)
-      .map(salesByHour);
-}
-
-/// Totaux des [sales] par heure locale de création : liste de 24 montants
-/// (montant brut des ventes ; les retours n'y figurent pas).
-List<Decimal> salesByHour(Iterable<Sale> sales) {
-  final totals = List<Decimal>.filled(24, Decimal.zero);
-  for (final sale in sales) {
-    final hour = sale.createdAt.toLocal().hour;
-    totals[hour] += sale.totalAmount;
-  }
-  return totals;
+      .map((sales) => sales.firstOrNull);
 }
 
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
-/// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
+/// alimente les « Alertes de stock » de l'accueil.
 @riverpod
 Stream<List<Product>> homeLowStock(Ref ref) {
   return ref.watch(catalogRepositoryProvider).watchLowStockProducts();
-}
-
-/// Panier moyen du jour, arrondi au franc ; `null` sans vente. Calculé sur
-/// les ventes brutes : un retour ne change pas le montant des paniers vendus.
-Decimal? averageBasket(DailyStats stats) {
-  if (stats.saleCount == 0) return null;
-  final sold = stats.totalAmount + stats.refundTotal;
-  return Decimal.fromBigInt((sold / Decimal.fromInt(stats.saleCount)).round());
-}
-
-/// Part des espèces dans l'encaissé du jour, en pourcentage entier (0–100) ;
-/// `null` si rien n'a été encaissé.
-int? cashSharePercent(DailyStats stats) {
-  final collected = stats.cashTotal + stats.mobileMoneyTotal;
-  if (collected == Decimal.zero) return null;
-  return (stats.cashTotal * Decimal.fromInt(100) / collected).round().toInt();
 }

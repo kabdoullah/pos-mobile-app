@@ -52,11 +52,11 @@ class AppColors {
   /// Surface variante pour le fond des champs et des chips.
   static const Color surfaceVariant = Color(0xFFFEF9EE);
 
-  /// Couleur de bordure des champs et des limites d'UI.
-  static const Color border = Color(0xFFE7E5E4);
+  /// Couleur de bordure des champs et des limites d'UI (≥ 3:1 sur blanc).
+  static const Color border = Color(0xFF8A817C);
 
   /// Couleur des séparateurs de section.
-  static const Color divider = Color(0xFFF5F0E8);
+  static const Color divider = Color(0xFFF0EBE3);
 
   // Couleurs de texte
   /// Texte principal. Quasi-noir chaud — lisibilité maximale sur surfaces
@@ -95,7 +95,8 @@ class AppColors {
   /// Avertissement / stock bas / réapprovisionnement nécessaire.
   ///
   /// Rouge-orangé — visuellement distinct de l'or secondaire `#CA8A04`.
-  static const Color warning = Color(0xFFEA580C);
+  /// `#C2410C` : l'ancien `#EA580C` échouait (3,6:1 sur blanc).
+  static const Color warning = Color(0xFFC2410C);
 
   /// Teinte de fond des conteneurs en état d'avertissement.
   static const Color warningContainer = Color(0xFFFFEDD5);
@@ -141,6 +142,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   const AppSemanticColors({
     required this.success,
     required this.successContainer,
+    required this.onSuccessContainer,
     required this.elevationShadow,
     required this.raisedSurface,
   });
@@ -151,6 +153,10 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
 
   /// Teinte de fond des conteneurs en état de succès (chips, cercles d'icône).
   final Color successContainer;
+
+  /// Texte et icônes posés sur [successContainer] (« À rendre au client »,
+  /// « À jour »).
+  final Color onSuccessContainer;
 
   /// Ombre des surfaces élevées (panneau d'encaissement, ticket, bouton
   /// principal) : cacao en clair ; noire en sombre, où une ombre de la
@@ -165,30 +171,32 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   static const light = AppSemanticColors(
     success: Color(0xFF166534), // vert forêt, WCAG AA sur blanc
     successContainer: Color(0xFFDCFCE7),
+    onSuccessContainer: Color(0xFF166534),
     elevationShadow: Color(0xFF92400E), // cacao
     raisedSurface: Color(0xFFFFFFFF),
   );
 
   /// Instance mode sombre.
   static const dark = AppSemanticColors(
-    success: Color(0xFF4ADE80), // green-400 — lisible sur surface quasi-noire
-    successContainer: Color(0xFF14532D),
+    success: Color(0xFF86EFAC), // lisible sur surface cacao
+    successContainer: Color(0xFF12351F),
+    onSuccessContainer: Color(0xFFB7F5CC),
     elevationShadow: Color(0xFF000000),
-    raisedSurface: Color(
-      0xFF2A1B0C,
-    ), // entre surface et surfaceContainerHighest
+    raisedSurface: Color(0xFF2C2219), // barre d'encaissement
   );
 
   @override
   AppSemanticColors copyWith({
     Color? success,
     Color? successContainer,
+    Color? onSuccessContainer,
     Color? elevationShadow,
     Color? raisedSurface,
   }) {
     return AppSemanticColors(
       success: success ?? this.success,
       successContainer: successContainer ?? this.successContainer,
+      onSuccessContainer: onSuccessContainer ?? this.onSuccessContainer,
       elevationShadow: elevationShadow ?? this.elevationShadow,
       raisedSurface: raisedSurface ?? this.raisedSurface,
     );
@@ -202,6 +210,9 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       successContainer:
           Color.lerp(successContainer, other.successContainer, t) ??
           successContainer,
+      onSuccessContainer:
+          Color.lerp(onSuccessContainer, other.onSuccessContainer, t) ??
+          onSuccessContainer,
       elevationShadow:
           Color.lerp(elevationShadow, other.elevationShadow, t) ??
           elevationShadow,

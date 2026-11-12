@@ -1,171 +1,152 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../sync/sync_orchestrator.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 import '../providers/connectivity_provider.dart';
+import '../sync/sync_orchestrator.dart';
 import '../sync/sync_providers.dart';
 
-/// Affiche un bandeau d'état de synchro en temps réel : hors ligne, synchro en
-/// cours, en attente, erreur ou inactif.
+/// Bandeau d'anomalie de synchro, sous l'AppBar. Rien quand tout va bien :
+/// l'état courant est porté par la pastille `OfflineStatusIndicator`.
+///
+/// - Hors ligne : ton neutre, rassurant — tout ce qui est local fonctionne.
+/// - Envoi échoué : rassurer d'abord (rien n'est perdu), puis « Réessayer ».
 class SyncStatusIndicator extends ConsumerWidget {
-  /// Crée un indicateur d'état de synchro.
-  const SyncStatusIndicator({super.key});
+  /// Crée le bandeau d'anomalie.
+  const SyncStatusIndicator({
+    this.offlineTitle = 'Pas de réseau',
+    this.offlineMessage = 'Ventes et caisse fonctionnent.',
+    super.key,
+  });
+
+  /// Titre du bandeau hors ligne.
+  final String offlineTitle;
+
+  /// Phrase rassurante du bandeau hors ligne, avant le nombre d'envois en
+  /// attente.
+  final String offlineMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isOnlineAsync = ref.watch(isOnlineProvider);
+    final cs = Theme.of(context).colorScheme;
+    // État réseau inconnu : pas d'alerte parasite à l'ouverture.
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
     final syncStatus = ref.watch(syncOrchestratorProvider);
-    final pendingCountAsync = ref.watch(pendingSyncCountProvider);
-
-    final isOnline = isOnlineAsync.value ?? false;
-    final pendingCount = pendingCountAsync.value ?? 0;
+    final pendingCount = ref.watch(pendingSyncCountProvider).value ?? 0;
 
     if (!isOnline) {
-      return _buildOfflineBanner(context);
+      final pending = switch (pendingCount) {
+        0 => '',
+        1 => ' 1 modification en attente d’envoi.',
+        _ => ' $pendingCount modifications en attente d’envoi.',
+      };
+      return _Banner(
+        icon: Icons.cloud_off_outlined,
+        title: offlineTitle,
+        message: '$offlineMessage$pending',
+        background: cs.surfaceContainerLow,
+        foreground: cs.onSurface,
+        divider: cs.outlineVariant,
+      );
     }
-
-    return switch (syncStatus) {
-      SyncStatusSyncing() => _buildSyncingBanner(context),
-      SyncStatusError(message: final msg) => _buildErrorBanner(context, msg),
-      SyncStatusIdle(lastSyncAt: final lastSyncAt) =>
-        pendingCount > 0
-            ? _buildPendingBanner(context, pendingCount)
-            : _buildIdleBanner(context, lastSyncAt != null),
-    };
+    if (syncStatus is SyncStatusError) {
+      return _Banner(
+        icon: Icons.sync_problem_outlined,
+        title: switch (pendingCount) {
+          0 => 'Envoi échoué',
+          1 => '1 modification non envoyée',
+          _ => '$pendingCount modifications non envoyées',
+        },
+        message: 'Elles sont gardées sur ce téléphone.',
+        background: cs.errorContainer,
+        foreground: cs.onErrorContainer,
+        actionLabel: 'Réessayer',
+        onAction: () =>
+            unawaited(ref.read(syncOrchestratorProvider.notifier).syncNow()),
+      );
+    }
+    return const SizedBox.shrink();
   }
+}
 
-  Widget _buildOfflineBanner(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      color: cs.tertiary,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hors-ligne',
-            style: AppTypography.labelMedium.copyWith(color: cs.onTertiary),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Vos ventes seront sauvegardées en ligne dès le retour du réseau',
-            style: AppTypography.bodySmall.copyWith(color: cs.onTertiary),
-          ),
-        ],
-      ),
+class _Banner extends StatelessWidget {
+  const _Banner({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.background,
+    required this.foreground,
+    this.divider,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final Color background;
+  final Color foreground;
+  final Color? divider;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = AppTypography.bodyMedium.copyWith(
+      color: foreground,
+      height: 1.35,
     );
-  }
-
-  Widget _buildSyncingBanner(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      color: cs.primaryContainer,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(cs.primary),
+    final divider = this.divider;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: background,
+          border: divider == null
+              ? null
+              : Border(bottom: BorderSide(color: divider)),
+        ),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm + 2,
+          onAction == null ? AppSpacing.md : AppSpacing.xs,
+          AppSpacing.sm + 2,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: foreground),
+            const SizedBox(width: AppSpacing.sm + 2),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '$title\n',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(text: message),
+                  ],
+                ),
+                style: style,
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Sauvegarde en ligne...',
-              style: AppTypography.bodySmall.copyWith(color: cs.primary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorBanner(BuildContext context, String message) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      color: cs.errorContainer,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.warning_rounded, color: cs.error, size: 18),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Erreur de sauvegarde — réessayez plus tard',
-              style: AppTypography.bodySmall.copyWith(color: cs.error),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPendingBanner(BuildContext context, int count) {
-    final cs = Theme.of(context).colorScheme;
-    // La file contient ventes, retours, produits et catégories.
-    final label = count == 1
-        ? '1 modification à sauvegarder'
-        : '$count modifications à sauvegarder';
-    return Container(
-      width: double.infinity,
-      color: cs.tertiaryContainer,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.cloud_upload_outlined, color: cs.tertiary, size: 18),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.bodySmall.copyWith(color: cs.onSurface),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIdleBanner(BuildContext context, bool hasEverSynced) {
-    if (!hasEverSynced) return const SizedBox.shrink();
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      color: cs.secondaryContainer,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.check_circle, color: cs.secondary, size: 16),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              'À jour',
-              style: AppTypography.captionText.copyWith(color: cs.secondary),
-            ),
-          ),
-        ],
+            if (onAction != null)
+              TextButton(
+                onPressed: onAction,
+                style: TextButton.styleFrom(
+                  foregroundColor: foreground,
+                  textStyle: AppTypography.labelLarge.copyWith(
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+                child: Text(actionLabel ?? 'Réessayer'),
+              ),
+          ],
+        ),
       ),
     );
   }

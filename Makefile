@@ -1,6 +1,13 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help install gen gen-watch run run-ios run-prod analyze format test build-apk build-apk-dev build-aab clean
+.PHONY: help install gen gen-watch run run-ios run-prod analyze format test build-apk build-apk-dev build-aab symbolize clean
+
+# APK release obfusqué (−16 % de code Dart ; pas l'AAB) : les traces ne sont
+# lisibles qu'avec les symboles de la version, rangés hors de build/ pour
+# survivre à `make clean`. À conserver pour chaque version publiée.
+VERSION := $(shell awk '/^version:/ {print $$2}' pubspec.yaml)
+SYMBOLS_DIR := symbols/$(VERSION)
+OBFUSCATE := --obfuscate --split-debug-info=$(SYMBOLS_DIR)
 
 help: ## Liste les commandes disponibles
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -32,14 +39,18 @@ format: ## Formate le code Dart
 test: ## Lance les tests
 	flutter test
 
-build-apk: ## Build l'APK release prod
-	flutter build apk --release --flavor prod -t lib/main_prod.dart
+build-apk: ## Build l'APK release prod (obfusqué, symboles dans symbols/<version>)
+	flutter build apk --release --flavor prod -t lib/main_prod.dart $(OBFUSCATE)
 
 build-apk-dev: ## Build l'APK dev (debug)
 	flutter build apk --flavor dev -t lib/main.dart
 
 build-aab: ## Build le AAB release prod (Play Store)
 	flutter build appbundle --release --flavor prod -t lib/main_prod.dart
+
+symbolize: ## Rend lisible une trace obfusquée : make symbolize TRACE=trace.txt [V=<version>] [ARCH=arm]
+	@test -n "$(TRACE)" || { echo "Usage : make symbolize TRACE=trace.txt [V=<version>] [ARCH=arm64|arm]"; exit 1; }
+	flutter symbolize -i $(TRACE) -d symbols/$(or $(V),$(VERSION))/app.android-$(or $(ARCH),arm64).symbols
 
 clean: ## Nettoie les caches Flutter
 	flutter clean

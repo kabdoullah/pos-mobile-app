@@ -58,6 +58,36 @@ void main() {
       expect(full.canSubmitFor(d('10500')), isTrue);
     });
 
+    test('chaque part doit être positive', () {
+      final allCash = CheckoutState(
+        method: PaymentMethod.mixed,
+        cashReceived: d('10500'),
+        mobileMoney: Decimal.zero,
+      );
+      expect(allCash.canSubmitFor(d('10500')), isFalse);
+      expect(
+        allCash.mixedErrorFor(d('10500')),
+        'Tout est payé en espèces : choisissez Espèces',
+      );
+    });
+
+    test('setMixedCash : le reste passe en mobile money', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.listen(checkoutProvider, (_, _) {});
+      final notifier = container.read(checkoutProvider.notifier)
+        ..selectMethod(PaymentMethod.mixed)
+        ..setMixedCash(d('2000'), total: d('3025'));
+      var state = container.read(checkoutProvider);
+      expect(state.mobileMoney, d('1025'));
+      expect(state.canSubmitFor(d('3025')), isTrue);
+
+      notifier.setMixedCash(d('4000'), total: d('3025'));
+      state = container.read(checkoutProvider);
+      expect(state.mobileMoney, isNull);
+      expect(state.canSubmitFor(d('3025')), isFalse);
+    });
+
     test('un excédent bloque (le use case exige l’égalité)', () {
       final state = CheckoutState(
         method: PaymentMethod.mixed,

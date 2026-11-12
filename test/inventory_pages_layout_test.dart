@@ -124,13 +124,10 @@ void main() {
     testWidgets('onglet Stock, thème $name', (tester) async {
       await pump(tester, const StockOverviewPage(), theme: theme);
       expect(tester.takeException(), isNull);
-      expect(
-        find.textContaining('Valeur du stock', findRichText: true),
-        findsOneWidget,
-      );
+      expect(find.textContaining('valeur', findRichText: true), findsOneWidget);
 
       // Filtre « Ruptures » depuis sa puce, qui porte le compteur.
-      await tester.tap(find.textContaining('Ruptures ·', findRichText: true));
+      await tester.tap(find.textContaining('Ruptures ', findRichText: true));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Rupture'),
@@ -149,11 +146,15 @@ void main() {
 
     testWidgets('filtre par catégorie dans Stock, thème $name', (tester) async {
       await pump(tester, const StockOverviewPage(), theme: theme);
-      await tester.scrollUntilVisible(
-        find.text('Toutes catégories'),
-        200,
-        scrollable: _list,
-      );
+      // Une puce « Catégorie », au bout de la rangée de filtres, ouvre la
+      // liste des catégories.
+      await tester.ensureVisible(find.text('Catégorie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Catégorie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Toutes catégories'));
+      await tester.pumpAndSettle();
+      expect(find.text('Catégorie'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

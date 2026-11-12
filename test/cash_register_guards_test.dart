@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
@@ -425,6 +426,12 @@ void main() {
         find.text('Clôturez la caisse avant de vous déconnecter.'),
         findsOneWidget,
       );
+      // La règle est expliquée et l'action utile proposée.
+      expect(find.text('Clôturez d’abord la caisse'), findsOneWidget);
+      expect(
+        find.widgetWithText(PrimaryButton, 'Clôturer la caisse'),
+        findsOneWidget,
+      );
       expect(find.text('Se déconnecter ?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -596,7 +603,7 @@ void main() {
       await pumpSheet(tester, dark: true);
 
       expect(find.text('Fond de caisse'), findsOneWidget);
-      expect(find.text('Commentaire (facultatif)'), findsOneWidget);
+      expect(find.text('Ajouter un commentaire'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

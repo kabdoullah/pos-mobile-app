@@ -7,7 +7,7 @@ import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
 /// Structure commune de `PrimaryButton` et `SecondaryButton` : pleine
-/// largeur, 56 dp de haut, retour haptique, états désactivé et chargement.
+/// largeur, 56 ou 48 dp de haut, retour haptique, états désactivé et chargement.
 ///
 /// Seul le style (fond, bordure, ombre, couleurs) varie d'un bouton à
 /// l'autre. Volontairement absent de `index.dart` : les écrans utilisent les
@@ -23,6 +23,7 @@ class ButtonFrame extends StatelessWidget {
     required this.progressColor,
     required this.boxShadow,
     this.border,
+    this.height = AppSpacing.buttonHeight,
     this.loadingLabel,
     this.icon,
     this.trailingIcon,
@@ -53,6 +54,9 @@ class ButtonFrame extends StatelessWidget {
   /// Bordure optionnelle.
   final BoxBorder? border;
 
+  /// Hauteur : 56 dp pour l'action principale, 48 dp pour la secondaire.
+  final double height;
+
   /// Libellé affiché à côté de l'indicateur pendant le chargement. Sans
   /// libellé, seul l'indicateur est affiché.
   final String? loadingLabel;
@@ -72,7 +76,7 @@ class ButtonFrame extends StatelessWidget {
     );
 
     return SizedBox(
-      height: 56,
+      height: height,
       width: double.infinity,
       child: Container(
         decoration: BoxDecoration(

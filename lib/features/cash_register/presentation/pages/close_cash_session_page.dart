@@ -16,12 +16,11 @@ import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 import '../widgets/cash_notice_banner.dart';
-import '../widgets/cash_summary_card.dart';
 import '../widgets/discrepancy_badge.dart';
 
-/// Clôture de la caisse : récapitulatif, montant compté, état (équilibrée,
-/// excédent, déficit), commentaire obligatoire en cas d'écart, puis
-/// confirmation.
+/// Clôture de la caisse : espèces comptées en grand, solde théorique, écart
+/// calculé en direct (équilibrée, excédent, déficit), commentaire obligatoire
+/// en cas d'écart, puis confirmation avec le détail de la formule.
 class CloseCashSessionPage extends ConsumerWidget {
   /// Crée l'écran de clôture.
   const CloseCashSessionPage({super.key});
@@ -179,91 +178,236 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
     final summary = widget.summary;
+    final counted = _counted;
     final discrepancy = _discrepancy;
     final formError = _formError;
+    final expectedNegative = summary.expectedAmount < Decimal.zero;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xl,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CashSummaryCard.fromSummary(summary, elevated: false),
-        if (summary.rejectedCashRefunds > Decimal.zero) ...[
-          const SizedBox(height: AppSpacing.sm),
-          CashNoticeBanner(
-            level: CashNoticeLevel.warning,
-            message:
-                'Retour refusé : ${formatFcfa(summary.rejectedCashRefunds)} '
-                'rendus non comptés',
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.lg,
+            ),
+            children: [
+              AmountInput(
+                label: 'Espèces comptées dans le tiroir',
+                hint: '0',
+                large: true,
+                value: counted,
+                errorText: _countedError,
+                onChanged: (value) => setState(() {
+                  _counted = value;
+                  _countedError = null;
+                  if (!_noteRequired) _noteError = null;
+                }),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppListGroup(
+                children: [
+                  _AmountRow(
+                    label: 'Solde théorique',
+                    value: formatFcfa(summary.expectedAmount),
+                    color: expectedNegative ? cs.error : null,
+                  ),
+                  _AmountRow(
+                    label: 'Compté',
+                    value: counted == null ? '—' : formatFcfa(counted),
+                  ),
+                ],
+              ),
+              if (expectedNegative) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Solde négatif : vérifiez les sorties et les '
+                  'remboursements.',
+                  style: AppTypography.bodyMedium.copyWith(color: cs.error),
+                ),
+              ],
+              if (summary.rejectedCashRefunds > Decimal.zero) ...[
+                const SizedBox(height: AppSpacing.sm),
+                CashNoticeBanner(
+                  level: CashNoticeLevel.warning,
+                  message:
+                      'Retour refusé : '
+                      '${formatFcfa(summary.rejectedCashRefunds)} rendus non '
+                      'comptés',
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              // L'écart se met à jour pendant la saisie et s'annonce aux
+              // lecteurs d'écran.
+              Semantics(
+                liveRegion: true,
+                child: discrepancy == null
+                    ? Text(
+                        "Saisissez le montant pour voir l'écart.",
+                        style: muted,
+                      )
+                    : _DiscrepancyBox(discrepancy: discrepancy),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: _noteRequired
+                    ? "Expliquez l'écart (obligatoire)"
+                    : 'Commentaire (facultatif)',
+                hint: _noteRequired ? 'Ex. : monnaie rendue en trop' : null,
+                controller: _noteController,
+                errorText: _noteError,
+                maxLines: 3,
+                maxLength: CashRegisterException.maxNoteLength,
+                onChanged: (_) {
+                  if (_noteError != null) setState(() => _noteError = null);
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                summary.mobileMoneySales > Decimal.zero
+                    ? 'Mobile money (hors tiroir) : '
+                          '${formatFcfa(summary.mobileMoneySales)} · le '
+                          'résultat final est confirmé par le serveur.'
+                    : 'Le résultat final est confirmé par le serveur.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              if (formError != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  formError,
+                  style: AppTypography.errorText.copyWith(color: cs.error),
+                ),
+              ],
+            ],
           ),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Comptez les espèces du tiroir',
-          style: AppTypography.titleMedium.copyWith(color: cs.onSurface),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        AmountInput(
-          label: 'Montant compté',
-          hint: '0',
-          value: _counted,
-          errorText: _countedError,
-          onChanged: (value) => setState(() {
-            _counted = value;
-            _countedError = null;
-            if (!_noteRequired) _noteError = null;
-          }),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // L'état se met à jour pendant la saisie et s'annonce aux lecteurs
-        // d'écran.
-        Semantics(
-          liveRegion: true,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: discrepancy == null
-                ? Text(
-                    "Saisissez le montant pour voir l'écart.",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  )
-                : DiscrepancyBadge(discrepancy: discrepancy),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppTextField(
-          label: _noteRequired
-              ? 'Commentaire (obligatoire)'
-              : 'Commentaire (facultatif)',
-          hint: _noteRequired ? "Expliquez l'écart" : null,
-          controller: _noteController,
-          errorText: _noteError,
-          maxLines: 3,
-          maxLength: CashRegisterException.maxNoteLength,
-          onChanged: (_) {
-            if (_noteError != null) setState(() => _noteError = null);
-          },
-        ),
-        if (formError != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            formError,
-            style: AppTypography.errorText.copyWith(color: cs.error),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        PrimaryButton(
-          label: 'Clôturer la caisse',
-          icon: Icons.lock_outline,
-          isLoading: _isLoading,
-          onPressed: _isLoading ? null : _submit,
+        BottomActionBar(
+          children: [
+            PrimaryButton(
+              label: 'Clôturer la caisse',
+              icon: Icons.lock_outline,
+              isLoading: _isLoading,
+              onPressed: _isLoading ? null : _submit,
+            ),
+          ],
         ),
       ],
+    );
+  }
+}
+
+/// Ligne « libellé … montant » d'un groupe.
+class _AmountRow extends StatelessWidget {
+  const _AmountRow({required this.label, required this.value, this.color});
+
+  final String label;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      label: '$label : $value',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + 2,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+            ),
+            Text(
+              value,
+              style: AppTypography.bodyMedium.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Écart en grand, sur la couleur de son état : équilibrée, excédent ou
+/// déficit.
+class _DiscrepancyBox extends StatelessWidget {
+  const _DiscrepancyBox({required this.discrepancy});
+
+  final Decimal discrepancy;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = discrepancyColors(context, discrepancy);
+    final kind = DiscrepancyKind.of(discrepancy);
+    final title = switch (kind) {
+      DiscrepancyKind.balanced => 'Caisse équilibrée',
+      DiscrepancyKind.surplus => 'Excédent',
+      DiscrepancyKind.deficit => 'Déficit',
+    };
+    final sign = switch (kind) {
+      DiscrepancyKind.balanced => '',
+      DiscrepancyKind.surplus => '+ ',
+      DiscrepancyKind.deficit => '− ',
+    };
+    return Semantics(
+      container: true,
+      label: discrepancyLabel(discrepancy),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm + 6,
+          vertical: AppSpacing.sm + 4,
+        ),
+        decoration: BoxDecoration(
+          color: colors.background,
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: AppTypography.labelLarge.copyWith(
+                  color: colors.foreground,
+                ),
+              ),
+            ),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '$sign${formatFcfa(discrepancy.abs())}',
+                  style: AppTypography.amountLarge.copyWith(
+                    color: colors.foreground,
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

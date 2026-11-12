@@ -8,7 +8,7 @@ enum ShellBranch {
   /// Accueil (dashboard).
   home,
 
-  /// Caisse (vente).
+  /// Vendre (caisse enregistreuse).
   sale,
 
   /// Vue d'ensemble du stock.
@@ -58,7 +58,8 @@ class MainShell extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.point_of_sale_outlined),
             selectedIcon: Icon(Icons.point_of_sale),
-            label: 'Caisse',
+            // « Vendre » : « Ma caisse » désigne la session du tiroir.
+            label: 'Vendre',
           ),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),

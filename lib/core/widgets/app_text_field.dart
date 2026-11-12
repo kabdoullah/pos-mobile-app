@@ -32,6 +32,7 @@ class AppTextField extends StatefulWidget {
     this.maxLength,
     this.textCapitalization = TextCapitalization.none,
     this.suffixText,
+    this.large = false,
     super.key,
   });
 
@@ -97,6 +98,9 @@ class AppTextField extends StatefulWidget {
   /// Texte fixe affiché à la fin du champ (ex. unité : « FCFA », « % »).
   final String? suffixText;
 
+  /// Montant mis en avant (montant reçu) : champ de 68 dp, chiffres 34 sp.
+  final bool large;
+
   @override
   State<AppTextField> createState() => _AppTextFieldState();
 }
@@ -134,14 +138,20 @@ class _AppTextFieldState extends State<AppTextField> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Libellé au-dessus du champ (pas de label flottant), 16 sp.
         Text(
           widget.label,
-          style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+          style: AppTypography.bodyMedium.copyWith(
+            color: cs.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         SizedBox(
           // Hauteur fixe sans compteur : il s'affiche sous le champ.
-          height: widget.maxLines == 1 && widget.maxLength == null ? 56 : null,
+          height: widget.maxLines == 1 && widget.maxLength == null
+              ? (widget.large ? 68 : 56)
+              : null,
           child: TextField(
             // Toucher ailleurs ferme le clavier.
             onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -159,13 +169,25 @@ class _AppTextFieldState extends State<AppTextField> {
             textInputAction: widget.textInputAction,
             onSubmitted: widget.onSubmitted,
             autofillHints: widget.autofillHints,
-            style: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
+            style:
+                (widget.large
+                        ? AppTypography.amountDisplay
+                        : AppTypography.bodyMedium)
+                    .copyWith(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,
               suffixText: widget.suffixText,
-              hintStyle: AppTypography.hintText.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+              suffixStyle: widget.large
+                  ? AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurfaceVariant,
+                    )
+                  : null,
+              hintStyle:
+                  (widget.large
+                          ? AppTypography.amountDisplay
+                          : AppTypography.bodyMedium)
+                      .copyWith(color: cs.onSurfaceVariant),
               prefixIcon: widget.prefixIcon != null
                   ? Icon(widget.prefixIcon, color: cs.onSurfaceVariant)
                   : null,
@@ -187,7 +209,10 @@ class _AppTextFieldState extends State<AppTextField> {
                         ? Icon(widget.suffixIcon, color: cs.onSurfaceVariant)
                         : null),
               filled: true,
-              fillColor: cs.surfaceContainerHighest,
+              // Fond de l'écran au repos, surface au focus.
+              fillColor: _focusNode.hasFocus
+                  ? cs.surface
+                  : Theme.of(context).scaffoldBackgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 borderSide: BorderSide(color: borderColor),
@@ -198,15 +223,15 @@ class _AppTextFieldState extends State<AppTextField> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                borderSide: BorderSide(color: activeBorderColor),
+                borderSide: BorderSide(color: activeBorderColor, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                borderSide: BorderSide(color: cs.error),
+                borderSide: BorderSide(color: cs.error, width: 2),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                borderSide: BorderSide(color: cs.error),
+                borderSide: BorderSide(color: cs.error, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
@@ -224,13 +249,14 @@ class _AppTextFieldState extends State<AppTextField> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ExcludeSemantics(
-                  child: Icon(Icons.error_outline, size: 16, color: cs.error),
+                  child: Icon(Icons.error_outline, size: 20, color: cs.error),
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     widget.errorText!,
-                    style: AppTypography.errorText.copyWith(color: cs.error),
+                    // Erreur sous le champ en 16 sp.
+                    style: AppTypography.bodyMedium.copyWith(color: cs.error),
                   ),
                 ),
               ],

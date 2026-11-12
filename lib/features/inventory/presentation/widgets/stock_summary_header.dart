@@ -18,21 +18,20 @@ class StockSummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.labelMedium.copyWith(
-      color: cs.onSurfaceVariant,
-    );
-    final strong = AppTypography.labelMedium.copyWith(
+    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
+    final strong = AppTypography.bodyMedium.copyWith(
       color: cs.onSurface,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
+      fontFeatures: AppTypography.tabularFigures,
     );
     final count = summary.productCount;
 
     return Text.rich(
       TextSpan(
+        style: muted,
         children: [
-          TextSpan(text: '$count', style: strong),
-          TextSpan(text: count <= 1 ? ' produit' : ' produits', style: muted),
-          TextSpan(text: '  ·  Valeur du stock ', style: muted),
+          TextSpan(text: count <= 1 ? '$count produit' : '$count produits'),
+          const TextSpan(text: ' · valeur '),
           TextSpan(text: formatFcfa(summary.stockValue), style: strong),
         ],
       ),
@@ -40,14 +39,15 @@ class StockSummaryHeader extends StatelessWidget {
   }
 }
 
-/// Filtres d'état du stock : Tous, Stock faible et Ruptures, avec leur
-/// compteur (accentué tant que le filtre n'est pas actif).
+/// Filtres d'état du stock sur une seule rangée : Tous, Bas et Ruptures avec
+/// leur compteur, puis [trailing] (filtre de catégorie).
 class StockFilterChips extends StatelessWidget {
   /// Crée les filtres ; [summary] fournit les compteurs (masqués si `null`).
   const StockFilterChips({
     required this.filter,
     required this.onFilter,
     this.summary,
+    this.trailing,
     super.key,
   });
 
@@ -60,54 +60,48 @@ class StockFilterChips extends StatelessWidget {
   /// Synthèse portant les compteurs.
   final StockSummary? summary;
 
+  /// Puce affichée après les filtres d'état.
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final summary = this.summary;
+    final trailing = this.trailing;
 
-    return Wrap(
-      spacing: AppSpacing.sm,
-      children: [
-        for (final (value, label, count, accent) in [
-          (StockFilter.all, 'Tous', null, null),
-          (
-            StockFilter.lowStock,
-            'Stock faible',
-            summary?.lowStockCount,
-            cs.tertiary,
-          ),
-          (
-            StockFilter.outOfStock,
-            'Ruptures',
-            summary?.outOfStockCount,
-            cs.error,
-          ),
-        ])
-          ChoiceChip(
-            // Padding réduit : les 3 filtres tiennent sur une ligne à 360 dp.
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-            showCheckmark: false,
-            selected: filter == value,
-            onSelected: (_) => onFilter(value),
-            label: Text.rich(
-              TextSpan(
-                text: label,
-                children: [
-                  if (count != null)
-                    TextSpan(
-                      text: ' · $count',
-                      style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        // Compteur d'alerte en couleur tant qu'il y a quelque
-                        // chose à voir et que le filtre n'est pas déjà actif.
-                        color: count > 0 && filter != value ? accent : null,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final (value, label, count) in [
+            (StockFilter.all, 'Tous', null),
+            (StockFilter.lowStock, 'Bas', summary?.lowStockCount),
+            (StockFilter.outOfStock, 'Ruptures', summary?.outOfStockCount),
+          ]) ...[
+            ChoiceChip(
+              showCheckmark: false,
+              selected: filter == value,
+              onSelected: (_) => onFilter(value),
+              label: Text.rich(
+                TextSpan(
+                  text: label,
+                  children: [
+                    if (count != null)
+                      TextSpan(
+                        text: ' $count',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: AppTypography.tabularFigures,
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-      ],
+            const SizedBox(width: AppSpacing.sm),
+          ],
+          ?trailing,
+        ],
+      ),
     );
   }
 }

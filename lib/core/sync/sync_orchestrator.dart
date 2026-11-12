@@ -37,10 +37,20 @@ class SyncStatusSyncing extends SyncStatus {
 /// État d'erreur quand la synchro échoue.
 class SyncStatusError extends SyncStatus {
   /// Crée l'état d'erreur avec [message].
-  const SyncStatusError({required this.message});
+  const SyncStatusError({
+    required this.message,
+    this.failedAt,
+    this.lastSyncAt,
+  });
 
   /// Message d'erreur destiné à l'utilisateur.
   final String message;
+
+  /// Heure de l'échec.
+  final DateTime? failedAt;
+
+  /// Dernière synchro réussie avant l'échec, s'il y en a une.
+  final DateTime? lastSyncAt;
 }
 
 /// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
@@ -49,6 +59,9 @@ class SyncStatusError extends SyncStatus {
 @Riverpod(keepAlive: true)
 class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
   bool _isSyncing = false;
+
+  /// Dernière synchro réussie, gardée pour l'afficher après un échec.
+  DateTime? _lastSyncAt;
   Timer? _periodicTimer;
   Timer? _debounceTimer;
   Timer? _startupTimer;
@@ -267,10 +280,15 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
 
       _logger.d('Sync completed successfully');
       await _purgeSyncedEntries();
-      state = SyncStatusIdle(lastSyncAt: DateTime.now());
+      _lastSyncAt = DateTime.now();
+      state = SyncStatusIdle(lastSyncAt: _lastSyncAt);
     } catch (e, st) {
       _logger.e('Sync failed', error: e, stackTrace: st);
-      state = const SyncStatusError(message: 'Erreur de sauvegarde');
+      state = SyncStatusError(
+        message: 'Erreur de sauvegarde',
+        failedAt: DateTime.now(),
+        lastSyncAt: _lastSyncAt,
+      );
     } finally {
       _isSyncing = false;
     }

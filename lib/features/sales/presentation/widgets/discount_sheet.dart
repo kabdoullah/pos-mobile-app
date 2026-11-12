@@ -25,6 +25,7 @@ Future<DiscountSheetResult?> showDiscountSheet(
 }) {
   return showModalBottomSheet<DiscountSheetResult>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     builder: (_) =>

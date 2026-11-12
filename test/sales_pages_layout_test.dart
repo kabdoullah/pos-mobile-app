@@ -6,6 +6,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/returns/domain/repositories/returns_repository.dart';
@@ -74,6 +75,14 @@ Future<void> pump(
   when(
     () => repo.watchSalesByDateRange(any(), any()),
   ).thenAnswer((_) => Stream.value(history));
+  when(() => repo.watchSaleLinesByDateRange(any(), any())).thenAnswer(
+    (_) => Stream.value({
+      's10452': [
+        for (final item in items)
+          (productName: item.productName, quantity: item.quantity),
+      ],
+    }),
+  );
   when(() => repo.watchSale(any())).thenAnswer((_) => Stream.value(null));
   when(() => repo.watchSaleItems(any())).thenAnswer((_) => Stream.value(lines));
   final returns = _MockReturns();
@@ -118,12 +127,26 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.text('3 ventes'), findsOneWidget);
-      expect(find.text('En attente de synchro'), findsOneWidget);
+      expect(find.text("En attente d'envoi"), findsOneWidget);
+      expect(find.text('19:42 · n° 10452'), findsOneWidget);
+      expect(
+        find.text(
+          'Riz parfumé Uncle Ben’s sac de 25 kilogrammes ×100, '
+          'Coca-Cola 33cl ×2',
+        ),
+        findsOneWidget,
+      );
 
       await tester.enterText(find.byType(TextField), '10452');
       await tester.pumpAndSettle();
-      expect(find.text('Reçu #10450'), findsNothing);
-      expect(find.text('Reçu #10452'), findsOneWidget);
+      expect(find.text('19:42 · n° 10450'), findsNothing);
+      expect(find.text('19:42 · n° 10452'), findsOneWidget);
+
+      // Recherche par produit vendu.
+      await tester.enterText(find.byType(TextField), 'coca');
+      await tester.pumpAndSettle();
+      expect(find.text('19:42 · n° 10452'), findsOneWidget);
+      expect(find.text('1 vente'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -142,7 +165,8 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.textContaining('100 × 125'), findsOneWidget);
-      expect(find.text('Synchronisée'), findsOneWidget);
+      expect(find.text('Envoyée'), findsOneWidget);
+      expect(find.widgetWithText(PrimaryButton, 'Imprimer'), findsOneWidget);
     });
 
     testWidgets('ticket sans lignes, hors ligne, thème $name', (tester) async {
@@ -153,11 +177,15 @@ void main() {
         online: false,
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('Reçu en attente de synchronisation'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Reçu PDF disponible lorsque la connexion sera rétablie.'),
-        200,
-      );
+      expect(find.text('Reçu en attente d’envoi'), findsOneWidget);
+      expect(find.text("Vente en attente d'envoi"), findsOneWidget);
+      // Retour et PDF attendent l'envoi de la vente.
+      for (final label in ['Partager PDF', 'Retour']) {
+        final button = tester.widget<SecondaryButton>(
+          find.widgetWithText(SecondaryButton, label),
+        );
+        expect(button.onPressed, isNull, reason: label);
+      }
       expect(tester.takeException(), isNull);
     });
   }

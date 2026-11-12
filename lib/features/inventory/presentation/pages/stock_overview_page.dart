@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
@@ -98,14 +97,17 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(Routes.productNew),
         icon: const Icon(Icons.add),
-        label: const Text('Produit'),
+        label: const Text('Nouveau produit'),
       ),
       body: productsAsync.when(
         loading: () => const _LoadingList(),
         error: (_, _) => EmptyState(
           icon: Icons.error_outline,
-          title: 'Impossible de charger les produits',
-          message: 'Réessayez dans un instant.',
+          tone: EmptyStateTone.error,
+          title: "Le stock ne s'affiche pas",
+          message:
+              'Vos quantités ne sont pas modifiées. Réessayez dans un '
+              'instant.',
           actionLabel: 'Réessayer',
           onAction: () => ref.invalidate(stockProductsProvider),
         ),
@@ -113,9 +115,10 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
           if (products.isEmpty) {
             return EmptyState(
               icon: Icons.inventory_2_outlined,
-              title: 'Aucun produit',
-              message: 'Ajoutez votre premier produit.',
+              title: 'Aucun produit pour l’instant',
+              message: 'Ajoutez votre premier produit pour suivre son stock.',
               actionLabel: 'Ajouter un produit',
+              actionIcon: Icons.add,
               onAction: () => context.push(Routes.productNew),
             );
           }
@@ -197,12 +200,26 @@ class _StockList extends ConsumerWidget {
               AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
-                hintText: 'Rechercher un produit…',
+                hintText: 'Rechercher un produit',
                 actions: [
-                  IconButton(
-                    tooltip: 'Scanner un code-barres',
-                    icon: const Icon(Icons.qr_code_scanner),
+                  // Bouton libellé intégré au champ, comme en caisse.
+                  TextButton.icon(
                     onPressed: onScan,
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Scanner'),
+                    style: TextButton.styleFrom(
+                      backgroundColor: cs.primaryContainer,
+                      foregroundColor: cs.onPrimaryContainer,
+                      minimumSize: const Size(0, AppSpacing.buttonHeightSm),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm + 4,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSpacing.radiusMd,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -211,56 +228,98 @@ class _StockList extends ConsumerWidget {
                 filter: filter,
                 onFilter: onFilterChanged,
                 summary: summary,
-              ),
-              if (categories.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                // Catégories : défilement horizontal, une ligne quel que soit
-                // leur nombre.
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        label: const Text('Toutes catégories'),
-                        selected: activeCategory == null,
-                        onSelected: (_) => onCategoryChanged(null),
-                      ),
-                      for (final category in categories) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        FilterChip(
-                          label: Text(category.name),
-                          selected: activeCategory == category.id,
-                          onSelected: (selected) =>
-                              onCategoryChanged(selected ? category.id : null),
+                trailing: categories.isEmpty
+                    ? null
+                    : FilterChip(
+                        showCheckmark: false,
+                        selected: activeCategory != null,
+                        label: Text(
+                          categories
+                                  .where((c) => c.id == activeCategory)
+                                  .firstOrNull
+                                  ?.name ??
+                              'Catégorie',
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+                        avatar: const Icon(Icons.arrow_drop_down),
+                        onSelected: (_) async {
+                          final picked = await showModalBottomSheet<_Pick>(
+                            context: context,
+                            useRootNavigator: true,
+                            showDragHandle: true,
+                            builder: (context) => SafeArea(
+                              child: ListView(
+                                shrinkWrap: true,
+                                children: [
+                                  ListTile(
+                                    title: const Text('Toutes catégories'),
+                                    selected: activeCategory == null,
+                                    onTap: () => Navigator.of(
+                                      context,
+                                    ).pop(const _Pick(null)),
+                                  ),
+                                  for (final category in categories)
+                                    ListTile(
+                                      title: Text(category.name),
+                                      selected: activeCategory == category.id,
+                                      onTap: () => Navigator.of(
+                                        context,
+                                      ).pop(_Pick(category.id)),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                          if (picked != null) onCategoryChanged(picked.id);
+                        },
+                      ),
+              ),
             ],
           ),
         ),
         if (visible.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text(
-                query.isNotEmpty
-                    ? 'Aucun produit ne correspond à « $query ».'
-                    : switch (filter) {
-                        StockFilter.lowStock =>
-                          'Aucun produit à réapprovisionner.',
-                        StockFilter.outOfStock => 'Aucune rupture de stock.',
-                        StockFilter.all => 'Aucun produit.',
-                      },
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ),
+            child: query.isNotEmpty
+                ? EmptyState(
+                    icon: Icons.search_off,
+                    tone: EmptyStateTone.neutral,
+                    title: 'Aucun produit « $query »',
+                    message: 'Vérifiez l’orthographe ou scannez le produit.',
+                  )
+                : switch (filter) {
+                    StockFilter.outOfStock => EmptyState(
+                      icon: Icons.check_circle_outline,
+                      tone: EmptyStateTone.success,
+                      title: 'Aucun produit en rupture',
+                      message: 'Tous vos produits sont disponibles à la vente.',
+                      secondaryActions: [
+                        TextButton(
+                          onPressed: () => onFilterChanged(StockFilter.all),
+                          child: const Text('Voir tous les produits'),
+                        ),
+                      ],
+                    ),
+                    StockFilter.lowStock => EmptyState(
+                      icon: Icons.check_circle_outline,
+                      tone: EmptyStateTone.success,
+                      title: 'Aucun stock bas',
+                      message:
+                          'Tous vos produits sont au-dessus de leur seuil '
+                          "d'alerte.",
+                      secondaryActions: [
+                        TextButton(
+                          onPressed: () => onFilterChanged(StockFilter.all),
+                          child: const Text('Voir tous les produits'),
+                        ),
+                      ],
+                    ),
+                    StockFilter.all => const EmptyState(
+                      icon: Icons.label_outline,
+                      tone: EmptyStateTone.neutral,
+                      title: 'Aucun produit dans cette catégorie',
+                      message: 'Choisissez une autre catégorie.',
+                    ),
+                  },
           )
         else
           // Une seule surface, même marge latérale que l'en-tête.
@@ -289,6 +348,13 @@ class _StockList extends ConsumerWidget {
   }
 }
 
+/// Choix fait dans la feuille des catégories (`id` null = toutes).
+class _Pick {
+  const _Pick(this.id);
+
+  final String? id;
+}
+
 class _LoadingList extends StatelessWidget {
   const _LoadingList();
 
@@ -297,14 +363,42 @@ class _LoadingList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       physics: const NeverScrollableScrollPhysics(),
-      children: const [
-        SkeletonBox(height: 20),
-        SizedBox(height: AppSpacing.sm),
-        SkeletonBox(height: 56),
-        SizedBox(height: AppSpacing.md),
-        SkeletonBox(height: 64),
-        SizedBox(height: AppSpacing.sm),
-        SkeletonBox(height: 64),
+      children: [
+        const SkeletonBox(height: 18, width: 240),
+        const SizedBox(height: AppSpacing.sm),
+        const SkeletonBox(height: 56, radius: AppSpacing.radiusMd),
+        const SizedBox(height: AppSpacing.sm),
+        const Row(
+          children: [
+            SkeletonBox(width: 60, height: 40),
+            SizedBox(width: AppSpacing.sm),
+            SkeletonBox(width: 70, height: 40),
+            SizedBox(width: AppSpacing.sm),
+            SkeletonBox(width: 100, height: 40),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        for (var i = 0; i < 6; i++)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+            child: Row(
+              children: [
+                SkeletonBox(width: 44, height: 44),
+                SizedBox(width: AppSpacing.sm + 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonBox(height: 16, width: 160),
+                      SizedBox(height: AppSpacing.sm),
+                      SkeletonBox(height: 16, width: 110),
+                    ],
+                  ),
+                ),
+                SkeletonBox(width: 88, height: 48, radius: AppSpacing.radiusMd),
+              ],
+            ),
+          ),
       ],
     );
   }

@@ -178,8 +178,11 @@ Format requis pour la soumission sur le Google Play Store. Smaller download size
 
 ```bash
 make build-apk
-# = flutter build apk --release --flavor prod -t lib/main_prod.dart
+# = flutter build apk --release --flavor prod -t lib/main_prod.dart \
+#     --obfuscate --split-debug-info=symbols/<version>
 ```
+
+Cet APK est obfusqué (pas l'AAB Play Store). Les symboles (`symbols/<version>/app.android-*.symbols`, non versionnés) sont indispensables pour lire une trace de pile : les archiver avec chaque version publiée, puis `make symbolize TRACE=trace.txt V=<version>` (`ARCH=arm` pour un appareil 32 bits).
 
 ### APK par architecture (sideload optimisé)
 
@@ -327,6 +330,7 @@ Cause : mauvais point d'entrée utilisé. Toujours utiliser `make build-apk` ou 
 [ ] make analyze            — 0 erreur
 [ ] key.properties présent  — keystore de release configuré
 [ ] make build-aab          — AAB Play Store (ou make build-apk pour sideload)
+[ ] symbols/<version>/      — si make build-apk : symboles archivés hors du poste
 [ ] aapt dump badging       — applicationId = ci.pos.macaisse (pas .dev)
 [ ] keytool -printcert      — signature release vérifiée (pas debug)
 [ ] adb install + smoke     — login, PIN, réseau prod OK

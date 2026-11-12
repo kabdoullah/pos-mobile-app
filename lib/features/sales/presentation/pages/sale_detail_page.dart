@@ -13,6 +13,7 @@ import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/margin_summary.dart';
 import '../../domain/entities/sale.dart';
 import '../../../printing/presentation/providers/printer_provider.dart';
+import '../../../returns/presentation/providers/returns_providers.dart';
 import '../../../returns/presentation/widgets/sale_returns_section.dart';
 import '../../../printing/domain/repositories/printer_repository.dart';
 import '../../domain/entities/payment_method_label.dart';
@@ -43,20 +44,75 @@ class SaleDetailPage extends ConsumerWidget {
     final isSynced = sale.receiptNumber > 0;
     final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
 
+    final returnable = ref.watch(returnableLinesProvider(sale)).value;
+    final canReturn =
+        isSynced &&
+        (returnable ?? const []).any((l) => l.returnableQuantity > 0);
+
     return AppScaffold(
-      title: isSynced ? 'Vente #${sale.receiptNumber}' : 'Vente',
+      title: isSynced ? 'Vente n° ${sale.receiptNumber}' : 'Vente',
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.md),
+          child: isSynced
+              ? const StatusPill(
+                  label: 'Envoyée',
+                  icon: Icons.cloud_done_outlined,
+                  tone: StatusPillTone.success,
+                )
+              : const StatusPill(
+                  label: 'En attente',
+                  icon: Icons.schedule,
+                  tone: StatusPillTone.warning,
+                ),
+        ),
+      ],
+      bottomActions: [
+        PrimaryButton(
+          label: 'Imprimer',
+          icon: Icons.print_outlined,
+          onPressed: () => _handlePrint(context, ref, sale, items),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: SecondaryButton(
+                label: 'Partager PDF',
+                // Le PDF est généré par le serveur : réseau + vente
+                // synchronisée.
+                onPressed: isSynced && isOnline
+                    ? () => _handleDownloadPdf(context, ref, sale)
+                    : null,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: SecondaryButton(
+                label: 'Retour',
+                onPressed: canReturn
+                    ? () => context.push(Routes.saleReturn, extra: sale)
+                    : null,
+              ),
+            ),
+          ],
+        ),
+      ],
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          if (!isSynced) ...[
+            _PendingBanner(),
+            const SizedBox(height: AppSpacing.md),
+          ],
           ReceiptTicket(
             title: isSynced
-                ? 'Reçu #${sale.receiptNumber}'
-                : 'Reçu en attente de synchronisation',
+                ? 'Reçu n° ${sale.receiptNumber}'
+                : 'Reçu en attente d’envoi',
             subtitle: toBeginningOfSentenceCase(
               DateFormat(
-                "EEEE d MMMM yyyy 'à' HH:mm",
+                "EEEE d MMMM yyyy '·' HH:mm",
                 'fr_FR',
-              ).format(sale.createdAt),
+              ).format(sale.createdAt.toLocal()),
               'fr_FR',
             ),
             lines: [
@@ -79,48 +135,25 @@ class SaleDetailPage extends ConsumerWidget {
                   ),
             total: sale.totalAmount,
             discount: sale.discountAmount,
-            footer: [
-              ('Paiement', sale.paymentMethod.label),
-              ('Statut', isSynced ? 'Synchronisée' : 'En attente de synchro'),
-            ],
+            footer: [('Paiement', sale.paymentMethod.label)],
           ),
           if (items != null &&
               items.any((item) => item.purchaseUnitPrice != null)) ...[
             const SizedBox(height: AppSpacing.md),
             _InternalMargin(sale: sale, items: items),
           ],
-          const SizedBox(height: AppSpacing.lg),
-          PrimaryButton(
-            label: 'Imprimer',
-            icon: Icons.print_outlined,
-            onPressed: () => _handlePrint(context, ref, sale, items),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            // Le PDF est généré par le serveur : réseau + vente synchronisée.
-            onPressed: isSynced && isOnline
-                ? () => _handleDownloadPdf(context, ref, sale)
-                : null,
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('Reçu PDF'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
-            ),
-          ),
-          if (!isSynced || !isOnline) ...[
-            const SizedBox(height: AppSpacing.xs),
+          if (isSynced && !isOnline) ...[
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              isOnline
-                  ? 'Reçu PDF disponible après synchronisation.'
-                  : 'Reçu PDF disponible lorsque la connexion sera rétablie.',
+              'Reçu PDF disponible lorsque la connexion sera rétablie.',
               textAlign: TextAlign.center,
               style: muted,
             ),
           ],
-          // Retours enregistrés et action « Retourner des articles ».
+          // Retours déjà enregistrés ; l'action est dans la barre du bas.
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: SaleReturnsSection(sale: sale),
+            child: SaleReturnsSection(sale: sale, showReturnAction: false),
           ),
         ],
       ),
@@ -296,6 +329,38 @@ class _InfoRow extends StatelessWidget {
                 fontFeatures: AppTypography.tabularFigures,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Vente pas encore envoyée : le retour attend l'envoi (règle inchangée).
+class _PendingBanner extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final style = AppTypography.bodyMedium.copyWith(
+      color: cs.onTertiaryContainer,
+    );
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: cs.tertiaryContainer,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Vente en attente d'envoi",
+            style: style.copyWith(fontWeight: FontWeight.w700),
+          ),
+          Text(
+            'Le retour et le reçu PDF seront possibles dès qu’elle sera '
+            'envoyée.',
+            style: style,
           ),
         ],
       ),

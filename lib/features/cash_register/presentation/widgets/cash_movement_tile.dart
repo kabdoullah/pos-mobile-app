@@ -82,7 +82,9 @@ class CashMovementTile extends StatelessWidget {
                       '$typeLabel · $reason',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.titleMedium,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(details, style: muted),
                     if (isRejected)
