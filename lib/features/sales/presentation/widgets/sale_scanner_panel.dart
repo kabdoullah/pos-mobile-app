@@ -15,10 +15,11 @@ const _cameraForeground = Color(0xB3FFFFFF);
 // Or secondaire du thème, accent du viseur.
 const _viewfinderColor = Color(0xFFCA8A04);
 
-/// Bandeau caméra compact : scan en continu au-dessus du panier.
+/// Zone caméra du scanner de la caisse : viseur, invite de permission et,
+/// en option, bouton de torche.
 ///
 /// Le [MobileScanner] n'est monté que si [isActive] : le démonter libère la
-/// caméra (bottom sheet ouvert, page recouverte, bandeau replié).
+/// caméra (page recouverte, application en arrière-plan).
 class SaleScannerPanel extends StatelessWidget {
   /// Crée le bandeau caméra.
   const SaleScannerPanel({
@@ -30,8 +31,24 @@ class SaleScannerPanel extends StatelessWidget {
     required this.onDetect,
     required this.onToggleTorch,
     required this.onOpenAppSettings,
+    this.height = saleScannerPanelHeight,
+    this.borderRadius = AppSpacing.radiusLg,
+    this.showTorchButton = true,
+    this.hint,
     super.key,
   });
+
+  /// Hauteur de la zone caméra.
+  final double height;
+
+  /// Rayon des coins.
+  final double borderRadius;
+
+  /// Affiche le bouton de torche dans la zone (sinon l'écran le porte).
+  final bool showTorchButton;
+
+  /// Consigne affichée en bas de la zone (« Placez le code-barres… »).
+  final String? hint;
 
   /// Contrôleur de la caméra, possédé par la page.
   final MobileScannerController controller;
@@ -59,10 +76,11 @@ class SaleScannerPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hint = this.hint;
     return SizedBox(
-      height: saleScannerPanelHeight,
+      height: height,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: ColoredBox(
           color: _cameraBackground,
           child: switch ((isCheckingPermission, isPermissionGranted)) {
@@ -74,18 +92,32 @@ class SaleScannerPanel extends StatelessWidget {
               children: [
                 MobileScanner(controller: controller, onDetect: onDetect),
                 const CustomPaint(painter: _ViewfinderPainter()),
-                Positioned(
-                  top: AppSpacing.xs,
-                  right: AppSpacing.xs,
-                  child: IconButton(
-                    tooltip: isTorchOn ? 'Éteindre la torche' : 'Torche',
-                    color: _cameraForeground,
-                    icon: Icon(
-                      isTorchOn ? Icons.flashlight_off : Icons.flashlight_on,
+                if (hint != null)
+                  Positioned(
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                    bottom: AppSpacing.sm + 6,
+                    child: Text(
+                      hint,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyMedium.copyWith(
+                        color: _cameraForeground,
+                      ),
                     ),
-                    onPressed: onToggleTorch,
                   ),
-                ),
+                if (showTorchButton)
+                  Positioned(
+                    top: AppSpacing.xs,
+                    right: AppSpacing.xs,
+                    child: IconButton(
+                      tooltip: isTorchOn ? 'Éteindre la torche' : 'Torche',
+                      color: _cameraForeground,
+                      icon: Icon(
+                        isTorchOn ? Icons.flashlight_off : Icons.flashlight_on,
+                      ),
+                      onPressed: onToggleTorch,
+                    ),
+                  ),
               ],
             ),
           },

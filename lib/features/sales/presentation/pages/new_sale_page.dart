@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
@@ -15,7 +13,6 @@ import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart
 import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
-import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../../catalog/presentation/pages/product_form_page.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
@@ -24,6 +21,7 @@ import '../../domain/entities/discount.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/scan_provider.dart';
+import 'sale_scanner_page.dart';
 import '../widgets/discount_sheet.dart';
 import '../widgets/product_browser.dart';
 import '../widgets/product_search_results.dart';
@@ -31,7 +29,6 @@ import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_cart_sheet.dart';
 import '../widgets/sale_checkout_bar.dart';
 import '../widgets/sale_confirmation_sheet.dart';
-import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
 import 'sale_payment_page.dart';
@@ -53,16 +50,6 @@ class NewSalePage extends ConsumerStatefulWidget {
 }
 
 class _NewSalePageState extends ConsumerState<NewSalePage> {
-  late final MobileScannerController _scanner;
-  bool _isPermissionGranted = false;
-  // La permission caméra n'est demandée qu'à la première ouverture du
-  // scanner, replié par défaut pour laisser la place au catalogue.
-  bool _hasRequestedPermission = false;
-  bool _isCheckingPermission = true;
-  bool _isScannerOpen = false;
-  bool _isCameraPaused = false;
-  bool _isTorchOn = false;
-
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   Timer? _searchDebounce;
@@ -75,8 +62,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   @override
   void initState() {
     super.initState();
-    _scanner = createRetailScannerController();
-    // La caméra se replie pendant la saisie d'une recherche.
+    // La barre d'encaissement se masque pendant la saisie d'une recherche.
     _searchFocus.addListener(() => setState(() {}));
   }
 
@@ -86,92 +72,20 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     _toastTimer?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
-    unawaited(_scanner.dispose());
     super.dispose();
   }
 
-  Future<void> _checkPermission() async {
-    _hasRequestedPermission = true;
-    final status = await Permission.camera.request();
-    if (!mounted) return;
-    setState(() {
-      _isPermissionGranted = status.isGranted;
-      _isCheckingPermission = false;
-    });
-  }
-
   // ---------------------------------------------------------------------------
-  // Caméra
+  // Scanner
   // ---------------------------------------------------------------------------
 
-  void _toggleScanner() {
-    setState(() {
-      _isScannerOpen = !_isScannerOpen;
-      if (!_isScannerOpen) _isTorchOn = false;
-    });
-    if (_isScannerOpen) {
-      _searchFocus.unfocus();
-      if (!_hasRequestedPermission) unawaited(_checkPermission());
-    }
-  }
-
-  Future<void> _toggleTorch() async {
-    await _scanner.toggleTorch();
-    if (!mounted) return;
-    setState(() => _isTorchOn = !_isTorchOn);
-  }
-
-  /// Démonte la caméra pendant [action] (feuille, page empilée) : pas de scan
-  /// en arrière-plan, caméra libérée.
-  Future<T?> _withCameraPaused<T>(Future<T?> Function() action) async {
-    setState(() {
-      _isCameraPaused = true;
-      _isTorchOn = false;
-    });
-    try {
-      return await action();
-    } finally {
-      if (mounted) setState(() => _isCameraPaused = false);
-    }
-  }
-
-  Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
-    final rawValue = capture.barcodes.firstOrNull?.rawValue;
-    if (rawValue == null || !mounted) return;
-    // Normalise avant le scan et avant de passer au formulaire produit.
-    final code = rawValue.trim().replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
-    if (code.isEmpty) return;
-
-    final outcome = await ref.read(scanControllerProvider.notifier).scan(code);
-    if (!mounted) return;
-
-    switch (outcome.result) {
-      case ScanResult.cooldown:
-        return;
-      case ScanResult.added:
-      case ScanResult.quantityIncremented:
-        unawaited(HapticFeedback.mediumImpact());
-        _showToast(
-          SaleToastData(
-            message: '${outcome.product?.name ?? 'Produit'} ajouté',
-            kind: SaleToastKind.success,
-          ),
-        );
-      case ScanResult.stockExceeded:
-        unawaited(HapticFeedback.heavyImpact());
-        _showStockExceeded(outcome.product);
-      case ScanResult.notFound:
-        _showToast(
-          SaleToastData(
-            message: 'Produit introuvable',
-            kind: SaleToastKind.info,
-            actionLabel: 'Créer',
-            onAction: () => _withCameraPaused(
-              () => context.push(Routes.productNew, extra: code),
-            ),
-          ),
-          duration: const Duration(seconds: 5),
-        );
+  /// Scanner plein écran en continu ; un code inconnu revient ici pour créer
+  /// le produit, code-barres pré-rempli.
+  Future<void> _openScanner() async {
+    _searchFocus.unfocus();
+    final code = await showSaleScannerPage(context);
+    if (code != null && mounted) {
+      await context.push(Routes.productNew, extra: code);
     }
   }
 
@@ -274,49 +188,43 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       _showStockExceeded(product);
       return;
     }
-    final result = await _withCameraPaused(
-      () => showQuantitySheet(
-        context,
-        productName: product.name,
-        unitPrice: product.sellingPrice,
-        stock: stock,
-        maxQuantity: remaining,
-        confirmLabel: 'Ajouter',
-      ),
+    final result = await showQuantitySheet(
+      context,
+      productName: product.name,
+      unitPrice: product.sellingPrice,
+      stock: stock,
+      maxQuantity: remaining,
+      confirmLabel: 'Ajouter',
     );
     if (result case QuantityChosen(:final quantity) when mounted) {
       _addProduct(product, quantity: quantity);
     }
   }
 
-  /// Ligne du panier : quantité, puis réduction si demandée — la caméra
-  /// reste en pause pendant les deux feuilles.
+  /// Ligne du panier : quantité, puis réduction si demandée.
   Future<void> _editCartItem(CartItem item) async {
-    await _withCameraPaused(() async {
-      final result = await showQuantitySheet(
-        context,
-        productName: item.productName,
-        unitPrice: item.unitPrice,
-        stock: item.availableStock,
-        initialQuantity: item.quantity,
-        maxQuantity: item.availableStock,
-        confirmLabel: 'Mettre à jour',
-        offerDiscount: true,
-        discount: item.discount,
-      );
-      if (!mounted) return null;
-      switch (result) {
-        case QuantityChosen(:final quantity):
-          ref
-              .read(cartProvider.notifier)
-              .updateQuantity(item.productId, quantity);
-        case DiscountRequested():
-          await _editItemDiscount(item);
-        case null:
-          break;
-      }
-      return null;
-    });
+    final result = await showQuantitySheet(
+      context,
+      productName: item.productName,
+      unitPrice: item.unitPrice,
+      stock: item.availableStock,
+      initialQuantity: item.quantity,
+      maxQuantity: item.availableStock,
+      confirmLabel: 'Mettre à jour',
+      offerDiscount: true,
+      discount: item.discount,
+    );
+    if (!mounted) return;
+    switch (result) {
+      case QuantityChosen(:final quantity):
+        ref
+            .read(cartProvider.notifier)
+            .updateQuantity(item.productId, quantity);
+      case DiscountRequested():
+        await _editItemDiscount(item);
+      case null:
+        break;
+    }
   }
 
   Future<void> _editItemDiscount(CartItem item) async {
@@ -336,13 +244,11 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   /// Remise globale sur le sous-total du panier.
   Future<void> _editCartDiscount() async {
     final cart = ref.read(cartProvider);
-    final result = await _withCameraPaused(
-      () => showDiscountSheet(
-        context,
-        title: 'Remise sur la vente',
-        gross: cart.subtotal,
-        initial: cart.discount,
-      ),
+    final result = await showDiscountSheet(
+      context,
+      title: 'Remise sur la vente',
+      gross: cart.subtotal,
+      initial: cart.discount,
     );
     if (result == null || !mounted) return;
     ref.read(cartProvider.notifier).setDiscount(result.discount);
@@ -373,24 +279,20 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   /// tout en chiffres est un code-barres, sinon un nom.
   Future<void> _createFromSearch(String query) async {
     final isBarcode = RegExp(r'^\d{6,}$').hasMatch(query);
-    await _withCameraPaused(
-      () => context.push(
-        Routes.productNew,
-        extra: isBarcode ? query : ProductNamePrefill(query),
-      ),
+    await context.push(
+      Routes.productNew,
+      extra: isBarcode ? query : ProductNamePrefill(query),
     );
   }
 
   Future<void> _showCart() async {
-    final checkout = await _withCameraPaused(
-      () => showSaleCartSheet(
-        context,
-        onEditItem: _editCartItem,
-        onEditItemDiscount: _editItemDiscount,
-        onEditDiscount: _editCartDiscount,
-      ),
+    final checkout = await showSaleCartSheet(
+      context,
+      onEditItem: _editCartItem,
+      onEditItemDiscount: _editItemDiscount,
+      onEditDiscount: _editCartDiscount,
     );
-    if ((checkout ?? false) && mounted) await _checkout();
+    if (checkout && mounted) await _checkout();
   }
 
   // ---------------------------------------------------------------------------
@@ -402,25 +304,20 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   Future<void> _checkout() async {
     FocusScope.of(context).unfocus();
     if (_query.isNotEmpty) _clearSearch();
-    await _withCameraPaused(() async {
-      final completed = await showSalePaymentPage(context);
-      if (completed == null || !mounted) return null;
-      await showSaleConfirmationSheet(
-        context,
-        sale: completed.sale,
-        items: completed.items,
-        change: completed.change,
-      );
-      return null;
-    });
+    final completed = await showSalePaymentPage(context);
+    if (completed == null || !mounted) return;
+    await showSaleConfirmationSheet(
+      context,
+      sale: completed.sale,
+      items: completed.items,
+      change: completed.change,
+    );
   }
 
   /// Caisse fermée : on l'ouvre sans perdre le panier, puis on encaisse.
   Future<void> _openCashSession() async {
-    final opened = await _withCameraPaused(
-      () => showOpenCashSessionSheet(context),
-    );
-    if ((opened ?? false) && mounted) {
+    final opened = await showOpenCashSessionSheet(context);
+    if (opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Caisse ouverte. Vous pouvez encaisser.')),
       );
@@ -449,14 +346,9 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
         ? _categoryId
         : null;
 
-    // Onglet masqué (IndexedStack de la shell) : TickerMode est désactivé.
-    // La caméra est alors démontée, sinon elle tournerait en arrière-plan.
-    final isTabVisible = TickerMode.valuesOf(context).enabled;
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final isSearchFocused = _searchFocus.hasFocus;
     final isSearching = _query.isNotEmpty;
-    final showCamera =
-        _isScannerOpen && !keyboardOpen && !isSearchFocused && !isSearching;
     // Pendant une recherche au clavier, les résultats prennent toute la place.
     final showCheckout = !(keyboardOpen && isSearchFocused);
     final divider = BorderSide(color: cs.outlineVariant);
@@ -470,8 +362,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
-            onPressed: () =>
-                _withCameraPaused(() => context.push(Routes.bluetoothSetup)),
+            onPressed: () => context.push(Routes.bluetoothSetup),
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
@@ -501,33 +392,8 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                     controller: _searchController,
                     focusNode: _searchFocus,
                     onChanged: _onSearchChanged,
-                    isScannerOpen: _isScannerOpen,
-                    onToggleScanner: _toggleScanner,
+                    onScan: _openScanner,
                   ),
-                ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  child: showCamera
-                      ? Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.md,
-                            0,
-                            AppSpacing.md,
-                            AppSpacing.sm,
-                          ),
-                          child: SaleScannerPanel(
-                            controller: _scanner,
-                            isActive: !_isCameraPaused && isTabVisible,
-                            isPermissionGranted: _isPermissionGranted,
-                            isCheckingPermission: _isCheckingPermission,
-                            isTorchOn: _isTorchOn,
-                            onDetect: _onBarcodeDetected,
-                            onToggleTorch: _toggleTorch,
-                            onOpenAppSettings: openAppSettings,
-                          ),
-                        )
-                      : const SizedBox(width: double.infinity),
                 ),
                 if (!isSearching && categories.isNotEmpty)
                   _CategoryChips(
@@ -564,17 +430,13 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                               onOpen: _openProduct,
                               onRetry: () =>
                                   ref.invalidate(stockProductsProvider),
-                              onAddProduct: () => _withCameraPaused(
-                                () => context.push(Routes.productNew),
-                              ),
+                              onAddProduct: () =>
+                                  context.push(Routes.productNew),
                               // Scanner de la caisse : un code inconnu propose
                               // « Créer ».
-                              onScanProduct: () {
-                                if (!_isScannerOpen) _toggleScanner();
-                              },
-                              onImportProducts: () => _withCameraPaused(
-                                () => context.push(Routes.productImport),
-                              ),
+                              onScanProduct: _openScanner,
+                              onImportProducts: () =>
+                                  context.push(Routes.productImport),
                             ),
                           ],
                         ),

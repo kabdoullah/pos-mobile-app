@@ -10,25 +10,21 @@ class SaleSearchBar extends StatelessWidget {
     required this.controller,
     required this.focusNode,
     required this.onChanged,
-    required this.isScannerOpen,
-    required this.onToggleScanner,
+    required this.onScan,
     super.key,
   });
 
   /// Contrôleur du champ de recherche.
   final TextEditingController controller;
 
-  /// Focus du champ (la page replie la caméra pendant la saisie).
+  /// Focus du champ.
   final FocusNode focusNode;
 
   /// Appelé à chaque modification du texte.
   final ValueChanged<String> onChanged;
 
-  /// Indique si la caméra est dépliée.
-  final bool isScannerOpen;
-
-  /// Déplie ou replie la caméra.
-  final VoidCallback onToggleScanner;
+  /// Ouvre le scanner plein écran.
+  final VoidCallback onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +37,9 @@ class SaleSearchBar extends StatelessWidget {
       actions: [
         // Bouton libellé intégré au champ : pas d'icône seule pour scanner.
         TextButton.icon(
-          onPressed: onToggleScanner,
-          icon: Icon(isScannerOpen ? Icons.close : Icons.qr_code_scanner),
-          label: Text(isScannerOpen ? 'Fermer' : 'Scanner'),
+          onPressed: onScan,
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Scanner'),
           style: TextButton.styleFrom(
             backgroundColor: cs.primaryContainer,
             foregroundColor: cs.onPrimaryContainer,

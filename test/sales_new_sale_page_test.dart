@@ -22,6 +22,7 @@ import 'package:mobile/features/catalog/domain/entities/product_page.dart';
 import 'package:mobile/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:mobile/features/catalog/providers/catalog_di_providers.dart';
 import 'package:mobile/features/sales/presentation/pages/new_sale_page.dart';
+import 'package:mobile/features/sales/presentation/pages/sale_scanner_page.dart';
 import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
 import 'package:mobile/features/sales/presentation/providers/checkout_provider.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
@@ -170,11 +171,18 @@ void main() {
       find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
       findsOneWidget,
     );
-    // Scanner replié par défaut : il s'ouvre à la demande.
+    // « Scanner » ouvre le scanner plein écran (caméra refusée ici : l'invite
+    // s'affiche sans monter la caméra).
     expect(find.byType(SaleScannerPanel), findsNothing);
     await tester.tap(find.widgetWithText(TextButton, 'Scanner'));
     await tester.pumpAndSettle();
+    expect(find.byType(SaleScannerPage), findsOneWidget);
     expect(find.byType(SaleScannerPanel), findsOneWidget);
+    expect(find.text('Derniers articles scannés'), findsOneWidget);
+    expect(find.widgetWithText(PrimaryButton, 'Terminer'), findsOneWidget);
+    await tester.tap(find.widgetWithText(PrimaryButton, 'Terminer'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SaleScannerPage), findsNothing);
   });
 
   testWidgets('caisse ouverte, panier vide : Encaisser désactivé', (
