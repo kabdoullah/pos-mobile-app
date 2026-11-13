@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
-import 'package_icon.dart';
+import 'stroke_icon.dart';
 
 /// Vignette carrée d'une image, ou pictogramme « colis » de la maquette v2 si
 /// aucune image, pendant le chargement ou en cas d'erreur.

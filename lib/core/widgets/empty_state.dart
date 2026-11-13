@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
-import 'package_icon.dart';
+import 'stroke_icon.dart';
 import 'primary_button.dart';
 
 /// Affichage d'état vide pour les listes et conteneurs (v2) : pictogramme au

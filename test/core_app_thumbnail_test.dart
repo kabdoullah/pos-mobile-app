@@ -78,4 +78,28 @@ void main() {
       expect(title.style!.fontWeight, FontWeight.w600);
     },
   );
+
+  for (final (name, theme) in [
+    ('clair', AppTheme.light()),
+    ('sombre', AppTheme.dark()),
+  ]) {
+    testWidgets('les 6 pictogrammes de la maquette se dessinent, $name', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: Row(
+              children: [
+                for (final icon in DesignIcon.values) StrokeIcon(icon),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(StrokeIcon), findsNWidgets(DesignIcon.values.length));
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import '../widgets/stroke_icon.dart';
 
 /// Onglets de la [MainShell], dans l'ordre des branches de la
 /// [StatefulShellRoute] (`app_router.dart`) et des destinations ci-dessous —
@@ -57,12 +58,14 @@ class MainShell extends StatelessWidget {
 }
 
 /// Destinations, dans l'ordre de [ShellBranch].
-const _destinations = <(IconData, IconData, String)>[
-  (Icons.home_outlined, Icons.home, 'Accueil'),
-  (Icons.point_of_sale_outlined, Icons.point_of_sale, 'Vendre'),
-  (Icons.inventory_2_outlined, Icons.inventory_2, 'Stock'),
-  (Icons.receipt_long_outlined, Icons.receipt_long, 'Historique'),
-  (Icons.settings_outlined, Icons.settings, 'Paramètres'),
+/// Pictogrammes dessinés de la maquette : le même au trait, actif ou non
+/// (seules la couleur et la graisse du libellé changent).
+const _destinations = <(DesignIcon, String)>[
+  (DesignIcon.home, 'Accueil'),
+  (DesignIcon.sell, 'Vendre'),
+  (DesignIcon.stock, 'Stock'),
+  (DesignIcon.history, 'Historique'),
+  (DesignIcon.settings, 'Paramètres'),
 ];
 
 /// Barre de navigation v2 (remplace `NavigationBar`) : plate, 64 dp, filet
@@ -88,11 +91,10 @@ class _AppBottomNav extends StatelessWidget {
           height: 64,
           child: Row(
             children: [
-              for (final (index, (icon, selectedIcon, label))
-                  in _destinations.indexed)
+              for (final (index, (icon, label)) in _destinations.indexed)
                 Expanded(
                   child: _NavItem(
-                    icon: index == selectedIndex ? selectedIcon : icon,
+                    icon: icon,
                     label: label,
                     selected: index == selectedIndex,
                     onTap: () => onSelected(index),
@@ -114,7 +116,7 @@ class _NavItem extends StatelessWidget {
     required this.onTap,
   });
 
-  final IconData icon;
+  final DesignIcon icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -136,7 +138,7 @@ class _NavItem extends StatelessWidget {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(icon, size: 24, color: color),
+                StrokeIcon(icon, color: color),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   label,
