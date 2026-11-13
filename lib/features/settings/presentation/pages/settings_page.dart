@@ -69,8 +69,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final storeAddress = store?.address;
     final footer = store?.receiptFooterText;
 
-    return AppScaffold(
-      title: 'Paramètres',
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: AppSpacing.md,
+        title: const Text('Paramètres'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: AppSpacing.md),
+            child: OfflineStatusIndicator(),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
@@ -78,7 +87,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Commerce',
             children: [
               SettingsTile(
-                icon: Icons.storefront_outlined,
                 title: store == null ? 'Configurer ma boutique' : 'Mon magasin',
                 subtitle: Text(
                   store == null
@@ -101,7 +109,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               if (store != null)
                 SettingsTile(
-                  icon: Icons.receipt_long_outlined,
                   title: 'Reçus',
                   subtitle: Text(
                     footer == null || footer.isEmpty
@@ -119,9 +126,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Caisse',
             children: [
               SettingsTile(
-                icon: Icons.print_outlined,
                 title: 'Imprimante',
-                subtitle: Text(_printerLabel(ref.watch(printerProvider))),
+                subtitle: _PrinterStatus(state: ref.watch(printerProvider)),
                 showChevron: true,
                 onTap: () => context.push(Routes.bluetoothSetup),
               ),
@@ -131,59 +137,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Application',
             children: [
               SettingsTile(
-                icon: Icons.cloud_sync_outlined,
                 title: 'Synchronisation',
                 subtitle: Text(_syncLabel()),
                 busy: _syncing,
                 onTap: _syncNow,
-                trailing: const Icon(Icons.refresh),
-              ),
-              SettingsTile(
-                icon: Icons.palette_outlined,
-                title: 'Apparence',
-                trailing: SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined, size: 18),
-                      tooltip: 'Clair',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                      tooltip: 'Système',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined, size: 18),
-                      tooltip: 'Sombre',
-                    ),
-                  ],
-                  selected: {ref.watch(themeModeProvider)},
-                  onSelectionChanged: (modes) =>
-                      ref.read(themeModeProvider.notifier).setMode(modes.first),
-                  showSelectedIcon: false,
-                  style: SegmentedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                  ),
+                trailing: TextButton(
+                  onPressed: _syncNow,
+                  child: const Text('Relancer'),
                 ),
               ),
               SettingsTile(
-                icon: Icons.file_download_outlined,
+                title: 'Apparence',
+                below: SegmentedControl<ThemeMode>(
+                  segments: const [
+                    (value: ThemeMode.light, label: 'Clair'),
+                    (value: ThemeMode.system, label: 'Système'),
+                    (value: ThemeMode.dark, label: 'Sombre'),
+                  ],
+                  selected: ref.watch(themeModeProvider),
+                  onChanged: ref.read(themeModeProvider.notifier).setMode,
+                ),
+              ),
+              SettingsTile(
                 title: 'Exporter les ventes',
                 subtitle: const Text('Fichier CSV à partager'),
                 busy: _exporting,
                 onTap: _exportCsv,
               ),
               SettingsTile(
-                icon: Icons.help_outline,
                 title: 'Revoir le tutoriel',
                 subtitle: const Text('Visite guidée de l’application'),
                 showChevron: true,
                 onTap: () => context.push(Routes.tutorial),
               ),
               SettingsTile(
-                icon: Icons.privacy_tip_outlined,
                 title: 'Politique de confidentialité',
                 trailing: const Icon(Icons.open_in_new, size: 18),
                 onTap: () => _openUrl(AppConfig.privacyPolicyUrl),
@@ -195,7 +182,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               if (phone != null)
                 SettingsTile(
-                  icon: Icons.person_outline,
                   title: 'Mon compte',
                   subtitle: Text(
                     [
@@ -211,14 +197,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   onTap: () => showSellerNameSheet(context, sellerName),
                 ),
               if (phone != null) const AccountEmailTile(),
+              SettingsTile(title: 'Se déconnecter', onTap: _confirmLogout),
               SettingsTile(
-                icon: Icons.logout_outlined,
-                title: 'Se déconnecter',
-                destructive: true,
-                onTap: _confirmLogout,
-              ),
-              SettingsTile(
-                icon: Icons.delete_forever_outlined,
                 title: 'Supprimer mon compte',
                 subtitle: const Text('Compte, boutique et ventes effacés'),
                 destructive: true,
@@ -230,14 +210,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
     );
   }
-
-  String _printerLabel(PrinterState state) => switch (state) {
-    PrinterConnected(:final name) => 'Connectée : $name',
-    PrinterConnecting() => 'Connexion…',
-    PrinterDisconnected(savedName: final name?) => name,
-    PrinterDisconnected() => 'Aucune imprimante configurée',
-    PrinterError() => 'Erreur de connexion — touchez pour vérifier',
-  };
 
   /// État de synchro en mots simples (jamais de jargon technique).
   String _syncLabel() {
@@ -398,5 +370,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
+  }
+}
+
+/// État de l'imprimante en point + mot.
+class _PrinterStatus extends StatelessWidget {
+  const _PrinterStatus({required this.state});
+
+  final PrinterState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, tone) = switch (state) {
+      PrinterConnected(:final name) => ('$name connectée', StatusTone.success),
+      PrinterConnecting() => ('Connexion…', StatusTone.neutral),
+      PrinterDisconnected(savedName: final name?) => (
+        '$name · non connectée',
+        StatusTone.neutral,
+      ),
+      PrinterDisconnected() => (
+        'Aucune imprimante configurée',
+        StatusTone.warning,
+      ),
+      PrinterError() => (
+        'Connexion échouée · touchez pour vérifier',
+        StatusTone.error,
+      ),
+    };
+    return StatusIndicator(label: label, tone: tone);
   }
 }

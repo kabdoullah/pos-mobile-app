@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
-import '../../../../core/responsive/responsive.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -34,6 +34,10 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
   bool _isLoading = false;
   // ✨ track quel MAC est en cours de connexion — évite le spinner global sur tous les devices
   String? _connectingMac;
+
+  /// Dernier appareil dont la connexion a échoué (raison et « Réessayer »
+  /// affichées sur sa ligne).
+  String? _failedMac;
   bool _testing = false;
 
   @override
@@ -118,7 +122,10 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     if (ref.read(printerProvider) is PrinterConnecting) return;
 
     // ✨ mémoriser le MAC pour afficher le spinner uniquement sur cette carte
-    setState(() => _connectingMac = device.macAdress);
+    setState(() {
+      _connectingMac = device.macAdress;
+      _failedMac = null;
+    });
 
     // Note : BluetoothInfo.macAdress (un seul « d »)
     await ref
@@ -130,17 +137,15 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
 
     final newState = ref.read(printerProvider);
     if (newState is PrinterConnected) {
-      _onConnectSuccess();
-    } else if (newState is PrinterError) {
+      // On reste sur l'écran : « Imprimer un test » est juste là.
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Connexion impossible. Vérifiez que l’imprimante est allumée et '
-            'à proximité.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
+        const SnackBar(
+          content: Text('Imprimante connectée'),
+          duration: Duration(seconds: 2),
         ),
       );
+    } else if (newState is PrinterError) {
+      setState(() => _failedMac = device.macAdress);
     }
   }
 
@@ -176,232 +181,290 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
     await ref.read(printerProvider.notifier).forget();
   }
 
-  // Correctif n°2 : snackbar + retour au lieu du dialogue d'impression test
-  // cassé
-  void _onConnectSuccess() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Imprimante connectée'),
-        duration: Duration(seconds: 2),
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final printerState = ref.watch(printerProvider);
+    final (savedMac, savedName) = switch (printerState) {
+      PrinterConnected(:final mac, :final name) => (mac, name),
+      PrinterDisconnected(:final savedMac, :final savedName) => (
+        savedMac,
+        savedName,
+      ),
+      PrinterError(:final savedMac) => (savedMac, null),
+      PrinterConnecting() => (null, null),
+    };
+    final savedListed = _pairedDevices.any((d) => d.macAdress == savedMac);
+    final canRefresh = !_checkingPermission && _hasPermission;
+    final meta = AppTypography.body.copyWith(color: colors.textSecondary);
+
+    final List<Widget> content;
+    if (_checkingPermission) {
+      content = const [
+        SizedBox(height: AppSpacing.xl),
+        Center(child: AppLoadingIndicator()),
+      ];
+    } else if (!_hasPermission) {
+      content = [
+        _Message(
+          title: 'Accès Bluetooth refusé',
+          message:
+              'Ma Caisse a besoin du Bluetooth pour parler à '
+              'l’imprimante.',
+          actionLabel: 'Autoriser le Bluetooth',
+          onAction: _requestPermission,
+        ),
+      ];
+    } else if (_pairedDevices.isEmpty && savedName == null) {
+      content = [
+        _Message(
+          title: 'Aucune imprimante appairée',
+          message: Platform.isIOS
+              ? 'Allumez l’imprimante Bluetooth et placez-la près du '
+                    'téléphone, puis actualisez.'
+              : 'Allumez l’imprimante, puis appairez-la dans les réglages '
+                    'Bluetooth du téléphone. Revenez ensuite ici.',
+          actionLabel: 'Ouvrir les réglages Bluetooth',
+          onAction: () =>
+              AppSettings.openAppSettings(type: AppSettingsType.bluetooth),
+          secondaryLabel: 'Actualiser',
+          onSecondary: _loadDevices,
+        ),
+      ];
+    } else {
+      content = [
+        if (_isLoading) const LinearProgressIndicator(minHeight: 2),
+        const OverlineHeader('Imprimantes appairées au téléphone'),
+        FlatList(
+          children: [
+            // Imprimante enregistrée mais absente de la liste (iOS, appairage
+            // retiré) : on peut encore la tester ou l'oublier.
+            if (savedName != null && !savedListed)
+              _PrinterRow(
+                name: savedName,
+                status: const StatusIndicator(
+                  label: 'Enregistrée',
+                  tone: StatusTone.neutral,
+                ),
+                actions: [_testButton(), _forgetButton(savedName)],
+              ),
+            for (final device in _pairedDevices)
+              _deviceRow(device, printerState, savedMac),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          child: Text(
+            'Une nouvelle imprimante doit d’abord être appairée dans les '
+            'réglages Bluetooth du téléphone.',
+            style: meta,
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: TextButton(
+              onPressed: () =>
+                  AppSettings.openAppSettings(type: AppSettingsType.bluetooth),
+              child: const Text('Ouvrir les réglages Bluetooth'),
+            ),
+          ),
+        ),
+      ];
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Imprimante'),
+        actions: [
+          if (canRefresh)
+            TextButton(
+              onPressed: _isLoading ? null : _loadDevices,
+              child: const Text('Actualiser'),
+            ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+        children: content,
       ),
     );
-    Navigator.of(context).pop();
   }
+
+  Widget _deviceRow(
+    BluetoothInfo device,
+    PrinterState printerState,
+    String? savedMac,
+  ) {
+    final mac = device.macAdress;
+    final isConnected =
+        printerState is PrinterConnected && printerState.mac == mac;
+    final isConnecting = _connectingMac == mac;
+    final anyConnecting = printerState is PrinterConnecting;
+    final failed = _failedMac == mac;
+    final colors = AppColors.of(context);
+
+    final Widget status;
+    if (isConnected) {
+      status = const StatusIndicator(
+        label: 'Connectée',
+        tone: StatusTone.success,
+      );
+    } else if (failed) {
+      status = const StatusIndicator(
+        label: 'Connexion échouée',
+        tone: StatusTone.error,
+      );
+    } else {
+      status = Text(
+        mac == savedMac
+            ? 'Enregistrée · non connectée'
+            : 'Appairée · non connectée',
+        style: AppTypography.bodySmall.copyWith(color: colors.textSecondary),
+      );
+    }
+
+    return _PrinterRow(
+      name: device.name,
+      status: status,
+      hint: failed
+          ? 'Vérifiez qu’elle est allumée, chargée et à moins de quelques '
+                'mètres.'
+          : null,
+      actions: isConnected
+          ? [_testButton(), _forgetButton(device.name)]
+          : [
+              SecondaryButton(
+                label: failed ? 'Réessayer' : 'Connecter',
+                isLoading: isConnecting,
+                onPressed: anyConnecting
+                    ? null
+                    : () => _connectToDevice(device),
+              ),
+              if (mac == savedMac) _forgetButton(device.name),
+            ],
+    );
+  }
+
+  Widget _testButton() => SecondaryButton(
+    label: 'Imprimer un test',
+    isLoading: _testing,
+    onPressed: _testing ? null : _printTest,
+  );
+
+  Widget _forgetButton(String name) => TextButton(
+    onPressed: _testing ? null : () => _forget(name),
+    child: const Text('Oublier'),
+  );
+}
+
+/// Ligne d'une imprimante : nom, état, conseil éventuel, actions.
+class _PrinterRow extends StatelessWidget {
+  const _PrinterRow({
+    required this.name,
+    required this.status,
+    required this.actions,
+    this.hint,
+  });
+
+  final String name;
+  final Widget status;
+  final List<Widget> actions;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
-    // ✨ extraits une fois — pas de double lookup Theme.of(context) dans itemBuilder
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final savedName = switch (ref.watch(printerProvider)) {
-      PrinterConnected(:final name) => name,
-      PrinterDisconnected(:final savedName) => savedName,
-      _ => null,
-    };
-
-    return AppScaffold(
-      title: 'Configurer l\'imprimante',
-      actions: [
-        if (!_checkingPermission && _hasPermission)
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadDevices,
-            tooltip: 'Actualiser',
-          ),
-      ],
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(
-          responsiveValue(context, small: AppSpacing.md, medium: AppSpacing.lg),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (savedName != null) ...[
-              _SavedPrinterCard(
-                name: savedName,
-                isTesting: _testing,
-                onTest: _printTest,
-                onForget: () => _forget(savedName),
+    final colors = AppColors.of(context);
+    final hint = this.hint;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(name, style: AppTypography.bodyStrong),
+          const SizedBox(height: 2),
+          status,
+          if (hint != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              hint,
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.textSecondary,
               ),
-              const SizedBox(height: AppSpacing.lg),
-            ],
-            if (_checkingPermission) ...[
-              const Center(child: AppLoadingIndicator()),
-              const SizedBox(height: AppSpacing.lg),
-              const Text(
-                'Vérification des permissions...',
-                textAlign: TextAlign.center,
-              ),
-            ] else if (!_hasPermission) ...[
-              EmptyState(
-                icon: Icons.bluetooth_disabled_outlined,
-                title: 'Permission Bluetooth requise',
-                message:
-                    'L\'app doit accéder à Bluetooth pour découvrir les imprimantes.',
-                actionLabel: 'Accorder la permission',
-                onAction: _requestPermission,
-              ),
-            ] else if (_pairedDevices.isEmpty) ...[
-              EmptyState(
-                icon: Icons.print_outlined,
-                title: 'Aucune imprimante trouvée',
-                message: Platform.isIOS
-                    ? 'Allumez votre imprimante Bluetooth et placez-la près '
-                          'du téléphone.'
-                    : 'Appairez d\'abord votre imprimante Bluetooth dans les '
-                          'réglages Android.',
-                actionLabel: 'Ouvrir les réglages Bluetooth',
-                // Correctif n°3 : ouvre directement les paramètres Bluetooth
-                // via app_settings
-                onAction: () => AppSettings.openAppSettings(
-                  type: AppSettingsType.bluetooth,
-                ),
-              ),
-            ] else ...[
-              // ✨ barre de progression lors d'un refresh (liste déjà visible)
-              if (_isLoading) const LinearProgressIndicator(),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Appareils appairés (${_pairedDevices.length})',
-                style: tt.titleSmall,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              // Une seule surface, une ligne par appareil.
-              AppListGroup(
-                dividerIndent: 56,
-                children: [
-                  for (final device in _pairedDevices)
-                    Builder(
-                      builder: (context) {
-                        final printerState = ref.watch(printerProvider);
-                        final isConnected =
-                            printerState is PrinterConnected &&
-                            printerState.mac == device.macAdress;
-                        final isAnyConnecting =
-                            printerState is PrinterConnecting;
-                        // Indicateur uniquement sur la ligne de l'appareil
-                        // en cours de connexion.
-                        final isThisDeviceConnecting =
-                            _connectingMac == device.macAdress;
-
-                        return ListTile(
-                          onTap: (isConnected || isAnyConnecting)
-                              ? null
-                              : () => _connectToDevice(device),
-                          leading: Icon(
-                            isConnected ? Icons.check_circle : Icons.bluetooth,
-                            color: isConnected
-                                ? cs.secondary
-                                : cs.onSurfaceVariant,
-                          ),
-                          title: Text(device.name),
-                          subtitle: Text(device.macAdress, style: tt.bodySmall),
-                          trailing: isConnected
-                              ? Text(
-                                  'Connectée',
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: cs.secondary,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                )
-                              : isThisDeviceConnecting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: cs.onSurfaceVariant,
-                                ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
-                            vertical: AppSpacing.xs,
-                          ),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ],
+            ),
           ],
-        ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              for (final (i, action) in actions.indexed) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.sm),
+                if (action is TextButton) action else Expanded(child: action),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Imprimante enregistrée : nom, ticket de test et oubli.
-class _SavedPrinterCard extends StatelessWidget {
-  const _SavedPrinterCard({
-    required this.name,
-    required this.isTesting,
-    required this.onTest,
-    required this.onForget,
+/// État sans liste (permission, aucune imprimante) : titre, explication,
+/// action principale et action secondaire éventuelle.
+class _Message extends StatelessWidget {
+  const _Message({
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+    this.secondaryLabel,
+    this.onSecondary,
   });
 
-  final String name;
-  final bool isTesting;
-  final VoidCallback onTest;
-  final VoidCallback onForget;
+  final String title;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return AppCard(
+    final colors = AppColors.of(context);
+    final secondaryLabel = this.secondaryLabel;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xl,
+        AppSpacing.md,
+        0,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Imprimante enregistrée',
-            style: AppTypography.labelMedium.copyWith(
-              color: cs.onSurfaceVariant,
+            title,
+            style: AppTypography.bodyStrong.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Icon(Icons.print_outlined, color: cs.primary),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.titleMedium,
-                ),
-              ),
-            ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            message,
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  onPressed: isTesting ? null : onTest,
-                  icon: isTesting
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.receipt_outlined),
-                  label: const Text('Tester'),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: TextButton.icon(
-                  onPressed: isTesting ? null : onForget,
-                  icon: const Icon(Icons.link_off),
-                  label: const Text('Oublier'),
-                  style: TextButton.styleFrom(foregroundColor: cs.error),
-                ),
-              ),
-            ],
-          ),
+          PrimaryButton(label: actionLabel, onPressed: onAction),
+          if (secondaryLabel != null)
+            TextButton(onPressed: onSecondary, child: Text(secondaryLabel)),
         ],
       ),
     );
