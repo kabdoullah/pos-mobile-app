@@ -14,13 +14,12 @@ Future<void> showStockAdjustmentSheet(BuildContext context, String productId) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => StockAdjustmentSheet(productId: productId),
   );
 }
 
-/// Bottom sheet pour enregistrer un ajustement de stock manuel (réception,
-/// casse, correction d'inventaire) sur un produit donné.
+/// Feuille « Ajuster le stock » : sens (Entrée / Sortie), quantité, nouveau
+/// stock visible avant de valider, motif (réception, casse, correction…).
 class StockAdjustmentSheet extends ConsumerStatefulWidget {
   /// Crée une [StockAdjustmentSheet].
   const StockAdjustmentSheet({required this.productId, super.key});
@@ -113,179 +112,169 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
     }
   }
 
+  /// Quantité saisie, `null` si vide ou invalide.
+  int? get _quantity {
+    final value = parseWholeQuantity(_quantityController.text.trim());
+    return value == null || value <= 0 ? null : value;
+  }
+
+  void _setQuantity(int quantity) {
+    final text = '$quantity';
+    _quantityController.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    setState(() => _quantityError = null);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = AppColors.of(context);
+    final colors = AppColors.of(context);
+    final product = ref.watch(stockProductProvider(widget.productId)).value;
+    final stock = product?.currentStock;
+    final quantity = _quantity;
+    final newStock = stock == null || quantity == null
+        ? null
+        : stock + (_isEntry ? quantity : -quantity);
+    final reasons = _isEntry ? _entryReasons : _exitReasons;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.md,
+          right: AppSpacing.md,
+          top: AppSpacing.lg,
+          bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.lg,
-            bottom: AppSpacing.lg + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: cs.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const Text(
-                  'Ajuster le stock',
-                  style: AppTypography.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DirectionOption(
-                        label: 'Entrée',
-                        icon: Icons.add_circle_outline,
-                        color: semantic.success,
-                        selected: _isEntry,
-                        onTap: () => setState(() => _isEntry = true),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _DirectionOption(
-                        label: 'Sortie',
-                        icon: Icons.remove_circle_outline,
-                        color: cs.error,
-                        selected: !_isEntry,
-                        onTap: () => setState(() => _isEntry = false),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppTextField(
-                  label: 'Quantité',
-                  hint: 'ex: 10',
-                  controller: _quantityController,
-                  keyboardType: TextInputType.number,
-                  // Virgule gardée visible pour être refusée, jamais
-                  // recollée aux chiffres (« 2,5 » ≠ 25).
-                  inputFormatters: wholeNumberInputFormatters(maxLength: 6),
-                  errorText: _quantityError,
-                ),
-                const SizedBox(height: AppSpacing.lg),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Ajuster le stock', style: AppTypography.sectionTitle),
+              if (product != null)
                 Text(
-                  'Motif rapide',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: cs.onSurfaceVariant,
+                  stock == null
+                      ? product.name
+                      : '${product.name} · $stock en stock',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final reason
-                        in _isEntry ? _entryReasons : _exitReasons)
-                      ChoiceChip(
-                        label: Text(reason),
-                        selected: _noteController.text == reason,
-                        onSelected: (selected) => setState(() {
-                          _noteController.text = selected ? reason : '';
-                        }),
+              const SizedBox(height: AppSpacing.md),
+              SegmentedControl<bool>(
+                segments: const [
+                  (value: true, label: 'Entrée'),
+                  (value: false, label: 'Sortie'),
+                ],
+                selected: _isEntry,
+                onChanged: (isEntry) => setState(() {
+                  if (isEntry == _isEntry) return;
+                  _isEntry = isEntry;
+                  // Les motifs dépendent du sens.
+                  if (!reasonsFor(isEntry).contains(_noteController.text)) {
+                    _noteController.clear();
+                  }
+                }),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const Text('Quantité', style: AppTypography.bodyStrong),
+              const SizedBox(height: AppSpacing.xs + 2),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: QuantityStepper(
+                  quantity: quantity ?? 0,
+                  large: true,
+                  onDecrease: quantity != null && quantity > 1
+                      ? () => _setQuantity(quantity - 1)
+                      : null,
+                  onIncrease: () => _setQuantity((quantity ?? 0) + 1),
+                  field: Semantics(
+                    label: 'Quantité',
+                    child: TextField(
+                      onTapOutside: (_) =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      controller: _quantityController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      style: AppTypography.figureLarge,
+                      // Virgule gardée visible pour être refusée, jamais
+                      // recollée aux chiffres (« 2,5 » ≠ 25).
+                      inputFormatters: wholeNumberInputFormatters(maxLength: 6),
+                      onChanged: (_) => setState(() => _quantityError = null),
+                      // Le cadre du stepper suffit : ni fond ni contour.
+                      decoration: const InputDecoration(
+                        isDense: true,
+                        hintText: '0',
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
                       ),
-                  ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                AppTextField(
-                  label: 'Motif (optionnel)',
-                  hint: 'Ou précisez...',
-                  controller: _noteController,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Valider l\'ajustement',
-                  onPressed: _isLoading ? null : _submit,
-                  isLoading: _isLoading,
+              ),
+              if (_quantityError != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _quantityError!,
+                  style: AppTypography.errorText.copyWith(color: colors.error),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DirectionOption extends StatelessWidget {
-  const _DirectionOption({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.12) : null,
-          border: Border.all(
-            color: selected
-                ? color
-                : Theme.of(context).colorScheme.outlineVariant,
-          ),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: selected
-                  ? color
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: selected
-                    ? color
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              if (stock != null)
+                DefinitionRow(
+                  label: 'Nouveau stock',
+                  value: newStock == null ? '$stock' : '$stock → $newStock',
+                  color: newStock != null && newStock < 0 ? colors.error : null,
+                ),
+              const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+              const Text('Motif', style: AppTypography.bodyStrong),
+              const SizedBox(height: AppSpacing.xs + 2),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final reason in reasons)
+                    QuickChoiceButton(
+                      label: reason,
+                      isSelected: _noteController.text == reason,
+                      onTap: () => setState(() {
+                        _noteController.text = _noteController.text == reason
+                            ? ''
+                            : reason;
+                      }),
+                    ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+              AppTextField(
+                label: 'Préciser (facultatif)',
+                controller: _noteController,
+                maxLines: 2,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              PrimaryButton(
+                label: quantity == null
+                    ? "Valider l'ajustement"
+                    : _isEntry
+                    ? 'Ajouter $quantity au stock'
+                    : 'Retirer $quantity du stock',
+                onPressed: _isLoading ? null : _submit,
+                isLoading: _isLoading,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  /// Motifs proposés pour une entrée ([isEntry]) ou une sortie.
+  static List<String> reasonsFor(bool isEntry) =>
+      isEntry ? _entryReasons : _exitReasons;
 }

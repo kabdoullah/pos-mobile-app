@@ -12,7 +12,6 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
-import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
@@ -277,9 +276,13 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
             ),
           ),
           if (!isSearching && categories.isNotEmpty)
-            _CategoryTabs(
-              categories: categories,
-              selectedId: categoryId,
+            UnderlineTabs<String?>(
+              tabs: [
+                (value: null, label: 'Tous'),
+                for (final category in categories)
+                  (value: category.id, label: category.name),
+              ],
+              selected: categoryId,
               onSelected: (id) => setState(() => _categoryId = id),
             ),
           if (isRegisterClosed) const _RegisterClosedNote(),
@@ -388,94 +391,6 @@ class _RegisterClosedNote extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Catégories en onglets soulignés : « Tous » puis les catégories du
-/// catalogue, sur une ligne défilante.
-class _CategoryTabs extends StatelessWidget {
-  const _CategoryTabs({
-    required this.categories,
-    required this.selectedId,
-    required this.onSelected,
-  });
-
-  final List<Category> categories;
-  final String? selectedId;
-  final ValueChanged<String?> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: colors.border)),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        child: Row(
-          children: [
-            _CategoryTab(
-              label: 'Tous',
-              isSelected: selectedId == null,
-              onTap: () => onSelected(null),
-            ),
-            for (final category in categories)
-              _CategoryTab(
-                label: category.name,
-                isSelected: selectedId == category.id,
-                onTap: () => onSelected(category.id),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryTab extends StatelessWidget {
-  const _CategoryTab({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 3),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isSelected ? colors.action : Colors.transparent,
-                width: 2,
-              ),
-            ),
-          ),
-          child: Text(
-            label,
-            style: AppTypography.bodyStrong.copyWith(
-              fontSize: 15,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? colors.textPrimary : colors.textSecondary,
-            ),
-          ),
         ),
       ),
     );

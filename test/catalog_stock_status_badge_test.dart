@@ -60,7 +60,7 @@ void main() {
     await pump(tester, product(stock: 24));
     expect(find.text('Disponible'), findsOneWidget);
     await pump(tester, product(stock: 3, minStock: 5));
-    expect(find.text('Stock faible'), findsOneWidget);
+    expect(find.text('Stock bas'), findsOneWidget);
     await pump(tester, product());
     expect(find.text('Non suivi'), findsOneWidget);
   });

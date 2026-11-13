@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/status_indicator.dart';
 import '../../domain/entities/product.dart';
 
-/// État du stock (point + mot, v2) : Disponible, Stock faible, Rupture ou
+/// État du stock (point + mot, v2) : Disponible, Stock bas, Rupture ou
 /// Non suivi.
 ///
 /// Avec [showQuantity] (caisse), le badge porte la quantité — « Stock : 24 »,
@@ -35,7 +35,7 @@ class StockStatusBadge extends StatelessWidget {
     final (label, tone) = switch (level) {
       StockLevel.outOfStock => ('Rupture', StatusTone.error),
       StockLevel.low => (
-        showQuantity ? 'Faible : $stock' : 'Stock faible',
+        showQuantity ? 'Faible : $stock' : 'Stock bas',
         StatusTone.warning,
       ),
       StockLevel.normal => (

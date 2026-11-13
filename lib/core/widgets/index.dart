@@ -23,4 +23,5 @@ export 'secondary_button.dart';
 export 'skeleton_box.dart';
 export 'status_indicator.dart';
 export 'sync_status_indicator.dart';
+export 'underline_tabs.dart';
 export 'zigzag_clipper.dart';

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
@@ -61,44 +62,74 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
     });
   }
 
+  /// Choisit la catégorie filtrée (feuille) ; « Toutes » la retire.
+  Future<void> _pickCategory() async {
+    final categories = ref.read(categoriesProvider).value ?? const [];
+    final picked = await showModalBottomSheet<({String? id})>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Text('Catégorie', style: AppTypography.sectionTitle),
+            ),
+            for (final (id, name) in [
+              (null, 'Toutes les catégories'),
+              for (final c in categories) (c.id, c.name),
+            ])
+              ListTile(
+                title: Text(name),
+                selected: _categoryId == id,
+                onTap: () => Navigator.of(context).pop((id: id)),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => _categoryId = picked.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(stockProductsProvider);
 
-    return AppScaffold(
-      title: 'Stock',
-      actions: [
-        IconButton(
-          tooltip: 'Mouvements de stock',
-          icon: const Icon(Icons.swap_vert),
-          onPressed: () => context.push(Routes.stockMovements),
-        ),
-        PopupMenuButton<void>(
-          tooltip: "Plus d'options",
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              onTap: () => context.push(Routes.categories),
-              child: const ListTile(
-                leading: Icon(Icons.label_outline),
-                title: Text('Catégories'),
-                contentPadding: EdgeInsets.zero,
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: AppSpacing.md,
+        title: const Text('Stock'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push(Routes.productNew),
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Produit'),
+          ),
+          PopupMenuButton<String>(
+            tooltip: "Plus d'options",
+            onSelected: (route) => context.push(route),
+            itemBuilder: (context) => const [
+              PopupMenuItem(
+                value: Routes.stockMovements,
+                child: Text('Mouvements de stock'),
               ),
-            ),
-            PopupMenuItem(
-              onTap: () => context.push(Routes.productImport),
-              child: const ListTile(
-                leading: Icon(Icons.upload_file_outlined),
-                title: Text('Importer des produits'),
-                contentPadding: EdgeInsets.zero,
+              PopupMenuItem(
+                value: Routes.categories,
+                child: Text('Catégories'),
               ),
-            ),
-          ],
-        ),
-      ],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.productNew),
-        icon: const Icon(Icons.add),
-        label: const Text('Produit'),
+              PopupMenuItem(
+                value: Routes.productImport,
+                child: Text('Importer des produits'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: productsAsync.when(
         loading: () => const _LoadingList(),
@@ -124,7 +155,7 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
             filter: _filter,
             query: _query,
             categoryId: _categoryId,
-            onCategoryChanged: (id) => setState(() => _categoryId = id),
+            onPickCategory: _pickCategory,
             searchController: _searchController,
             onQueryChanged: _setQuery,
             onFilterChanged: (filter) => setState(() => _filter = filter),
@@ -137,13 +168,16 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
   }
 }
 
+/// Valeur de l'onglet « Catégorie » (ouvre le choix, n'est jamais actif).
+const _categoryTab = 'category';
+
 class _StockList extends ConsumerWidget {
   const _StockList({
     required this.products,
     required this.filter,
     required this.query,
     required this.categoryId,
-    required this.onCategoryChanged,
+    required this.onPickCategory,
     required this.searchController,
     required this.onQueryChanged,
     required this.onFilterChanged,
@@ -155,7 +189,7 @@ class _StockList extends ConsumerWidget {
   final StockFilter filter;
   final String query;
   final String? categoryId;
-  final ValueChanged<String?> onCategoryChanged;
+  final VoidCallback onPickCategory;
   final TextEditingController searchController;
   final ValueChanged<String> onQueryChanged;
   final ValueChanged<StockFilter> onFilterChanged;
@@ -164,127 +198,170 @@ class _StockList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final summary = ref.watch(stockSummaryProvider).value;
     final categories = ref.watch(categoriesProvider).value ?? const [];
     // Catégorie supprimée entre-temps : le filtre retombe sur « Toutes ».
-    final activeCategory = categories.any((c) => c.id == categoryId)
-        ? categoryId
-        : null;
+    final activeCategory = categories
+        .where((c) => c.id == categoryId)
+        .firstOrNull;
     final visible = filterStockProducts(
       products,
       filter: filter,
       query: query,
-      categoryId: activeCategory,
+      categoryId: activeCategory?.id,
     );
+    String counted(String label, int? count) =>
+        count == null ? label : '$label $count';
 
     return CustomScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.sm,
-          ),
-          sliver: SliverList.list(
-            children: [
-              if (summary != null) ...[
-                StockSummaryHeader(summary: summary),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              AppSearchBar(
+        SliverList.list(
+          children: [
+            if (summary != null) StockSummaryHeader(summary: summary),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
-                hintText: 'Rechercher un produit…',
+                hintText: 'Rechercher un produit',
                 actions: [
-                  IconButton(
-                    tooltip: 'Scanner un code-barres',
-                    icon: const Icon(Icons.qr_code_scanner),
+                  TextButton.icon(
                     onPressed: onScan,
+                    icon: const Icon(Icons.qr_code_scanner, size: 20),
+                    label: const Text('Scanner'),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              StockFilterChips(
-                filter: filter,
-                onFilter: onFilterChanged,
-                summary: summary,
-              ),
-              if (categories.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                // Catégories : défilement horizontal, une ligne quel que soit
-                // leur nombre.
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      FilterChip(
-                        label: const Text('Toutes catégories'),
-                        selected: activeCategory == null,
-                        onSelected: (_) => onCategoryChanged(null),
-                      ),
-                      for (final category in categories) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        FilterChip(
-                          label: Text(category.name),
-                          selected: activeCategory == category.id,
-                          onSelected: (selected) =>
-                              onCategoryChanged(selected ? category.id : null),
-                        ),
-                      ],
-                    ],
-                  ),
+            ),
+            UnderlineTabs<String>(
+              tabs: [
+                (value: StockFilter.all.name, label: 'Tous'),
+                (
+                  value: StockFilter.lowStock.name,
+                  label: counted('Stock bas', summary?.lowStockCount),
                 ),
+                (
+                  value: StockFilter.outOfStock.name,
+                  label: counted('Ruptures', summary?.outOfStockCount),
+                ),
+                if (categories.isNotEmpty)
+                  (
+                    value: _categoryTab,
+                    label: activeCategory == null
+                        ? 'Catégorie'
+                        : 'Catégorie : ${activeCategory.name}',
+                  ),
               ],
-            ],
-          ),
+              selected: filter.name,
+              onSelected: (value) => value == _categoryTab
+                  ? onPickCategory()
+                  : onFilterChanged(StockFilter.values.byName(value)),
+            ),
+          ],
         ),
         if (visible.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text(
-                query.isNotEmpty
-                    ? 'Aucun produit ne correspond à « $query ».'
-                    : switch (filter) {
-                        StockFilter.lowStock =>
-                          'Aucun produit à réapprovisionner.',
-                        StockFilter.outOfStock => 'Aucune rupture de stock.',
-                        StockFilter.all => 'Aucun produit.',
-                      },
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ),
+            child: query.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(AppSpacing.lg),
+                    child: Text(
+                      'Aucun produit ne correspond à « $query ».',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.body.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  )
+                : _EmptyFilter(
+                    filter: filter,
+                    onShowAll: () => onFilterChanged(StockFilter.all),
+                  ),
           )
         else
-          // Une seule surface, même marge latérale que l'en-tête.
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            sliver: SliverAppListGroup(
-              itemCount: visible.length,
-              dividerIndent: AppSpacing.md + 48 + AppSpacing.sm,
-              itemBuilder: (context, index) {
-                final product = visible[index];
-                return StockProductTile(
-                  key: ValueKey(product.id),
-                  product: product,
-                  onTap: () => onOpen(product),
-                  onAdjust: product.currentStock == null
-                      ? null
-                      : () => showStockAdjustmentSheet(context, product.id),
-                );
-              },
+          SliverList.builder(
+            itemCount: visible.length,
+            itemBuilder: (context, index) {
+              final product = visible[index];
+              return DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colors.border)),
+                ),
+                child: ColoredBox(
+                  color: colors.surface,
+                  child: StockProductTile(
+                    key: ValueKey(product.id),
+                    product: product,
+                    onTap: () => onOpen(product),
+                    onAdjust: product.currentStock == null
+                        ? null
+                        : () => showStockAdjustmentSheet(context, product.id),
+                  ),
+                ),
+              );
+            },
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+      ],
+    );
+  }
+}
+
+/// Filtre sans résultat : une bonne nouvelle formulée comme telle.
+class _EmptyFilter extends StatelessWidget {
+  const _EmptyFilter({required this.filter, required this.onShowAll});
+
+  final StockFilter filter;
+  final VoidCallback onShowAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final (title, message) = switch (filter) {
+      StockFilter.outOfStock => (
+        'Aucun produit en rupture',
+        'Tous vos produits sont disponibles à la vente.',
+      ),
+      StockFilter.lowStock => (
+        'Aucun stock bas',
+        'Aucun produit n’est sous son seuil d’alerte.',
+      ),
+      StockFilter.all => ('Aucun produit', 'Aucun produit dans cette vue.'),
+    };
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyStrong.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        // Place pour le bouton flottant.
-        const SliverToBoxAdapter(child: SizedBox(height: 88)),
-      ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
+          ),
+          if (filter != StockFilter.all)
+            TextButton(
+              onPressed: onShowAll,
+              child: const Text('Voir tous les produits'),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -300,7 +377,7 @@ class _LoadingList extends StatelessWidget {
       children: const [
         SkeletonBox(height: 20),
         SizedBox(height: AppSpacing.sm),
-        SkeletonBox(height: 56),
+        SkeletonBox(height: 48),
         SizedBox(height: AppSpacing.md),
         SkeletonBox(height: 64),
         SizedBox(height: AppSpacing.sm),

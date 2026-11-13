@@ -5,9 +5,9 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../domain/entities/stock_movement.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
-/// Ligne d'un mouvement de stock : motif, date, variation et stock obtenu.
+/// Ligne d'un mouvement de stock (liste à plat) : motif ou produit, date,
+/// variation signée et stock obtenu (« + 60 → 60 »).
 class StockMovementTile extends StatelessWidget {
   /// Crée la ligne. [productName] s'affiche en titre dans la vue « tous les
   /// produits ».
@@ -32,73 +32,72 @@ class StockMovementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = AppColors.of(context);
+    final colors = AppColors.of(context);
     final delta = movement.quantityDelta;
     final isPositive = (delta ?? 0) >= 0;
-    final color = isPositive ? semantic.success : cs.error;
     final deltaLabel = delta == null
         ? '—'
-        : (isPositive ? '+$delta' : '$delta');
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+        : isPositive
+        ? '+ $delta'
+        : '− ${delta.abs()}';
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
     final note = movement.note;
     final productName = this.productName;
+    final resulting = movement.resultingStock;
 
     final details = [
+      DateFormat('d MMM · HH:mm', 'fr_FR').format(movement.createdAt),
       if (productName != null) _reasonLabel(movement.reason),
-      DateFormat('d MMM à HH:mm', 'fr_FR').format(movement.createdAt),
       if (note != null && note.isNotEmpty) note,
     ].join(' · ');
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Row(
-        children: [
-          if (productName != null)
-            ProductThumbnailById(productId: movement.productId)
-          else
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Icon(
-                  isPositive ? Icons.add : Icons.remove,
-                  size: 20,
-                  color: color,
-                ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 60),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    productName ?? _reasonLabel(movement.reason),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.bodyStrong,
+                  ),
+                  Text(details, style: meta),
+                ],
               ),
             ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: AppSpacing.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  productName ?? _reasonLabel(movement.reason),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.titleMedium,
+                  deltaLabel,
+                  style: AppTypography.bodyStrong.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: delta == null
+                        ? colors.textSecondary
+                        : isPositive
+                        ? colors.success
+                        : colors.error,
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
                 ),
-                Text(details, style: muted),
+                if (resulting != null) Text('→ $resulting', style: meta),
               ],
             ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                deltaLabel,
-                style: AppTypography.titleMedium.copyWith(color: color),
-              ),
-              if (movement.resultingStock != null)
-                Text('Stock : ${movement.resultingStock}', style: muted),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
