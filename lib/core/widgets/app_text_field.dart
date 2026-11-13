@@ -33,6 +33,7 @@ class AppTextField extends StatefulWidget {
     this.textCapitalization = TextCapitalization.none,
     this.suffixText,
     this.large = false,
+    this.readOnly = false,
     super.key,
   });
 
@@ -102,6 +103,9 @@ class AppTextField extends StatefulWidget {
   /// tabulaires.
   final bool large;
 
+  /// Valeur affichée mais non modifiable ici (fond en creux).
+  final bool readOnly;
+
   @override
   State<AppTextField> createState() => _AppTextFieldState();
 }
@@ -153,6 +157,7 @@ class _AppTextFieldState extends State<AppTextField> {
             // Toucher ailleurs ferme le clavier.
             onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             autofocus: widget.autofocus,
+            readOnly: widget.readOnly,
             maxLength: widget.maxLength,
             textCapitalization: widget.textCapitalization,
             controller: widget.controller,
@@ -199,7 +204,7 @@ class _AppTextFieldState extends State<AppTextField> {
                         ? Icon(widget.suffixIcon, color: cs.onSurfaceVariant)
                         : null),
               filled: true,
-              fillColor: cs.surface,
+              fillColor: widget.readOnly ? cs.surfaceContainerHigh : cs.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 borderSide: BorderSide(color: borderColor),

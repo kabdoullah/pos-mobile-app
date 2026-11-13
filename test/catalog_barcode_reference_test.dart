@@ -239,7 +239,7 @@ void main() {
     final hint = find.textContaining('Nom suggéré');
 
     Future<void> scan(WidgetTester tester) async {
-      final button = find.byTooltip('Scanner un code-barres');
+      final button = find.text('Scanner');
       await tester.ensureVisible(button);
       await tester.tap(button);
       await tester.pumpAndSettle();

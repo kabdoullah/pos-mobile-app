@@ -35,15 +35,13 @@ class ProductFormPage extends ConsumerStatefulWidget {
   ConsumerState<ProductFormPage> createState() => _ProductFormPageState();
 }
 
-class _ProductFormPageState extends ConsumerState<ProductFormPage>
-    with TickerProviderStateMixin {
+class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   late TextEditingController _nameController;
   late TextEditingController _priceController;
   late TextEditingController _purchasePriceController;
   late TextEditingController _barcodeController;
   late TextEditingController _stockController;
   late TextEditingController _minStockController;
-  late AnimationController _formAnimationController;
   String? _nameError;
   String? _priceError;
   String? _purchasePriceError;
@@ -52,6 +50,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
   String? _barcodeError;
   bool _isLoading = false;
   bool _prefilled = false;
+
+  /// Stock déjà suivi à l'ouverture (modification) : il ne se change plus
+  /// ici mais par « Ajuster » (mouvement tracé).
+  bool _stockTracked = false;
   static final _logger = Logger();
 
   // Code-barres (normalisé) dont vient le nom affiché, tant que l'utilisateur
@@ -73,12 +75,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     );
     _stockController = TextEditingController();
     _minStockController = TextEditingController();
-    _formAnimationController = AnimationController(
-      // Entrée courte : le formulaire doit être utilisable tout de suite.
-      duration: const Duration(milliseconds: 250),
-      vsync: this,
-    );
-    unawaited(_formAnimationController.forward());
     final initialBarcode = widget.initialBarcode;
     if (widget.productId == null && initialBarcode != null) {
       unawaited(_suggestName(initialBarcode));
@@ -93,7 +89,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
     _barcodeController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
-    _formAnimationController.dispose();
     super.dispose();
   }
 
@@ -255,7 +250,15 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               categoryId: _categoryId,
             );
       } else {
-        // Mode édition
+        // Mode édition. Stock suivi : il ne se change que par « Ajuster » ;
+        // on renvoie le stock actuel relu, jamais celui affiché à
+        // l'ouverture (des ventes ont pu le modifier entre-temps).
+        final currentStock = _stockTracked
+            ? (await ref
+                      .read(catalogRepositoryProvider)
+                      .getProduct(widget.productId!))
+                  ?.currentStock
+            : stock;
         await ref
             .read(productEditorProvider.notifier)
             .update(
@@ -264,7 +267,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
               sellingPrice: price,
               purchasePrice: purchasePrice,
               barcode: barcode.isEmpty ? null : barcode,
-              currentStock: stock,
+              currentStock: currentStock,
               minStock: minStock,
             );
         if (_categoryId != _initialCategoryId) {
@@ -295,7 +298,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
 
     final confirmed = await showConfirmDialog(
       context,
-      title: 'Supprimer ce produit ?',
+      title: 'Supprimer « ${_nameController.text.trim()} » ?',
       message:
           'Il ne sera plus proposé en caisse ni dans le stock. Ses ventes '
           'passées restent dans l’historique.',
@@ -327,7 +330,6 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final isEditMode = widget.productId != null;
     final productAsync = isEditMode
         ? ref.watch(productProvider(widget.productId!))
@@ -348,6 +350,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
           }
           if (product.currentStock != null) {
             _stockController.text = product.currentStock!.toString();
+            _stockTracked = true;
           }
           if (product.minStock != null) {
             _minStockController.text = product.minStock!.toString();
@@ -358,194 +361,205 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage>
       });
     }
 
+    final colors = AppColors.of(context);
     final spacing = responsiveValue(
       context,
       small: AppSpacing.md,
       medium: AppSpacing.lg,
     );
-    // ✨ AppBar M3 standard — backgroundColor et elevation gérés par le theme
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
+        leading: const BackButton(),
         title: Text(isEditMode ? 'Modifier le produit' : 'Nouveau produit'),
-        actions: isEditMode
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.history),
-                  tooltip: 'Historique du stock',
-                  onPressed: () => context.push(
-                    Routes.productStockHistory.replaceFirst(
-                      ':id',
-                      widget.productId!,
-                    ),
-                  ),
+        actions: [
+          if (isEditMode)
+            TextButton(
+              onPressed: () => context.push(
+                Routes.productStockHistory.replaceFirst(
+                  ':id',
+                  widget.productId!,
                 ),
-              ]
-            : null,
+              ),
+              child: const Text('Historique'),
+            ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(
-            left: spacing,
-            right: spacing,
-            top: spacing,
-            bottom: spacing + MediaQuery.of(context).viewInsets.bottom,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: EdgeInsets.fromLTRB(
+                spacing,
+                AppSpacing.sm,
+                spacing,
+                spacing,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: AppTextField(
+                          label: 'Code-barres',
+                          hint: 'Facultatif',
+                          controller: _barcodeController,
+                          errorText: _barcodeError,
+                          onChanged: _onBarcodeEdited,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Semantics(
+                          label: 'Scanner un code-barres',
+                          button: true,
+                          excludeSemantics: true,
+                          child: TextButton.icon(
+                            onPressed: _openScanner,
+                            icon: const Icon(Icons.qr_code_scanner, size: 20),
+                            label: const Text('Scanner'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Nom du produit',
+                    hint: 'ex. : Riz blanc',
+                    controller: _nameController,
+                    errorText: _nameError,
+                    onChanged: (_) {
+                      if (_nameSuggested) {
+                        setState(() => _nameSuggestedFor = null);
+                      }
+                    },
+                    helper: _nameSuggested ? const _SuggestedNameHint() : null,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  CategoryPicker(
+                    value: _categoryId,
+                    onChanged: (id) => setState(() => _categoryId = id),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AppTextField(
+                          label: "Prix d'achat",
+                          hint: 'Facultatif',
+                          suffixText: 'FCFA',
+                          controller: _purchasePriceController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          errorText: _purchasePriceError,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+                      Expanded(
+                        child: AppTextField(
+                          label: 'Prix de vente',
+                          hint: '0',
+                          suffixText: 'FCFA',
+                          controller: _priceController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          errorText: _priceError,
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                    ],
+                  ),
+                  _EstimatedMargin(
+                    sellingText: _priceController.text,
+                    purchaseText: _purchasePriceController.text,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: AppTextField(
+                          label: _stockTracked
+                              ? 'Stock actuel'
+                              : 'Stock initial',
+                          hint: 'Facultatif',
+                          controller: _stockController,
+                          keyboardType: TextInputType.number,
+                          errorText: _stockError,
+                          readOnly: _stockTracked,
+                          helper: _stockTracked
+                              ? Text(
+                                  'Se modifie par « Ajuster ».',
+                                  style: AppTypography.bodySmall.copyWith(
+                                    color: colors.textSecondary,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+                      Expanded(
+                        child: AppTextField(
+                          label: "Seuil d'alerte",
+                          hint: 'ex. : 5',
+                          controller: _minStockController,
+                          keyboardType: TextInputType.number,
+                          errorText: _minStockError,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isEditMode) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        onPressed: _isLoading ? null : _delete,
+                        style: TextButton.styleFrom(
+                          foregroundColor: colors.error,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: const Text('Supprimer le produit'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.0,
-                child: AppTextField(
-                  label: 'Nom du produit',
-                  hint: 'ex: Riz blanc',
-                  controller: _nameController,
-                  errorText: _nameError,
-                  onChanged: (_) {
-                    if (_nameSuggested) {
-                      setState(() => _nameSuggestedFor = null);
-                    }
-                  },
-                  helper: _nameSuggested ? const _SuggestedNameHint() : null,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm + AppSpacing.xs,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.1,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        label: "Prix d'achat (FCFA)",
-                        hint: 'Optionnel',
-                        controller: _purchasePriceController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        errorText: _purchasePriceError,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: AppTextField(
-                        label: 'Prix de vente (FCFA)',
-                        hint: '0',
-                        controller: _priceController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        errorText: _priceError,
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _EstimatedMargin(
-                sellingText: _priceController.text,
-                purchaseText: _purchasePriceController.text,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              CategoryPicker(
-                value: _categoryId,
-                onChanged: (id) => setState(() => _categoryId = id),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.2,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppTextField(
-                        label: 'Code-barres',
-                        hint: 'Optionnel',
-                        controller: _barcodeController,
-                        errorText: _barcodeError,
-                        onChanged: _onBarcodeEdited,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    // ✨ IconButton M3 — remplace Material+InkWell custom (20 lignes → 8)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: IconButton(
-                        onPressed: _openScanner,
-                        icon: const Icon(Icons.qr_code_2, size: 28),
-                        tooltip: 'Scanner un code-barres',
-                        style: IconButton.styleFrom(
-                          backgroundColor: cs.primaryContainer,
-                          foregroundColor: cs.onPrimaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.3,
-                child: AppTextField(
-                  label: 'Stock initial',
-                  hint: 'Optionnel',
-                  controller: _stockController,
-                  keyboardType: TextInputType.number,
-                  errorText: _stockError,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.4,
-                child: AppTextField(
-                  label: 'Seuil d\'alerte stock bas',
-                  hint: 'Optionnel — ex: 5',
-                  controller: _minStockController,
-                  keyboardType: TextInputType.number,
-                  errorText: _minStockError,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              _AnimatedFormField(
-                animation: _formAnimationController,
-                delay: 0.5,
                 child: PrimaryButton(
-                  label: isEditMode ? 'Modifier' : 'Enregistrer',
+                  label: isEditMode
+                      ? 'Enregistrer les modifications'
+                      : 'Enregistrer le produit',
                   onPressed: _isLoading ? null : _submit,
                   isLoading: _isLoading,
                 ),
               ),
-              if (isEditMode) ...[
-                const SizedBox(height: AppSpacing.md),
-                _AnimatedFormField(
-                  animation: _formAnimationController,
-                  delay: 0.6,
-                  // ✨ cs.error — cs déjà défini en build(), SizedBox fixe supprimé
-                  child: OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _delete,
-                    icon: const Icon(Icons.delete_outline),
-                    label: const Text('Supprimer'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: cs.error,
-                      side: BorderSide(color: cs.error),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppSpacing.radiusMd,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -569,28 +583,28 @@ class _EstimatedMargin extends StatelessWidget {
     if (selling == null || purchase == null) return const SizedBox.shrink();
 
     final margin = selling - purchase;
-    final semantic = AppColors.of(context);
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final isLoss = margin < Decimal.zero;
-    final color = isLoss ? cs.error : semantic.success;
-    final sign = margin > Decimal.zero ? '+' : '';
+    final rate = selling == Decimal.zero
+        ? null
+        : (margin * Decimal.fromInt(100) / selling).round();
+    final amount = margin > Decimal.zero
+        ? '+ ${formatFcfa(margin)}'
+        : margin < Decimal.zero
+        ? '− ${formatFcfa(margin.abs())}'
+        : formatFcfa(margin);
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Row(
-        children: [
-          Text(
-            'Marge estimée',
-            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
-          ),
-          const Spacer(),
-          Text(
-            isLoss
-                ? '${formatFcfa(margin)} · vente à perte'
-                : '$sign${formatFcfa(margin)}',
-            style: AppTypography.labelMedium.copyWith(color: color),
-          ),
-        ],
+      child: Text(
+        isLoss
+            ? 'Marge estimée : $amount par unité · vente à perte'
+            : 'Marge estimée : $amount par unité'
+                  '${rate == null ? '' : ' ($rate %)'}',
+        style: AppTypography.meta.copyWith(
+          color: isLoss ? colors.error : colors.success,
+          fontFeatures: AppTypography.tabularFigures,
+        ),
       ),
     );
   }
@@ -626,40 +640,6 @@ class _SuggestedNameHint extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Enveloppe privée de champ de formulaire animé — apparaît en fondu et
-/// glissement au chargement.
-class _AnimatedFormField extends StatelessWidget {
-  const _AnimatedFormField({
-    required this.animation,
-    required this.delay,
-    required this.child,
-  });
-
-  final AnimationController animation;
-  final double delay;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    // ✨ une seule CurvedAnimation partagée — évite de créer le même objet deux fois
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Interval(delay, delay + 0.4, curve: Curves.easeOut),
-    );
-
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(curved),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.3),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
       ),
     );
   }
