@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
@@ -21,8 +22,9 @@ import '../widgets/open_cash_session_sheet.dart';
 /// Nombre de mouvements affichés sur l'écran de la caisse active.
 const _recentMovementCount = 10;
 
-/// Caisse : solde théorique et mouvements de la session ouverte, ou
-/// invitation à ouvrir la caisse.
+/// « Ma caisse » : solde du tiroir et son calcul, mouvements du jour, puis
+/// Entrée / Sortie / Clôturer fixés en bas ; ou invitation à ouvrir la caisse.
+/// Une anomalie du serveur (clôture refusée, retour refusé) s'affiche en tête.
 class CashRegisterPage extends ConsumerWidget {
   /// Crée l'écran de la caisse.
   const CashRegisterPage({super.key});
@@ -30,36 +32,57 @@ class CashRegisterPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeCashSessionProvider);
-    return AppScaffold(
-      title: 'Caisse',
-      actions: [
-        IconButton(
-          tooltip: 'Historique des caisses',
-          icon: const Icon(Icons.history),
-          onPressed: () => context.push(Routes.cashHistory),
-        ),
-      ],
-      body: active.when(
-        loading: () => const _CashSkeleton(),
-        error: (_, _) => EmptyState(
-          icon: Icons.error_outline,
-          title: 'Caisse indisponible',
-          message: 'Impossible de lire la caisse sur ce téléphone.',
-          actionLabel: 'Réessayer',
-          onAction: () => ref.invalidate(activeCashSessionProvider),
-        ),
-        data: (session) => session == null
-            ? const _ClosedCash()
-            : _ActiveCash(session: session),
+    final session = active.value;
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Ma caisse'),
+        actions: [
+          TextButton(
+            onPressed: () => context.push(Routes.cashHistory),
+            child: const Text('Sessions'),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _RejectedCloseAlert(),
+          Expanded(
+            child: active.when(
+              loading: () => const _CashSkeleton(),
+              error: (_, _) => EmptyState(
+                icon: Icons.error_outline,
+                title: 'Caisse indisponible',
+                message: 'Impossible de lire la caisse sur ce téléphone.',
+                actionLabel: 'Réessayer',
+                onAction: () => ref.invalidate(activeCashSessionProvider),
+              ),
+              data: (session) => session == null
+                  ? EmptyState(
+                      icon: Icons.point_of_sale_outlined,
+                      title: 'Caisse fermée',
+                      message:
+                          'Comptez les espèces du tiroir puis ouvrez la caisse '
+                          'pour suivre le solde de la journée.',
+                      actionLabel: 'Ouvrir la caisse',
+                      onAction: () => showOpenCashSessionSheet(context),
+                    )
+                  : _ActiveCash(session: session),
+            ),
+          ),
+          if (session != null) const _ActionsBar(),
+        ],
       ),
     );
   }
 }
 
-/// Aucune caisse ouverte : invitation à ouvrir, et rappel d'une clôture
-/// refusée par le serveur s'il y en a une.
-class _ClosedCash extends ConsumerWidget {
-  const _ClosedCash();
+/// Dernière clôture refusée par le serveur : bandeau en tête, avec l'action
+/// qui règle le problème.
+class _RejectedCloseAlert extends ConsumerWidget {
+  const _RejectedCloseAlert();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -69,53 +92,33 @@ class _ClosedCash extends ConsumerWidget {
         ?.where((s) => s.status == CashSessionStatus.closed)
         .firstOrNull;
     final rejectionCode = latest?.rejectionCode;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (latest != null && rejectionCode != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              0,
-            ),
-            child: CashNoticeBanner(
-              level: CashNoticeLevel.error,
-              title: 'Dernière clôture refusée par le serveur',
-              message: cashRegisterMessage(rejectionCode),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(0, AppSpacing.buttonHeightSm),
-                  ),
-                  onPressed: () => context.push(
-                    Routes.cashSessionDetail.replaceFirst(':id', latest.id),
-                  ),
-                  child: const Text('Voir la session'),
-                ),
-              ),
+    if (latest == null || rejectionCode == null) {
+      return const SizedBox.shrink();
+    }
+    return CashNoticeBanner(
+      level: CashNoticeLevel.error,
+      title: 'Dernière clôture refusée par le serveur',
+      message: cashRegisterMessage(rejectionCode),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.of(context).onErrorSubtle,
+            textStyle: AppTypography.labelLarge.copyWith(
+              decoration: TextDecoration.underline,
             ),
           ),
-        Expanded(
-          child: EmptyState(
-            icon: Icons.point_of_sale_outlined,
-            title: 'Caisse fermée',
-            message:
-                'Comptez les espèces du tiroir puis ouvrez la caisse pour '
-                'suivre le solde de la journée.',
-            actionLabel: 'Ouvrir la caisse',
-            onAction: () => showOpenCashSessionSheet(context),
+          onPressed: () => context.push(
+            Routes.cashSessionDetail.replaceFirst(':id', latest.id),
           ),
+          child: const Text('Voir la session'),
         ),
-      ],
+      ),
     );
   }
 }
 
-/// Caisse ouverte : solde théorique, formule, actions et derniers
-/// mouvements.
+/// Caisse ouverte : solde, calcul, mouvements du jour.
 class _ActiveCash extends ConsumerWidget {
   const _ActiveCash({required this.session});
 
@@ -123,24 +126,19 @@ class _ActiveCash extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final summary = ref.watch(cashSummaryProvider(session.id));
     final movements = ref.watch(cashMovementsProvider(session.id));
-    final openedAt = DateFormat(
-      "'Ouverte le' d MMM 'à' HH:mm",
-      'fr_FR',
-    ).format(session.openedAt.toLocal());
+    final since = DateFormat.Hm('fr_FR').format(session.openedAt.toLocal());
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xl,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.lg),
       children: [
         summary.when(
-          loading: () => const SkeletonBox(height: 280),
+          loading: () => const Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: SkeletonBox(height: 280),
+          ),
           error: (e, _) => CashNoticeBanner(
             level: CashNoticeLevel.error,
             message: cashRegisterErrorMessage(e),
@@ -148,112 +146,118 @@ class _ActiveCash extends ConsumerWidget {
           data: (summary) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              CashSummaryCard.fromSummary(summary, caption: openedAt),
-              if (summary.rejectedCashRefunds > Decimal.zero) ...[
-                const SizedBox(height: AppSpacing.sm),
-                CashNoticeBanner(
-                  level: CashNoticeLevel.warning,
-                  message:
-                      'Retour refusé : '
-                      '${formatFcfa(summary.rejectedCashRefunds)} rendus non '
-                      'comptés',
+              if (summary.rejectedCashRefunds > Decimal.zero)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: CashNoticeBanner(
+                    level: CashNoticeLevel.warning,
+                    title: 'Retour refusé',
+                    message:
+                        '${formatFcfa(summary.rejectedCashRefunds)} rendus non '
+                        'comptés dans le solde.',
+                  ),
                 ),
-              ],
+              CashSummaryCard.fromSummary(
+                summary,
+                expectedLabel: 'Solde théorique du tiroir',
+                status: StatusIndicator(
+                  label: 'Ouverte depuis $since',
+                  tone: StatusTone.success,
+                ),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        Row(
-          children: [
-            Expanded(
-              child: _MovementButton(
-                label: 'Entrée',
-                icon: Icons.south_west,
-                onPressed: () =>
-                    showCashMovementSheet(context, CashMovementType.cashIn),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: _MovementButton(
-                label: 'Sortie',
-                icon: Icons.north_east,
-                onPressed: () =>
-                    showCashMovementSheet(context, CashMovementType.cashOut),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        PrimaryButton(
-          label: 'Clôturer la caisse',
-          icon: Icons.lock_outline,
-          onPressed: () => context.push(Routes.cashClose),
-        ),
-        const SizedBox(height: AppSpacing.lg),
+        const OverlineHeader('Mouvements du jour'),
         movements.when(
-          loading: () => const SkeletonBox(height: 120),
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: SkeletonBox(height: 120),
+          ),
           error: (e, _) => CashNoticeBanner(
             level: CashNoticeLevel.error,
             message: cashRegisterErrorMessage(e),
           ),
-          data: (movements) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SectionHeader(
-                title: 'Derniers mouvements',
-                count: movements.isEmpty ? null : movements.length,
-              ),
-              if (movements.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          data: (movements) => movements.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
                   child: Text(
                     "Aucune entrée ni sortie d'espèces pour l'instant.",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: cs.onSurfaceVariant,
+                    style: AppTypography.body.copyWith(
+                      color: colors.textSecondary,
                     ),
                   ),
                 )
-              else
-                AppListGroup(
-                  dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+              : FlatList(
                   children: [
                     for (final movement in movements.take(_recentMovementCount))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                        ),
-                        child: CashMovementTile(movement: movement),
-                      ),
+                      CashMovementTile(movement: movement),
                   ],
                 ),
-            ],
-          ),
         ),
       ],
     );
   }
 }
 
-class _MovementButton extends StatelessWidget {
-  const _MovementButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
+/// Barre fixe : Entrée, Sortie, puis « Clôturer la caisse ».
+class _ActionsBar extends StatelessWidget {
+  const _ActionsBar();
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + AppSpacing.xs,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: SecondaryButton(
+                      label: 'Entrée',
+                      icon: Icons.south,
+                      onPressed: () => showCashMovementSheet(
+                        context,
+                        CashMovementType.cashIn,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: SecondaryButton(
+                      label: 'Sortie',
+                      icon: Icons.north,
+                      onPressed: () => showCashMovementSheet(
+                        context,
+                        CashMovementType.cashOut,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              PrimaryButton(
+                label: 'Clôturer la caisse',
+                onPressed: () => context.push(Routes.cashClose),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -268,11 +272,11 @@ class _CashSkeleton extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: const [
-        SkeletonBox(height: 280),
-        SizedBox(height: AppSpacing.md),
-        SkeletonBox(height: AppSpacing.buttonHeightSm),
+        SkeletonBox(width: 160, height: 16),
         SizedBox(height: AppSpacing.sm),
-        SkeletonBox(height: AppSpacing.buttonHeight),
+        SkeletonBox(width: 220, height: 32),
+        SizedBox(height: AppSpacing.lg),
+        SkeletonBox(height: 200),
       ],
     );
   }

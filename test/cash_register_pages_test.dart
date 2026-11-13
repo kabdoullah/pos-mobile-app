@@ -214,7 +214,10 @@ void main() {
     expect(find.text('Caisse fermée'), findsOneWidget);
     // La clôture refusée reste visible depuis la caisse fermée.
     expect(
-      find.text('Dernière clôture refusée par le serveur'),
+      find.textContaining(
+        'Dernière clôture refusée par le serveur',
+        findRichText: true,
+      ),
       findsOneWidget,
     );
     await tester.tap(find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'));
@@ -236,17 +239,24 @@ void main() {
     await pumpCash(tester, Routes.cashRegister);
 
     expect(
-      find.bySemanticsLabel('Solde théorique : ${formatFcfa(d('47500'))}'),
+      find.bySemanticsLabel(
+        'Solde théorique du tiroir : ${formatFcfa(d('47500'))}',
+      ),
       findsOneWidget,
     );
+    expect(find.textContaining('Ouverte depuis'), findsOneWidget);
     for (final label in [
       'Fond de caisse',
-      'Ventes espèces (6)',
+      'Ventes en espèces (6)',
       'Entrées',
       'Sorties',
-      'Remboursements espèces',
+      'Remboursements',
     ]) {
-      expect(find.text(label), findsOneWidget, reason: label);
+      expect(
+        find.bySemanticsLabel(RegExp('^${RegExp.escape(label)} :')),
+        findsOneWidget,
+        reason: label,
+      );
     }
     expect(find.text('Entrée'), findsOneWidget);
     expect(find.text('Sortie'), findsOneWidget);
@@ -257,6 +267,44 @@ void main() {
       find.textContaining('Refusé par le serveur'),
       findsOneWidget,
       reason: 'un mouvement refusé est marqué',
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sortie au-delà du tiroir : expliquée et bloquée à la saisie', (
+    tester,
+  ) async {
+    stubActive(openSession(), summary());
+    when(
+      () => repo.watchMovements('s1'),
+    ).thenAnswer((_) => Stream.value(const []));
+    await pumpCash(tester, Routes.cashRegister);
+
+    await tester.tap(find.widgetWithText(SecondaryButton, 'Sortie'));
+    await tester.pumpAndSettle();
+    expect(find.text("Mouvement d'espèces"), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '60000');
+    await tester.pump();
+    expect(
+      find.text(
+        'Le tiroir contient ${formatFcfa(d('47500'))}. Une sortie ne peut '
+        'pas dépasser ce montant.',
+      ),
+      findsOneWidget,
+    );
+    final button = tester.widget<PrimaryButton>(
+      find.widgetWithText(PrimaryButton, 'Retirer ${formatFcfa(d('60000'))}'),
+    );
+    expect(button.onPressed, isNull);
+
+    // Une entrée n'est pas limitée par le solde.
+    await tester.tap(find.text('Entrée').last);
+    await tester.pump();
+    expect(find.textContaining('Le tiroir contient'), findsNothing);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ajouter ${formatFcfa(d('60000'))}'),
+      findsOneWidget,
     );
     expect(tester.takeException(), isNull);
   });
@@ -293,7 +341,7 @@ void main() {
     await tester.enterText(field, '12000');
     await tester.pump();
     expect(find.text('Excédent de ${formatFcfa(d('2000'))}'), findsOneWidget);
-    expect(find.text('Commentaire (obligatoire)'), findsOneWidget);
+    expect(find.text("Expliquez l'écart (obligatoire)"), findsOneWidget);
 
     await tester.enterText(field, '9000');
     await tester.pump();
@@ -308,25 +356,29 @@ void main() {
     await tester.enterText(find.byType(TextField).last, 'Pièce perdue');
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
     await tester.pumpAndSettle();
-    // Le dialogue récapitule chaque terme, le montant compté et l'écart.
+    // Le dialogue récapitule le solde théorique, le compté et l'écart.
     final dialog = find.byType(AlertDialog);
+    expect(
+      find.descendant(
+        of: dialog,
+        matching: find.text('Clôturer avec ${formatFcfa(d('9000'))} ?'),
+      ),
+      findsOneWidget,
+    );
     for (final line in [
-      'Fond de caisse : ${formatFcfa(d('10000'))}',
-      'Ventes espèces : ${formatFcfa(d('40000'))}',
-      'Entrées : ${formatFcfa(d('5000'))}',
-      'Sorties : ${formatFcfa(d('6000'))}',
-      'Remboursements : ${formatFcfa(d('1500'))}',
       'Solde théorique : ${formatFcfa(d('10000'))}',
-      'Montant compté : ${formatFcfa(d('9000'))}',
-      'Écart : Déficit de ${formatFcfa(d('1000'))}',
+      'Compté : ${formatFcfa(d('9000'))}',
+      'Écart · déficit : − ${formatFcfa(d('1000'))}',
     ]) {
       expect(
-        find.descendant(of: dialog, matching: find.textContaining(line)),
+        find.descendant(of: dialog, matching: find.bySemanticsLabel(line)),
         findsOneWidget,
         reason: line,
       );
     }
-    await tester.tap(find.text('Clôturer'));
+    await tester.tap(
+      find.descendant(of: dialog, matching: find.text('Clôturer la caisse')),
+    );
     await tester.pumpAndSettle();
 
     verify(
@@ -365,7 +417,12 @@ void main() {
     await tester.enterText(find.byType(TextField).last, 'Solde négatif');
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Clôturer'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Clôturer la caisse'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     verify(
@@ -420,30 +477,40 @@ void main() {
         find.text(
           'Montant recalculé par le serveur : ${formatFcfa(d('50000'))} '
           '(affiché : ${formatFcfa(d('48000'))})',
+          findRichText: true,
         ),
         findsOneWidget,
       );
       expect(
         find.text(
           'Opérations arrivées après clôture : +${formatFcfa(d('1500'))}',
+          findRichText: true,
         ),
         findsOneWidget,
       );
       expect(
         find.text(
-          'Retour refusé : ${formatFcfa(d('2500'))} rendus non comptés',
+          'Retour refusé. ${formatFcfa(d('2500'))} rendus non comptés dans le '
+          'solde.',
+          findRichText: true,
         ),
         findsOneWidget,
       );
       // Chiffres du serveur, solde figé à la clôture.
-      expect(find.text('Ventes espèces (7)'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('^Ventes en espèces \\(7\\) :')),
+        findsOneWidget,
+      );
       expect(
         find.bySemanticsLabel(
           'Solde théorique à la clôture : ${formatFcfa(d('50000'))}',
         ),
         findsOneWidget,
       );
-      expect(find.text('Déficit de ${formatFcfa(d('1000'))}'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Déficit de ${formatFcfa(d('1000'))}'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     });
 
@@ -454,7 +521,10 @@ void main() {
       await pumpCash(tester, '/cash/sessions/s1', online: false);
 
       verifyNever(() => repo.fetchRemoteDetail(any()));
-      expect(find.text('Ventes espèces (6)'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp('^Ventes en espèces \\(6\\) :')),
+        findsOneWidget,
+      );
       expect(find.textContaining('Opérations arrivées'), findsNothing);
       expect(find.text('Session indisponible'), findsNothing);
       expect(tester.takeException(), isNull);
@@ -478,7 +548,10 @@ void main() {
       await pumpCash(tester, '/cash/sessions/s1');
 
       expect(
-        find.text('Le serveur exige un commentaire pour cet écart'),
+        find.textContaining(
+          'Le serveur exige un commentaire pour cet écart',
+          findRichText: true,
+        ),
         findsOneWidget,
       );
       // Clôture non acceptée : le serveur n'est même pas interrogé.
@@ -508,8 +581,14 @@ void main() {
       );
       await pumpCash(tester, '/cash/sessions/s1', online: false);
 
-      expect(find.text('Refusé par le serveur'), findsOneWidget);
-      expect(find.text('Cette caisse est déjà clôturée.'), findsOneWidget);
+      expect(
+        find.text(
+          'Refusé par le serveur. Cette caisse est déjà clôturée.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Refusée'), findsOneWidget);
       expect(find.text('Renvoyer la clôture'), findsNothing);
     });
   });
@@ -523,10 +602,13 @@ void main() {
     await pumpCash(tester, Routes.cashHistory, online: false);
 
     expect(
-      find.text('Hors ligne : sessions de ce téléphone uniquement'),
+      find.textContaining(
+        'Hors ligne. Sessions de ce téléphone uniquement',
+        findRichText: true,
+      ),
       findsOneWidget,
     );
-    expect(find.text('Déficit de ${formatFcfa(d('1000'))}'), findsOneWidget);
+    expect(find.text('Écart − ${formatFcfa(d('1000'))}'), findsOneWidget);
     verifyNever(() => repo.fetchRemoteHistory(cursor: any(named: 'cursor')));
   });
 
@@ -677,12 +759,8 @@ void main() {
 
         final cs = theme.colorScheme;
         // Solde négatif affiché tel quel, en couleur d'erreur du thème.
-        final hero = tester.widget<AmountDisplay>(
-          find.byWidgetPredicate(
-            (w) => w is AmountDisplay && w.amount == d('-2000'),
-          ),
-        );
-        expect(hero.color, cs.error);
+        final hero = tester.widget<Text>(find.text(formatFcfa(d('-2000'))));
+        expect(hero.style!.color, cs.error);
         expect(contrast(cs.error, cs.surface), greaterThanOrEqualTo(4.5));
 
         // Excédent : paire d'avertissement du thème.

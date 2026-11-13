@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -16,7 +17,6 @@ Future<bool> showOpenCashSessionSheet(BuildContext context) async {
   final opened = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => const OpenCashSessionSheet(),
   );
   return opened ?? false;
@@ -39,6 +39,9 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
   String? _noteError;
   String? _formError;
   bool _isLoading = false;
+
+  /// Champ commentaire affiché (replié par défaut : facultatif).
+  bool _showNote = false;
 
   @override
   void dispose() {
@@ -84,53 +87,70 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
     }
   }
 
+  void _setAmount(Decimal? value) => setState(() {
+    _amount = value;
+    _amountError = null;
+  });
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final formError = _formError;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+    final amount = _amount;
+    // « Comme hier soir » : le montant compté à la dernière clôture.
+    final lastCounted = lastClosedSession(
+      ref.watch(localCashSessionHistoryProvider).value,
+    )?.countedAmount;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.md,
+          right: AppSpacing.md,
+          top: AppSpacing.lg,
+          bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.lg,
-            bottom: AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'Ouvrir la caisse',
-                  style: AppTypography.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Comptez les espèces présentes dans le tiroir.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: cs.onSurfaceVariant,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text('Ouvrir la caisse', style: AppTypography.sectionTitle),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Comptez les espèces présentes dans le tiroir et saisissez le '
+                'total.',
+                style: AppTypography.body.copyWith(color: colors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AmountInput(
+                label: 'Fond de caisse',
+                hint: '0',
+                value: amount,
+                errorText: _amountError,
+                large: true,
+                onChanged: _setAmount,
+              ),
+              const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  if (lastCounted != null && lastCounted > Decimal.zero)
+                    QuickChoiceButton(
+                      label:
+                          'Comme à la dernière clôture · '
+                          '${formatAmount(lastCounted)}',
+                      isSelected: amount == lastCounted,
+                      onTap: () => _setAmount(lastCounted),
+                    ),
+                  QuickChoiceButton(
+                    label: '0',
+                    isSelected: amount == Decimal.zero,
+                    onTap: () => _setAmount(Decimal.zero),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AmountInput(
-                  label: 'Fond de caisse',
-                  hint: '0',
-                  value: _amount,
-                  errorText: _amountError,
-                  onChanged: (value) => setState(() {
-                    _amount = value;
-                    _amountError = null;
-                  }),
-                ),
+                ],
+              ),
+              if (_showNote) ...[
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
                   label: 'Commentaire (facultatif)',
@@ -139,22 +159,36 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
                   maxLines: 2,
                   maxLength: CashRegisterException.maxNoteLength,
                 ),
-                if (formError != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    formError,
-                    style: AppTypography.errorText.copyWith(color: cs.error),
+              ] else
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _showNote = true),
+                    icon: const Icon(Icons.add, size: 20),
+                    label: const Text('Ajouter un commentaire'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                      ),
+                    ),
                   ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                PrimaryButton(
-                  label: 'Ouvrir la caisse',
-                  icon: Icons.lock_open_outlined,
-                  isLoading: _isLoading,
-                  onPressed: _isLoading ? null : _submit,
+                ),
+              if (formError != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  formError,
+                  style: AppTypography.errorText.copyWith(color: colors.error),
                 ),
               ],
-            ),
+              const SizedBox(height: AppSpacing.md),
+              PrimaryButton(
+                label: amount == null
+                    ? 'Ouvrir la caisse'
+                    : 'Ouvrir avec ${formatFcfa(amount)}',
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _submit,
+              ),
+            ],
           ),
         ),
       ),

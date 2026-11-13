@@ -32,6 +32,23 @@ String discrepancyLabel(Decimal discrepancy) =>
       DiscrepancyKind.deficit => 'Déficit de ${formatFcfa(discrepancy.abs())}',
     };
 
+/// Montant signé de l'écart : « + 300 FCFA », « − 1 175 FCFA » ou « 0 FCFA ».
+String signedDiscrepancy(Decimal discrepancy) =>
+    switch (DiscrepancyKind.of(discrepancy)) {
+      DiscrepancyKind.balanced => formatFcfa(Decimal.zero),
+      DiscrepancyKind.surplus => '+ ${formatFcfa(discrepancy)}',
+      DiscrepancyKind.deficit => '− ${formatFcfa(discrepancy.abs())}',
+    };
+
+/// Libellé de la ligne d'écart d'un récapitulatif : « Écart · déficit »,
+/// « Écart · excédent » ou « Écart ».
+String discrepancyRowLabel(Decimal discrepancy) =>
+    switch (DiscrepancyKind.of(discrepancy)) {
+      DiscrepancyKind.balanced => 'Écart',
+      DiscrepancyKind.surplus => 'Écart · excédent',
+      DiscrepancyKind.deficit => 'Écart · déficit',
+    };
+
 /// Tonalité de l'écart : succès si équilibrée, alerte pour un excédent,
 /// erreur pour un déficit.
 StatusTone discrepancyTone(Decimal discrepancy) =>

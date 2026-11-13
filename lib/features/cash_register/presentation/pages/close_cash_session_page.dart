@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
@@ -16,7 +17,6 @@ import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 import '../widgets/cash_notice_banner.dart';
-import '../widgets/cash_summary_card.dart';
 import '../widgets/discrepancy_badge.dart';
 
 /// Clôture de la caisse : récapitulatif, montant compté, état (équilibrée,
@@ -29,8 +29,11 @@ class CloseCashSessionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final active = ref.watch(activeCashSessionProvider);
-    return AppScaffold(
-      title: 'Clôturer la caisse',
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Clôturer la caisse'),
+      ),
       body: active.when(
         loading: () => const _CloseSkeleton(),
         error: (_, _) => EmptyState(
@@ -103,22 +106,6 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     super.dispose();
   }
 
-  String _confirmMessage(Decimal counted, Decimal discrepancy) {
-    final s = widget.summary;
-    return [
-      'Fond de caisse : ${formatFcfa(s.openingAmount)}',
-      'Ventes espèces : ${formatFcfa(s.cashSales)}',
-      'Entrées : ${formatFcfa(s.cashIn)}',
-      'Sorties : ${formatFcfa(s.cashOut)}',
-      'Remboursements : ${formatFcfa(s.cashRefunds)}',
-      'Solde théorique : ${formatFcfa(s.expectedAmount)}',
-      'Montant compté : ${formatFcfa(counted)}',
-      'Écart : ${discrepancyLabel(discrepancy)}',
-      '',
-      'Une caisse clôturée ne peut plus être modifiée.',
-    ].join('\n');
-  }
-
   Future<void> _submit() async {
     final counted = _counted;
     final discrepancy = _discrepancy;
@@ -131,13 +118,15 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     });
     if (counted == null || discrepancy == null || _noteError != null) return;
 
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Clôturer la caisse ?',
-      message: _confirmMessage(counted, discrepancy),
-      confirmLabel: 'Clôturer',
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ConfirmCloseDialog(
+        expected: widget.summary.expectedAmount,
+        counted: counted,
+        discrepancy: discrepancy,
+      ),
     );
-    if (!confirmed || !mounted) return;
+    if (!(confirmed ?? false) || !mounted) return;
 
     // Capturés avant l'écriture : la session clôturée disparaît de la caisse
     // active et ce formulaire peut être démonté avant la fin de l'await.
@@ -178,92 +167,245 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final summary = widget.summary;
     final discrepancy = _discrepancy;
+    final counted = _counted;
     final formError = _formError;
+    final movementsNet = summary.cashIn - summary.cashOut - summary.cashRefunds;
+    final mobile = summary.mobileMoneySales;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xl,
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CashSummaryCard.fromSummary(summary, elevated: false),
-        if (summary.rejectedCashRefunds > Decimal.zero) ...[
-          const SizedBox(height: AppSpacing.sm),
-          CashNoticeBanner(
-            level: CashNoticeLevel.warning,
-            message:
-                'Retour refusé : ${formatFcfa(summary.rejectedCashRefunds)} '
-                'rendus non comptés',
-          ),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Comptez les espèces du tiroir',
-          style: AppTypography.titleMedium.copyWith(color: cs.onSurface),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        AmountInput(
-          label: 'Montant compté',
-          hint: '0',
-          value: _counted,
-          errorText: _countedError,
-          onChanged: (value) => setState(() {
-            _counted = value;
-            _countedError = null;
-            if (!_noteRequired) _noteError = null;
-          }),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        // L'état se met à jour pendant la saisie et s'annonce aux lecteurs
-        // d'écran.
-        Semantics(
-          liveRegion: true,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: discrepancy == null
-                ? Text(
-                    "Saisissez le montant pour voir l'écart.",
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: cs.onSurfaceVariant,
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.only(
+              top: AppSpacing.sm,
+              bottom: AppSpacing.lg,
+            ),
+            children: [
+              if (summary.rejectedCashRefunds > Decimal.zero)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: CashNoticeBanner(
+                    level: CashNoticeLevel.warning,
+                    title: 'Retour refusé',
+                    message:
+                        '${formatFcfa(summary.rejectedCashRefunds)} rendus '
+                        'non comptés dans le solde.',
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: AmountInput(
+                  label: 'Espèces comptées dans le tiroir',
+                  hint: '0',
+                  value: counted,
+                  errorText: _countedError,
+                  large: true,
+                  onChanged: (value) => setState(() {
+                    _counted = value;
+                    _countedError = null;
+                    if (!_noteRequired) _noteError = null;
+                  }),
+                ),
+              ),
+              const OverlineHeader('Récapitulatif'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DefinitionRow(
+                      label: 'Fond de caisse',
+                      value: formatFcfa(summary.openingAmount),
                     ),
-                  )
-                : DiscrepancyBadge(discrepancy: discrepancy),
+                    DefinitionRow(
+                      label: 'Ventes en espèces',
+                      value: '+ ${formatFcfa(summary.cashSales)}',
+                    ),
+                    DefinitionRow(
+                      label: 'Entrées, sorties, remboursements',
+                      value: movementsNet < Decimal.zero
+                          ? '− ${formatFcfa(movementsNet.abs())}'
+                          : '+ ${formatFcfa(movementsNet)}',
+                    ),
+                    DefinitionRow(
+                      label: 'Solde théorique',
+                      value: formatFcfa(summary.expectedAmount),
+                      emphasized: true,
+                      // Solde négatif affiché tel quel, en couleur d'erreur.
+                      color: summary.expectedAmount < Decimal.zero
+                          ? colors.error
+                          : null,
+                    ),
+                    if (counted != null && discrepancy != null) ...[
+                      DefinitionRow(
+                        label: 'Compté',
+                        value: formatFcfa(counted),
+                        emphasized: true,
+                      ),
+                      DefinitionRow(
+                        label: discrepancyRowLabel(discrepancy),
+                        value: signedDiscrepancy(discrepancy),
+                        color: discrepancyTone(discrepancy).colorIn(context),
+                        showDivider: false,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              // L'état se met à jour pendant la saisie et s'annonce aux
+              // lecteurs d'écran.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: discrepancy == null
+                        ? Text(
+                            "Saisissez le montant pour voir l'écart.",
+                            style: AppTypography.body.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          )
+                        : DiscrepancyBadge(discrepancy: discrepancy),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: AppTextField(
+                  label: _noteRequired
+                      ? "Expliquez l'écart (obligatoire)"
+                      : 'Commentaire (facultatif)',
+                  hint: 'Ex. : monnaie rendue en trop',
+                  controller: _noteController,
+                  errorText: _noteError,
+                  maxLines: 3,
+                  maxLength: CashRegisterException.maxNoteLength,
+                  onChanged: (_) {
+                    if (_noteError != null) setState(() => _noteError = null);
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Text(
+                  [
+                    if (mobile > Decimal.zero)
+                      'Mobile money hors tiroir : ${formatFcfa(mobile)}.',
+                    'Les montants finaux sont confirmés par le serveur.',
+                  ].join(' '),
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.textSecondary,
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
+                ),
+              ),
+              if (formError != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: Text(
+                    formError,
+                    style: AppTypography.errorText.copyWith(
+                      color: colors.error,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: AppSpacing.md),
-        AppTextField(
-          label: _noteRequired
-              ? 'Commentaire (obligatoire)'
-              : 'Commentaire (facultatif)',
-          hint: _noteRequired ? "Expliquez l'écart" : null,
-          controller: _noteController,
-          errorText: _noteError,
-          maxLines: 3,
-          maxLength: CashRegisterException.maxNoteLength,
-          onChanged: (_) {
-            if (_noteError != null) setState(() => _noteError = null);
-          },
-        ),
-        if (formError != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            formError,
-            style: AppTypography.errorText.copyWith(color: cs.error),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border(top: BorderSide(color: colors.border)),
           ),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        PrimaryButton(
-          label: 'Clôturer la caisse',
-          icon: Icons.lock_outline,
-          isLoading: _isLoading,
-          onPressed: _isLoading ? null : _submit,
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + AppSpacing.xs,
+              ),
+              child: PrimaryButton(
+                label: 'Clôturer la caisse',
+                isLoading: _isLoading,
+                onPressed: _isLoading ? null : _submit,
+              ),
+            ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+/// Confirmation avant l'action définitive : solde théorique, compté, écart.
+class _ConfirmCloseDialog extends StatelessWidget {
+  const _ConfirmCloseDialog({
+    required this.expected,
+    required this.counted,
+    required this.discrepancy,
+  });
+
+  final Decimal expected;
+  final Decimal counted;
+  final Decimal discrepancy;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return AlertDialog(
+      title: Text('Clôturer avec ${formatFcfa(counted)} ?'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DefinitionRow(
+              label: 'Solde théorique',
+              value: formatFcfa(expected),
+            ),
+            DefinitionRow(label: 'Compté', value: formatFcfa(counted)),
+            DefinitionRow(
+              label: discrepancyRowLabel(discrepancy),
+              value: signedDiscrepancy(discrepancy),
+              color: discrepancyTone(discrepancy).colorIn(context),
+              showDivider: false,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'La caisse sera fermée jusqu’à la prochaine ouverture.',
+              style: AppTypography.body.copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            PrimaryButton(
+              label: 'Clôturer la caisse',
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Revenir'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

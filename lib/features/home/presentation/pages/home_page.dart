@@ -315,17 +315,6 @@ class _ClosedContent extends ConsumerWidget {
   }
 }
 
-/// Session clôturée la plus récente de [history] ; `null` s'il n'y en a pas.
-CashSession? lastClosedSession(List<CashSession>? history) {
-  CashSession? last;
-  for (final session in history ?? const <CashSession>[]) {
-    final closedAt = session.closedAt;
-    if (closedAt == null) continue;
-    if (last == null || closedAt.isAfter(last.closedAt!)) last = session;
-  }
-  return last;
-}
-
 /// « aujourd'hui à 19:30 », « hier à 19:30 » ou « le 3 novembre à 19:30 ».
 String closureLabel(DateTime closedAt, {DateTime? now}) {
   final local = closedAt.toLocal();

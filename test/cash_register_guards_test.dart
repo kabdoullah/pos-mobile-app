@@ -596,7 +596,7 @@ void main() {
       await pumpSheet(tester, dark: true);
 
       expect(find.text('Fond de caisse'), findsOneWidget);
-      expect(find.text('Commentaire (facultatif)'), findsOneWidget);
+      expect(find.text('Ajouter un commentaire'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

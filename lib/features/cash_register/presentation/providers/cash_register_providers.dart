@@ -34,6 +34,17 @@ Stream<List<CashMovement>> cashMovements(Ref ref, String sessionId) =>
 Stream<List<CashSession>> localCashSessionHistory(Ref ref) =>
     ref.watch(cashRegisterRepositoryProvider).watchLocalHistory();
 
+/// Session clôturée la plus récente de [history] ; `null` s'il n'y en a pas.
+CashSession? lastClosedSession(List<CashSession>? history) {
+  CashSession? last;
+  for (final session in history ?? const <CashSession>[]) {
+    final closedAt = session.closedAt;
+    if (closedAt == null) continue;
+    if (last == null || closedAt.isAfter(last.closedAt!)) last = session;
+  }
+  return last;
+}
+
 /// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
 /// n'y est pas (session d'un autre téléphone).
 @riverpod
