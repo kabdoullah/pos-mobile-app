@@ -143,7 +143,7 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
         data: (products) {
           if (products.isEmpty) {
             return EmptyState(
-              icon: Icons.inventory_2_outlined,
+              graphic: const PackageIcon(size: 32),
               title: 'Aucun produit',
               message: 'Ajoutez votre premier produit.',
               actionLabel: 'Ajouter un produit',

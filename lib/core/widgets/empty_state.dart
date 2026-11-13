@@ -1,26 +1,34 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import 'package_icon.dart';
 import 'primary_button.dart';
 
-/// Affichage d'état vide pour les listes et conteneurs.
-///
-/// Affiché quand aucune donnée n'est disponible. Comprend une icône, un titre,
-/// un message et un bouton d'action optionnel. Centré, sur un ton encourageant.
+/// Affichage d'état vide pour les listes et conteneurs (v2) : pictogramme au
+/// trait 32 dp en texte secondaire, sans pastille ; titre 18/600, phrase 16,
+/// une action. Centré, sur un ton encourageant.
 class EmptyState extends StatelessWidget {
   /// Crée un état vide.
   const EmptyState({
-    required this.icon,
     required this.title,
     required this.message,
     this.actionLabel,
     this.onAction,
+    this.icon,
+    this.graphic,
     super.key,
-  });
+  }) : assert(
+         (icon == null) != (graphic == null),
+         'Fournir soit une icône, soit un pictogramme dessiné.',
+       );
 
-  /// Icône à afficher (grande, couleur principale).
-  final IconData icon;
+  /// Icône Material à afficher.
+  final IconData? icon;
+
+  /// Pictogramme dessiné à la place de [icon] (ex. [PackageIcon]).
+  final Widget? graphic;
 
   /// Texte du titre.
   final String title;
@@ -36,7 +44,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     return Center(
       child: SingleChildScrollView(
         child: Padding(
@@ -45,30 +53,24 @@ class EmptyState extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icône dans une pastille : présente sans écraser le message,
-              // y compris clavier ouvert sur petit écran.
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: cs.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Icon(icon, size: 48, color: cs.primary),
-                ),
+              ExcludeSemantics(
+                child:
+                    graphic ??
+                    Icon(icon, size: 32, color: colors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 title,
-                style: AppTypography.titleMedium,
+                style: AppTypography.bodyStrong.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 message,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+                style: AppTypography.body.copyWith(color: colors.textSecondary),
                 textAlign: TextAlign.center,
               ),
               if (actionLabel != null && onAction != null) ...[

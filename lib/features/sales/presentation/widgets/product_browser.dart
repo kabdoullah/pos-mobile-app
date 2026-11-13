@@ -71,7 +71,7 @@ class ProductBrowser extends StatelessWidget {
         return SliverFillRemaining(
           hasScrollBody: false,
           child: EmptyState(
-            icon: Icons.inventory_2_outlined,
+            graphic: const PackageIcon(size: 32),
             title: 'Aucun produit pour l’instant',
             message:
                 'Ajoutez vos produits une fois ; ensuite, un toucher suffit '

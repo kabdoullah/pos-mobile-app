@@ -14,6 +14,7 @@ export 'image_source_sheet.dart';
 export 'loading_indicator.dart';
 export 'offline_status_indicator.dart';
 export 'overline_header.dart';
+export 'package_icon.dart';
 export 'primary_button.dart';
 export 'quantity_stepper.dart';
 export 'quick_choice_button.dart';

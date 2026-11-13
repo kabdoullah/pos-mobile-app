@@ -44,4 +44,38 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+    'état vide produit : pictogramme « colis » 32 dp, sans pastille',
+    (tester) async {
+      final theme = AppTheme.light();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: theme,
+          home: const Scaffold(
+            body: EmptyState(
+              graphic: PackageIcon(size: 32),
+              title: 'Aucun produit',
+              message: 'Ajoutez votre premier produit.',
+            ),
+          ),
+        ),
+      );
+      final icon = tester.widget<PackageIcon>(find.byType(PackageIcon));
+      expect(icon.size, 32);
+      // Plus de pastille colorée autour du pictogramme.
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is DecoratedBox &&
+              w.decoration is BoxDecoration &&
+              (w.decoration as BoxDecoration).shape == BoxShape.circle,
+        ),
+        findsNothing,
+      );
+      final title = tester.widget<Text>(find.text('Aucun produit'));
+      expect(title.style!.fontSize, 18);
+      expect(title.style!.fontWeight, FontWeight.w600);
+    },
+  );
 }
