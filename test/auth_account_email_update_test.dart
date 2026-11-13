@@ -79,8 +79,8 @@ void main() {
       await _pump(tester, profile, const AccountEmailBanner());
       await tester.pumpAndSettle();
 
-      expect(find.text('Ajoutez un email'), findsOneWidget);
-      await tester.tap(find.text('Ajouter mon email'));
+      expect(find.textContaining('Ajoutez un e-mail'), findsOneWidget);
+      await tester.tap(find.text('Ajouter'));
       await tester.pumpAndSettle();
 
       final fields = find.byType(TextField);
@@ -92,7 +92,10 @@ void main() {
       expect(profile.account.email, 'awa@example.com');
       expect(find.textContaining('Lien envoyé à awa@example.com'), findsOne);
       // La bannière passe à l'étape suivante : confirmer l'adresse.
-      expect(find.text('Confirmez votre email'), findsOneWidget);
+      expect(
+        find.textContaining('Confirmez votre e-mail', findRichText: true),
+        findsOneWidget,
+      );
     });
 
     testWidgets('« Plus tard » masque le rappel 7 jours', (tester) async {
@@ -103,7 +106,10 @@ void main() {
       await tester.tap(find.text('Plus tard'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Confirmez votre email'), findsNothing);
+      expect(
+        find.textContaining('Confirmez votre e-mail', findRichText: true),
+        findsNothing,
+      );
       final snoozed = profile.snoozedUntil!;
       expect(snoozed.difference(DateTime.now()).inDays, inInclusiveRange(6, 7));
     });
@@ -115,7 +121,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(Card), findsNothing);
-      expect(find.text('Ajoutez un email'), findsNothing);
+      expect(find.textContaining('Ajoutez un e-mail'), findsNothing);
     });
 
     testWidgets('email confirmé : pas de rappel', (tester) async {
@@ -133,7 +139,7 @@ void main() {
       await _pump(tester, profile, const AccountEmailBanner());
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Renvoyer le lien'));
+      await tester.tap(find.text('Renvoyer'));
       await tester.pumpAndSettle();
 
       expect(profile.resendCalls, 1);
@@ -174,7 +180,7 @@ void main() {
     await _pump(tester, _OfflineProfile(), const AccountEmailBanner());
     await tester.pump();
 
-    expect(find.text('Ajoutez un email'), findsNothing);
+    expect(find.textContaining('Ajoutez un e-mail'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

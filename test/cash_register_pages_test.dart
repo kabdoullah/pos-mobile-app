@@ -638,7 +638,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('home card shows an unavailable balance on summary error', (
+  testWidgets('home cash box shows an unavailable balance on summary error', (
     tester,
   ) async {
     stubActive(openSession(), null);
@@ -647,32 +647,19 @@ void main() {
     ).thenAnswer((_) => Stream.error(StateError('drift')));
     await pumpHome(tester);
 
-    expect(
-      find.bySemanticsLabel('Caisse ouverte, solde indisponible'),
-      findsOneWidget,
-    );
+    expect(find.text('Caisse ouverte'), findsOneWidget);
+    expect(find.text('Solde indisponible'), findsOneWidget);
     expect(find.byType(SkeletonBox), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('home card navigates to /cash', (tester) async {
+  testWidgets('home cash box shows the drawer and opens /cash', (tester) async {
     stubActive(openSession(), summary());
     await pumpHome(tester);
 
-    final card = find.bySemanticsLabel(
-      'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
-    );
-    expect(card, findsOneWidget);
-    // Action de tap exposée aux lecteurs d'écran (TalkBack, VoiceOver).
-    expect(
-      tester.getSemantics(card),
-      matchesSemantics(
-        label: 'Caisse ouverte, solde théorique ${formatFcfa(d('47500'))}',
-        isButton: true,
-        hasTapAction: true,
-      ),
-    );
-    await tester.tap(card);
+    expect(find.text('Espèces dans le tiroir'), findsOneWidget);
+    expect(find.text(formatFcfa(d('47500'))), findsOneWidget);
+    await tester.tap(find.text('Entrée / sortie'));
     await tester.pumpAndSettle();
     expect(find.text('page caisse'), findsOneWidget);
   });

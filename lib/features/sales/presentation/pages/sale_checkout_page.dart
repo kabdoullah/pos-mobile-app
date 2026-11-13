@@ -24,6 +24,14 @@ import '../widgets/payment_method_selector.dart';
 import '../widgets/quantity_sheet.dart';
 import '../widgets/sale_payment_section.dart';
 
+/// Marges des sur-titres de l'écran.
+const _overlinePadding = EdgeInsets.fromLTRB(
+  AppSpacing.md,
+  AppSpacing.md + AppSpacing.xs,
+  AppSpacing.md,
+  AppSpacing.sm,
+);
+
 /// Écran Encaisser : articles (modifiables en place), remise sur le total,
 /// total, paiement, puis la monnaie à rendre et « Valider la vente » fixés en
 /// bas.
@@ -248,11 +256,12 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                     children: [
-                      _Overline(
+                      OverlineHeader(
                         'Articles · ${cart.unitCount}',
                         trailing: 'Touchez une ligne pour la modifier',
+                        padding: _overlinePadding,
                       ),
-                      _ListSurface(
+                      FlatList(
                         children: [
                           for (final item in cart.items)
                             CartItemTile(
@@ -284,7 +293,10 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
                           onEditDiscount: _editCartDiscount,
                         ),
                       ),
-                      const _Overline('Paiement'),
+                      const OverlineHeader(
+                        'Paiement',
+                        padding: _overlinePadding,
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.md,
@@ -378,84 +390,6 @@ class _Summary {
   final Decimal? amount;
   final StatusTone? tone;
   final Widget? status;
-}
-
-/// Sur-titre de groupe (« ARTICLES · 4 ») avec une indication à droite.
-class _Overline extends StatelessWidget {
-  const _Overline(this.text, {this.trailing});
-
-  final String text;
-  final String? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final trailing = this.trailing;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md + AppSpacing.xs,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          Text(
-            text.toUpperCase(),
-            style: AppTypography.overline.copyWith(color: colors.textSecondary),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                trailing,
-                textAlign: TextAlign.end,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.bodySmall.copyWith(
-                  color: colors.textSecondary,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// Liste à plat pleine largeur : surface, filets entre les lignes.
-class _ListSurface extends StatelessWidget {
-  const _ListSurface({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final divider = BorderSide(color: AppColors.of(context).border);
-    return DecoratedBox(
-      position: DecorationPosition.foreground,
-      decoration: BoxDecoration(
-        border: Border(top: divider, bottom: divider),
-      ),
-      child: Column(
-        children: [
-          for (final (i, child) in children.indexed)
-            DecoratedBox(
-              position: DecorationPosition.foreground,
-              decoration: BoxDecoration(
-                border: i == children.length - 1
-                    ? null
-                    : Border(bottom: divider),
-              ),
-              child: child,
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Remise sur le total (lien, ou sous-total et remise modifiable), puis le

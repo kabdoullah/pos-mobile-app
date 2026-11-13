@@ -1,197 +1,191 @@
-import 'dart:math' as math;
-
-import 'package:clock/clock.dart';
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
 import '../providers/home_providers.dart';
 
-/// Chiffres du jour : chiffre d'affaires, nombre de ventes, panier moyen et
-/// répartition espèces / mobile money.
+/// Section « Aujourd'hui » : chiffre d'affaires, répartition espèces / mobile
+/// money, ventes, panier moyen, bénéfice estimé et marge moyenne. Sans vente,
+/// une phrase plutôt que des zéros.
 class TodaySummary extends ConsumerWidget {
-  /// Crée la synthèse du jour.
+  /// Crée la section du jour.
   const TodaySummary({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(dailySummaryProvider);
-
-    return summary.when(
-      // Données locales (drift) : le squelette n'est visible qu'un instant.
-      loading: () => const Column(
-        children: [
-          SkeletonBox(height: 104, radius: AppSpacing.radiusLg),
-          SizedBox(height: AppSpacing.sm),
-          SkeletonBox(height: 76, radius: AppSpacing.radiusLg),
-        ],
-      ),
-      error: (_, _) =>
-          _SummaryError(onRetry: () => ref.invalidate(dailySummaryProvider)),
-      data: (stats) => _SummaryContent(stats: stats),
-    );
-  }
-}
-
-class _SummaryContent extends StatelessWidget {
-  const _SummaryContent({required this.stats});
-
-  final DailyStats stats;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final average = averageBasket(stats);
-    final cashShare = cashSharePercent(stats);
+    final stats = summary.value;
+    final peak = peakHour(ref.watch(todayHourlySalesProvider).value);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Chiffre d'affaires : l'information n°1 de l'écran.
-        _Tile(
-          color: cs.primaryContainer,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Chiffre d'affaires",
-                style: AppTypography.labelMedium.copyWith(
-                  color: cs.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              AmountDisplay(
-                amount: stats.totalAmount,
-                size: AmountSize.hero,
-                color: cs.onPrimaryContainer,
-              ),
-              if (stats.refundTotal > Decimal.zero)
-                Text(
-                  'net de ${formatFcfa(stats.refundTotal)} remboursés',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: cs.onPrimaryContainer,
-                  ),
-                ),
-              _HourlyBars(color: cs.onPrimaryContainer),
-            ],
-          ),
+        OverlineHeader(
+          'Aujourd’hui',
+          trailing: peak == null ? null : 'Pic : $peak h – ${peak + 1} h',
         ),
-        const SizedBox(height: AppSpacing.sm),
-        // Chiffres secondaires : une seule surface à plat sous le
-        // chiffre d'affaires, seul bloc mis en avant.
-        AppListGroup(
-          dividerIndent: 0,
-          children: [
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    child: _Metric(
-                      label: 'Ventes',
-                      value: '${stats.saleCount}',
-                    ),
-                  ),
-                  VerticalDivider(width: 1, color: cs.outlineVariant),
-                  Expanded(
-                    child: _Metric(
-                      label: 'Panier moyen',
-                      value: average == null ? '—' : formatFcfa(average),
-                    ),
-                  ),
-                ],
-              ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: switch (summary) {
+            _ when stats != null && stats.saleCount == 0 => const _NoSaleYet(),
+            _ when stats != null => _Figures(stats: stats),
+            AsyncError() => _SummaryError(
+              onRetry: () => ref.invalidate(dailySummaryProvider),
             ),
-            if (cashShare != null)
-              _PaymentSplit(cashPercent: cashShare, stats: stats),
-          ],
+            _ => const _Skeleton(),
+          },
         ),
       ],
     );
   }
 }
 
-/// Mini-graphique des ventes par heure, de la première vente du jour à l'heure
-/// courante ; la barre du pic est accentuée. Rien tant qu'il n'y a pas de
-/// vente.
-class _HourlyBars extends ConsumerWidget {
-  const _HourlyBars({required this.color});
+/// Heure de la plus grosse tranche de ventes du jour ; `null` sans vente.
+int? peakHour(List<Decimal>? hourly) {
+  if (hourly == null) return null;
+  var best = -1;
+  var bestAmount = Decimal.zero;
+  for (final (hour, amount) in hourly.indexed) {
+    if (amount > bestAmount) {
+      best = hour;
+      bestAmount = amount;
+    }
+  }
+  return best < 0 ? null : best;
+}
 
-  static const _minHours = 8;
+class _NoSaleYet extends StatelessWidget {
+  const _NoSaleYet();
 
-  final Color color;
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Aucune vente pour l’instant.', style: AppTypography.body),
+        Text(
+          'Votre chiffre d’affaires et votre bénéfice estimé s’afficheront ici.',
+          style: AppTypography.body.copyWith(color: colors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+class _Figures extends ConsumerWidget {
+  const _Figures({required this.stats});
+
+  final DailyStats stats;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totals = ref.watch(todayHourlySalesProvider).value;
-    if (totals == null) return const SizedBox.shrink();
-    final first = totals.indexWhere((t) => t > Decimal.zero);
-    if (first < 0) return const SizedBox.shrink();
-    final last = totals.lastIndexWhere((t) => t > Decimal.zero);
-    final end = math.max(last, clock.now().hour);
-    // Au moins 8 heures affichées : une seule heure de ventes ne doit pas
-    // donner une barre pleine largeur.
-    final start = math.max(0, math.min(first, end - (_minHours - 1)));
-    final hours = totals.sublist(start, end + 1);
-    final peak = hours.reduce((a, b) => a > b ? a : b);
-    final peakHour = start + hours.indexOf(peak);
-    final labelStyle = AppTypography.labelSmall.copyWith(color: color);
+    final colors = AppColors.of(context);
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
+    final average = averageBasket(stats);
+    final margin = ref.watch(todayMarginSummaryProvider).value;
+    final rate = margin?.marginRate;
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Chiffre d’affaires', style: meta),
+        Text(formatFcfa(stats.totalAmount), style: AppTypography.figureLarge),
+        if (stats.refundTotal > Decimal.zero)
+          Text(
+            'net de ${formatFcfa(stats.refundTotal)} remboursés',
+            style: meta,
+          ),
+        _PaymentSplit(stats: stats),
+        _KpiRow(
+          left: ('Ventes', '${stats.saleCount}'),
+          right: ('Panier moyen', average == null ? '—' : formatFcfa(average)),
+        ),
+        _KpiRow(
+          left: (
+            'Bénéfice estimé',
+            margin == null ? '—' : formatFcfa(margin.margin),
+          ),
+          right: (
+            'Marge moyenne',
+            rate == null ? '—' : '${rate.round().toBigInt()} %',
+          ),
+        ),
+        if (margin?.hasUnknownCost ?? false)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: Text(
+              'Estimation partielle : des produits n’ont pas de prix d’achat.',
+              style: meta,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Barre fine espèces / mobile money, puis les deux montants.
+class _PaymentSplit extends StatelessWidget {
+  const _PaymentSplit({required this.stats});
+
+  final DailyStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final share = cashSharePercent(stats);
+    if (share == null) return const SizedBox.shrink();
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
     return Semantics(
-      label: 'Ventes par heure, pic à $peakHour h',
-      excludeSemantics: true,
+      label: 'Espèces $share %, mobile money ${100 - share} %',
       child: Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        padding: const EdgeInsets.only(top: AppSpacing.sm + 2),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(
-              height: 40,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (final total in hours)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                        child: FractionallySizedBox(
-                          // Heure sans vente : simple trait de base. Heure
-                          // avec ventes : au moins un quart de la hauteur,
-                          // même écrasée par une grosse vente au pic.
-                          heightFactor: total > Decimal.zero
-                              ? math.max((total / peak).toDouble(), 0.25)
-                              : 0.06,
-                          alignment: Alignment.bottomCenter,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: color.withValues(
-                                alpha: total == peak
-                                    ? 0.9
-                                    : total > Decimal.zero
-                                    ? 0.45
-                                    : 0.2,
-                              ),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(3),
-                              ),
-                            ),
-                          ),
-                        ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: SizedBox(
+                height: 6,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (share > 0)
+                      Expanded(
+                        flex: share,
+                        child: ColoredBox(color: colors.textPrimary),
                       ),
-                    ),
-                ],
+                    if (share > 0 && share < 100) const SizedBox(width: 2),
+                    if (share < 100)
+                      Expanded(
+                        flex: 100 - share,
+                        child: ColoredBox(color: colors.brand),
+                      ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            Row(
+            const SizedBox(height: AppSpacing.xs + 2),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: AppSpacing.sm,
               children: [
-                Text('$start h', style: labelStyle),
-                const Spacer(),
-                Text('$end h', style: labelStyle),
+                Text('Espèces · ${formatFcfa(stats.cashTotal)}', style: meta),
+                Text(
+                  'Mobile money · ${formatFcfa(stats.mobileMoneyTotal)}',
+                  style: meta,
+                ),
               ],
             ),
           ],
@@ -201,38 +195,73 @@ class _HourlyBars extends ConsumerWidget {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+/// Deux indicateurs côte à côte, séparés par des filets.
+class _KpiRow extends StatelessWidget {
+  const _KpiRow({required this.left, required this.right});
+
+  final (String, String) left;
+  final (String, String) right;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final divider = BorderSide(color: colors.border);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm + 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(border: Border(top: divider)),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _Kpi(label: left.$1, value: left.$2),
+              ),
+              VerticalDivider(width: 1, thickness: 1, color: colors.border),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.md),
+                  child: _Kpi(label: right.$1, value: right.$2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Kpi extends StatelessWidget {
+  const _Kpi({required this.label, required this.value});
 
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.only(top: AppSpacing.sm + 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: AppTypography.labelMedium.copyWith(
-              color: cs.onSurfaceVariant,
+            style: AppTypography.bodySmall.copyWith(
+              color: colors.textSecondary,
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            // Une seule ligne : sinon la mesure de IntrinsicHeight (rangée
-            // Ventes / Panier moyen) compte le texte replié sur plusieurs
-            // lignes et la case garde un grand vide.
             child: Text(
               value,
               maxLines: 1,
               softWrap: false,
-              style: AppTypography.titleLarge.copyWith(
+              style: AppTypography.bodyStrong.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 fontFeatures: AppTypography.tabularFigures,
               ),
             ),
@@ -243,119 +272,18 @@ class _Metric extends StatelessWidget {
   }
 }
 
-/// Répartition de l'encaissé : barre à deux segments + montants.
-class _PaymentSplit extends StatelessWidget {
-  const _PaymentSplit({required this.cashPercent, required this.stats});
-
-  final int cashPercent;
-  final DailyStats stats;
+class _Skeleton extends StatelessWidget {
+  const _Skeleton();
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
-
-    return Semantics(
-      label: 'Espèces $cashPercent %, mobile money ${100 - cashPercent} %',
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-              child: SizedBox(
-                height: 8,
-                child: Row(
-                  // Sans stretch, un ColoredBox sans enfant prend la hauteur
-                  // minimale (0) : la barre était invisible.
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (cashPercent > 0)
-                      Expanded(
-                        flex: cashPercent,
-                        child: ColoredBox(color: cs.primary),
-                      ),
-                    if (cashPercent < 100)
-                      Expanded(
-                        flex: 100 - cashPercent,
-                        child: ColoredBox(color: cs.secondary),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            _Legend(
-              color: cs.primary,
-              label: 'Espèces',
-              amount: formatFcfa(stats.cashTotal),
-              style: muted,
-            ),
-            _Legend(
-              color: cs.secondary,
-              label: 'Mobile money',
-              amount: formatFcfa(stats.mobileMoneyTotal),
-              style: muted,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Ligne de légende : pastille, libellé et montant aligné à droite (une ligne
-/// par moyen : les gros montants ne tiennent pas côte à côte sur 360 dp).
-class _Legend extends StatelessWidget {
-  const _Legend({
-    required this.color,
-    required this.label,
-    required this.amount,
-    required this.style,
-  });
-
-  final Color color;
-  final String label;
-  final String amount;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: const SizedBox.square(dimension: 8),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(child: Text(label, style: style)),
-          Text(amount, style: style),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tile extends StatelessWidget {
-  const _Tile({required this.color, required this.child});
-
-  final Color color;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: child,
-      ),
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SkeletonBox(width: 140, height: 14),
+        SizedBox(height: AppSpacing.sm),
+        SkeletonBox(width: 200, height: 24),
+      ],
     );
   }
 }
@@ -367,24 +295,17 @@ class _SummaryError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return _Tile(
-      color: cs.errorContainer,
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: cs.onErrorContainer),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'Impossible de charger les chiffres du jour.',
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onErrorContainer,
-              ),
-            ),
+    final colors = AppColors.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Impossible de charger les chiffres du jour.',
+            style: AppTypography.body.copyWith(color: colors.error),
           ),
-          TextButton(onPressed: onRetry, child: const Text('Réessayer')),
-        ],
-      ),
+        ),
+        TextButton(onPressed: onRetry, child: const Text('Réessayer')),
+      ],
     );
   }
 }

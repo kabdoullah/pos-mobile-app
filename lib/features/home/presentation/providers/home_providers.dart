@@ -41,7 +41,7 @@ Stream<DailyStats> dailySummary(Ref ref) {
 
 /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
 ///
-/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+/// Alimente « Bénéfice estimé » et « Marge moyenne » de l'accueil.
 @riverpod
 Stream<MarginSummary> todayMarginSummary(Ref ref) {
   final today = ref.watch(todayProvider);
@@ -60,7 +60,7 @@ Stream<List<Sale>> recentSales(Ref ref) {
 }
 
 /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+/// heure locale) — donne l'heure de pointe (« Pic ») de l'accueil.
 @riverpod
 Stream<List<Decimal>> todayHourlySales(Ref ref) {
   final today = ref.watch(todayProvider);
