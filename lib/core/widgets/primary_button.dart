@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'button_frame.dart';
 import '../../app/theme/app_colors.dart';
 
-/// Bouton d'action principal pleine largeur aux couleurs de la marque
-/// (brun cacao).
+/// Bouton d'action principal pleine largeur, couleur `action` (cacao), plat.
 ///
-/// Conçu pour l'accessibilité et une UX mobile d'abord. Hauteur minimale de 56
-/// dp pour des zones tactiles confortables. Gère les états de chargement et
-/// désactivé.
+/// 56 dp de haut : geste répété au comptoir. Un seul par écran. Gère les
+/// états de chargement et désactivé.
 class PrimaryButton extends StatelessWidget {
   /// Crée un bouton principal.
   const PrimaryButton({
@@ -42,7 +40,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final isDisabled = onPressed == null;
 
     return ButtonFrame(
@@ -52,27 +50,10 @@ class PrimaryButton extends StatelessWidget {
       loadingLabel: loadingLabel,
       icon: icon,
       trailingIcon: trailingIcon,
-      backgroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.12)
-          : cs.primary,
-      // Désactivé : onPrimary sur le fond grisé était illisible (blanc sur
-      // gris clair, brun foncé sur brun en sombre).
-      foregroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.38)
-          : cs.onPrimary,
-      progressColor: cs.onPrimary,
-      boxShadow: isDisabled
-          ? const []
-          : [
-              BoxShadow(
-                color: Theme.of(context)
-                    .extension<AppSemanticColors>()!
-                    .elevationShadow
-                    .withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+      backgroundColor: isDisabled ? colors.surfaceSunken : colors.action,
+      foregroundColor: isDisabled ? colors.textDisabled : colors.onAction,
+      progressColor: colors.onAction,
+      pressedColor: colors.actionPressed,
     );
   }
 }

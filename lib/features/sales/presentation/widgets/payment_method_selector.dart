@@ -100,7 +100,7 @@ class _MethodTile extends StatelessWidget {
                   softWrap: false,
                   style: AppTypography.labelSmall.copyWith(
                     color: foreground,
-                    fontWeight: isSelected ? FontWeight.w700 : null,
+                    fontWeight: isSelected ? FontWeight.w600 : null,
                   ),
                 ),
               ],

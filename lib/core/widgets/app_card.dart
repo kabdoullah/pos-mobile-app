@@ -5,10 +5,10 @@ import '../../app/theme/app_colors.dart';
 
 /// Surface de contenu, à plat ou élevée.
 ///
-/// La hiérarchie d'un écran tient en trois niveaux : le fond de page, les
-/// surfaces à plat (listes, groupes — fine bordure, sans ombre) et une seule
-/// surface élevée, réservée à l'objet principal de l'écran (total, vente en
-/// cours). Cliquable en option.
+/// Plat (v2) : aucune ombre sur ce qui est posé, la structure vient des
+/// filets. [elevated] désigne l'encadré qui doit se détacher (l'état de la
+/// caisse, le total) : rayon de surface (12) au lieu du rayon de contrôle.
+/// Cliquable en option.
 class AppCard extends StatelessWidget {
   /// Crée une surface.
   const AppCard({
@@ -28,31 +28,21 @@ class AppCard extends StatelessWidget {
   /// Padding interne autour de l'enfant.
   final double padding;
 
-  /// Surface élevée : ombre teintée cacao et coins plus arrondis. Une seule
-  /// par écran, sinon elle ne signale plus rien.
+  /// Encadré mis en avant (rayon 12). Un seul par écran, sinon il ne
+  /// signale plus rien.
   final bool elevated;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final colors = AppColors.of(context);
     final borderRadius = BorderRadius.circular(
       elevated ? AppSpacing.radiusLg : AppSpacing.radiusMd,
     );
     return Container(
       decoration: BoxDecoration(
-        color: elevated ? semantic.raisedSurface : cs.surface,
+        color: colors.surface,
         borderRadius: borderRadius,
-        border: elevated ? null : Border.all(color: cs.outlineVariant),
-        boxShadow: elevated
-            ? [
-                BoxShadow(
-                  color: semantic.elevationShadow.withValues(alpha: 0.14),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
+        border: Border.all(color: colors.border),
       ),
       child: Material(
         color: Colors.transparent,

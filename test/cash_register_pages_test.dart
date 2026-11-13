@@ -705,14 +705,13 @@ void main() {
           find.text('Excédent de ${formatFcfa(d('2000'))}'),
         );
         expect(surplus.style!.color, cs.onTertiaryContainer);
-        // Les trois états lisibles sur leur fond.
-        final semantic = theme.extension<AppSemanticColors>()!;
-        for (final (fg, bg) in [
-          (semantic.success, semantic.successContainer),
-          (cs.onTertiaryContainer, cs.tertiaryContainer),
-          (cs.onErrorContainer, cs.errorContainer),
-        ]) {
-          expect(contrast(fg, bg), greaterThanOrEqualTo(4.5));
+        // Les trois états (mot coloré, sans pastille) lisibles sur la
+        // surface comme sur le fond d'écran.
+        final colors = theme.extension<AppColors>()!;
+        for (final fg in [colors.success, colors.warning, colors.error]) {
+          for (final bg in [colors.surface, colors.canvas]) {
+            expect(contrast(fg, bg), greaterThanOrEqualTo(4.5));
+          }
         }
         expect(tester.takeException(), isNull);
       });
@@ -735,7 +734,7 @@ void main() {
         );
         final namedColors =
             RegExp(
-                r'Colors\.(\w+)',
+                r'\bColors\.(\w+)',
               ).allMatches(source).map((m) => m.group(1)).toSet()
               ..remove('transparent');
         expect(namedColors, isEmpty, reason: file.path);

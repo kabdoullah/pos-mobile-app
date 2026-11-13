@@ -36,7 +36,7 @@ class LowStockSection extends ConsumerWidget {
     if (products == null) return const SizedBox.shrink();
 
     if (products.isEmpty) {
-      final success = Theme.of(context).extension<AppSemanticColors>()!.success;
+      final success = AppColors.of(context).success;
       return Row(
         children: [
           Icon(Icons.check_circle_outline, color: success, size: 20),

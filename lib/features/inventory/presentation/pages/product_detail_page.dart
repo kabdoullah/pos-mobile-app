@@ -86,7 +86,7 @@ class _ProductDetail extends ConsumerWidget {
         ? null
         : margin < Decimal.zero
         ? cs.error
-        : Theme.of(context).extension<AppSemanticColors>()!.success;
+        : AppColors.of(context).success;
 
     return AppScaffold(
       title: product.name,

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
+import '../../../../core/widgets/status_indicator.dart';
 import '../../domain/entities/product.dart';
 
-/// Badge d'état du stock : Disponible, Stock faible, Rupture ou Non suivi.
+/// État du stock (point + mot, v2) : Disponible, Stock faible, Rupture ou
+/// Non suivi.
 ///
 /// Avec [showQuantity] (caisse), le badge porte la quantité — « Stock : 24 »,
 /// « Faible : 3 », « Rupture » — et disparaît si le stock n'est pas suivi.
@@ -25,8 +24,6 @@ class StockStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
     final stock = product.currentStock;
     // En caisse, un stock négatif (écart d'inventaire) se vend comme une
     // rupture : le badge ne doit pas afficher « Stock : -2 ».
@@ -35,42 +32,18 @@ class StockStatusBadge extends StatelessWidget {
         : product.stockLevel;
     if (showQuantity && level == null) return const SizedBox.shrink();
 
-    final (label, background, foreground) = switch (level) {
-      StockLevel.outOfStock => (
-        'Rupture',
-        cs.errorContainer,
-        cs.onErrorContainer,
-      ),
+    final (label, tone) = switch (level) {
+      StockLevel.outOfStock => ('Rupture', StatusTone.error),
       StockLevel.low => (
         showQuantity ? 'Faible : $stock' : 'Stock faible',
-        cs.tertiaryContainer,
-        cs.onTertiaryContainer,
+        StatusTone.warning,
       ),
       StockLevel.normal => (
         showQuantity ? 'Stock : $stock' : 'Disponible',
-        semantic.successContainer,
-        semantic.success,
+        StatusTone.success,
       ),
-      null => ('Non suivi', cs.surfaceContainerHighest, cs.onSurfaceVariant),
+      null => ('Non suivi', StatusTone.neutral),
     };
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 2,
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTypography.labelSmall.copyWith(color: foreground),
-        ),
-      ),
-    );
+    return StatusIndicator(label: label, tone: tone);
   }
 }

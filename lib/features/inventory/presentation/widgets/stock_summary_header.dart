@@ -97,7 +97,7 @@ class StockFilterChips extends StatelessWidget {
                     TextSpan(
                       text: ' · $count',
                       style: AppTypography.labelMedium.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         // Compteur d'alerte en couleur tant qu'il y a quelque
                         // chose à voir et que le filtre n'est pas déjà actif.
                         color: count > 0 && filter != value ? accent : null,

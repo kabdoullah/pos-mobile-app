@@ -114,7 +114,7 @@ class CartItemTile extends StatelessWidget {
             Text(
               formatAmount(item.lineTotal),
               style: AppTypography.bodyLarge.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 height: 1.3,
                 fontFeatures: AppTypography.tabularFigures,
               ),

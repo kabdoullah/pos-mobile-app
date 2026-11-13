@@ -37,8 +37,8 @@ class SplashPage extends ConsumerWidget {
     final theme = Theme.of(context);
     return ColoredBox(
       color: theme.brightness == Brightness.dark
-          ? theme.colorScheme.surface
-          : AppColors.background,
+          ? AppColors.splashDark
+          : AppColors.splashLight,
     );
   }
 }

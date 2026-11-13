@@ -13,7 +13,6 @@ Future<void> showDeleteAccountSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => const DeleteAccountSheet(),
   );
 }
@@ -75,7 +74,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),

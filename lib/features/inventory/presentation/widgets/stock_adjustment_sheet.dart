@@ -116,7 +116,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
 
     return Container(
       decoration: BoxDecoration(

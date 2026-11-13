@@ -569,7 +569,7 @@ class _EstimatedMargin extends StatelessWidget {
     if (selling == null || purchase == null) return const SizedBox.shrink();
 
     final margin = selling - purchase;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
     final cs = Theme.of(context).colorScheme;
     final isLoss = margin < Decimal.zero;
     final color = isLoss ? cs.error : semantic.success;

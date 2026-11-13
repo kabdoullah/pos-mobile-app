@@ -9,8 +9,9 @@ import '../../app/theme/app_typography.dart';
 /// Structure commune de `PrimaryButton` et `SecondaryButton` : pleine
 /// largeur, 56 dp de haut, retour haptique, états désactivé et chargement.
 ///
-/// Seul le style (fond, bordure, ombre, couleurs) varie d'un bouton à
-/// l'autre. Volontairement absent de `index.dart` : les écrans utilisent les
+/// Plat (v2) : aucune ombre ; la pression se lit par un fond plus soutenu
+/// ([pressedColor]), sans ondulation. Seul le style (fond, bordure, couleurs)
+/// varie d'un bouton à l'autre. Volontairement absent de `index.dart` : les écrans utilisent les
 /// boutons nommés, jamais ce cadre directement.
 class ButtonFrame extends StatelessWidget {
   /// Crée le cadre d'un bouton.
@@ -21,7 +22,7 @@ class ButtonFrame extends StatelessWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     required this.progressColor,
-    required this.boxShadow,
+    required this.pressedColor,
     this.border,
     this.loadingLabel,
     this.icon,
@@ -47,8 +48,8 @@ class ButtonFrame extends StatelessWidget {
   /// Couleur de l'indicateur de chargement.
   final Color progressColor;
 
-  /// Ombre portée (vide quand le bouton est désactivé).
-  final List<BoxShadow> boxShadow;
+  /// Fond pendant l'appui.
+  final Color pressedColor;
 
   /// Bordure optionnelle.
   final BoxBorder? border;
@@ -79,7 +80,6 @@ class ButtonFrame extends StatelessWidget {
           color: backgroundColor,
           borderRadius: borderRadius,
           border: border,
-          boxShadow: boxShadow,
         ),
         child: Material(
           color: Colors.transparent,
@@ -92,6 +92,8 @@ class ButtonFrame extends StatelessWidget {
                     onPressed?.call();
                   },
             borderRadius: borderRadius,
+            highlightColor: pressedColor,
+            splashFactory: NoSplash.splashFactory,
             child: Center(
               child: isLoading && loadingLabel != null
                   ? Row(

@@ -287,7 +287,7 @@ class _ProductCard extends StatelessWidget {
                           formatFcfa(product.sellingPrice),
                           maxLines: 1,
                           style: AppTypography.labelLarge.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                             fontFeatures: AppTypography.tabularFigures,
                             color: outOfStock
                                 ? cs.onSurfaceVariant

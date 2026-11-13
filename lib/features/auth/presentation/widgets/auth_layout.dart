@@ -328,7 +328,7 @@ class ValidationHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final success = Theme.of(context).extension<AppSemanticColors>()!.success;
+    final success = AppColors.of(context).success;
     final color = isMet ? success : cs.onSurfaceVariant;
     return Semantics(
       label: '$label : ${isMet ? 'respecté' : 'non respecté'}',

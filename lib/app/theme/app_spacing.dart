@@ -34,39 +34,34 @@ class AppSpacing {
   /// les états vides.
   static const double xxxl = 64;
 
-  // Jetons de rayon de bordure
-  /// Petit rayon d'angle. 8 pt — chips, petits boutons, coins de dialogue.
+  // Jetons de rayon de bordure (v2 : deux rayons utiles, 8 et 12)
+  /// Rayon des contrôles. 8 pt — boutons, champs, chips, stepper.
   static const double radiusSm = 8;
 
-  /// Rayon d'angle moyen. 12 pt — champs, boutons standards, importance
-  /// modérée.
-  static const double radiusMd = 12;
+  /// Rayon des contrôles. 8 pt — alias de [radiusSm] (boutons, champs).
+  static const double radiusMd = 8;
 
-  /// Grand rayon d'angle. 16 pt — cartes, bottom sheets, surfaces surélevées.
-  static const double radiusLg = 16;
+  /// Rayon des surfaces. 12 pt — feuilles, dialogues, vignettes, encadrés.
+  static const double radiusLg = 12;
 
-  /// Très grand rayon d'angle. 24 pt — grandes cartes, modales mises en avant.
-  static const double radiusXl = 24;
+  /// Rayon des surfaces. 12 pt — alias de [radiusLg].
+  static const double radiusXl = 12;
 
-  /// Entièrement arrondi. 999 pt — chips, badges, éléments circulaires.
+  /// Entièrement arrondi. 999 pt — points de statut uniquement.
   static const double radiusFull = 999;
 
   // Zones tactiles / tailles adaptées au toucher
-  /// Hauteur de bouton — gros doigts, usage rapide à une main. Padding vertical
-  /// généreux.
-  /// Usage : ElevatedButton, OutlinedButton, boutons d'action principaux et
-  /// secondaires.
+  /// Hauteur des actions du parcours de vente (Nouvelle vente, Encaisser,
+  /// Valider, reçu) : geste répété au comptoir, une main occupée.
   static const double buttonHeight = 56;
 
-  /// Hauteur de bouton secondaire — un peu plus petite que le principal,
-  /// toujours facile à toucher.
-  /// Usage : boutons tertiaires, boutons retour, actions d'annulation.
+  /// Hauteur standard des contrôles (v2) : boutons hors parcours de vente,
+  /// boutons secondaires et tertiaires.
   static const double buttonHeightSm = 48;
 
-  /// Hauteur de champ de saisie — identique au bouton principal pour la
-  /// cohérence visuelle et les appuis de gros doigts.
+  /// Hauteur de champ de saisie : 48 pt, comme les contrôles (v2).
   /// Usage : TextField, TextFormField, champs de recherche, listes déroulantes.
-  static const double inputHeight = 56;
+  static const double inputHeight = 48;
 
   /// Taille de bouton icône — 48 pt minimum pour la zone tactile, peut grandir
   /// pour des icônes plus grandes.

@@ -40,7 +40,7 @@ class ReturnSuccessView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
     final live = ref
         .watch(saleReturnsProvider(sale.id))
         .value

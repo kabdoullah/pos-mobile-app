@@ -32,7 +32,6 @@ Future<void> showSaleConfirmationSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     // Fond de page ivoire : le ticket blanc se détache comme du papier.
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     builder: (_) =>
@@ -134,7 +133,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
-          0,
+          AppSpacing.lg,
           AppSpacing.md,
           AppSpacing.md,
         ),

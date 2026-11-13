@@ -99,7 +99,7 @@ class _AccountEmailBannerState extends ConsumerState<AccountEmailBanner> {
                             title,
                             style: AppTypography.titleMedium.copyWith(
                               color: foreground,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -120,7 +120,7 @@ class _AccountEmailBannerState extends ConsumerState<AccountEmailBanner> {
                                 TextSpan(
                                   text: email,
                                   style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 const TextSpan(

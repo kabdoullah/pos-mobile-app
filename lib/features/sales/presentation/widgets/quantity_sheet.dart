@@ -46,7 +46,6 @@ Future<QuantitySheetResult?> showQuantitySheet(
 }) {
   return showModalBottomSheet<QuantitySheetResult>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _QuantitySheet(
       productName: productName,
@@ -156,7 +155,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),

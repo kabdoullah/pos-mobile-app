@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Système typographique pour POS Mobile CI.
+/// Système typographique (refonte v2).
 ///
-/// Échelle optimisée pour les utilisateurs peu à l'aise avec la lecture, la
-/// lisibilité en plein soleil et l'accessibilité. Une seule famille, Schibsted
-/// Grotesk (OFL), embarquée dans `assets/fonts/` pour fonctionner hors ligne.
-/// Graisse minimale w400 (normal), w500–w600 de préférence pour la clarté des
-/// boutons/libellés.
+/// Une seule famille, Inter (OFL), embarquée dans `assets/fonts/` pour
+/// fonctionner hors ligne : grande hauteur d'x lisible au soleil, chiffres
+/// tabulaires natifs et espace fine insécable U+202F (séparateur de milliers
+/// de `intl` en `fr_FR`). Trois graisses seulement : 400, 500, 600.
+///
+/// Échelle v2 : [figureHero] 32/600, [figureLarge] 24/600, [screenTitle]
+/// 22/600, [sectionTitle] 20/600, [bodyStrong] 16/500, [body] 16/400
+/// (minimum du texte courant), [meta] 14/500, [overline] 13/600. Les anciens
+/// noms (titleLarge, amountDisplay…) restent des alias vers cette échelle.
 ///
 /// Les couleurs sont volontairement absentes — appliquées via
 /// [ThemeData.textTheme] pour que le passage clair/sombre fonctionne
@@ -18,11 +22,7 @@ class AppTypography {
 
   /// Famille déclarée dans `pubspec.yaml`. Répétée dans chaque style : les
   /// écrans utilisent souvent [AppTypography] directement, hors du thème.
-  ///
-  /// Les fichiers embarqués ajoutent l'espace fine insécable U+202F, absente
-  /// de la police d'origine : c'est le séparateur de milliers de `intl` en
-  /// `fr_FR`, sans lui « 1 000 » s'afficherait « 1000 ».
-  static const String fontFamily = 'SchibstedGrotesk';
+  static const String fontFamily = 'Inter';
 
   /// Chiffres à chasse fixe : les montants ne « bougent » pas quand ils
   /// changent et s'alignent en colonne.
@@ -30,66 +30,58 @@ class AppTypography {
     FontFeature.tabularFigures(),
   ];
 
-  // Échelle display (texte très grand, mis en avant)
-  /// Grand texte display. 40 sp, w700.
-  static const TextStyle displayLarge = TextStyle(
+  // Échelle v2
+
+  /// Le chiffre décisif de l'écran (à rendre, solde, total). 32/600, un seul
+  /// par écran.
+  static const TextStyle figureHero = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 40,
-    fontWeight: FontWeight.w700,
+    fontFeatures: tabularFigures,
+    fontSize: 32,
+    fontWeight: FontWeight.w600,
     height: 1.2,
     letterSpacing: -0.5,
   );
 
-  /// Texte display moyen. 34 sp, w700.
-  static const TextStyle displayMedium = TextStyle(
+  /// Montant mis en avant, secondaire au héros. 24/600.
+  static const TextStyle figureLarge = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 34,
-    fontWeight: FontWeight.w700,
-    height: 1.25,
-    letterSpacing: 0,
-  );
-
-  // Échelle headline (grand, mis en avant)
-  /// Grand titre. 26 sp, w600. Titres d'AppBar, en-têtes de section.
-  static const TextStyle titleLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 26,
+    fontFeatures: tabularFigures,
+    fontSize: 24,
     fontWeight: FontWeight.w600,
-    height: 1.3,
-    letterSpacing: 0,
+    height: 1.25,
+    letterSpacing: -0.25,
   );
 
-  /// Titre d'AppBar. 22 sp, w600. Plus compact que [titleLarge] : laisse la
-  /// place au nom de la boutique et aux actions sur un écran de 360 dp.
-  static const TextStyle appBarTitle = TextStyle(
+  /// Titre d'écran (AppBar). 22/600.
+  static const TextStyle screenTitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 22,
     fontWeight: FontWeight.w600,
     height: 1.3,
-    letterSpacing: 0,
+    letterSpacing: -0.2,
   );
 
-  /// Titre moyen. 20 sp, w600. Titres de dialogue, en-têtes d'élément de liste.
-  static const TextStyle titleMedium = TextStyle(
+  /// Titre de section, de feuille ou de dialogue. 20/600.
+  static const TextStyle sectionTitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    height: 1.4,
-    letterSpacing: 0,
+    height: 1.35,
+    letterSpacing: -0.1,
   );
 
-  // Échelle body (texte de lecture)
-  /// Grand texte courant. 18 sp, w400.
-  static const TextStyle bodyLarge = TextStyle(
+  /// Texte appuyé : nom de produit, valeur d'une ligne. 16/500.
+  static const TextStyle bodyStrong = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 18,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
+    fontSize: 16,
+    fontWeight: FontWeight.w500,
+    height: 1.45,
     letterSpacing: 0,
   );
 
-  /// Texte courant standard. 16 sp, w400. **Taille minimale du texte courant.**
-  static const TextStyle bodyMedium = TextStyle(
+  /// Texte courant. 16/400. **Taille minimale du texte courant.**
+  static const TextStyle body = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w400,
@@ -97,17 +89,64 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Petit texte courant. 14 sp, w400. Infos complémentaires / secondaires.
+  /// Métadonnées : horodatage, numéro, stock. 14/500.
+  static const TextStyle meta = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w500,
+    height: 1.4,
+    letterSpacing: 0,
+  );
+
+  /// Sur-titre de groupe (« AUJOURD'HUI »). 13/600, à écrire en majuscules.
+  static const TextStyle overline = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    letterSpacing: 0.8,
+  );
+
+  // Alias de l'échelle précédente, rattachés à l'échelle v2.
+
+  /// Grand texte display. Alias de [figureHero].
+  static const TextStyle displayLarge = figureHero;
+
+  /// Texte display moyen. 28/600.
+  static const TextStyle displayMedium = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w600,
+    height: 1.25,
+    letterSpacing: -0.4,
+  );
+
+  /// Grand titre. Alias de [screenTitle].
+  static const TextStyle titleLarge = screenTitle;
+
+  /// Titre d'AppBar. Alias de [screenTitle].
+  static const TextStyle appBarTitle = screenTitle;
+
+  /// Titre moyen. Alias de [sectionTitle].
+  static const TextStyle titleMedium = sectionTitle;
+
+  /// Grand texte courant. Alias de [bodyStrong] (la v2 n'a pas de corps
+  /// 18 sp : l'emphase passe par la graisse).
+  static const TextStyle bodyLarge = bodyStrong;
+
+  /// Texte courant standard. Alias de [body].
+  static const TextStyle bodyMedium = body;
+
+  /// Petit texte courant. 14/400. Infos complémentaires / secondaires.
   static const TextStyle bodySmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    height: 1.5,
+    height: 1.45,
     letterSpacing: 0,
   );
 
-  // Échelle label (boutons, tags, contrôles)
-  /// Grand libellé. 16 sp, w600. Texte de bouton, libellés d'action.
+  /// Grand libellé. 16/600. Texte de bouton, libellés d'action.
   static const TextStyle labelLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
@@ -116,48 +155,25 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Libellé moyen. 14 sp, w500. Texte de chip, libellés de bouton secondaire.
-  static const TextStyle labelMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    height: 1.4,
-    letterSpacing: 0,
-  );
+  /// Libellé moyen. Alias de [meta].
+  static const TextStyle labelMedium = meta;
 
-  /// Petit libellé. 12 sp, w500. Petits caractères, notes de bas de page.
+  /// Petit libellé. 12/500. Libellés de la barre de navigation uniquement.
   static const TextStyle labelSmall = TextStyle(
     fontFamily: fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w500,
-    height: 1.4,
-    letterSpacing: 0,
-  );
-
-  // Styles sémantiques — forme seulement, couleur appliquée à l'appel via
-  // colorScheme
-  /// Affichage de montant. 34 sp, w700. Grands totaux FCFA, récapitulatifs de
-  /// transaction.
-  static const TextStyle amountDisplay = TextStyle(
-    fontFamily: fontFamily,
-    fontFeatures: tabularFigures,
-    fontSize: 34,
-    fontWeight: FontWeight.w700,
-    height: 1.2,
-    letterSpacing: -0.5,
-  );
-
-  /// Grand montant. 28 sp, w700. Montants de ligne, sous-totaux.
-  static const TextStyle amountLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontFeatures: tabularFigures,
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
     height: 1.3,
     letterSpacing: 0,
   );
 
-  /// Texte de légende. 13 sp, w400. Métadonnées, horodatages.
+  /// Affichage de montant. Alias de [figureHero].
+  static const TextStyle amountDisplay = figureHero;
+
+  /// Grand montant. Alias de [figureLarge].
+  static const TextStyle amountLarge = figureLarge;
+
+  /// Texte de légende. 13/400. Métadonnées secondaires.
   static const TextStyle captionText = TextStyle(
     fontFamily: fontFamily,
     fontSize: 13,
@@ -166,33 +182,15 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Forme du style de message d'erreur. Appliquer `colorScheme.error` à
-  /// l'appel.
-  static const TextStyle errorText = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    height: 1.5,
-    letterSpacing: 0,
-  );
+  /// Forme du message d'erreur sous un champ (14/500). Appliquer
+  /// `colorScheme.error` à l'appel.
+  static const TextStyle errorText = meta;
 
-  /// Forme du style de message de succès. Appliquer `colorScheme.secondary` à
-  /// l'appel.
-  static const TextStyle successText = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
-    height: 1.5,
-    letterSpacing: 0,
-  );
+  /// Forme du message de succès (14/500). Appliquer le jeton `success` de
+  /// `AppColors` à l'appel.
+  static const TextStyle successText = meta;
 
-  /// Forme du texte d'indice / placeholder. Appliquer
-  /// `colorScheme.onSurfaceVariant` à l'appel.
-  static const TextStyle hintText = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
-    letterSpacing: 0,
-  );
+  /// Forme du texte d'indice / placeholder (16/400, comme la saisie).
+  /// Appliquer `colorScheme.onSurfaceVariant` à l'appel.
+  static const TextStyle hintText = body;
 }

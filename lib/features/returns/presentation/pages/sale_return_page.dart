@@ -162,7 +162,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
     final draft = widget.draft;
     final total = draft.refundTotal(widget.lines);
     final hasItems = draft.selections(widget.lines).isNotEmpty;
@@ -247,9 +247,9 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
         // Même panneau que l'encaissement de la caisse : seule surface élevée,
         // le montant à rembourser reste l'objet principal.
         Material(
-          color: semantic.raisedSurface,
+          color: semantic.surface,
           elevation: 8,
-          shadowColor: semantic.elevationShadow.withValues(alpha: 0.35),
+          shadowColor: semantic.elevationShadow.withValues(alpha: 0.12),
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(AppSpacing.radiusLg),

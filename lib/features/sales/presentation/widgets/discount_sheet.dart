@@ -25,7 +25,6 @@ Future<DiscountSheetResult?> showDiscountSheet(
 }) {
   return showModalBottomSheet<DiscountSheetResult>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) =>
         _DiscountSheet(title: title, gross: gross, initial: initial),
@@ -144,7 +143,7 @@ class _DiscountSheetState extends State<_DiscountSheet> {
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
           ),
@@ -174,6 +173,7 @@ class _DiscountSheetState extends State<_DiscountSheet> {
                   _isCustom = false;
                   _controller.clear();
                 }),
+                showSelectedIcon: false,
               ),
               const SizedBox(height: AppSpacing.md),
               Wrap(

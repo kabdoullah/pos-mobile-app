@@ -22,7 +22,6 @@ Future<bool> showReturnConfirmationSheet(
   final confirmed = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (context) => _ConfirmationSheet(
       selections: selections,
       reason: reason,
@@ -72,7 +71,7 @@ class _ConfirmationSheetState extends State<_ConfirmationSheet> {
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,
-          0,
+          AppSpacing.lg,
           AppSpacing.md,
           AppSpacing.md,
         ),

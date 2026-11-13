@@ -17,7 +17,6 @@ Future<void> showAccountEmailSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => AccountEmailSheet(currentEmail: currentEmail),
   );
 }
@@ -147,7 +146,7 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),

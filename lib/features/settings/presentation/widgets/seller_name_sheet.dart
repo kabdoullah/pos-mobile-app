@@ -15,7 +15,6 @@ Future<void> showSellerNameSheet(BuildContext context, String? current) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => SellerNameSheet(initialName: current),
   );
 }
@@ -75,7 +74,7 @@ class _SellerNameSheetState extends ConsumerState<SellerNameSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),

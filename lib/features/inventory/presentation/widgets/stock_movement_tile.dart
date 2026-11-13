@@ -33,7 +33,7 @@ class StockMovementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
     final delta = movement.quantityDelta;
     final isPositive = (delta ?? 0) >= 0;
     final color = isPositive ? semantic.success : cs.error;

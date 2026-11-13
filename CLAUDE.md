@@ -53,7 +53,7 @@ Two provider locations:
 **Dependency rules:** `presentation` → `domain` + `providers/` (never `data` directly). `data` → `domain` only. `domain` → nothing. Cross-feature: import other feature's `domain` and `providers/`, never `data`.
 
 **Global structure:**
-- `lib/core/` — `AppConfig`, theme (Cacao & Or palette), GoRouter, Dio/Retrofit network, secure storage, sync logic
+- `lib/core/` — `AppConfig`, theme (Cacao & Sauge v2 palette, `lib/app/theme/`), GoRouter, Dio/Retrofit network, secure storage, sync logic
 - `lib/database/` — drift schema (Products, Categories, Sales, SaleItems, SyncQueue, SyncMetadata tables)
 - `test/` — flat test files, no directory mirroring lib/
 
@@ -107,7 +107,7 @@ Phone utilities: `core/utils/phone_formatter.dart` — `toE164Ci()` (local → E
 
 **Sync:** Sales append-only via `SyncQueue` (UUID v4 client-side, idempotent). Catalog and categories (ADR-0008): `dirty=true` flag, push full state — push order is cash session opens → sales → returns → cash movements → cash session closes → categories → products (a product is held while its category is not yet accepted by the server; a cash close is held while its session's open, sales, returns or movements are still queued). Pull on app start + connectivity restored; it merges a locally-created category into a server one with the same name, and stores pulled sale items.
 
-**Theme:** "Cacao & Or" — primary brun cacao `#92400E`, secondary or `#CA8A04`. `textOnSecondary` is dark (never white on gold — fails WCAG AA). Use `AppSemanticColors` extension for dark-mode and stock-status colors.
+**Theme (v2 "Cacao & Sauge", Inter):** flat, no Material look — no ripple, no elevation on resting elements, controls r8 / surfaces r12, underline tabs, custom bottom nav in `main_shell.dart`. Tokens live in the `AppColors` ThemeExtension (`AppColors.of(context)`: canvas, surfaceSunken, border(Strong), action `#9A5527`, actionPressed, brand `#C87942` — graphics only, never text —, success/warning/error…); `ColorScheme` is derived from them (secondary = success, tertiary = warning, their containers = plain surface). Statuses are a dot + word (`StatusIndicator`), never a tinted pill. Typography: `AppTypography` v2 scale (figureHero 32, screenTitle 22, body 16 min, meta 14), weights 400/500/600 only.
 
 **Code generation:** `make gen` covers `drift_dev`, `freezed`, `json_serializable`, `riverpod_generator`, `retrofit_generator`.
 

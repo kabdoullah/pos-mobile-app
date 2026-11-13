@@ -40,7 +40,7 @@ class SaleCheckoutPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final semantic = AppColors.of(context);
     final cart = ref.watch(cartProvider);
     final checkout = ref.watch(checkoutProvider);
     final total = cart.total;
@@ -65,9 +65,9 @@ class SaleCheckoutPanel extends ConsumerWidget {
 
     return Material(
       // Seule surface élevée de la caisse : le total reste l'objet principal.
-      color: semantic.raisedSurface,
+      color: semantic.surface,
       elevation: 8,
-      shadowColor: semantic.elevationShadow.withValues(alpha: 0.35),
+      shadowColor: semantic.elevationShadow.withValues(alpha: 0.12),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),

@@ -100,9 +100,7 @@ class ReceiptTicket extends StatelessWidget {
       clipper: const ZigzagClipper(),
       color: cs.surface,
       elevation: 2,
-      shadowColor: Theme.of(
-        context,
-      ).extension<AppSemanticColors>()!.elevationShadow.withValues(alpha: 0.4),
+      shadowColor: AppColors.of(context).elevationShadow.withValues(alpha: 0.4),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.md,

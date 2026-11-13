@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import 'button_frame.dart';
+import '../../app/theme/app_colors.dart';
 
-/// Bouton d'action secondaire pleine largeur avec contour or.
+/// Bouton d'action secondaire pleine largeur : fond `surface`, filet
+/// `borderStrong`, texte `textPrimary` ; pressé = `surfaceSunken`.
 ///
-/// Pour les actions moins importantes comme Annuler ou Retour. Hauteur minimale
-/// de 56 dp pour des zones tactiles confortables.
+/// Pour les actions moins importantes comme Annuler ou Retour.
 class SecondaryButton extends StatelessWidget {
   /// Crée un bouton secondaire.
   const SecondaryButton({
@@ -30,7 +31,7 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final isDisabled = onPressed == null;
 
     return ButtonFrame(
@@ -38,24 +39,13 @@ class SecondaryButton extends StatelessWidget {
       onPressed: onPressed,
       isLoading: isLoading,
       icon: icon,
-      backgroundColor: isDisabled ? cs.surfaceContainerHighest : cs.surface,
-      foregroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.38)
-          : cs.secondary,
-      progressColor: cs.secondary,
+      backgroundColor: isDisabled ? colors.surfaceSunken : colors.surface,
+      foregroundColor: isDisabled ? colors.textDisabled : colors.textPrimary,
+      progressColor: colors.textPrimary,
+      pressedColor: colors.surfaceSunken,
       border: Border.all(
-        color: isDisabled ? cs.outlineVariant : cs.secondary,
-        width: 2,
+        color: isDisabled ? colors.border : colors.borderStrong,
       ),
-      boxShadow: isDisabled
-          ? const []
-          : [
-              BoxShadow(
-                color: cs.secondary.withValues(alpha: 0.12),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
     );
   }
 }
