@@ -34,7 +34,10 @@ void main() {
 
     test('montant insuffisant bloque l’encaissement', () {
       final state = CheckoutState(cashReceived: d('10000'));
-      expect(state.cashErrorFor(d('10500')), 'Montant insuffisant');
+      expect(
+        state.cashErrorFor(d('10500')),
+        'Inférieur au total. Ajoutez des espèces ou choisissez Mixte.',
+      );
       expect(state.canSubmitFor(d('10500')), isFalse);
       expect(state.changeFor(d('10500')), Decimal.zero);
     });
@@ -116,6 +119,27 @@ void main() {
         expect(state.mobileMoney, isNull);
       },
     );
+
+    test('mixte : la part mobile money est le reste du total', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      container.listen(checkoutProvider, (_, _) {});
+      final notifier = container.read(checkoutProvider.notifier)
+        ..selectMethod(PaymentMethod.mixed)
+        ..splitMixed(d('2000'), d('3025'));
+      var state = container.read(checkoutProvider);
+      expect(state.mobileMoney, d('1025'));
+      expect(state.canSubmitFor(d('3025')), isTrue);
+
+      // Espèces au-delà du total : part mobile à zéro, la vente est bloquée.
+      notifier.splitMixed(d('4000'), d('3025'));
+      state = container.read(checkoutProvider);
+      expect(state.mobileMoney, Decimal.zero);
+      expect(state.canSubmitFor(d('3025')), isFalse);
+
+      notifier.splitMixed(null, d('3025'));
+      expect(container.read(checkoutProvider).mobileMoney, isNull);
+    });
   });
 
   group('Cart.addItem(quantity:)', () {

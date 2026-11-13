@@ -32,6 +32,7 @@ class AppTextField extends StatefulWidget {
     this.maxLength,
     this.textCapitalization = TextCapitalization.none,
     this.suffixText,
+    this.large = false,
     super.key,
   });
 
@@ -97,6 +98,10 @@ class AppTextField extends StatefulWidget {
   /// Texte fixe affiché à la fin du champ (ex. unité : « FCFA », « % »).
   final String? suffixText;
 
+  /// Champ montant mis en avant (montant reçu) : 64 dp, chiffres 28/600
+  /// tabulaires.
+  final bool large;
+
   @override
   State<AppTextField> createState() => _AppTextFieldState();
 }
@@ -141,7 +146,9 @@ class _AppTextFieldState extends State<AppTextField> {
         const SizedBox(height: AppSpacing.xs),
         SizedBox(
           // Hauteur fixe sans compteur : il s'affiche sous le champ.
-          height: widget.maxLines == 1 && widget.maxLength == null ? 56 : null,
+          height: widget.maxLines == 1 && widget.maxLength == null
+              ? (widget.large ? 64 : 56)
+              : null,
           child: TextField(
             // Toucher ailleurs ferme le clavier.
             onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
@@ -159,7 +166,12 @@ class _AppTextFieldState extends State<AppTextField> {
             textInputAction: widget.textInputAction,
             onSubmitted: widget.onSubmitted,
             autofillHints: widget.autofillHints,
-            style: AppTypography.bodyMedium.copyWith(color: cs.onSurface),
+            style: widget.large
+                ? AppTypography.displayMedium.copyWith(
+                    color: cs.onSurface,
+                    fontFeatures: AppTypography.tabularFigures,
+                  )
+                : AppTypography.bodyMedium.copyWith(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,
               suffixText: widget.suffixText,
@@ -187,7 +199,7 @@ class _AppTextFieldState extends State<AppTextField> {
                         ? Icon(widget.suffixIcon, color: cs.onSurfaceVariant)
                         : null),
               filled: true,
-              fillColor: cs.surfaceContainerHighest,
+              fillColor: cs.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                 borderSide: BorderSide(color: borderColor),
@@ -198,7 +210,8 @@ class _AppTextFieldState extends State<AppTextField> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                borderSide: BorderSide(color: activeBorderColor),
+                // Focus v2 : 2 dp action (ou erreur).
+                borderSide: BorderSide(color: activeBorderColor, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -206,7 +219,7 @@ class _AppTextFieldState extends State<AppTextField> {
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                borderSide: BorderSide(color: cs.error),
+                borderSide: BorderSide(color: cs.error, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,

@@ -14,6 +14,7 @@ export 'offline_status_indicator.dart';
 export 'primary_button.dart';
 export 'quantity_stepper.dart';
 export 'section_header.dart';
+export 'segmented_control.dart';
 export 'secondary_button.dart';
 export 'skeleton_box.dart';
 export 'status_indicator.dart';

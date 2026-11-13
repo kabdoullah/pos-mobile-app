@@ -4,47 +4,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
-import '../../../../core/network/error_mapper.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../auth/providers/store_provider.dart';
-import '../../../cash_register/domain/repositories/cash_register_repository.dart';
+import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
 import '../../../catalog/domain/entities/category.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
-import '../../domain/entities/cart_item.dart';
-import '../../domain/entities/discount.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
 import '../providers/sales_providers.dart';
-import '../providers/scan_provider.dart';
-import '../widgets/discount_sheet.dart';
 import '../widgets/product_browser.dart';
 import '../widgets/product_search_results.dart';
 import '../widgets/quantity_sheet.dart';
-import '../widgets/sale_cart.dart';
-import '../widgets/sale_checkout_panel.dart';
+import '../widgets/sale_cart_bar.dart';
 import '../widgets/sale_confirmation_sheet.dart';
-import '../widgets/sale_payment_section.dart';
-import '../widgets/sale_scanner_panel.dart';
 import '../widgets/sale_search_bar.dart';
 import '../widgets/sale_toast.dart';
+import 'sale_scanner_page.dart';
 
-/// Écran de caisse (onglet Caisse) : recherche/scan et catégories en haut,
-/// puis un seul défilement catalogue → panier → paiement, et le total avec le
-/// bouton d'encaissement fixés en bas. La confirmation s'affiche en
-/// bottom sheet, puis la caisse est immédiatement prête pour la vente suivante.
+/// Écran Vendre (onglet) : recherche et « Scanner » en haut, catégories en
+/// onglets, puis le catalogue où toucher une ligne ajoute une unité. La barre
+/// du bas mène à l'écran Encaisser ; la confirmation de vente s'affiche ici
+/// au retour, et l'écran est aussitôt prêt pour la vente suivante.
 ///
 /// La page reste montée quand on change d'onglet : le panier est conservé.
 class NewSalePage extends ConsumerStatefulWidget {
-  /// Crée l'écran de caisse.
+  /// Crée l'écran Vendre.
   const NewSalePage({super.key});
 
   @override
@@ -52,33 +43,14 @@ class NewSalePage extends ConsumerStatefulWidget {
 }
 
 class _NewSalePageState extends ConsumerState<NewSalePage> {
-  late final MobileScannerController _scanner;
-  bool _isPermissionGranted = false;
-  // La permission caméra n'est demandée qu'à la première ouverture du
-  // scanner, replié par défaut pour laisser la place au catalogue.
-  bool _hasRequestedPermission = false;
-  bool _isCheckingPermission = true;
-  bool _isScannerOpen = false;
-  bool _isCameraPaused = false;
-  bool _isTorchOn = false;
-
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
   Timer? _searchDebounce;
   String _query = '';
   String? _categoryId;
-  final _cartHeaderKey = GlobalKey();
 
   SaleToastData? _toast;
   Timer? _toastTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _scanner = createRetailScannerController();
-    // La caméra se replie pendant la saisie d'une recherche.
-    _searchFocus.addListener(() => setState(() {}));
-  }
 
   @override
   void dispose() {
@@ -86,99 +58,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     _toastTimer?.cancel();
     _searchController.dispose();
     _searchFocus.dispose();
-    unawaited(_scanner.dispose());
     super.dispose();
-  }
-
-  Future<void> _checkPermission() async {
-    _hasRequestedPermission = true;
-    final status = await Permission.camera.request();
-    if (!mounted) return;
-    setState(() {
-      _isPermissionGranted = status.isGranted;
-      _isCheckingPermission = false;
-    });
-  }
-
-  // ---------------------------------------------------------------------------
-  // Caméra
-  // ---------------------------------------------------------------------------
-
-  void _toggleScanner() {
-    setState(() {
-      _isScannerOpen = !_isScannerOpen;
-      if (!_isScannerOpen) _isTorchOn = false;
-    });
-    if (_isScannerOpen) {
-      _searchFocus.unfocus();
-      if (!_hasRequestedPermission) unawaited(_checkPermission());
-    }
-  }
-
-  /// Aucun résultat de recherche : on propose de scanner le code à la place.
-  void _scanInsteadOfSearch() {
-    _clearSearch();
-    if (!_isScannerOpen) _toggleScanner();
-  }
-
-  Future<void> _toggleTorch() async {
-    await _scanner.toggleTorch();
-    if (!mounted) return;
-    setState(() => _isTorchOn = !_isTorchOn);
-  }
-
-  /// Démonte la caméra pendant [action] (feuille, page empilée) : pas de scan
-  /// en arrière-plan, caméra libérée.
-  Future<T?> _withCameraPaused<T>(Future<T?> Function() action) async {
-    setState(() {
-      _isCameraPaused = true;
-      _isTorchOn = false;
-    });
-    try {
-      return await action();
-    } finally {
-      if (mounted) setState(() => _isCameraPaused = false);
-    }
-  }
-
-  Future<void> _onBarcodeDetected(BarcodeCapture capture) async {
-    final rawValue = capture.barcodes.firstOrNull?.rawValue;
-    if (rawValue == null || !mounted) return;
-    // Normalise avant le scan et avant de passer au formulaire produit.
-    final code = rawValue.trim().replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
-    if (code.isEmpty) return;
-
-    final outcome = await ref.read(scanControllerProvider.notifier).scan(code);
-    if (!mounted) return;
-
-    switch (outcome.result) {
-      case ScanResult.cooldown:
-        return;
-      case ScanResult.added:
-      case ScanResult.quantityIncremented:
-        unawaited(HapticFeedback.mediumImpact());
-        _showToast(
-          SaleToastData(
-            message: '${outcome.product?.name ?? 'Produit'} ajouté',
-            kind: SaleToastKind.success,
-          ),
-        );
-      case ScanResult.stockExceeded:
-        unawaited(HapticFeedback.heavyImpact());
-        _showStockExceeded(outcome.product);
-      case ScanResult.notFound:
-        _showToast(
-          SaleToastData(
-            message: 'Produit introuvable',
-            kind: SaleToastKind.info,
-            actionLabel: 'Créer',
-            onAction: () => _withCameraPaused(
-              () => context.push(Routes.productNew, extra: code),
-            ),
-          ),
-          duration: const Duration(seconds: 5),
-        );
-    }
   }
 
   // ---------------------------------------------------------------------------
@@ -199,13 +79,13 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     if (mounted && _toast != null) setState(() => _toast = null);
   }
 
-  void _showStockExceeded(Product? product) {
-    final stock = product?.currentStock;
+  void _showStockExceeded(Product product) {
+    final stock = product.currentStock;
     _showToast(
       SaleToastData(
         message: stock == null
             ? 'Stock insuffisant'
-            : 'Stock insuffisant · Stock disponible : $stock',
+            : 'Stock insuffisant · disponible : $stock',
         kind: SaleToastKind.error,
       ),
       duration: const Duration(milliseconds: 2500),
@@ -230,29 +110,33 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     setState(() => _query = '');
   }
 
+  /// Ajoute [quantity] unités : le trait « au panier » et le stepper de la
+  /// ligne suffisent comme retour. Après un ajout depuis la recherche, retour
+  /// immédiat au catalogue.
   void _addProduct(Product product, {int quantity = 1}) {
     final added = ref
         .read(cartProvider.notifier)
         .addItem(product, quantity: quantity);
     if (!added) {
+      unawaited(HapticFeedback.heavyImpact());
       _showStockExceeded(product);
       return;
     }
-    unawaited(HapticFeedback.lightImpact());
-    // Après un ajout depuis la recherche, retour immédiat à la vue courante.
-    _clearSearch();
-    _showToast(
-      SaleToastData(
-        message: quantity > 1
-            ? '${product.name} ×$quantity ajouté'
-            : '${product.name} ajouté',
-        kind: SaleToastKind.success,
-      ),
-    );
+    unawaited(HapticFeedback.selectionClick());
+    if (_query.isNotEmpty) _clearSearch();
   }
 
-  /// Retire une ligne sans confirmation (croix, glissement, « − » à 1) et
-  /// propose de l'annuler : un geste involontaire ne coûte pas la ligne.
+  void _decrease(Product product) {
+    final quantity = ref.read(cartProvider.notifier).quantityOf(product.id);
+    if (quantity <= 1) {
+      _removeCartItem(product.id);
+    } else {
+      ref.read(cartProvider.notifier).updateQuantity(product.id, quantity - 1);
+    }
+  }
+
+  /// Retire une ligne sans confirmation et propose de l'annuler : un geste
+  /// involontaire ne coûte pas la ligne.
   void _removeCartItem(String productId) {
     final items = ref.read(cartProvider).items;
     final index = items.indexWhere((item) => item.productId == productId);
@@ -261,7 +145,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     ref.read(cartProvider.notifier).removeItem(productId);
     _showToast(
       SaleToastData(
-        message: '${item.productName} retiré',
+        message: '${item.productName} retiré du panier',
         kind: SaleToastKind.success,
         actionLabel: 'Annuler',
         showDismiss: false,
@@ -272,346 +156,235 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
-  Future<void> _openProduct(Product product) async {
+  /// Saisie détaillée de la quantité (appui long, chiffre du stepper).
+  Future<void> _editQuantity(Product product) async {
     final stock = product.currentStock;
     final inCart = ref.read(cartProvider.notifier).quantityOf(product.id);
-    final remaining = stock == null ? null : stock - inCart;
-    if (remaining != null && remaining <= 0) {
+    if (inCart == 0 && stock != null && stock <= 0) {
       _showStockExceeded(product);
       return;
     }
-    final result = await _withCameraPaused(
-      () => showQuantitySheet(
-        context,
-        productName: product.name,
-        unitPrice: product.sellingPrice,
-        stock: stock,
-        maxQuantity: remaining,
-        confirmLabel: 'Ajouter',
-      ),
+    final result = await showQuantitySheet(
+      context,
+      productName: product.name,
+      unitPrice: product.sellingPrice,
+      stock: stock,
+      initialQuantity: inCart == 0 ? 1 : inCart,
+      maxQuantity: stock,
+      confirmLabel: inCart == 0 ? 'Ajouter' : 'Mettre à jour',
     );
-    if (result case QuantityChosen(:final quantity) when mounted) {
-      _addProduct(product, quantity: quantity);
+    if (!mounted) return;
+    if (result case QuantityChosen(:final quantity)) {
+      if (inCart == 0) {
+        _addProduct(product, quantity: quantity);
+      } else {
+        ref.read(cartProvider.notifier).updateQuantity(product.id, quantity);
+      }
     }
   }
 
-  /// Ligne du panier : quantité, puis réduction si demandée — la caméra
-  /// reste en pause pendant les deux feuilles.
-  Future<void> _editCartItem(CartItem item) async {
-    await _withCameraPaused(() async {
-      final result = await showQuantitySheet(
-        context,
-        productName: item.productName,
-        unitPrice: item.unitPrice,
-        stock: item.availableStock,
-        initialQuantity: item.quantity,
-        maxQuantity: item.availableStock,
-        confirmLabel: 'Mettre à jour',
-        offerDiscount: true,
-        discount: item.discount,
-      );
-      if (!mounted) return null;
-      switch (result) {
-        case QuantityChosen(:final quantity):
-          ref
-              .read(cartProvider.notifier)
-              .updateQuantity(item.productId, quantity);
-        case DiscountRequested():
-          await _editItemDiscount(item);
-        case null:
-          break;
-      }
-      return null;
-    });
-  }
-
-  Future<void> _editItemDiscount(CartItem item) async {
-    final result = await showDiscountSheet(
-      context,
-      title: 'Réduction · ${item.productName}',
-      gross: item.grossTotal,
-      initial: item.discount,
-    );
-    if (result == null || !mounted) return;
-    ref
-        .read(cartProvider.notifier)
-        .setItemDiscount(item.productId, result.discount);
-    _showDiscountToast(result.discount);
-  }
-
-  /// Remise globale sur le sous-total du panier.
-  Future<void> _editCartDiscount() async {
-    final cart = ref.read(cartProvider);
-    final result = await _withCameraPaused(
-      () => showDiscountSheet(
-        context,
-        title: 'Remise sur la vente',
-        gross: cart.subtotal,
-        initial: cart.discount,
-      ),
-    );
-    if (result == null || !mounted) return;
-    ref.read(cartProvider.notifier).setDiscount(result.discount);
-    _showDiscountToast(result.discount);
-  }
-
-  void _showDiscountToast(Discount? discount) {
-    _showToast(
-      SaleToastData(
-        message: discount == null ? 'Réduction retirée' : 'Réduction appliquée',
-        kind: SaleToastKind.success,
-      ),
-    );
-  }
-
-  /// Fait défiler jusqu'au panier (depuis le compteur d'articles du panneau
-  /// d'encaissement) ; une recherche en cours est d'abord refermée.
-  void _scrollToCart() {
-    if (_query.isNotEmpty) _clearSearch();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final target = _cartHeaderKey.currentContext;
-      if (target == null || !target.mounted) return;
-      unawaited(
-        Scrollable.ensureVisible(
-          target,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        ),
-      );
-    });
-  }
-
-  Future<void> _clearCart() async {
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Vider le panier ?',
-      message: 'Tous les articles seront supprimés.',
-      confirmLabel: 'Vider',
-      isDangerous: true,
-    );
-    if (confirmed) ref.read(cartProvider.notifier).clear();
-  }
-
   // ---------------------------------------------------------------------------
-  // Encaissement
+  // Scanner, encaissement, caisse
   // ---------------------------------------------------------------------------
 
-  Future<void> _submit() async {
-    FocusScope.of(context).unfocus();
-    try {
-      final completed = await ref
-          .read(saleSubmissionProvider.notifier)
-          .submit();
-      if (completed == null) return;
-      unawaited(HapticFeedback.heavyImpact());
-      if (!mounted) return;
-      await _withCameraPaused(
-        () => showSaleConfirmationSheet(
-          context,
-          sale: completed.sale,
-          items: completed.items,
-          change: completed.change,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      if (e is CashRegisterException &&
-          e.code == CashRegisterException.noOpenSession) {
-        await _openCashSession();
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
+  Future<void> _openScanner() async {
+    _clearSearch();
+    final exit = await context.push<SaleScannerExit>(Routes.saleScanner);
+    if (!mounted) return;
+    switch (exit) {
+      case SaleScannerExit.checkout:
+        await _openCheckout();
+      case SaleScannerExit.manualEntry:
+        _searchFocus.requestFocus();
+      case null:
+        break;
     }
   }
 
-  /// Caisse fermée à l'encaissement : rien n'a été enregistré et le panier est
-  /// conservé. Le commerçant ouvre la caisse puis valide de nouveau lui-même.
+  Future<void> _openCheckout() async {
+    _searchFocus.unfocus();
+    final completed = await context.push<CompletedSale>(Routes.saleCheckout);
+    if (completed == null || !mounted) return;
+    await showSaleConfirmationSheet(
+      context,
+      sale: completed.sale,
+      items: completed.items,
+      change: completed.change,
+    );
+  }
+
   Future<void> _openCashSession() async {
-    final opened = await _withCameraPaused(
-      () => showOpenCashSessionSheet(context),
-    );
-    if ((opened ?? false) && mounted) {
+    final opened = await showOpenCashSessionSheet(context);
+    if (opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Caisse ouverte. Validez de nouveau la vente.'),
-        ),
+        const SnackBar(content: Text('Caisse ouverte. Vous pouvez encaisser.')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Garde les contrôleurs auto-dispose en vie tant que la caisse est
-    // affichée — ils sont utilisés via ref.read pendant des awaits.
-    ref.watch(scanControllerProvider);
+    // Garde le brouillon de paiement (auto-dispose) pendant tout le parcours
+    // de vente : l'écran Encaisser s'empile au-dessus de celui-ci.
     ref.watch(checkoutProvider);
     final cart = ref.watch(cartProvider);
-    final isSubmitting = ref.watch(saleSubmissionProvider);
-    final cartNotifier = ref.read(cartProvider.notifier);
-    final storeName = ref.watch(storeConfigProvider).value?.name;
+    final session = ref.watch(activeCashSessionProvider);
+    // Tant que l'état est inconnu, la caisse est supposée ouverte : pas de
+    // bandeau qui clignote au démarrage.
+    final isRegisterClosed = session.hasValue && session.value == null;
     final categories = ref.watch(categoriesProvider).value ?? const [];
     // Catégorie supprimée entre-temps : le filtre retombe sur « Tous ».
     final categoryId = categories.any((c) => c.id == _categoryId)
         ? _categoryId
         : null;
-
-    // Onglet masqué (IndexedStack de la shell) : TickerMode est désactivé.
-    // La caméra est alors démontée, sinon elle tournerait en arrière-plan.
-    final isTabVisible = TickerMode.valuesOf(context).enabled;
-    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
-    final isSearchFocused = _searchFocus.hasFocus;
     final isSearching = _query.isNotEmpty;
-    final showCamera =
-        _isScannerOpen && !keyboardOpen && !isSearchFocused && !isSearching;
-    // Pendant une recherche au clavier, les résultats prennent toute la place.
-    final showCheckout = !(keyboardOpen && isSearchFocused);
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final cartQuantities = {
+      for (final item in cart.items) item.productId: item.quantity,
+    };
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
-        // Même en-tête que l'accueil : boutique en titre, état réseau discret
-        // à droite.
-        title: Text(
-          storeName == null || storeName.isEmpty ? 'Caisse' : storeName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: const Text('Vendre'),
         actions: [
           const OfflineStatusIndicator(),
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
-            onPressed: () =>
-                _withCameraPaused(() => context.push(Routes.bluetoothSetup)),
+            onPressed: () => context.push(Routes.bluetoothSetup),
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => Column(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.sm,
+            ),
+            child: SaleSearchBar(
+              controller: _searchController,
+              focusNode: _searchFocus,
+              onChanged: _onSearchChanged,
+              onScan: _openScanner,
+            ),
+          ),
+          if (!isSearching && categories.isNotEmpty)
+            _CategoryTabs(
+              categories: categories,
+              selectedId: categoryId,
+              onSelected: (id) => setState(() => _categoryId = id),
+            ),
+          if (isRegisterClosed) const _RegisterClosedNote(),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: isSearching
+                      ? ProductSearchResults(
+                          query: _query,
+                          onAdd: _addProduct,
+                          onDecrease: _decrease,
+                          onEditQuantity: _editQuantity,
+                          onScan: _openScanner,
+                        )
+                      : CustomScrollView(
+                          keyboardDismissBehavior:
+                              ScrollViewKeyboardDismissBehavior.onDrag,
+                          slivers: [
+                            ProductBrowser(
+                              products: ref.watch(stockProductsProvider),
+                              categoryId: categoryId,
+                              cartQuantities: cartQuantities,
+                              onAdd: _addProduct,
+                              onDecrease: _decrease,
+                              onEditQuantity: _editQuantity,
+                              onRetry: () =>
+                                  ref.invalidate(stockProductsProvider),
+                              onAddProduct: () =>
+                                  context.push(Routes.productNew),
+                            ),
+                          ],
+                        ),
+                ),
+                Positioned(
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  bottom: AppSpacing.sm,
+                  child: SaleToast(data: _toast, onDismiss: _dismissToast),
+                ),
+              ],
+            ),
+          ),
+          // Pendant une saisie au clavier, les résultats prennent la place.
+          if (!keyboardOpen)
+            SaleCartBar(
+              units: cart.unitCount,
+              total: cart.total,
+              isRegisterClosed: isRegisterClosed,
+              onCheckout: _openCheckout,
+              onOpenRegister: _openCashSession,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Bandeau « Caisse fermée », annoncé avant d'encaisser.
+class _RegisterClosedNote extends StatelessWidget {
+  const _RegisterClosedNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm + AppSpacing.xs,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.xs,
-                AppSpacing.md,
-                AppSpacing.sm,
-              ),
-              child: SaleSearchBar(
-                controller: _searchController,
-                focusNode: _searchFocus,
-                onChanged: _onSearchChanged,
-                isScannerOpen: _isScannerOpen,
-                onToggleScanner: _toggleScanner,
+              padding: const EdgeInsets.only(top: 7),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.warning,
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox.square(dimension: 8),
               ),
             ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: showCamera
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md,
-                        0,
-                        AppSpacing.md,
-                        AppSpacing.sm,
-                      ),
-                      child: SaleScannerPanel(
-                        controller: _scanner,
-                        isActive: !_isCameraPaused && isTabVisible,
-                        isPermissionGranted: _isPermissionGranted,
-                        isCheckingPermission: _isCheckingPermission,
-                        isTorchOn: _isTorchOn,
-                        onDetect: _onBarcodeDetected,
-                        onToggleTorch: _toggleTorch,
-                        onOpenAppSettings: openAppSettings,
-                      ),
-                    )
-                  : const SizedBox(width: double.infinity),
-            ),
-            if (!isSearching && categories.isNotEmpty)
-              _CategoryChips(
-                categories: categories,
-                selectedId: categoryId,
-                onSelected: (id) => setState(() => _categoryId = id),
-              ),
+            const SizedBox(width: AppSpacing.sm + 2),
             Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: isSearching
-                        ? ProductSearchResults(
-                            query: _query,
-                            onQuickAdd: _addProduct,
-                            onOpen: _openProduct,
-                            onScan: _scanInsteadOfSearch,
-                          )
-                        : CustomScrollView(
-                            keyboardDismissBehavior:
-                                ScrollViewKeyboardDismissBehavior.onDrag,
-                            slivers: [
-                              ProductBrowser(
-                                products: ref.watch(stockProductsProvider),
-                                categoryId: categoryId,
-                                cartQuantities: {
-                                  for (final item in cart.items)
-                                    item.productId: item.quantity,
-                                },
-                                onProductTap: _openProduct,
-                                onQuickAdd: _addProduct,
-                                onRetry: () =>
-                                    ref.invalidate(stockProductsProvider),
-                                onAddProduct: () => _withCameraPaused(
-                                  () => context.push(Routes.productNew),
-                                ),
-                              ),
-                              SaleCart(
-                                headerKey: _cartHeaderKey,
-                                items: cart.items,
-                                onQuantityChanged: (productId, quantity) =>
-                                    quantity <= 0
-                                    ? _removeCartItem(productId)
-                                    : cartNotifier.updateQuantity(
-                                        productId,
-                                        quantity,
-                                      ),
-                                onRemove: _removeCartItem,
-                                onItemTap: _editCartItem,
-                                onClear: _clearCart,
-                              ),
-                              const SliverToBoxAdapter(
-                                child: SalePaymentSection(),
-                              ),
-                            ],
-                          ),
-                  ),
-                  Positioned(
-                    top: AppSpacing.xs,
-                    left: AppSpacing.md,
-                    right: AppSpacing.md,
-                    child: SaleToast(data: _toast, onDismiss: _dismissToast),
-                  ),
-                ],
+              child: Text.rich(
+                const TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Caisse fermée. ',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    TextSpan(
+                      text:
+                          'Ouvrez-la pour pouvoir encaisser. Votre panier '
+                          'est gardé.',
+                    ),
+                  ],
+                ),
+                style: AppTypography.body.copyWith(fontSize: 15, height: 1.4),
               ),
             ),
-            if (showCheckout)
-              ConstrainedBox(
-                // Clavier ouvert : le panneau défile au lieu de déborder.
-                constraints: BoxConstraints(
-                  maxHeight: constraints.maxHeight * 0.75,
-                ),
-                child: SingleChildScrollView(
-                  clipBehavior: Clip.none,
-                  child: SaleCheckoutPanel(
-                    onSubmit: _submit,
-                    onEditDiscount: _editCartDiscount,
-                    onShowCart: _scrollToCart,
-                    isSubmitting: isSubmitting,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -619,10 +392,10 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   }
 }
 
-/// Filtre de catégories de la caisse : « Tous » puis les catégories du
+/// Catégories en onglets soulignés : « Tous » puis les catégories du
 /// catalogue, sur une ligne défilante.
-class _CategoryChips extends StatelessWidget {
-  const _CategoryChips({
+class _CategoryTabs extends StatelessWidget {
+  const _CategoryTabs({
     required this.categories,
     required this.selectedId,
     required this.onSelected,
@@ -634,31 +407,74 @@ class _CategoryChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        AppSpacing.sm,
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
       ),
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: const Text('Tous'),
-            selected: selectedId == null,
-            onSelected: (_) => onSelected(null),
-          ),
-          for (final category in categories) ...[
-            const SizedBox(width: AppSpacing.sm),
-            ChoiceChip(
-              label: Text(category.name),
-              selected: selectedId == category.id,
-              onSelected: (selected) =>
-                  onSelected(selected ? category.id : null),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Row(
+          children: [
+            _CategoryTab(
+              label: 'Tous',
+              isSelected: selectedId == null,
+              onTap: () => onSelected(null),
             ),
+            for (final category in categories)
+              _CategoryTab(
+                label: category.name,
+                isSelected: selectedId == category.id,
+                onTap: () => onSelected(category.id),
+              ),
           ],
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryTab extends StatelessWidget {
+  const _CategoryTab({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 3),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? colors.action : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppTypography.bodyStrong.copyWith(
+              fontSize: 15,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? colors.textPrimary : colors.textSecondary,
+            ),
+          ),
+        ),
       ),
     );
   }

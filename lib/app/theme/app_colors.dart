@@ -160,6 +160,13 @@ class AppColors extends ThemeExtension<AppColors> {
   /// Voile posé sur l'image caméra du scanner, quel que soit le mode.
   static const Color cameraScrim = Color(0x99141613);
 
+  /// Fond de la zone caméra (avant l'image, caméra en pause), quel que soit
+  /// le mode.
+  static const Color cameraBackground = Color(0xFF0B0C0A);
+
+  /// Texte posé sur la zone caméra, quel que soit le mode.
+  static const Color onCamera = Color(0xFFEDEEE9);
+
   /// Jetons du thème courant.
   static AppColors of(BuildContext context) =>
       Theme.of(context).extension<AppColors>()!;

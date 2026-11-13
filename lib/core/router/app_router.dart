@@ -27,6 +27,8 @@ import '../../features/inventory/presentation/pages/product_detail_page.dart';
 import '../../features/inventory/presentation/pages/stock_history_page.dart';
 import '../../features/inventory/presentation/pages/stock_overview_page.dart';
 import '../../features/sales/presentation/pages/new_sale_page.dart';
+import '../../features/sales/presentation/pages/sale_checkout_page.dart';
+import '../../features/sales/presentation/pages/sale_scanner_page.dart';
 import '../../features/sales/presentation/pages/sales_history_page.dart';
 import '../../features/returns/presentation/pages/sale_return_page.dart';
 import '../../features/sales/presentation/pages/sale_detail_page.dart';
@@ -112,9 +114,16 @@ abstract class Routes {
   /// Modale de scan de code-barres.
   static const String barcodeScanner = '/scan';
 
-  /// Onglet Caisse : caisse (scan, panier, paiement et encaissement sur un
-  /// seul écran).
+  /// Onglet Vendre : catalogue, recherche et panier en cours.
   static const String newSale = '/sales/new';
+
+  /// Écran Encaisser : articles, remise, paiement et validation. Se ferme avec
+  /// la vente enregistrée (`CompletedSale`), ou `null` si on revient.
+  static const String saleCheckout = '/sales/checkout';
+
+  /// Scanner de vente plein écran, en continu. Se ferme avec un
+  /// `SaleScannerExit` (encaisser, saisie manuelle) ou `null`.
+  static const String saleScanner = '/sales/scan';
 
   /// Détail d'une vente (reçoit la [Sale] via `extra`).
   static const String saleDetail = '/sales/detail';
@@ -379,6 +388,14 @@ GoRouter appRouter(Ref ref) {
               : SaleDetailPage(sale: sale);
           return PageTransitions.scale(context, state, child);
         },
+      ),
+      GoRoute(
+        path: Routes.saleCheckout,
+        builder: (context, state) => const SaleCheckoutPage(),
+      ),
+      GoRoute(
+        path: Routes.saleScanner,
+        builder: (context, state) => const SaleScannerPage(),
       ),
       GoRoute(
         path: Routes.saleReturn,
