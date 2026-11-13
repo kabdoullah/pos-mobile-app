@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../core/sync/sync_providers.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../cash_register/presentation/cash_logout_guard.dart';
 import '../../domain/entities/pin_failure.dart';
 import '../../providers/store_provider.dart';
 import '../providers/auth_providers.dart';
@@ -115,64 +113,6 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
   Future<void> _verifyPin() async {
     await ref.read(authProvider.notifier).verifyPin(_pin);
     // Succès : le routeur ouvre l'accueil. Échec : voir le listen de build().
-  }
-
-  Future<void> _confirmSwitchAccount() async {
-    // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
-    // perdues au changement de compte.
-    final blockReason = await cashLogoutBlockReason(ref);
-    if (!mounted) return;
-    if (blockReason != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(blockReason),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      return;
-    }
-    final pending = await _pendingSalesCount();
-    if (!mounted) return;
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Changer de compte ?',
-      message: [
-        'Vous devrez vous reconnecter avec les identifiants du nouveau '
-            'compte. Le PIN de cet appareil sera supprimé.',
-        // Si un autre compte se connecte, la synchro efface les données
-        // locales de l'ancien compte (ventes, retours, produits non envoyés).
-        if (pending == 1)
-          '1 modification pas encore synchronisée : déverrouillez et '
-              'synchronisez d\'abord, sinon elle sera effacée si un autre '
-              'compte se connecte.',
-        if (pending > 1)
-          '$pending modifications pas encore synchronisées : déverrouillez et '
-              'synchronisez d\'abord, sinon elles seront effacées si un autre '
-              'compte se connecte.',
-      ].join('\n\n'),
-      confirmLabel: 'Changer de compte',
-      isDangerous: pending > 0,
-    );
-    // Le routeur ouvre la connexion dès que l'état passe à Unauthenticated.
-    if (confirmed && mounted) {
-      await ref.read(authProvider.notifier).logout();
-    }
-  }
-
-  /// Ventes pas encore envoyées au serveur. Lu à la demande : l'écran PIN
-  /// n'a pas à ouvrir la base locale pour rien.
-  Future<int> _pendingSalesCount() async {
-    // Garde le provider (auto-dispose) en vie le temps de la lecture.
-    final sub = ref.listenManual(pendingSyncCountProvider, (_, _) {});
-    try {
-      return await ref.read(pendingSyncCountProvider.future);
-    } on Object {
-      return 0;
-    } finally {
-      sub.close();
-    }
   }
 
   static String _greeting() => DateTime.now().hour < 18 ? 'Bonjour' : 'Bonsoir';
@@ -288,11 +228,6 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             TextButton(
               onPressed: isLoading ? null : () => showForgotPinSheet(context),
               child: const Text('Code PIN oublié ?'),
-            ),
-            TextButton(
-              onPressed: isLoading ? null : _confirmSwitchAccount,
-              style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
-              child: const Text('Changer de compte'),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],

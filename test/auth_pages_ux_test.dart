@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -414,63 +413,6 @@ void main() {
       expect(auth.state.value, isA<AuthPinSetupRequired>());
       expect(find.text('Code PIN oublié'), findsNothing);
       expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('changer de compte : confirmation puis déconnexion', (
-      tester,
-    ) async {
-      final auth = await _pump(
-        tester,
-        const PinLoginPage(),
-        status: const AuthPinRequired(),
-        pendingSales: 2,
-      );
-
-      await tester.tap(find.text('Changer de compte'));
-      await tester.pumpAndSettle();
-      expect(find.text('Changer de compte ?'), findsOneWidget);
-      expect(find.textContaining('2 modifications pas encore'), findsOneWidget);
-
-      await tester.tap(find.text('Annuler'));
-      await tester.pumpAndSettle();
-      expect(auth.loggedOut, isFalse);
-
-      await tester.tap(find.text('Changer de compte'));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(ElevatedButton, 'Changer de compte'),
-      );
-      await tester.pumpAndSettle();
-      expect(auth.loggedOut, isTrue);
-    });
-
-    testWidgets('changer de compte : refusé tant que la caisse est ouverte', (
-      tester,
-    ) async {
-      final auth = await _pump(
-        tester,
-        const PinLoginPage(),
-        status: const AuthPinRequired(),
-        cashSession: CashSession(
-          id: 'session-1',
-          deviceId: 'device-1',
-          status: CashSessionStatus.open,
-          openingAmount: Decimal.zero,
-          openedAt: DateTime.utc(2026),
-          syncStatus: CashSyncStatus.synced,
-          serverRecalculated: false,
-        ),
-      );
-
-      await tester.tap(find.text('Changer de compte'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
-        findsOneWidget,
-      );
-      expect(find.text('Changer de compte ?'), findsNothing);
-      expect(auth.loggedOut, isFalse);
     });
   });
 }
