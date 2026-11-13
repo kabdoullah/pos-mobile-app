@@ -29,21 +29,25 @@ void main() {
     expect(salesTotals(const []).total, Decimal.zero);
   });
 
-  group('searchSalesByReceipt', () {
+  group('searchSales', () {
     test('vide ou sans chiffre : toutes les ventes', () {
-      expect(searchSalesByReceipt(sales, ''), sales);
-      expect(searchSalesByReceipt(sales, '#'), sales);
+      expect(searchSales(sales, ''), sales);
+      expect(searchSales(sales, '#'), sales);
     });
 
-    test('préfixe # accepté, correspondance partielle', () {
-      expect(searchSalesByReceipt(sales, '#10452').map((s) => s.id), [
-        's10452',
-      ]);
-      expect(searchSalesByReceipt(sales, '1045'), hasLength(2));
+    test('n° de reçu : préfixe # accepté, correspondance partielle', () {
+      expect(searchSales(sales, '#10452').map((s) => s.id), ['s10452']);
+      expect(searchSales(sales, '1045'), hasLength(2));
     });
 
-    test('une vente sans numéro ne correspond jamais', () {
-      expect(searchSalesByReceipt(sales, '0'), hasLength(2));
+    test('montant, espaces ignorés', () {
+      expect(searchSales(sales, '8 000').map((s) => s.id), ['s10451']);
+    });
+
+    test('vente sans numéro : retrouvée par son montant seulement', () {
+      // 10 500 et 500 contiennent « 500 » ; le n° 0 n'est jamais cherché.
+      expect(searchSales(sales, '500').map((s) => s.id), ['s10452', 's0']);
+      expect(searchSales(sales, '9'), isEmpty);
     });
   });
 

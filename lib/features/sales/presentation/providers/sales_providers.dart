@@ -137,19 +137,18 @@ List<({DateTime day, List<sale_entity.Sale> sales})> groupSalesByDay(
   return groups;
 }
 
-/// Recherche par numéro de reçu (préfixe « # » accepté). Une vente pas encore
-/// synchronisée n'a pas de numéro : elle ne correspond à aucune recherche.
-List<sale_entity.Sale> searchSalesByReceipt(
-  List<sale_entity.Sale> sales,
-  String query,
-) {
+/// Recherche par numéro de reçu (préfixe « # » accepté) ou par montant
+/// (chiffres seuls, « 3 025 » comme « 3025 »). Une vente pas encore
+/// synchronisée n'a pas de numéro : elle ne se retrouve que par son montant.
+List<sale_entity.Sale> searchSales(List<sale_entity.Sale> sales, String query) {
   final digits = query.replaceAll(RegExp(r'[^0-9]'), '');
   if (digits.isEmpty) return sales;
   return sales
       .where(
         (sale) =>
-            sale.receiptNumber > 0 &&
-            sale.receiptNumber.toString().contains(digits),
+            (sale.receiptNumber > 0 &&
+                sale.receiptNumber.toString().contains(digits)) ||
+            sale.totalAmount.toBigInt().toString().contains(digits),
       )
       .toList();
 }

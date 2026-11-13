@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
@@ -23,7 +24,6 @@ class SaleReturnsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
     final returns = ref.watch(saleReturnsProvider(sale.id)).value ?? const [];
     final lines = ref.watch(returnableLinesProvider(sale)).value;
     if (lines == null || lines.isEmpty) return const SizedBox.shrink();
@@ -36,27 +36,20 @@ class SaleReturnsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (returns.isNotEmpty) ...[
-          SectionHeader(title: 'Retours', count: returns.length),
+          const OverlineHeader('Retours', padding: EdgeInsets.only(bottom: 6)),
           for (final saleReturn in returns)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _ReturnTile(saleReturn: saleReturn, names: names),
-            ),
+            _ReturnTile(saleReturn: saleReturn, names: names),
+          const SizedBox(height: AppSpacing.md),
         ],
         if (canReturn)
-          OutlinedButton.icon(
+          SecondaryButton(
+            label: 'Retourner des articles',
             onPressed: () => context.push(Routes.saleReturn, extra: sale),
-            icon: const Icon(Icons.assignment_return_outlined),
-            label: const Text('Retourner des articles'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
-            ),
           )
         else if (!isSynced)
-          Text(
-            'Retour possible après synchronisation de la vente.',
-            textAlign: TextAlign.center,
-            style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+          const StatusIndicator(
+            label: 'Retour possible après synchronisation de la vente.',
+            tone: StatusTone.warning,
           ),
       ],
     );
@@ -72,70 +65,60 @@ class _ReturnTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final colors = AppColors.of(context);
+    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
     final r = saleReturn;
-    final (IconData icon, String status, Color color) = switch (r.syncStatus) {
-      ReturnSyncStatus.synced => (
-        Icons.cloud_done_outlined,
-        'Synchronisé',
-        cs.onSurfaceVariant,
-      ),
-      ReturnSyncStatus.pending => (
-        Icons.cloud_upload_outlined,
-        'En attente de synchro',
-        cs.onSurfaceVariant,
-      ),
+    final (String status, StatusTone tone) = switch (r.syncStatus) {
+      ReturnSyncStatus.synced => ('Synchronisé', StatusTone.success),
+      ReturnSyncStatus.pending => ('En attente de synchro', StatusTone.warning),
       ReturnSyncStatus.rejected => (
-        Icons.error_outline,
         returnRejectionMessage(r.rejectionCode),
-        cs.error,
+        StatusTone.error,
       ),
     };
 
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  r.returnNumber > 0
-                      ? 'Retour #${r.returnNumber}'
-                      : 'Retour (numéro à venir)',
-                  style: AppTypography.titleMedium,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    r.returnNumber > 0
+                        ? 'Retour #${r.returnNumber}'
+                        : 'Retour (numéro à venir)',
+                    style: AppTypography.bodyStrong,
+                  ),
                 ),
-              ),
-              Text(
-                '−${formatFcfa(r.refundAmount)}',
-                style: AppTypography.labelLarge,
-              ),
-            ],
-          ),
-          Text(
-            '${DateFormat('dd/MM/yyyy HH:mm', 'fr_FR').format(r.createdAt.toLocal())}'
-            ' · ${r.reason.label} · ${r.refundMethod.label}',
-            style: muted,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          for (final line in r.lines)
-            Text(
-              '${line.quantity} × ${names[line.saleItemId] ?? 'Article'} · '
-              '${line.restocked ? 'remis en stock' : line.condition.label.toLowerCase()}',
-              style: AppTypography.bodyMedium,
+                Text(
+                  '− ${formatFcfa(r.refundAmount)}',
+                  style: AppTypography.bodyStrong.copyWith(
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
+                ),
+              ],
             ),
-          const SizedBox(height: AppSpacing.xs),
-          Row(
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(status, style: muted.copyWith(color: color)),
+            Text(
+              '${DateFormat('d MMM · HH:mm', 'fr_FR').format(r.createdAt.toLocal())}'
+              ' · ${r.reason.label} · ${r.refundMethod.label}',
+              style: meta,
+            ),
+            for (final line in r.lines)
+              Text(
+                '${line.quantity} × ${names[line.saleItemId] ?? 'Article'} · '
+                '${line.restocked ? 'remis en stock' : line.condition.label.toLowerCase()}',
+                style: AppTypography.body,
               ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 2),
+            StatusIndicator(label: status, tone: tone),
+          ],
+        ),
       ),
     );
   }

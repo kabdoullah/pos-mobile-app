@@ -49,17 +49,25 @@ class OverlineHeader extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 32),
         child: Row(
           children: [
-            Semantics(
-              header: true,
-              child: Text(
-                text.toUpperCase(),
-                style: AppTypography.overline.copyWith(
-                  color: colors.textSecondary,
+            // Titre long (petit écran, grande police) : il passe à la ligne
+            // au lieu de déborder.
+            Flexible(
+              flex: 3,
+              child: Semantics(
+                header: true,
+                child: Text(
+                  text.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.overline.copyWith(
+                    color: colors.textSecondary,
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
+              flex: 2,
               child: Align(
                 alignment: Alignment.centerRight,
                 child: actionLabel != null

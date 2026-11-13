@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -35,92 +37,150 @@ class SaleDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     // Version drift en direct : le numéro de reçu apparaît dès la synchro.
     final sale = ref.watch(saleByIdProvider(this.sale.id)).value ?? this.sale;
     final items = ref.watch(saleItemsProvider(sale.id)).value;
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
     final isSynced = sale.receiptNumber > 0;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    // Aucune imprimante enregistrée : l'action utile devient « Configurer ».
+    final noPrinter = switch (ref.watch(printerProvider)) {
+      PrinterDisconnected(savedMac: null) => true,
+      _ => false,
+    };
+    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
 
-    return AppScaffold(
-      title: isSynced ? 'Vente #${sale.receiptNumber}' : 'Vente',
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          ReceiptTicket(
-            title: isSynced
-                ? 'Reçu #${sale.receiptNumber}'
-                : 'Reçu en attente de synchronisation',
-            subtitle: toBeginningOfSentenceCase(
-              DateFormat(
-                "EEEE d MMMM yyyy 'à' HH:mm",
-                'fr_FR',
-              ).format(sale.createdAt),
-              'fr_FR',
-            ),
-            lines: [
-              for (final item in items ?? const <CartItem>[])
-                ReceiptTicketLine(
-                  name: item.productName,
-                  quantity: item.quantity,
-                  unitPrice: item.unitPrice,
-                  amount: item.grossTotal,
-                  discount: item.discountAmount,
-                  leading: ProductThumbnailById(productId: item.productId),
-                ),
-            ],
-            linesPlaceholder: items == null
-                ? const SkeletonBox(height: 40)
-                : Text(
-                    "Le détail des articles n'est pas disponible sur cet "
-                    'appareil (vente enregistrée ailleurs).',
-                    style: muted,
-                  ),
-            total: sale.totalAmount,
-            discount: sale.discountAmount,
-            footer: [
-              ('Paiement', sale.paymentMethod.label),
-              ('Statut', isSynced ? 'Synchronisée' : 'En attente de synchro'),
-            ],
-          ),
-          if (items != null &&
-              items.any((item) => item.purchaseUnitPrice != null)) ...[
-            const SizedBox(height: AppSpacing.md),
-            _InternalMargin(sale: sale, items: items),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          PrimaryButton(
-            label: 'Imprimer',
-            icon: Icons.print_outlined,
-            onPressed: () => _handlePrint(context, ref, sale, items),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          OutlinedButton.icon(
-            // Le PDF est généré par le serveur : réseau + vente synchronisée.
-            onPressed: isSynced && isOnline
-                ? () => _handleDownloadPdf(context, ref, sale)
-                : null,
-            icon: const Icon(Icons.picture_as_pdf_outlined),
-            label: const Text('Reçu PDF'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
-            ),
-          ),
-          if (!isSynced || !isOnline) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              isOnline
-                  ? 'Reçu PDF disponible après synchronisation.'
-                  : 'Reçu PDF disponible lorsque la connexion sera rétablie.',
-              textAlign: TextAlign.center,
-              style: muted,
-            ),
-          ],
-          // Retours enregistrés et action « Retourner des articles ».
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: Text(isSynced ? 'Vente n° ${sale.receiptNumber}' : 'Vente'),
+        actions: [
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
-            child: SaleReturnsSection(sale: sale),
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: StatusIndicator(
+              label: isSynced ? 'Synchronisée' : 'En attente de synchro',
+              tone: isSynced ? StatusTone.success : StatusTone.warning,
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.lg,
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: ReceiptTicket(
+                    title: isSynced
+                        ? 'Reçu n° ${sale.receiptNumber}'
+                        : 'Reçu en attente de synchronisation',
+                    subtitle: toBeginningOfSentenceCase(
+                      DateFormat(
+                        "EEEE d MMMM yyyy 'à' HH:mm",
+                        'fr_FR',
+                      ).format(sale.createdAt),
+                      'fr_FR',
+                    ),
+                    lines: [
+                      for (final item in items ?? const <CartItem>[])
+                        ReceiptTicketLine(
+                          name: item.productName,
+                          quantity: item.quantity,
+                          unitPrice: item.unitPrice,
+                          amount: item.grossTotal,
+                          discount: item.discountAmount,
+                          leading: ProductThumbnailById(
+                            productId: item.productId,
+                          ),
+                        ),
+                    ],
+                    linesPlaceholder: items == null
+                        ? const SkeletonBox(height: 40)
+                        : Text(
+                            "Le détail des articles n'est pas disponible sur "
+                            'cet appareil (vente enregistrée ailleurs).',
+                            style: meta,
+                          ),
+                    total: sale.totalAmount,
+                    discount: sale.discountAmount,
+                    footer: [('Paiement', sale.paymentMethod.label)],
+                  ),
+                ),
+                if (items != null &&
+                    items.any((item) => item.purchaseUnitPrice != null))
+                  _InternalMargin(sale: sale, items: items),
+                // Retours enregistrés et action « Retourner des articles ».
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: SaleReturnsSection(sale: sale),
+                ),
+              ],
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm + AppSpacing.xs,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (noPrinter)
+                      PrimaryButton(
+                        label: 'Configurer l’imprimante',
+                        onPressed: () => context.push(Routes.bluetoothSetup),
+                      )
+                    else
+                      PrimaryButton(
+                        label: 'Imprimer le reçu',
+                        onPressed: () =>
+                            _handlePrint(context, ref, sale, items),
+                      ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SecondaryButton(
+                      label: 'Reçu PDF',
+                      // Le PDF est généré par le serveur : réseau + vente
+                      // synchronisée.
+                      onPressed: isSynced && isOnline
+                          ? () => _handleDownloadPdf(context, ref, sale)
+                          : null,
+                    ),
+                    if (!isSynced || !isOnline) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        isOnline
+                            ? 'Reçu PDF disponible après synchronisation.'
+                            : 'Reçu PDF disponible lorsque la connexion sera '
+                                  'rétablie.',
+                        textAlign: TextAlign.center,
+                        style: meta,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -210,9 +270,9 @@ class SaleDetailPage extends ConsumerWidget {
   }
 }
 
-/// Prix d'achat et marge de la vente, repliés par défaut : donnée interne au
-/// commerçant, jamais imprimée ni montrée au client (ADR-0009). Valeurs figées
-/// à la vente, jamais relues depuis le produit actuel.
+/// Prix d'achat et marge de la vente : donnée interne au commerçant, jamais
+/// imprimée ni montrée au client (ADR-0009). Valeurs figées à la vente,
+/// jamais relues depuis le produit actuel.
 class _InternalMargin extends StatelessWidget {
   const _InternalMargin({required this.sale, required this.items});
 
@@ -221,84 +281,53 @@ class _InternalMargin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final summary = MarginSummary.fromSales([(sale: sale, items: items)]);
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    String signed(Decimal value) => value < Decimal.zero
+        ? '− ${formatFcfa(value.abs())}'
+        : '+ ${formatFcfa(value)}';
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: cs.outlineVariant),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-      ),
-      child: Theme(
-        // Pas de séparateurs ajoutés par ExpansionTile.
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          leading: const Icon(Icons.lock_outline),
-          title: const Text('Infos internes'),
-          subtitle: Text('Non visibles par le client', style: muted),
-          childrenPadding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            0,
-            AppSpacing.md,
-            AppSpacing.md,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const OverlineHeader('Infos internes · non visibles du client'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final item in items)
+                DefinitionRow(
+                  label: item.purchaseUnitPrice == null
+                      ? "${item.productName} · prix d'achat inconnu"
+                      : '${item.productName} · achat '
+                            '${formatAmount(item.purchaseUnitPrice!)} · marge',
+                  value: item.margin == null ? '—' : signed(item.margin!),
+                ),
+              DefinitionRow(
+                label: "Coût d'achat",
+                value: formatFcfa(summary.cost),
+              ),
+              DefinitionRow(
+                label: 'Marge brute',
+                value: signed(summary.margin),
+                emphasized: true,
+                color: summary.margin < Decimal.zero
+                    ? colors.error
+                    : colors.success,
+                showDivider: false,
+              ),
+              if (summary.hasUnknownCost)
+                Text(
+                  "Articles sans prix d'achat exclus de la marge.",
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+            ],
           ),
-          children: [
-            for (final item in items)
-              _InfoRow(
-                label: item.productName,
-                value: item.purchaseUnitPrice == null
-                    ? "Prix d'achat inconnu"
-                    : 'Achat ${formatAmount(item.purchaseUnitPrice!)} · '
-                          'Marge ${formatFcfa(item.margin!)}',
-              ),
-            const Divider(),
-            _InfoRow(label: "Coût d'achat", value: formatFcfa(summary.cost)),
-            _InfoRow(label: 'Marge brute', value: formatFcfa(summary.margin)),
-            if (summary.hasUnknownCost)
-              Text(
-                "Articles sans prix d'achat exclus de la marge.",
-                style: muted,
-              ),
-          ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: AppTypography.bodyMedium.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          // Valeur calée à droite, comme une colonne de ticket.
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: AppTypography.labelLarge.copyWith(
-                fontFeatures: AppTypography.tabularFigures,
-              ),
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

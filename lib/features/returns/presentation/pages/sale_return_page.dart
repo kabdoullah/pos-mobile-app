@@ -15,7 +15,6 @@ import '../../domain/entities/sale_return.dart';
 import '../providers/returns_providers.dart';
 import '../widgets/return_confirmation_sheet.dart';
 import '../widgets/return_success_view.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../../app/theme/app_colors.dart';
 
 /// Retour d'articles d'une vente : quantités et état par article, motif,
@@ -35,7 +34,7 @@ class SaleReturnPage extends ConsumerWidget {
 
     if (saved != null) {
       return AppScaffold(
-        title: 'Retour enregistré',
+        title: 'Retour · vente n° ${sale.receiptNumber}',
         body: ReturnSuccessView(
           sale: sale,
           saved: saved,
@@ -45,8 +44,11 @@ class SaleReturnPage extends ConsumerWidget {
       );
     }
 
-    return AppScaffold(
-      title: 'Retour · vente #${sale.receiptNumber}',
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: Text('Retour · vente n° ${sale.receiptNumber}'),
+      ),
       body: linesAsync.when(
         loading: () => ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -72,10 +74,12 @@ class SaleReturnPage extends ConsumerWidget {
             );
           }
           if (!lines.any((l) => l.returnableQuantity > 0)) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.assignment_turned_in_outlined,
-              title: 'Tout a déjà été retourné',
-              message: 'Aucun article de cette vente ne peut plus être rendu.',
+              title: 'Tous les articles ont déjà été retournés',
+              message: 'Il n’y a plus rien à rembourser sur cette vente.',
+              actionLabel: 'Voir la vente',
+              onAction: () => Navigator.of(context).pop(),
             );
           }
           return _ReturnForm(sale: sale, lines: lines, draft: draft);
@@ -161,8 +165,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = AppColors.of(context);
+    final colors = AppColors.of(context);
     final draft = widget.draft;
     final total = draft.refundTotal(widget.lines);
     final hasItems = draft.selections(widget.lines).isNotEmpty;
@@ -175,110 +178,135 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
         : null;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             children: [
-              const SectionHeader(title: 'Articles'),
-              for (final line in widget.lines)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _LineCard(
-                    line: line,
-                    quantity: draft.quantityOf(line.saleItemId),
-                    condition: draft.conditionOf(line.saleItemId),
-                    onQuantity: (q) => _draft.setQuantity(line.saleItemId, q),
-                    onCondition: (c) => _draft.setCondition(line.saleItemId, c),
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.sm),
-              const SectionHeader(title: 'Motif'),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.xs,
+              const OverlineHeader('Que rapporte le client ?'),
+              FlatList(
                 children: [
-                  for (final reason in ReturnReason.values)
-                    ChoiceChip(
-                      label: Text(reason.label),
-                      selected: draft.reason == reason,
-                      onSelected: (_) => _draft.setReason(reason),
+                  for (final line in widget.lines)
+                    _LineCard(
+                      line: line,
+                      quantity: draft.quantityOf(line.saleItemId),
+                      condition: draft.conditionOf(line.saleItemId),
+                      onQuantity: (q) => _draft.setQuantity(line.saleItemId, q),
+                      onCondition: (c) =>
+                          _draft.setCondition(line.saleItemId, c),
                     ),
                 ],
               ),
-              if (draft.reason == ReturnReason.other) ...[
-                const SizedBox(height: AppSpacing.sm),
-                AppTextField(
-                  label: 'Précisez le motif',
-                  errorText: draft.needsNote ? 'Commentaire obligatoire' : null,
-                  onChanged: _draft.setNote,
-                  maxLength: 500,
-                  textCapitalization: TextCapitalization.sentences,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              const SectionHeader(title: 'Remboursement'),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  for (final method in RefundMethod.values)
-                    ChoiceChip(
-                      label: Text(method.label),
-                      selected: draft.refundMethod == method,
-                      onSelected: (_) => _draft.setRefundMethod(method),
+              const OverlineHeader('Motif'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        for (final reason in ReturnReason.values)
+                          QuickChoiceButton(
+                            label: reason.label,
+                            isSelected: draft.reason == reason,
+                            onTap: () => _draft.setReason(reason),
+                          ),
+                      ],
                     ),
-                ],
+                    if (draft.reason == ReturnReason.other) ...[
+                      const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+                      AppTextField(
+                        label: 'Précisez le motif (obligatoire)',
+                        hint: 'Ex. : flacon ouvert',
+                        errorText: draft.needsNote
+                            ? 'Commentaire obligatoire'
+                            : null,
+                        onChanged: _draft.setNote,
+                        maxLength: 500,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-              if (widget.sale.paymentMethod == PaymentMethod.mixed)
-                Padding(
-                  padding: const EdgeInsets.only(top: AppSpacing.xs),
-                  child: Text(
-                    'Vente payée en mixte : choisissez comment vous '
-                    'remboursez le client.',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurfaceVariant,
+              const OverlineHeader('Remboursement'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        for (final method in RefundMethod.values)
+                          QuickChoiceButton(
+                            label: method.label,
+                            isSelected: draft.refundMethod == method,
+                            onTap: () => _draft.setRefundMethod(method),
+                          ),
+                      ],
                     ),
-                  ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.xs + 2),
+                      child: Text(
+                        widget.sale.paymentMethod == PaymentMethod.mixed
+                            ? 'Vente payée en mixte : choisissez comment vous '
+                                  'remboursez le client.'
+                            : draft.refundMethod == RefundMethod.cash
+                            ? 'Un remboursement en espèces sort du tiroir de '
+                                  'caisse.'
+                            : 'Remboursez le client depuis votre téléphone.',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
-        // Même panneau que l'encaissement de la caisse : seule surface élevée,
-        // le montant à rembourser reste l'objet principal.
-        Material(
-          color: semantic.surface,
-          elevation: 8,
-          shadowColor: semantic.elevationShadow.withValues(alpha: 0.12),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppSpacing.radiusLg),
-            ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border(top: BorderSide(color: colors.border)),
           ),
           child: SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + AppSpacing.xs,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'À rembourser',
-                          style: AppTypography.titleMedium,
+                          style: AppTypography.body.copyWith(
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
-                      AmountDisplay(amount: total, size: AmountSize.large),
+                      Text(formatFcfa(total), style: AppTypography.figureLarge),
                     ],
                   ),
                   if (missing != null)
                     Text(
                       missing,
                       style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurfaceVariant,
+                        color: colors.textSecondary,
                       ),
                     ),
                   const SizedBox(height: AppSpacing.sm),
@@ -298,8 +326,9 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   }
 }
 
-/// Article de la vente : quantités vendue / rendue / retournable, prix figé,
-/// sélection de la quantité et de l'état, montant remboursable.
+/// Article de la vente (ligne à plat) : vendu / déjà rendu / retournable,
+/// quantité à rendre, montant, puis l'état de l'article et son effet sur le
+/// stock.
 class _LineCard extends StatelessWidget {
   const _LineCard({
     required this.line,
@@ -317,83 +346,98 @@ class _LineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final colors = AppColors.of(context);
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
     final returnable = line.returnableQuantity;
 
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + AppSpacing.xs,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ProductThumbnailById(productId: line.productId),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Text(line.productName, style: AppTypography.bodyStrong),
+              Text(
+                '${line.soldQuantity} × ${formatFcfa(line.unitPrice)}'
+                '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
+                style: meta,
+              ),
+              Text(
+                'Vendu ${line.soldQuantity} · déjà rendu '
+                '${line.returnedQuantity} · retournable $returnable',
+                style: meta,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              if (returnable == 0)
+                const StatusIndicator(
+                  label: 'Déjà entièrement retourné',
+                  tone: StatusTone.neutral,
+                )
+              else
+                Row(
                   children: [
-                    Text(line.productName, style: AppTypography.bodyLarge),
-                    Text(
-                      '${line.soldQuantity} × ${formatAmount(line.unitPrice)}'
-                      '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
-                      style: muted,
+                    QuantityStepper(
+                      quantity: quantity,
+                      onDecrease: quantity > 0
+                          ? () => onQuantity(quantity - 1)
+                          : null,
+                      onIncrease: quantity < returnable
+                          ? () => onQuantity(quantity + 1)
+                          : null,
                     ),
-                    Text(
-                      'Vendu ${line.soldQuantity} · déjà rendu '
-                      '${line.returnedQuantity} · retournable $returnable',
-                      style: muted,
-                    ),
+                    const Spacer(),
+                    if (quantity > 0)
+                      Text(
+                        formatFcfa(line.refundFor(quantity)),
+                        style: AppTypography.bodyStrong.copyWith(
+                          fontFeatures: AppTypography.tabularFigures,
+                        ),
+                      ),
                   ],
                 ),
-              ),
+              if (quantity > 0) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final c in ItemCondition.values)
+                      QuickChoiceButton(
+                        label: c.label,
+                        isSelected: condition == c,
+                        onTap: () => onCondition(c),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                StatusIndicator(
+                  label: condition.restocks
+                      ? 'Sera remis en stock'
+                      : 'Ne sera pas remis en stock',
+                  tone: condition.restocks
+                      ? StatusTone.success
+                      : StatusTone.neutral,
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          if (returnable == 0)
-            Text('Déjà entièrement retourné', style: muted)
-          else
-            Row(
-              children: [
-                QuantityStepper(
-                  quantity: quantity,
-                  onDecrease: quantity > 0
-                      ? () => onQuantity(quantity - 1)
-                      : null,
-                  onIncrease: quantity < returnable
-                      ? () => onQuantity(quantity + 1)
-                      : null,
-                ),
-                const Spacer(),
-                if (quantity > 0)
-                  AmountDisplay(amount: line.refundFor(quantity)),
-              ],
-            ),
-          if (quantity > 0) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                for (final c in ItemCondition.values)
-                  ChoiceChip(
-                    label: Text(c.label),
-                    selected: condition == c,
-                    onSelected: (_) => onCondition(c),
-                  ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              condition.restocks
-                  ? 'Sera remis en stock'
-                  : 'Ne sera pas remis en stock',
-              style: muted,
-            ),
-          ],
-        ],
-      ),
+        ),
+        // Article choisi : trait gauche couleur action.
+        if (quantity > 0)
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: SizedBox(width: 3, child: ColoredBox(color: colors.action)),
+          ),
+      ],
     );
   }
 }

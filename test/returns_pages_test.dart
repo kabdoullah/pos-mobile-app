@@ -383,10 +383,10 @@ void main() {
         100,
       );
       expect(find.textContaining('Vente payée en mixte'), findsOneWidget);
-      final cash = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, 'Espèces'),
+      final cash = tester.widget<QuickChoiceButton>(
+        find.widgetWithText(QuickChoiceButton, 'Espèces'),
       );
-      expect(cash.selected, isTrue);
+      expect(cash.isSelected, isTrue);
     });
 
     testWidgets('plus rien à retourner : écran explicite', (tester) async {
@@ -395,7 +395,10 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca(returned: 2)]),
       );
-      expect(find.text('Tout a déjà été retourné'), findsOneWidget);
+      expect(
+        find.text('Tous les articles ont déjà été retournés'),
+        findsOneWidget,
+      );
     });
   });
 }

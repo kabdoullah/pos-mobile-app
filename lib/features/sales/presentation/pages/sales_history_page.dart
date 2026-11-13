@@ -3,18 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
-import '../../../../core/router/main_shell.dart';
 import '../../../../core/widgets/index.dart';
-import '../../domain/entities/sale.dart';
 import '../../domain/entities/payment_method_label.dart';
+import '../../domain/entities/sale.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
 
-/// Onglet Historique : ventes par période, avec total, recherche par numéro
-/// de reçu et accès au détail.
+/// Période de l'historique, choisie par onglet.
+enum _Period { today, yesterday, week, month, custom }
+
+/// Onglet Historique : période en onglets (Aujourd'hui, Hier, 7 jours, Ce
+/// mois-ci, Dates), recherche par montant ou n° de reçu, ventes groupées par
+/// jour avec le total du jour, statut de synchro en point + mot.
 class SalesHistoryPage extends ConsumerStatefulWidget {
   /// Crée l'onglet Historique.
   const SalesHistoryPage({super.key});
@@ -24,17 +28,10 @@ class SalesHistoryPage extends ConsumerStatefulWidget {
 }
 
 class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
-  late DateTimeRange _range;
+  late DateTimeRange _range = _rangeFor(_Period.today);
+  _Period _period = _Period.today;
   final _searchController = TextEditingController();
   String _query = '';
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    _range = DateTimeRange(start: today, end: today);
-  }
 
   @override
   void dispose() {
@@ -42,19 +39,52 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     super.dispose();
   }
 
-  Future<void> _pickPeriod() async {
+  static DateTimeRange _rangeFor(_Period period) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    return switch (period) {
+      _Period.yesterday => DateTimeRange(start: yesterday, end: yesterday),
+      _Period.week => DateTimeRange(
+        start: today.subtract(const Duration(days: 6)),
+        end: today,
+      ),
+      _Period.month => DateTimeRange(
+        start: DateTime(today.year, today.month),
+        end: today,
+      ),
+      _Period.today ||
+      _Period.custom => DateTimeRange(start: today, end: today),
+    };
+  }
+
+  Future<void> _select(_Period period) async {
+    if (period != _Period.custom) {
+      setState(() {
+        _period = period;
+        _range = _rangeFor(period);
+      });
+      return;
+    }
     final picked = await showModalBottomSheet<DateTimeRange>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => DateRangeFilterSheet(initialRange: _range),
     );
-    if (picked != null && mounted) setState(() => _range = picked);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _range = picked;
+      // Une plage qui correspond à un onglet l'active.
+      _period = _Period.values.firstWhere(
+        (p) => p != _Period.custom && _rangeFor(p) == picked,
+        orElse: () => _Period.custom,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final provider = salesHistoryProvider(
       startDate: _range.start,
       endDate: _range.end,
@@ -62,52 +92,50 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     final salesAsync = ref.watch(provider);
     final isSingleDay = DateUtils.isSameDay(_range.start, _range.end);
 
-    return AppScaffold(
-      title: 'Historique',
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: AppSpacing.md,
+        title: const Text('Historique'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: AppSpacing.md),
+            child: OfflineStatusIndicator(),
+          ),
+        ],
+      ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
-              AppSpacing.sm,
-              AppSpacing.md,
               0,
+              AppSpacing.md,
+              AppSpacing.sm,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    ActionChip(
-                      avatar: const Icon(Icons.calendar_today, size: 18),
-                      label: Text(periodLabel(_range)),
-                      onPressed: _pickPeriod,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    // Gros totaux : réduits pour tenir à côté de la période.
-                    if (salesAsync.value case final sales?)
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: _PeriodTotals(sales: sales),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                AppSearchBar(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() => _query = value),
-                  hintText: 'Rechercher un n° de reçu',
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+            child: AppSearchBar(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _query = value),
+              hintText: 'Montant ou n° de reçu',
+              keyboardType: TextInputType.number,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          UnderlineTabs<_Period>(
+            tabs: [
+              (value: _Period.today, label: 'Aujourd’hui'),
+              (value: _Period.yesterday, label: 'Hier'),
+              (value: _Period.week, label: '7 jours'),
+              (value: _Period.month, label: 'Ce mois-ci'),
+              (
+                value: _Period.custom,
+                label: _period == _Period.custom
+                    ? periodLabel(_range)
+                    : 'Dates',
+              ),
+            ],
+            selected: _period,
+            onSelected: _select,
+          ),
           Expanded(
             child: salesAsync.when(
               loading: () => ListView(
@@ -130,55 +158,60 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
               ),
               data: (sales) {
                 if (sales.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'Aucune vente',
-                    message: isSingleDay
-                        ? 'Vos ventes de ce jour apparaîtront ici.'
-                        : 'Aucune vente sur cette période.',
-                    actionLabel: 'Faire une vente',
-                    onAction: () => StatefulNavigationShell.of(
-                      context,
-                    ).goBranch(ShellBranch.sale.index),
+                  return _EmptyPeriod(
+                    period: _period,
+                    onPickDates: () => _select(_Period.custom),
                   );
                 }
-                final visible = searchSalesByReceipt(sales, _query);
-                if (visible.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    child: Text(
-                      'Aucun reçu ne correspond à « $_query ».',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                  );
-                }
-                // Plusieurs jours : un en-tête par jour (libellé, sous-total)
-                // puis ses ventes sur une surface à plat ; chaque groupe est
-                // construit à la demande, même sur un mois de ventes.
+                final visible = searchSales(sales, _query);
+                final totals = salesTotals(visible);
                 return CustomScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   slivers: [
+                    if (isSingleDay)
+                      SliverToBoxAdapter(
+                        child: _TotalsLine(
+                          count: totals.count,
+                          total: formatFcfa(totals.total),
+                        ),
+                      ),
+                    if (visible.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.lg),
+                          child: Text(
+                            'Aucune vente ne correspond à « $_query ».',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.body.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    // Plusieurs jours : un sur-titre par jour avec son total,
+                    // puis ses ventes à plat ; construit à la demande.
                     for (final group in groupSalesByDay(visible)) ...[
                       if (!isSingleDay)
                         SliverToBoxAdapter(
                           child: _DayHeader(day: group.day, sales: group.sales),
                         ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          0,
-                          AppSpacing.md,
-                          AppSpacing.sm,
-                        ),
-                        sliver: SliverAppListGroup(
-                          itemCount: group.sales.length,
-                          dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
-                          itemBuilder: (context, index) =>
-                              _SaleTile(sale: group.sales[index]),
+                      SliverList.builder(
+                        itemCount: group.sales.length,
+                        itemBuilder: (context, index) => DecoratedBox(
+                          position: DecorationPosition.foreground,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: index == 0
+                                  ? BorderSide(color: colors.border)
+                                  : BorderSide.none,
+                              bottom: BorderSide(color: colors.border),
+                            ),
+                          ),
+                          child: ColoredBox(
+                            color: colors.surface,
+                            child: _SaleTile(sale: group.sales[index]),
+                          ),
                         ),
                       ),
                     ],
@@ -196,32 +229,47 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
   }
 }
 
-class _PeriodTotals extends StatelessWidget {
-  const _PeriodTotals({required this.sales});
+/// « 3 ventes » et le total de la période, au-dessus de la liste.
+class _TotalsLine extends StatelessWidget {
+  const _TotalsLine({required this.count, required this.total});
 
-  final List<Sale> sales;
+  final int count;
+  final String total;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final totals = salesTotals(sales);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        AmountDisplay(amount: totals.total, size: AmountSize.medium),
-        Text(
-          totals.count <= 1
-              ? '${totals.count} vente'
-              : '${totals.count} ventes',
-          style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
-        ),
-      ],
+    final colors = AppColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm + AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              count <= 1 ? '$count vente' : '$count ventes',
+              style: AppTypography.bodySmall.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+          ),
+          Text(
+            total,
+            style: AppTypography.bodyStrong.copyWith(
+              fontFeatures: AppTypography.tabularFigures,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-/// En-tête de jour (période sur plusieurs jours) : « Aujourd'hui », « Hier »
-/// ou la date, puis le total et le nombre de ventes du jour.
+/// Sur-titre de jour (période sur plusieurs jours) : « Aujourd'hui »,
+/// « Hier · mardi 10 » ou la date, avec le nombre de ventes et le total.
 class _DayHeader extends StatelessWidget {
   const _DayHeader({required this.day, required this.sales});
 
@@ -230,60 +278,24 @@ class _DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final totals = salesTotals(sales);
+    final count = totals.count <= 1
+        ? '${totals.count} vente'
+        : '${totals.count} ventes';
     final label = switch (periodLabel(DateTimeRange(start: day, end: day))) {
-      final relative && ("Aujourd'hui" || 'Hier') => relative,
-      _ => toBeginningOfSentenceCase(
-        DateFormat('EEEE d MMMM', 'fr_FR').format(day),
-        'fr_FR',
-      ),
+      "Aujourd'hui" => 'Aujourd’hui',
+      'Hier' => 'Hier · ${DateFormat('EEEE d', 'fr_FR').format(day)}',
+      _ => DateFormat('EEEE d MMMM', 'fr_FR').format(day),
     };
-    final muted = AppTypography.labelMedium.copyWith(
-      color: cs.onSurfaceVariant,
-    );
-
-    return Semantics(
-      header: true,
-      // Sur le fond de page, au-dessus de la surface de ses ventes.
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.md,
-          AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.labelMedium.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Text(
-              totals.count <= 1
-                  ? '${totals.count} vente · '
-                  : '${totals.count} ventes · ',
-              style: muted,
-            ),
-            Text(
-              formatFcfa(totals.total),
-              style: AppTypography.labelMedium.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return OverlineHeader(
+      label,
+      trailing: '$count · ${formatFcfa(totals.total)}',
     );
   }
 }
 
+/// Une vente : n° et heure, montant, moyen de paiement ; statut de synchro
+/// tant que le reçu n'a pas de numéro.
 class _SaleTile extends StatelessWidget {
   const _SaleTile({required this.sale});
 
@@ -291,48 +303,111 @@ class _SaleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     // Numéro 0 = pas encore attribué par le serveur : jamais affiché.
     final isSynced = sale.receiptNumber > 0;
     final time = DateFormat.Hm('fr_FR').format(sale.createdAt);
-
-    return ListTile(
+    return InkWell(
       onTap: () => context.push(Routes.saleDetail, extra: sale),
-      leading: DecoratedBox(
-        decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          shape: BoxShape.circle,
-        ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 60),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: Icon(
-            switch (sale.paymentMethod) {
-              PaymentMethod.cash => Icons.payments_outlined,
-              PaymentMethod.mixed => Icons.call_split,
-              _ => Icons.phone_android,
-            },
-            size: 20,
-            color: cs.onSurfaceVariant,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      isSynced
+                          ? 'Vente n° ${sale.receiptNumber} · $time'
+                          : 'Vente · $time',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyStrong,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    formatFcfa(sale.totalAmount),
+                    style: AppTypography.bodyStrong.copyWith(
+                      fontFeatures: AppTypography.tabularFigures,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                sale.paymentMethod.label,
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+              if (!isSynced)
+                const StatusIndicator(
+                  label: 'En attente de synchro',
+                  tone: StatusTone.warning,
+                ),
+            ],
           ),
         ),
       ),
-      // Une ligne chacun : un gros montant à droite tronque le texte au lieu
-      // de le replier caractère par caractère.
-      title: Text(
-        isSynced ? 'Reçu #${sale.receiptNumber}' : 'En attente de synchro',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.bodyMedium.copyWith(
-          fontWeight: FontWeight.w600,
-          color: isSynced ? null : cs.onSurfaceVariant,
-        ),
+    );
+  }
+}
+
+/// Période sans vente : proposer une autre période.
+class _EmptyPeriod extends StatelessWidget {
+  const _EmptyPeriod({required this.period, required this.onPickDates});
+
+  final _Period period;
+  final VoidCallback onPickDates;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final title = switch (period) {
+      _Period.today => 'Aucune vente aujourd’hui',
+      _Period.yesterday => 'Aucune vente hier',
+      _Period.week => 'Aucune vente ces 7 derniers jours',
+      _Period.month => 'Aucune vente ce mois-ci',
+      _Period.custom => 'Aucune vente sur cette période',
+    };
+    final message = period == _Period.today
+        ? 'Vos ventes du jour apparaîtront ici.'
+        : 'La boutique était peut-être fermée. Essayez une autre période.';
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyStrong.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Center(
+            child: SecondaryButton(
+              label: 'Choisir des dates',
+              onPressed: onPickDates,
+            ),
+          ),
+        ],
       ),
-      subtitle: Text(
-        '$time · ${sale.paymentMethod.label}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: AmountDisplay(amount: sale.totalAmount),
     );
   }
 }
