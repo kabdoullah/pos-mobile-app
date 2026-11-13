@@ -168,6 +168,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> forgetPin() => pinStorage.clearPin();
+
+  @override
   Future<void> deleteAccount(String password) async {
     try {
       await dataSource.deleteMe(DeleteAccountRequestDto(password: password));

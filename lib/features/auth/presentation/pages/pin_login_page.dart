@@ -12,6 +12,7 @@ import '../../domain/entities/pin_failure.dart';
 import '../../providers/store_provider.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/forgot_pin_sheet.dart';
 import '../widgets/pin_numpad.dart';
 
 /// Écran de déverrouillage quotidien par PIN, pavé numérique personnalisé.
@@ -282,6 +283,12 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
               enabled: !isLoading && !isLocked,
             ),
             const SizedBox(height: AppSpacing.xs),
+            // Toujours accessible, même pendant un blocage : le mot de passe
+            // du compte remplace le PIN.
+            TextButton(
+              onPressed: isLoading ? null : () => showForgotPinSheet(context),
+              child: const Text('Code PIN oublié ?'),
+            ),
             TextButton(
               onPressed: isLoading ? null : _confirmSwitchAccount,
               style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),

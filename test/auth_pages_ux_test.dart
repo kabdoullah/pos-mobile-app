@@ -64,6 +64,16 @@ class _FakeAuth extends Auth {
   @override
   Future<DateTime?> pinLockedUntil() async => null;
 
+  /// Mots de passe transmis à [recoverPin].
+  final recoverAttempts = <String>[];
+
+  @override
+  Future<void> recoverPin(String password) async {
+    recoverAttempts.add(password);
+    if (password != 'secret123') throw const InvalidCredentials();
+    state = const AsyncData(AuthPinSetupRequired());
+  }
+
   @override
   Future<void> logout() async {
     loggedOut = true;
@@ -376,6 +386,34 @@ void main() {
       // Pavé désactivé pendant le blocage : la saisie est ignorée.
       await _tapDigits(tester, '1');
       expect(find.bySemanticsLabel('0 chiffre saisi sur 4'), findsOneWidget);
+    });
+
+    testWidgets('code PIN oublié : mot de passe vérifié, sinon refusé', (
+      tester,
+    ) async {
+      final auth = await _pump(
+        tester,
+        const PinLoginPage(),
+        status: const AuthPinRequired(),
+      );
+
+      await tester.tap(find.text('Code PIN oublié ?'));
+      await tester.pumpAndSettle();
+      expect(find.text('Code PIN oublié'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'mauvais');
+      await tester.tap(find.text('Vérifier et choisir un nouveau PIN'));
+      await tester.pumpAndSettle();
+      expect(find.text('Mot de passe incorrect.'), findsOneWidget);
+      expect(auth.state.value, isA<AuthPinRequired>());
+
+      await tester.enterText(find.byType(TextField), 'secret123');
+      await tester.tap(find.text('Vérifier et choisir un nouveau PIN'));
+      await tester.pumpAndSettle();
+      expect(auth.recoverAttempts, ['mauvais', 'secret123']);
+      expect(auth.state.value, isA<AuthPinSetupRequired>());
+      expect(find.text('Code PIN oublié'), findsNothing);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('changer de compte : confirmation puis déconnexion', (

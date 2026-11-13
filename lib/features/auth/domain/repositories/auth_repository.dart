@@ -21,6 +21,10 @@ abstract class AuthRepository {
   /// Définit le PIN local après la première connexion.
   Future<void> setupPin(String pin);
 
+  /// Oublie le PIN de cet appareil (« Code PIN oublié »), sans toucher aux
+  /// tokens : l'utilisateur en choisit aussitôt un nouveau.
+  Future<void> forgetPin();
+
   /// Vérifie le PIN saisi par l'utilisateur.
   ///
   /// Se termine normalement si le PIN est correct. Lève `WrongPin` (avec les
