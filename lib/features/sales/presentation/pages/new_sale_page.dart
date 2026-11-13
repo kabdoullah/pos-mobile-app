@@ -171,7 +171,9 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       stock: stock,
       initialQuantity: inCart == 0 ? 1 : inCart,
       maxQuantity: stock,
-      confirmLabel: inCart == 0 ? 'Ajouter' : 'Mettre à jour',
+      confirmLabel: inCart == 0
+          ? 'Ajouter au panier'
+          : 'Mettre à jour le panier',
     );
     if (!mounted) return;
     if (result case QuantityChosen(:final quantity)) {

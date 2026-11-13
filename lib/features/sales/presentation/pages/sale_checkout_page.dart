@@ -86,7 +86,8 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
       stock: item.availableStock,
       initialQuantity: item.quantity,
       maxQuantity: item.availableStock,
-      confirmLabel: 'Mettre à jour',
+      confirmLabel: 'Mettre à jour le panier',
+      discount: item.discount,
     );
     if (result case QuantityChosen(:final quantity) when mounted) {
       _setQuantity(item, quantity);

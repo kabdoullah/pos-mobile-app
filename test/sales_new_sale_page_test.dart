@@ -278,7 +278,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(BottomSheet), findsOneWidget);
-      await tester.tap(find.textContaining('Ajouter · '));
+      await tester.tap(find.text('Ajouter au panier'));
       await tester.pumpAndSettle();
       expect(
         container.read(cartProvider.notifier).quantityOf('Coca-Cola 33cl'),

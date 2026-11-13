@@ -2,11 +2,13 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/fcfa_amount_input.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/discount.dart';
+import 'choice_row.dart';
 
 /// Résultat de la feuille de réduction : réduction appliquée, ou retrait
 /// ([discount] `null`).
@@ -47,41 +49,17 @@ class _DiscountSheet extends StatefulWidget {
 }
 
 /// Pourcentages proposés en un appui.
-final _percentPresets = [5, 10, 15, 20, 25, 50].map(Decimal.fromInt).toList();
+final _percentPresets = [5, 10, 15, 20].map(Decimal.fromInt).toList();
 
 /// Montants (FCFA) proposés en un appui ; ceux qui dépassent le montant brut
 /// sont masqués.
-final _amountPresets = [
-  100,
-  200,
-  500,
-  1000,
-  2000,
-  5000,
-].map(Decimal.fromInt).toList();
+final _amountPresets = [500, 1000, 2000, 5000].map(Decimal.fromInt).toList();
 
 class _DiscountSheetState extends State<_DiscountSheet> {
   late DiscountType _type = widget.initial?.type ?? DiscountType.percentage;
-
-  /// Valeur prédéfinie choisie (`null` : aucune, ou saisie libre).
-  Decimal? _preset;
-
-  /// Saisie libre (« Autre »), pour une valeur absente des choix.
-  bool _isCustom = false;
-  final _controller = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    final initial = widget.initial;
-    if (initial == null) return;
-    if (_presetsFor(initial.type).contains(initial.value)) {
-      _preset = initial.value;
-    } else {
-      _isCustom = true;
-      _controller.text = initial.value.toString();
-    }
-  }
+  late final _controller = TextEditingController(
+    text: widget.initial?.value.toString() ?? '',
+  );
 
   @override
   void dispose() {
@@ -89,44 +67,35 @@ class _DiscountSheetState extends State<_DiscountSheet> {
     super.dispose();
   }
 
-  List<Decimal> _presetsFor(DiscountType type) => switch (type) {
-    DiscountType.percentage => _percentPresets,
-    DiscountType.amount =>
-      _amountPresets.where((value) => value <= widget.gross).toList(),
-  };
+  bool get _isPercent => _type == DiscountType.percentage;
 
-  /// Réduction choisie, ou `null` si rien n'est choisi / la saisie est
-  /// invalide.
-  Discount? get _discount {
+  List<Decimal> get _presets => _isPercent
+      ? _percentPresets
+      : _amountPresets.where((value) => value <= widget.gross).toList();
+
+  /// Valeur saisie, ou `null` si le champ est vide ou invalide.
+  Decimal? get _value {
     final text = _controller.text.trim();
-    final value = !_isCustom
-        ? _preset
-        // Montant FCFA : francs entiers, une virgule rend la saisie invalide.
-        : _type == DiscountType.amount
-        ? parseFcfaAmount(text)
-        : Decimal.tryParse(text);
-    return value == null ? null : Discount(type: _type, value: value);
+    // Montant FCFA : francs entiers, une virgule rend la saisie invalide.
+    return _isPercent ? Decimal.tryParse(text) : parseFcfaAmount(text);
   }
 
-  void _selectPreset(Decimal value) => setState(() {
-    _preset = value;
-    _isCustom = false;
-    FocusScope.of(context).unfocus();
-  });
-
-  void _selectCustom() => setState(() {
-    _preset = null;
-    _isCustom = true;
-  });
+  void _setText(String text) {
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final discount = _discount;
-    final customText = _controller.text.trim();
-    final error = !_isCustom || customText.isEmpty
+    final text = _controller.text.trim();
+    final value = _value;
+    final discount = value == null ? null : Discount(type: _type, value: value);
+    final error = text.isEmpty
         ? null
-        : _type == DiscountType.amount && hasDecimalSeparator(customText)
+        : !_isPercent && hasDecimalSeparator(text)
         ? fcfaWholeAmountError
         : discount == null
         ? 'Entrez un nombre valide'
@@ -135,9 +104,9 @@ class _DiscountSheetState extends State<_DiscountSheet> {
         ? discount.amountOn(widget.gross)
         : Decimal.zero;
     final canApply = discount != null && error == null;
-    final isPercent = _type == DiscountType.percentage;
+    final presets = _presets;
 
-    // Défilante : choix + clavier (« Autre ») peuvent dépasser l'écran.
+    // Défilante : le clavier peut recouvrir le bas de la feuille.
     return SafeArea(
       child: SingleChildScrollView(
         child: Padding(
@@ -151,128 +120,103 @@ class _DiscountSheetState extends State<_DiscountSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(widget.title, style: AppTypography.titleLarge),
+              Text(widget.title, style: AppTypography.sectionTitle),
               const SizedBox(height: AppSpacing.md),
-              SegmentedButton<DiscountType>(
+              SegmentedControl<DiscountType>(
                 segments: const [
-                  ButtonSegment(
-                    value: DiscountType.percentage,
-                    label: Text('Pourcentage'),
-                    icon: Icon(Icons.percent),
-                  ),
-                  ButtonSegment(
-                    value: DiscountType.amount,
-                    label: Text('Montant'),
-                    icon: Icon(Icons.payments_outlined),
-                  ),
+                  (value: DiscountType.amount, label: 'Montant'),
+                  (value: DiscountType.percentage, label: 'Pourcentage'),
                 ],
-                selected: {_type},
-                onSelectionChanged: (selection) => setState(() {
-                  _type = selection.first;
-                  _preset = null;
-                  _isCustom = false;
-                  _controller.clear();
-                }),
-                showSelectedIcon: false,
+                selected: _type,
+                onChanged: (type) {
+                  if (type == _type) return;
+                  _type = type;
+                  _setText('');
+                },
               ),
               const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (final value in _presetsFor(_type))
-                    ChoiceChip(
-                      label: Text(
-                        isPercent ? '${value.toBigInt()} %' : formatFcfa(value),
-                      ),
-                      selected: !_isCustom && _preset == value,
-                      onSelected: (_) => _selectPreset(value),
-                    ),
-                  ChoiceChip(
-                    avatar: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Autre'),
-                    selected: _isCustom,
-                    onSelected: (_) => _selectCustom(),
-                  ),
-                ],
+              AppTextField(
+                label: 'Remise',
+                large: true,
+                suffixText: _isPercent ? '%' : 'FCFA',
+                errorText: error,
+                controller: _controller,
+                keyboardType: TextInputType.numberWithOptions(
+                  decimal: _isPercent,
+                ),
+                inputFormatters: _isPercent
+                    ? [
+                        // Jusqu'à 2 décimales pour un pourcentage (ex. 12,5).
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d{0,3}([.,]\d{0,2})?'),
+                        ),
+                        // Virgule française → point décimal.
+                        TextInputFormatter.withFunction(
+                          (_, next) => next.copyWith(
+                            text: next.text.replaceAll(',', '.'),
+                          ),
+                        ),
+                        LengthLimitingTextInputFormatter(10),
+                      ]
+                    // Montant : virgule gardée visible pour être refusée,
+                    // jamais recollée aux chiffres (« 50,5 » ≠ 505).
+                    : fcfaAmountInputFormatters,
+                onChanged: (_) => setState(() {}),
               ),
-              if (_isCustom) ...[
-                const SizedBox(height: AppSpacing.md),
-                AppTextField(
-                  label: 'Valeur',
-                  suffixText: isPercent ? '%' : 'FCFA',
-                  errorText: error,
-                  controller: _controller,
-                  autofocus: true,
-                  keyboardType: TextInputType.numberWithOptions(
-                    decimal: isPercent,
-                  ),
-                  inputFormatters: isPercent
-                      ? [
-                          // Jusqu'à 2 décimales pour un pourcentage (ex. 12,5).
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d{0,3}([.,]\d{0,2})?'),
-                          ),
-                          // Virgule française → point décimal.
-                          TextInputFormatter.withFunction(
-                            (_, next) => next.copyWith(
-                              text: next.text.replaceAll(',', '.'),
-                            ),
-                          ),
-                          LengthLimitingTextInputFormatter(10),
-                        ]
-                      // Montant : virgule gardée visible pour être refusée,
-                      // jamais recollée aux chiffres (« 50,5 » ≠ 505).
-                      : fcfaAmountInputFormatters,
-                  onChanged: (_) => setState(() {}),
+              if (presets.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+                ChoiceRow<Decimal>(
+                  choices: [
+                    for (final preset in presets)
+                      (
+                        value: preset,
+                        label: _isPercent
+                            ? '${preset.toBigInt()} %'
+                            : formatAmount(preset),
+                      ),
+                  ],
+                  selected: value,
+                  onSelected: (preset) {
+                    FocusScope.of(context).unfocus();
+                    _setText(preset.toString());
+                  },
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Aperçu',
-                style: AppTypography.labelMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              _PreviewRow(label: 'Prix initial', amount: widget.gross),
-              _PreviewRow(label: 'Réduction', amount: amount, negative: true),
-              const Divider(height: AppSpacing.md),
+              const SizedBox(height: AppSpacing.sm),
+              _PreviewRow(label: 'Sous-total', amount: widget.gross),
+              _PreviewRow(label: 'Remise', amount: amount, negative: true),
               _PreviewRow(
-                label: 'Prix final',
+                label: 'Nouveau total',
                 amount: widget.gross - amount,
                 emphasized: true,
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('Annuler'),
-                    ),
+                    child: widget.initial == null
+                        ? SecondaryButton(
+                            label: 'Annuler',
+                            onPressed: () => Navigator.of(context).pop(),
+                          )
+                        : SecondaryButton(
+                            label: 'Retirer la remise',
+                            onPressed: () =>
+                                Navigator.of(context).pop((discount: null)),
+                          ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: FilledButton(
+                    child: PrimaryButton(
+                      label: 'Appliquer',
                       onPressed: canApply
                           ? () =>
                                 Navigator.of(context).pop((discount: discount))
                           : null,
-                      child: const Text('Appliquer'),
                     ),
                   ),
                 ],
               ),
-              if (widget.initial != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                TextButton.icon(
-                  onPressed: () => Navigator.of(context).pop((discount: null)),
-                  icon: const Icon(Icons.close),
-                  label: const Text('Retirer la réduction'),
-                  style: TextButton.styleFrom(foregroundColor: cs.error),
-                ),
-              ],
             ],
           ),
         ),
@@ -281,6 +225,7 @@ class _DiscountSheetState extends State<_DiscountSheet> {
   }
 }
 
+/// Ligne de l'aperçu (définition) : libellé à gauche, montant à droite.
 class _PreviewRow extends StatelessWidget {
   const _PreviewRow({
     required this.label,
@@ -296,21 +241,45 @@ class _PreviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final style = emphasized
-        ? AppTypography.titleMedium
-        : AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
+    final colors = AppColors.of(context);
     final showMinus = negative && amount > Decimal.zero;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          // Le montant garde toute sa largeur ; le libellé cède la place.
-          Expanded(
-            child: Text(label, style: style, overflow: TextOverflow.ellipsis),
-          ),
-          Text('${showMinus ? '−' : ''}${formatFcfa(amount)}', style: style),
-        ],
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          top: emphasized
+              ? BorderSide(color: colors.borderStrong)
+              : BorderSide.none,
+          bottom: emphasized
+              ? BorderSide.none
+              : BorderSide(color: colors.border),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            // Le montant garde toute sa largeur ; le libellé cède la place.
+            Expanded(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: emphasized
+                    ? AppTypography.bodyStrong
+                    : AppTypography.body.copyWith(color: colors.textSecondary),
+              ),
+            ),
+            Text(
+              '${showMinus ? '−' : ''}${formatFcfa(amount)}',
+              style:
+                  (emphasized
+                          ? AppTypography.sectionTitle
+                          : AppTypography.bodyStrong)
+                      .copyWith(fontFeatures: AppTypography.tabularFigures),
+            ),
+          ],
+        ),
       ),
     );
   }
