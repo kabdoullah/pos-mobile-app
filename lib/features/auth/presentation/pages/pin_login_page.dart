@@ -261,7 +261,11 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             const SizedBox(height: AppSpacing.md),
             SlideTransition(
               position: _shakeAnimation,
-              child: PinDots(filledCount: _pin.length),
+              child: PinDots(
+                filledCount: _pin.length,
+                isError:
+                    isLocked || (authValue.hasError && !authValue.isLoading),
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             PinMessage(

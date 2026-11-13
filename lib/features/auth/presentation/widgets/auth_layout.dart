@@ -213,7 +213,10 @@ class AuthHeader extends StatelessWidget {
           child: Text(
             title,
             textAlign: align,
-            style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+            style: AppTypography.figureLarge.copyWith(
+              color: cs.onSurface,
+              fontFeatures: const [],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -260,16 +263,18 @@ class AuthBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
+    // Erreur : seul aplat de couleur (message bloquant). Avertissement : note
+    // à plat bordée, icône dans la couleur d'alerte.
     final (background, foreground, icon) = switch (tone) {
       AuthBannerTone.error => (
-        cs.errorContainer,
-        cs.onErrorContainer,
+        colors.errorSubtle,
+        colors.onErrorSubtle,
         Icons.error_outline_rounded,
       ),
       AuthBannerTone.warning => (
-        cs.tertiaryContainer,
-        cs.onTertiaryContainer,
+        colors.surface,
+        colors.textPrimary,
         Icons.schedule_rounded,
       ),
     };
@@ -281,12 +286,23 @@ class AuthBanner extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          border: tone == AuthBannerTone.warning
+              ? Border.all(color: colors.border)
+              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ExcludeSemantics(child: Icon(icon, color: foreground, size: 20)),
+            ExcludeSemantics(
+              child: Icon(
+                icon,
+                color: tone == AuthBannerTone.warning
+                    ? colors.warning
+                    : foreground,
+                size: 20,
+              ),
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(

@@ -200,12 +200,11 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 child: AuthHeader(
                   key: ValueKey(_step),
                   title: _step == 0
-                      ? 'Sécurisez votre caisse'
-                      : 'Confirmez votre PIN',
+                      ? 'Créez un code PIN'
+                      : 'Confirmez votre code PIN',
                   subtitle: _step == 0
-                      ? 'Votre PIN vous permettra de déverrouiller rapidement '
-                            'l\'application sur cet appareil.'
-                      : 'Saisissez à nouveau les 4 chiffres.',
+                      ? '4 chiffres pour déverrouiller la caisse rapidement.'
+                      : 'Saisissez le même code une seconde fois.',
                   centered: true,
                 ),
               ),
@@ -215,7 +214,10 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
               ),
               const SizedBox(height: AppSpacing.md),
-              PinDots(filledCount: _pin.length),
+              PinDots(
+                filledCount: _pin.length,
+                isError: !isLoading && title != null,
+              ),
               const SizedBox(height: AppSpacing.sm),
               PinMessage(title: title, detail: detail, isError: !isLoading),
               const Spacer(),

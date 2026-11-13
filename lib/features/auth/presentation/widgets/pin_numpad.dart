@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 
@@ -12,7 +13,12 @@ import '../../../../app/theme/app_typography.dart';
 /// chiffres. Le nombre de chiffres saisis est annoncé aux lecteurs d'écran.
 class PinDots extends StatelessWidget {
   /// Crée un indicateur de points du PIN.
-  const PinDots({super.key, required this.filledCount, this.length = 4});
+  const PinDots({
+    super.key,
+    required this.filledCount,
+    this.length = 4,
+    this.isError = false,
+  });
 
   /// Nombre de points remplis (chiffres saisis).
   final int filledCount;
@@ -20,9 +26,12 @@ class PinDots extends StatelessWidget {
   /// Nombre total de points (longueur du PIN).
   final int length;
 
+  /// Saisie refusée : contours en couleur d'erreur.
+  final bool isError;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     return Semantics(
       label:
           '$filledCount chiffre${filledCount > 1 ? 's' : ''} saisi'
@@ -33,17 +42,21 @@ class PinDots extends StatelessWidget {
         children: List.generate(length, (i) {
           final filled = i < filledCount;
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm + 2),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 16,
-              height: 16,
+              duration: const Duration(milliseconds: 120),
+              width: 14,
+              height: 14,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: filled ? cs.primary : Colors.transparent,
+                color: filled ? colors.textPrimary : Colors.transparent,
                 border: Border.all(
-                  color: filled ? cs.primary : cs.outline,
-                  width: 2,
+                  color: isError
+                      ? colors.error
+                      : filled
+                      ? colors.textPrimary
+                      : colors.borderStrong,
+                  width: 1.5,
                 ),
               ),
             ),
@@ -139,14 +152,34 @@ class PinNumpad extends StatelessWidget {
 
   Widget _buildKey(BuildContext context, String? key) {
     if (key == null) return const SizedBox.shrink();
-
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
 
     if (key == 'backspace') {
       return _NumpadKey(
         semanticLabel: 'Effacer',
+        plain: true,
         onTap: enabled ? onBackspace : null,
-        child: Icon(Icons.backspace_outlined, color: cs.onSurface, size: 22),
+        // Grande police : l'icône et le libellé se réduisent au lieu de
+        // déborder de la touche.
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.backspace_outlined,
+                color: colors.textSecondary,
+                size: 22,
+              ),
+              Text(
+                'Effacer',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -155,7 +188,10 @@ class PinNumpad extends StatelessWidget {
       onTap: enabled ? () => onDigit(key) : null,
       child: Text(
         key,
-        style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+        style: AppTypography.figureLarge.copyWith(
+          fontWeight: FontWeight.w500,
+          color: colors.textPrimary,
+        ),
       ),
     );
   }
@@ -166,33 +202,41 @@ class _NumpadKey extends StatelessWidget {
     required this.child,
     required this.semanticLabel,
     this.onTap,
+    this.plain = false,
   });
 
   final Widget child;
   final String semanticLabel;
   final VoidCallback? onTap;
 
+  /// Touche de fonction : sans fond ni filet.
+  final bool plain;
+
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final onTap = this.onTap;
+    final radius = BorderRadius.circular(AppSpacing.radiusSm);
     return Semantics(
       button: true,
       enabled: onTap != null,
       label: semanticLabel,
       excludeSemantics: true,
       child: Material(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        color: plain ? Colors.transparent : colors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: radius,
+          side: plain ? BorderSide.none : BorderSide(color: colors.border),
+        ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: radius,
           onTap: onTap == null
               ? null
               : () {
                   unawaited(HapticFeedback.selectionClick());
                   onTap();
                 },
-          child: SizedBox(height: 64, child: Center(child: child)),
+          child: SizedBox(height: 56, child: Center(child: child)),
         ),
       ),
     );

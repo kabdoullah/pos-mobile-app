@@ -325,7 +325,7 @@ void main() {
       );
       await _tapDigits(tester, '1234');
       expect(find.text('Choisissez un PIN plus sécurisé.'), findsOneWidget);
-      expect(find.text('Sécurisez votre caisse'), findsOneWidget);
+      expect(find.text('Créez un code PIN'), findsOneWidget);
     });
 
     testWidgets('hors inscription : ni étapes ni retour', (tester) async {
