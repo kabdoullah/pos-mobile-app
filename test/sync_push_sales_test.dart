@@ -149,4 +149,11 @@ void main() {
       expect(entry.lastError, startsWith('Network error'));
     },
   );
+
+  test('watchHasSales : faux sans vente, vrai dès la première', () async {
+    final hasSales = salesRepository.watchHasSales();
+    expect(await hasSales.first, isFalse);
+    await createOfflineSale();
+    expect(await salesRepository.watchHasSales().first, isTrue);
+  });
 }

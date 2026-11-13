@@ -20,6 +20,7 @@ import '../../../cash_register/presentation/providers/cash_register_providers.da
 import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
 import '../providers/home_providers.dart';
 import '../widgets/account_email_banner.dart';
+import '../widgets/first_steps_section.dart';
 import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
@@ -43,6 +44,7 @@ class HomePage extends ConsumerWidget {
     final session = ref.watch(activeCashSessionProvider);
     final isLoading = !session.hasValue && !session.hasError;
     final isClosed = session.hasValue && session.value == null;
+    final steps = watchFirstSteps(ref);
 
     void goTo(ShellBranch branch) =>
         StatefulNavigationShell.of(context).goBranch(branch.index);
@@ -115,6 +117,7 @@ class HomePage extends ConsumerWidget {
                       ],
                     ),
                   ),
+                const FirstStepsSection(),
                 const TodaySummary(),
                 const AccountEmailBanner(),
                 LowStockSection(onSeeStock: () => goTo(ShellBranch.inventory)),
@@ -134,7 +137,14 @@ class HomePage extends ConsumerWidget {
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.sm + AppSpacing.xs,
               ),
-              child: isClosed
+              // L'action du bas suit la prochaine étape : premier produit,
+              // ouverture de la caisse, puis la vente.
+              child: steps != null && !steps.product
+                  ? PrimaryButton(
+                      label: 'Ajouter mon premier produit',
+                      onPressed: () => context.push(Routes.productNew),
+                    )
+                  : isClosed
                   ? PrimaryButton(
                       label: 'Ouvrir la caisse',
                       onPressed: () => showOpenCashSessionSheet(context),

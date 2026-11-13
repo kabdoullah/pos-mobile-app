@@ -307,6 +307,15 @@ class SalesRepositoryImpl implements SalesRepository {
   }
 
   @override
+  Stream<bool> watchHasSales() => db
+      .customSelect(
+        'SELECT EXISTS(SELECT 1 FROM sales) AS has_sales',
+        readsFrom: {db.sales},
+      )
+      .watchSingle()
+      .map((row) => row.read<int>('has_sales') == 1);
+
+  @override
   Stream<DailyStats> watchTodayStats() {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);

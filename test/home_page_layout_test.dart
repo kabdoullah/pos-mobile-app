@@ -17,6 +17,7 @@ import 'package:mobile/features/cash_register/domain/entities/cash_summary.dart'
 import 'package:mobile/features/cash_register/presentation/providers/cash_register_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/home/presentation/pages/home_page.dart';
+import 'package:mobile/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:mobile/features/home/presentation/providers/home_providers.dart';
 import 'package:mobile/features/home/presentation/widgets/today_summary.dart';
 import 'package:mobile/features/sales/domain/entities/margin_summary.dart';
@@ -95,6 +96,9 @@ Future<void> pumpHome(
   bool registerOpen = true,
   SyncStatus sync = const SyncStatusIdle(),
   int pending = 0,
+  List<Product>? catalog,
+  bool hasSale = true,
+  bool withClosedSession = true,
 }) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
@@ -112,8 +116,12 @@ Future<void> pumpHome(
           (ref) => Stream.value(registerOpen ? openSession : null),
         ),
         localCashSessionHistoryProvider.overrideWith(
-          (ref) => Stream.value([closedSession]),
+          (ref) => Stream.value(withClosedSession ? [closedSession] : []),
         ),
+        stockProductsProvider.overrideWith(
+          (ref) => Stream.value(catalog ?? [product('Riz', 10)]),
+        ),
+        hasAnySaleProvider.overrideWith((ref) => Stream.value(hasSale)),
         cashSummaryProvider('s1').overrideWith(
           (ref) => Stream.value(
             CashSummary(
@@ -292,5 +300,50 @@ void main() {
       ..[10] = d('500')
       ..[15] = d('900');
     expect(peakHour(hourly), 15);
+  });
+
+  testWidgets('premiers pas : 0 sur 3, l’action du bas suit l’étape', (
+    tester,
+  ) async {
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      registerOpen: false,
+      catalog: const [],
+      hasSale: false,
+      withClosedSession: false,
+    );
+    expect(find.text('PREMIERS PAS'), findsOneWidget);
+    expect(find.text('0 sur 3'), findsOneWidget);
+    expect(find.text('Ajouter un premier produit'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ajouter mon premier produit'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('premiers pas : 2 sur 3, étape suivante la vente', (
+    tester,
+  ) async {
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      hasSale: false,
+    );
+    expect(find.text('2 sur 3'), findsOneWidget);
+    expect(find.text('Fait'), findsNWidgets(2));
+    expect(find.text('Faire une première vente'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Nouvelle vente'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('premiers pas masqués après la première vente', (tester) async {
+    await pumpHome(tester, theme: AppTheme.light(), withData: true);
+    expect(find.text('PREMIERS PAS'), findsNothing);
   });
 }

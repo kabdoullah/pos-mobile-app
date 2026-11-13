@@ -59,6 +59,10 @@ abstract class SalesRepository {
   /// Observe les totaux agrégés du jour — réémet à chaque vente ou retour.
   Stream<DailyStats> watchTodayStats();
 
+  /// Observe s'il existe au moins une vente sur l'appareil (« Premiers pas » :
+  /// première vente faite). Requête légère, sans charger les ventes.
+  Stream<bool> watchHasSales();
+
   /// Retourne toutes les ventes créées dans [startDate, endDate] inclus (fuseau
   /// horaire local de l'appareil).
   Future<List<Sale>> getSalesByDateRange(DateTime startDate, DateTime endDate);

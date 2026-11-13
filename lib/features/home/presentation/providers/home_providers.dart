@@ -81,6 +81,12 @@ List<Decimal> salesByHour(Iterable<Sale> sales) {
   return totals;
 }
 
+/// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
+/// des « Premiers pas » de l'accueil.
+@riverpod
+Stream<bool> hasAnySale(Ref ref) =>
+    ref.watch(salesRepositoryProvider).watchHasSales();
+
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
 /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
 @riverpod

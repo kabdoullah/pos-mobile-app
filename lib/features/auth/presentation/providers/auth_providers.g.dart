@@ -80,7 +80,7 @@ final class AuthProvider extends $AsyncNotifierProvider<Auth, AuthStatus> {
   Auth create() => Auth();
 }
 
-String _$authHash() => r'a988ad090a5a39bae9721f8fd3928fe730d648bd';
+String _$authHash() => r'eb3d8fe9b3d4c9654b3b0385efe01ccedfb587cb';
 
 /// Gère l'état et les actions d'authentification (connexion, inscription,
 /// création/vérification du PIN, déconnexion).
