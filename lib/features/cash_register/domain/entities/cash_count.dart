@@ -2,6 +2,15 @@ import 'package:decimal/decimal.dart';
 
 import 'denomination.dart';
 
+/// Moment du comptage dans la session.
+enum CashCountOperation {
+  /// Fond de caisse, à l'ouverture.
+  opening,
+
+  /// Montant compté, à la clôture.
+  closing,
+}
+
 /// Comptage du tiroir coupure par coupure (billetterie, ADR-0016).
 ///
 /// Immuable : chaque saisie produit un nouveau comptage. Les quantités sont

@@ -96,6 +96,40 @@ Map<String, dynamic> _$CashSummaryDtoToJson(_CashSummaryDto instance) =>
       'server_recalculated': instance.serverRecalculated,
     };
 
+_CashCountLineDto _$CashCountLineDtoFromJson(Map<String, dynamic> json) =>
+    _CashCountLineDto(
+      denominationType: json['denomination_type'] as String,
+      denomination: json['denomination'] as String,
+      quantity: (json['quantity'] as num).toInt(),
+      subtotal: json['subtotal'] as String,
+    );
+
+Map<String, dynamic> _$CashCountLineDtoToJson(_CashCountLineDto instance) =>
+    <String, dynamic>{
+      'denomination_type': instance.denominationType,
+      'denomination': instance.denomination,
+      'quantity': instance.quantity,
+      'subtotal': instance.subtotal,
+    };
+
+_CashCountDto _$CashCountDtoFromJson(Map<String, dynamic> json) =>
+    _CashCountDto(
+      lines: (json['lines'] as List<dynamic>)
+          .map((e) => CashCountLineDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      billsTotal: json['bills_total'] as String,
+      coinsTotal: json['coins_total'] as String,
+      total: json['total'] as String,
+    );
+
+Map<String, dynamic> _$CashCountDtoToJson(_CashCountDto instance) =>
+    <String, dynamic>{
+      'lines': instance.lines,
+      'bills_total': instance.billsTotal,
+      'coins_total': instance.coinsTotal,
+      'total': instance.total,
+    };
+
 _CashSessionDetailDto _$CashSessionDetailDtoFromJson(
   Map<String, dynamic> json,
 ) => _CashSessionDetailDto(
@@ -104,6 +138,12 @@ _CashSessionDetailDto _$CashSessionDetailDtoFromJson(
   movements: (json['movements'] as List<dynamic>)
       .map((e) => CashMovementDto.fromJson(e as Map<String, dynamic>))
       .toList(),
+  openingCount: json['opening_count'] == null
+      ? null
+      : CashCountDto.fromJson(json['opening_count'] as Map<String, dynamic>),
+  closingCount: json['closing_count'] == null
+      ? null
+      : CashCountDto.fromJson(json['closing_count'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$CashSessionDetailDtoToJson(
@@ -112,6 +152,8 @@ Map<String, dynamic> _$CashSessionDetailDtoToJson(
   'session': instance.session,
   'summary': instance.summary,
   'movements': instance.movements,
+  'opening_count': instance.openingCount,
+  'closing_count': instance.closingCount,
 };
 
 _CashSessionPageDto _$CashSessionPageDtoFromJson(Map<String, dynamic> json) =>
@@ -138,6 +180,9 @@ _CashSessionOpenRequestDto _$CashSessionOpenRequestDtoFromJson(
   openingAmount: json['opening_amount'] as String,
   openingNote: json['opening_note'] as String?,
   openedAt: json['opened_at'] as String,
+  openingCount: (json['opening_count'] as List<dynamic>?)
+      ?.map((e) => CashCountLineRequestDto.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$CashSessionOpenRequestDtoToJson(
@@ -148,6 +193,7 @@ Map<String, dynamic> _$CashSessionOpenRequestDtoToJson(
   'opening_amount': instance.openingAmount,
   'opening_note': instance.openingNote,
   'opened_at': instance.openedAt,
+  'opening_count': ?instance.openingCount,
 };
 
 _CashMovementCreateRequestDto _$CashMovementCreateRequestDtoFromJson(
@@ -179,6 +225,9 @@ _CashSessionCloseRequestDto _$CashSessionCloseRequestDtoFromJson(
   clientExpectedAmount: json['client_expected_amount'] as String,
   closingNote: json['closing_note'] as String?,
   closedAt: json['closed_at'] as String,
+  closingCount: (json['closing_count'] as List<dynamic>?)
+      ?.map((e) => CashCountLineRequestDto.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$CashSessionCloseRequestDtoToJson(
@@ -188,4 +237,21 @@ Map<String, dynamic> _$CashSessionCloseRequestDtoToJson(
   'client_expected_amount': instance.clientExpectedAmount,
   'closing_note': instance.closingNote,
   'closed_at': instance.closedAt,
+  'closing_count': ?instance.closingCount,
+};
+
+_CashCountLineRequestDto _$CashCountLineRequestDtoFromJson(
+  Map<String, dynamic> json,
+) => _CashCountLineRequestDto(
+  denominationType: json['denomination_type'] as String,
+  denomination: (json['denomination'] as num).toInt(),
+  quantity: (json['quantity'] as num).toInt(),
+);
+
+Map<String, dynamic> _$CashCountLineRequestDtoToJson(
+  _CashCountLineRequestDto instance,
+) => <String, dynamic>{
+  'denomination_type': instance.denominationType,
+  'denomination': instance.denomination,
+  'quantity': instance.quantity,
 };

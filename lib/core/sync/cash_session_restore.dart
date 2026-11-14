@@ -9,7 +9,9 @@ import 'cash_sync_remote_datasource.dart';
 
 /// Restaure depuis le serveur les sessions de caisse de cet appareil que la
 /// base locale ne connaît pas : la session ouverte (avec ses mouvements) et
-/// les dernières sessions clôturées.
+/// les dernières sessions clôturées. Le comptage d'ouverture de la session
+/// ouverte est restauré ; celui des sessions clôturées se lit en ligne
+/// (détail de session).
 ///
 /// `/sync/changes` ne transporte pas les sessions de caisse : après un
 /// effacement local (changement de compte, réinstallation), l'appareil
@@ -61,6 +63,10 @@ class CashSessionRestorer {
         );
         for (final movement in active.movements) {
           await _insertMovement(movement);
+        }
+        final openingCount = active.openingCount;
+        if (openingCount != null) {
+          await _insertCount(active.session.id, 'opening', openingCount);
         }
       }
       for (final session in recent.items) {
@@ -130,6 +136,23 @@ class CashSessionRestorer {
           mode: drift.InsertMode.insertOrIgnore,
         );
   }
+
+  Future<void> _insertCount(
+    String sessionId,
+    String operation,
+    CashCountDto count,
+  ) => _db.batch(
+    (b) => b.insertAll(_db.cashCountLines, [
+      for (final line in count.lines)
+        CashCountLinesCompanion.insert(
+          sessionId: sessionId,
+          operation: operation,
+          denominationType: line.denominationType,
+          denomination: Decimal.parse(line.denomination).toBigInt().toInt(),
+          quantity: line.quantity,
+        ),
+    ], mode: drift.InsertMode.insertOrIgnore),
+  );
 
   /// Montant normalisé comme ceux écrits par l'appareil (« 25000.00 » →
   /// « 25000 »).

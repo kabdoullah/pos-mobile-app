@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_session_detail.dart';
@@ -28,6 +29,24 @@ Stream<CashSummary> cashSummary(Ref ref, String sessionId) =>
 @riverpod
 Stream<List<CashMovement>> cashMovements(Ref ref, String sessionId) =>
     ref.watch(cashRegisterRepositoryProvider).watchMovements(sessionId);
+
+/// Observe le comptage [operation] de la session [sessionId] enregistré sur
+/// l'appareil, null sans billetterie.
+@riverpod
+Stream<CashCount?> localCashCount(
+  Ref ref,
+  String sessionId,
+  CashCountOperation operation,
+) => ref.watch(cashRegisterRepositoryProvider).watchCount(sessionId, operation);
+
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
+/// d'hier soir »), null si elle n'a pas de billetterie.
+@riverpod
+Future<CashCount?> lastClosingCount(Ref ref) {
+  // Relu quand l'historique local change (nouvelle clôture, restauration).
+  ref.watch(localCashSessionHistoryProvider);
+  return ref.read(cashRegisterRepositoryProvider).lastClosingCount();
+}
 
 /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
 @riverpod
@@ -149,13 +168,16 @@ class CashRegisterController extends _$CashRegisterController {
   @override
   void build() {}
 
-  /// Ouvre une session avec le fond de caisse [openingAmount].
+  /// Ouvre une session avec le fond de caisse [openingAmount] et, en mode
+  /// billetterie, son comptage [count].
   Future<CashSession> open({
     required Decimal openingAmount,
+    CashCount? count,
     String? note,
   }) async {
     final session = await ref.read(openCashSessionUseCaseProvider)(
       openingAmount: openingAmount,
+      count: count,
       note: note,
     );
     _syncIfOnline();
@@ -179,13 +201,16 @@ class CashRegisterController extends _$CashRegisterController {
     return movement;
   }
 
-  /// Clôture la session ouverte avec le montant compté [countedAmount].
+  /// Clôture la session ouverte avec le montant compté [countedAmount] et,
+  /// en mode billetterie, son comptage [count].
   Future<CashSession> close({
     required Decimal countedAmount,
+    CashCount? count,
     String? note,
   }) async {
     final session = await ref.read(closeCashSessionUseCaseProvider)(
       countedAmount: countedAmount,
+      count: count,
       note: note,
     );
     _syncIfOnline();

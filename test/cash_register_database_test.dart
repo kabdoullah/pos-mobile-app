@@ -62,7 +62,54 @@ void main() {
     expect(saleReturn.cashSessionId, isNull);
     expect(await db.select(db.cashSessions).get(), isEmpty);
     expect(await db.select(db.cashMovements).get(), isEmpty);
+    expect(await db.select(db.cashCountLines).get(), isEmpty);
   });
+
+  test(
+    'migration v10 to v11 keeps cash sessions and adds count lines',
+    () async {
+      final file = File(
+        '${Directory.systemTemp.createTempSync('pos_migration_v11').path}'
+        '/db.sqlite',
+      );
+      // Schéma v10 de cash_sessions, avec une session clôturée sans billetterie.
+      final raw = sqlite.sqlite3.open(file.path)
+        ..execute('''
+        CREATE TABLE cash_sessions (id TEXT NOT NULL PRIMARY KEY,
+          device_id TEXT NOT NULL, status TEXT NOT NULL,
+          opening_amount TEXT NOT NULL, opening_note TEXT,
+          opened_at INTEGER NOT NULL, expected_amount TEXT,
+          client_expected_amount TEXT, counted_amount TEXT,
+          discrepancy_amount TEXT, closing_note TEXT, closed_at INTEGER,
+          server_recalculated INTEGER NOT NULL DEFAULT 0,
+          sync_status TEXT NOT NULL DEFAULT 'pending', rejection_code TEXT);
+        INSERT INTO cash_sessions (id, device_id, status, opening_amount,
+          opened_at, counted_amount, closed_at)
+          VALUES ('cs1', 'device-1', 'closed', '10000', 0, '12000', 3600);
+        PRAGMA user_version = 10;
+      ''');
+      raw.close();
+
+      final db = AppDatabase.forTesting(NativeDatabase(file));
+      addTearDown(db.close);
+
+      final session = await db.select(db.cashSessions).getSingle();
+      expect(session.countedAmount, '12000');
+      expect(await db.select(db.cashCountLines).get(), isEmpty);
+      await db
+          .into(db.cashCountLines)
+          .insert(
+            CashCountLinesCompanion.insert(
+              sessionId: 'cs1',
+              operation: 'closing',
+              denominationType: 'bill',
+              denomination: 10000,
+              quantity: 1,
+            ),
+          );
+      expect(await db.select(db.cashCountLines).get(), hasLength(1));
+    },
+  );
 
   group('base en mémoire', () {
     late AppDatabase db;
@@ -99,8 +146,21 @@ void main() {
             ),
           );
 
+      await db
+          .into(db.cashCountLines)
+          .insert(
+            CashCountLinesCompanion.insert(
+              sessionId: 'cs1',
+              operation: 'opening',
+              denominationType: 'bill',
+              denomination: 10000,
+              quantity: 1,
+            ),
+          );
+
       await LocalDataResetService(db).wipeBusinessData();
 
+      expect(await db.select(db.cashCountLines).get(), isEmpty);
       expect(await db.select(db.cashMovements).get(), isEmpty);
       expect(await db.select(db.cashSessions).get(), isEmpty);
     });

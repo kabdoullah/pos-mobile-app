@@ -316,7 +316,9 @@ mixin _$CashSessionDetail {
 /// La session.
  CashSession get session;/// Récapitulatif calculé par le serveur.
  CashServerSummary get summary;/// Mouvements, du plus récent au plus ancien.
- List<CashMovement> get movements;
+ List<CashMovement> get movements;/// Comptage d'ouverture, null sans billetterie.
+ CashCount? get openingCount;/// Comptage de clôture, null sans billetterie ou avant la clôture.
+ CashCount? get closingCount;
 /// Create a copy of CashSessionDetail
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -327,16 +329,16 @@ $CashSessionDetailCopyWith<CashSessionDetail> get copyWith => _$CashSessionDetai
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionDetail&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other.movements, movements));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionDetail&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other.movements, movements)&&(identical(other.openingCount, openingCount) || other.openingCount == openingCount)&&(identical(other.closingCount, closingCount) || other.closingCount == closingCount));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(movements));
+int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(movements),openingCount,closingCount);
 
 @override
 String toString() {
-  return 'CashSessionDetail(session: $session, summary: $summary, movements: $movements)';
+  return 'CashSessionDetail(session: $session, summary: $summary, movements: $movements, openingCount: $openingCount, closingCount: $closingCount)';
 }
 
 
@@ -347,7 +349,7 @@ abstract mixin class $CashSessionDetailCopyWith<$Res>  {
   factory $CashSessionDetailCopyWith(CashSessionDetail value, $Res Function(CashSessionDetail) _then) = _$CashSessionDetailCopyWithImpl;
 @useResult
 $Res call({
- CashSession session, CashServerSummary summary, List<CashMovement> movements
+ CashSession session, CashServerSummary summary, List<CashMovement> movements, CashCount? openingCount, CashCount? closingCount
 });
 
 
@@ -364,12 +366,14 @@ class _$CashSessionDetailCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionDetail
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? session = null,Object? summary = null,Object? movements = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? session = null,Object? summary = null,Object? movements = null,Object? openingCount = freezed,Object? closingCount = freezed,}) {
   return _then(CashSessionDetail(
 session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as CashSession,summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as CashServerSummary,movements: null == movements ? _self.movements : movements // ignore: cast_nullable_to_non_nullable
-as List<CashMovement>,
+as List<CashMovement>,openingCount: freezed == openingCount ? _self.openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as CashCount?,closingCount: freezed == closingCount ? _self.closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as CashCount?,
   ));
 }
 /// Create a copy of CashSessionDetail
@@ -469,10 +473,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements,  CashCount? openingCount,  CashCount? closingCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CashSessionDetail() when $default != null:
-return $default(_that.session,_that.summary,_that.movements);case _:
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);case _:
   return orElse();
 
 }
@@ -490,10 +494,10 @@ return $default(_that.session,_that.summary,_that.movements);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements,  CashCount? openingCount,  CashCount? closingCount)  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionDetail():
-return $default(_that.session,_that.summary,_that.movements);}
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -507,10 +511,10 @@ return $default(_that.session,_that.summary,_that.movements);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CashSession session,  CashServerSummary summary,  List<CashMovement> movements,  CashCount? openingCount,  CashCount? closingCount)?  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionDetail() when $default != null:
-return $default(_that.session,_that.summary,_that.movements);case _:
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);case _:
   return null;
 
 }
@@ -522,7 +526,7 @@ return $default(_that.session,_that.summary,_that.movements);case _:
 
 
 class _CashSessionDetail implements CashSessionDetail {
-  const _CashSessionDetail({required this.session, required this.summary, required  List<CashMovement> movements}): _movements = movements;
+  const _CashSessionDetail({required this.session, required this.summary, required  List<CashMovement> movements, this.openingCount, this.closingCount}): _movements = movements;
   
 
 /// La session.
@@ -538,6 +542,10 @@ class _CashSessionDetail implements CashSessionDetail {
   return EqualUnmodifiableListView(_movements);
 }
 
+/// Comptage d'ouverture, null sans billetterie.
+@override final  CashCount? openingCount;
+/// Comptage de clôture, null sans billetterie ou avant la clôture.
+@override final  CashCount? closingCount;
 
 /// Create a copy of CashSessionDetail
 /// with the given fields replaced by the non-null parameter values.
@@ -549,16 +557,16 @@ _$CashSessionDetailCopyWith<_CashSessionDetail> get copyWith => __$CashSessionDe
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionDetail&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._movements, _movements));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionDetail&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._movements, _movements)&&(identical(other.openingCount, openingCount) || other.openingCount == openingCount)&&(identical(other.closingCount, closingCount) || other.closingCount == closingCount));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(_movements));
+int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(_movements),openingCount,closingCount);
 
 @override
 String toString() {
-  return 'CashSessionDetail(session: $session, summary: $summary, movements: $movements)';
+  return 'CashSessionDetail(session: $session, summary: $summary, movements: $movements, openingCount: $openingCount, closingCount: $closingCount)';
 }
 
 
@@ -569,7 +577,7 @@ abstract mixin class _$CashSessionDetailCopyWith<$Res> implements $CashSessionDe
   factory _$CashSessionDetailCopyWith(_CashSessionDetail value, $Res Function(_CashSessionDetail) _then) = __$CashSessionDetailCopyWithImpl;
 @override @useResult
 $Res call({
- CashSession session, CashServerSummary summary, List<CashMovement> movements
+ CashSession session, CashServerSummary summary, List<CashMovement> movements, CashCount? openingCount, CashCount? closingCount
 });
 
 
@@ -586,12 +594,14 @@ class __$CashSessionDetailCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionDetail
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? session = null,Object? summary = null,Object? movements = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? session = null,Object? summary = null,Object? movements = null,Object? openingCount = freezed,Object? closingCount = freezed,}) {
   return _then(_CashSessionDetail(
 session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as CashSession,summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as CashServerSummary,movements: null == movements ? _self._movements : movements // ignore: cast_nullable_to_non_nullable
-as List<CashMovement>,
+as List<CashMovement>,openingCount: freezed == openingCount ? _self.openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as CashCount?,closingCount: freezed == closingCount ? _self.closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as CashCount?,
   ));
 }
 

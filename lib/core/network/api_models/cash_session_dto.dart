@@ -76,7 +76,40 @@ sealed class CashSummaryDto with _$CashSummaryDto {
       _$CashSummaryDtoFromJson(json);
 }
 
-/// Session, résumé et mouvements (`CashSessionDetailResponse`).
+/// Ligne de billetterie enregistrée par le serveur (ADR-0016).
+@freezed
+sealed class CashCountLineDto with _$CashCountLineDto {
+  /// Crée un [CashCountLineDto].
+  const factory CashCountLineDto({
+    // 'bill' ou 'coin'.
+    @JsonKey(name: 'denomination_type') required String denominationType,
+    // Montant décimal en chaîne (« 10000.00 »).
+    required String denomination,
+    required int quantity,
+    required String subtotal,
+  }) = _CashCountLineDto;
+
+  factory CashCountLineDto.fromJson(Map<String, dynamic> json) =>
+      _$CashCountLineDtoFromJson(json);
+}
+
+/// Comptage d'une opération (`CashCountResponse`), totaux recalculés par le
+/// serveur.
+@freezed
+sealed class CashCountDto with _$CashCountDto {
+  /// Crée un [CashCountDto].
+  const factory CashCountDto({
+    required List<CashCountLineDto> lines,
+    @JsonKey(name: 'bills_total') required String billsTotal,
+    @JsonKey(name: 'coins_total') required String coinsTotal,
+    required String total,
+  }) = _CashCountDto;
+
+  factory CashCountDto.fromJson(Map<String, dynamic> json) =>
+      _$CashCountDtoFromJson(json);
+}
+
+/// Session, résumé, mouvements et billetterie (`CashSessionDetailResponse`).
 @freezed
 sealed class CashSessionDetailDto with _$CashSessionDetailDto {
   /// Crée un [CashSessionDetailDto].
@@ -85,6 +118,10 @@ sealed class CashSessionDetailDto with _$CashSessionDetailDto {
     required CashSummaryDto summary,
     // Du plus récent au plus ancien.
     required List<CashMovementDto> movements,
+    // Billetterie (ADR-0016) : null sans comptage détaillé (mode « Total
+    // seulement », serveur antérieur).
+    @JsonKey(name: 'opening_count') CashCountDto? openingCount,
+    @JsonKey(name: 'closing_count') CashCountDto? closingCount,
   }) = _CashSessionDetailDto;
 
   factory CashSessionDetailDto.fromJson(Map<String, dynamic> json) =>
@@ -116,6 +153,10 @@ sealed class CashSessionOpenRequestDto with _$CashSessionOpenRequestDto {
     @JsonKey(name: 'opening_amount') required String openingAmount,
     @JsonKey(name: 'opening_note') String? openingNote,
     @JsonKey(name: 'opened_at') required String openedAt,
+    // Billetterie (ADR-0016), absente en mode « Total seulement » et dans les
+    // entrées mises en file par une version antérieure.
+    @JsonKey(name: 'opening_count', includeIfNull: false)
+    List<CashCountLineRequestDto>? openingCount,
   }) = _CashSessionOpenRequestDto;
 
   factory CashSessionOpenRequestDto.fromJson(Map<String, dynamic> json) =>
@@ -152,8 +193,26 @@ sealed class CashSessionCloseRequestDto with _$CashSessionCloseRequestDto {
     @JsonKey(name: 'closing_note') String? closingNote,
     // Persisté à la clôture locale, renvoyé à l'identique à chaque retry.
     @JsonKey(name: 'closed_at') required String closedAt,
+    // Billetterie (ADR-0016), facultative comme à l'ouverture.
+    @JsonKey(name: 'closing_count', includeIfNull: false)
+    List<CashCountLineRequestDto>? closingCount,
   }) = _CashSessionCloseRequestDto;
 
   factory CashSessionCloseRequestDto.fromJson(Map<String, dynamic> json) =>
       _$CashSessionCloseRequestDtoFromJson(json);
+}
+
+/// Ligne de billetterie envoyée au serveur : entiers JSON, le serveur
+/// recalcule les sous-totaux.
+@freezed
+sealed class CashCountLineRequestDto with _$CashCountLineRequestDto {
+  /// Crée un [CashCountLineRequestDto].
+  const factory CashCountLineRequestDto({
+    @JsonKey(name: 'denomination_type') required String denominationType,
+    required int denomination,
+    required int quantity,
+  }) = _CashCountLineRequestDto;
+
+  factory CashCountLineRequestDto.fromJson(Map<String, dynamic> json) =>
+      _$CashCountLineRequestDtoFromJson(json);
 }

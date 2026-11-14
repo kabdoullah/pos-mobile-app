@@ -273,6 +273,35 @@ class CashSessions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Billetterie (ADR-0016) : quantité comptée de chaque coupure, à
+/// l'ouverture ou à la clôture d'une session. Écrite dans la transaction de
+/// l'ouverture ou de la clôture, jamais modifiée ensuite. Le sous-total se
+/// déduit (valeur × quantité) ; le total est le montant de la session.
+class CashCountLines extends Table {
+  /// Session de caisse parente.
+  TextColumn get sessionId => text()();
+
+  /// `opening` ou `closing`.
+  TextColumn get operation => text()();
+
+  /// `bill` ou `coin`, valeur de l'API.
+  TextColumn get denominationType => text()();
+
+  /// Valeur faciale en FCFA.
+  IntColumn get denomination => integer()();
+
+  /// Quantité comptée (≥ 0).
+  IntColumn get quantity => integer()();
+
+  @override
+  Set<Column> get primaryKey => {
+    sessionId,
+    operation,
+    denominationType,
+    denomination,
+  };
+}
+
 /// Entrées et sorties d'espèces d'une session de caisse.
 class CashMovements extends Table {
   /// UUID v4 généré côté client (idempotence sync).
@@ -362,6 +391,7 @@ class SyncQueue extends Table {
     SaleReturnItems,
     CashSessions,
     CashMovements,
+    CashCountLines,
     SyncQueue,
     SyncMetadata,
   ],
@@ -375,7 +405,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Version courante du schéma drift.
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -470,6 +500,11 @@ class AppDatabase extends _$AppDatabase {
         if (from >= 9) {
           await m.addColumn(saleReturns, saleReturns.cashSessionId);
         }
+      }
+      if (from < 11) {
+        // v10 → v11 (ADR-0016) : billetterie. Table nouvelle ; les sessions
+        // existantes n'ont pas de comptage détaillé.
+        await m.createTable(cashCountLines);
       }
     },
   );

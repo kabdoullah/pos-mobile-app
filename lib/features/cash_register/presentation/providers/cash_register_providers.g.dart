@@ -227,6 +227,144 @@ final class CashMovementsFamily extends $Family
   String toString() => r'cashMovementsProvider';
 }
 
+/// Observe le comptage [operation] de la session [sessionId] enregistré sur
+/// l'appareil, null sans billetterie.
+
+@ProviderFor(localCashCount)
+final localCashCountProvider = LocalCashCountFamily._();
+
+/// Observe le comptage [operation] de la session [sessionId] enregistré sur
+/// l'appareil, null sans billetterie.
+
+final class LocalCashCountProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CashCount?>,
+          CashCount?,
+          Stream<CashCount?>
+        >
+    with $FutureModifier<CashCount?>, $StreamProvider<CashCount?> {
+  /// Observe le comptage [operation] de la session [sessionId] enregistré sur
+  /// l'appareil, null sans billetterie.
+  LocalCashCountProvider._({
+    required LocalCashCountFamily super.from,
+    required (String, CashCountOperation) super.argument,
+  }) : super(
+         retry: null,
+         name: r'localCashCountProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$localCashCountHash();
+
+  @override
+  String toString() {
+    return r'localCashCountProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<CashCount?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<CashCount?> create(Ref ref) {
+    final argument = this.argument as (String, CashCountOperation);
+    return localCashCount(ref, argument.$1, argument.$2);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is LocalCashCountProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$localCashCountHash() => r'630f141ff83a098a0ac07ed9ab4210200c8c8a6b';
+
+/// Observe le comptage [operation] de la session [sessionId] enregistré sur
+/// l'appareil, null sans billetterie.
+
+final class LocalCashCountFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<CashCount?>,
+          (String, CashCountOperation)
+        > {
+  LocalCashCountFamily._()
+    : super(
+        retry: null,
+        name: r'localCashCountProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Observe le comptage [operation] de la session [sessionId] enregistré sur
+  /// l'appareil, null sans billetterie.
+
+  LocalCashCountProvider call(String sessionId, CashCountOperation operation) =>
+      LocalCashCountProvider._(argument: (sessionId, operation), from: this);
+
+  @override
+  String toString() => r'localCashCountProvider';
+}
+
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
+/// d'hier soir »), null si elle n'a pas de billetterie.
+
+@ProviderFor(lastClosingCount)
+final lastClosingCountProvider = LastClosingCountProvider._();
+
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
+/// d'hier soir »), null si elle n'a pas de billetterie.
+
+final class LastClosingCountProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<CashCount?>,
+          CashCount?,
+          FutureOr<CashCount?>
+        >
+    with $FutureModifier<CashCount?>, $FutureProvider<CashCount?> {
+  /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
+  /// d'hier soir »), null si elle n'a pas de billetterie.
+  LastClosingCountProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'lastClosingCountProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$lastClosingCountHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<CashCount?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<CashCount?> create(Ref ref) {
+    return lastClosingCount(ref);
+  }
+}
+
+String _$lastClosingCountHash() => r'2005d4c297f164de18e5b9874e832d085a4104e7';
+
 /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
 
 @ProviderFor(localCashSessionHistory)
@@ -572,7 +710,7 @@ final class CashRegisterControllerProvider
 }
 
 String _$cashRegisterControllerHash() =>
-    r'f6c3f33125bc7a6fe740fb7cf34f49d0e18c9fb0';
+    r'0c30d02410bf3356e07561ef34f70be0defae2f7';
 
 /// Écritures de caisse déclenchées depuis l'UI : ouverture, mouvement,
 /// clôture et renvoi d'une clôture avec commentaire.
