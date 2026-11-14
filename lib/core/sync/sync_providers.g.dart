@@ -349,3 +349,56 @@ final class CashRegisterRemoteDataSourceProvider
 
 String _$cashRegisterRemoteDataSourceHash() =>
     r'5e046c76e42eb417ee7a05e0c13ebbbd4b3d7ab3';
+
+/// Restaure les sessions de caisse de l'appareil après un pull complet.
+
+@ProviderFor(cashSessionRestorer)
+final cashSessionRestorerProvider = CashSessionRestorerProvider._();
+
+/// Restaure les sessions de caisse de l'appareil après un pull complet.
+
+final class CashSessionRestorerProvider
+    extends
+        $FunctionalProvider<
+          CashSessionRestorer,
+          CashSessionRestorer,
+          CashSessionRestorer
+        >
+    with $Provider<CashSessionRestorer> {
+  /// Restaure les sessions de caisse de l'appareil après un pull complet.
+  CashSessionRestorerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cashSessionRestorerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cashSessionRestorerHash();
+
+  @$internal
+  @override
+  $ProviderElement<CashSessionRestorer> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CashSessionRestorer create(Ref ref) {
+    return cashSessionRestorer(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CashSessionRestorer value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CashSessionRestorer>(value),
+    );
+  }
+}
+
+String _$cashSessionRestorerHash() =>
+    r'd64d74600945ee87ab3dd874c091531254c56d33';

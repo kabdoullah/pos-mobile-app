@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import '../entities/cash_count.dart';
 import '../entities/cash_movement.dart';
 import '../entities/cash_session.dart';
 import '../entities/cash_session_detail.dart';
@@ -18,6 +19,9 @@ class CashRegisterException implements Exception {
 
   /// Montant négatif (ou nul pour un mouvement).
   static const invalidAmount = 'invalid_amount';
+
+  /// Le total du comptage par coupure diffère du montant de la session.
+  static const countMismatch = 'count_mismatch';
 
   /// Commentaire obligatoire manquant.
   static const noteRequired = 'note_required';
@@ -81,13 +85,16 @@ abstract class CashRegisterRepository {
   /// Observe les mouvements d'une session, du plus récent au plus ancien.
   Stream<List<CashMovement>> watchMovements(String sessionId);
 
-  /// Ouvre une session avec son fond de caisse et la met en file de synchro,
-  /// dans une seule transaction.
+  /// Ouvre une session avec son fond de caisse et, en mode billetterie, le
+  /// comptage [openingCount] (dont le total est [openingAmount]) ; session,
+  /// lignes de comptage et entrée de file de synchro sont écrites dans une
+  /// seule transaction.
   ///
   /// Lève [CashRegisterException] (`session_already_open`) si une session est
   /// déjà ouverte.
   Future<CashSession> openSession({
     required Decimal openingAmount,
+    CashCount? openingCount,
     String? note,
   });
 
@@ -105,9 +112,11 @@ abstract class CashRegisterRepository {
     String? note,
   });
 
-  /// Clôture la session : fige le solde théorique local, l'écart et la date
-  /// de clôture, puis met la clôture en file de synchro, dans une seule
-  /// transaction. Une session déjà clôturée est renvoyée telle quelle.
+  /// Clôture la session : fige le solde théorique local, l'écart, la date
+  /// de clôture et, en mode billetterie, le comptage [closingCount] (dont le
+  /// total est [countedAmount]), puis met la clôture en file de synchro, dans
+  /// une seule transaction. Une session déjà clôturée est renvoyée telle
+  /// quelle.
   ///
   /// Lève [CashRegisterException] : `no_open_session` si la session est
   /// inconnue, `note_required` si l'écart avec le solde calculé dans la
@@ -115,8 +124,17 @@ abstract class CashRegisterRepository {
   Future<CashSession> closeSession({
     required String sessionId,
     required Decimal countedAmount,
+    CashCount? closingCount,
     String? note,
   });
+
+  /// Observe le comptage [operation] de la session [sessionId] enregistré sur
+  /// l'appareil, null sans billetterie.
+  Stream<CashCount?> watchCount(String sessionId, CashCountOperation operation);
+
+  /// Comptage de la dernière clôture de l'appareil, pour le reprendre à
+  /// l'ouverture ; null si cette clôture n'a pas de billetterie.
+  Future<CashCount?> lastClosingCount();
 
   /// Observe toutes les sessions de l'appareil, de la plus récente à la plus
   /// ancienne.

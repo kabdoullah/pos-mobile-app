@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'app/app.dart';
 import 'app/theme/theme_mode_provider.dart';
+import 'core/storage/theme_mode_storage.dart';
 import 'core/config.dart';
 import 'core/network/network_providers.dart';
 import 'core/storage/image_file_cache.dart';
@@ -31,7 +32,7 @@ void main() async {
   );
   // Lu avant runApp : la première frame suit le thème choisi par
   // l'utilisateur, pas celui du système.
-  final themeMode = await ThemeModeNotifier.readSaved();
+  final themeMode = await ThemeModeStorage().read();
   runApp(
     ProviderScope(
       overrides: [

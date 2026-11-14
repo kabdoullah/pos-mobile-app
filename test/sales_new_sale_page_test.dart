@@ -3,16 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
-import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
+import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
+import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
+import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
 import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/category.dart';
@@ -20,14 +23,14 @@ import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/catalog/domain/entities/product_page.dart';
 import 'package:mobile/features/catalog/domain/repositories/catalog_repository.dart';
 import 'package:mobile/features/catalog/providers/catalog_di_providers.dart';
+import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mobile/features/sales/presentation/pages/new_sale_page.dart';
+import 'package:mobile/features/sales/presentation/pages/sale_checkout_page.dart';
+import 'package:mobile/features/sales/presentation/pages/sale_scanner_page.dart';
 import 'package:mobile/features/sales/presentation/providers/cart_provider.dart';
 import 'package:mobile/features/sales/presentation/providers/checkout_provider.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_search_results.dart';
-import 'package:mobile/features/sales/presentation/widgets/sale_cart.dart';
-import 'package:mobile/features/sales/presentation/widgets/sale_checkout_panel.dart';
-import 'package:mobile/features/sales/presentation/widgets/sale_scanner_panel.dart';
 
 /// Évite que l'orchestrateur de synchro (pastille réseau) initialise la vraie
 /// authentification.
@@ -46,6 +49,8 @@ class _MockCatalog extends Mock implements CatalogRepository {}
 
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
+Decimal d(String value) => Decimal.parse(value);
+
 Product product(
   String name, {
   int? stock,
@@ -54,7 +59,7 @@ Product product(
 }) => Product(
   id: name,
   name: name,
-  sellingPrice: Decimal.parse(price),
+  sellingPrice: d(price),
   currentStock: stock,
   categoryId: categoryId,
   updatedAt: DateTime(2026),
@@ -66,12 +71,30 @@ final catalog = [
   product('Fanta', stock: 0, price: '1500'),
 ];
 
-Future<ProviderContainer> pumpPage(WidgetTester tester) async {
+final openSession = CashSession(
+  id: 's1',
+  deviceId: 'device-1',
+  status: CashSessionStatus.open,
+  openingAmount: d('10000'),
+  openedAt: DateTime.utc(2026, 11, 10, 8),
+  syncStatus: CashSyncStatus.synced,
+  serverRecalculated: false,
+);
+
+/// Monte l'écran Vendre dans un routeur minimal (Vendre, Encaisser, Scanner).
+///
+/// [registerOpen] : session ouverte observée par l'écran Vendre.
+/// [sessionAtSubmit] : session lue à la validation (null = caisse fermée).
+Future<ProviderContainer> pumpPage(
+  WidgetTester tester, {
+  bool registerOpen = true,
+  bool sessionAtSubmit = false,
+}) async {
   tester.view.physicalSize = const Size(360, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
-  // Caméra refusée : le bandeau affiche l'invite, sans monter MobileScanner.
+  // Caméra refusée : le scanner affiche l'invite, sans monter MobileScanner.
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   const permissions = MethodChannel('flutter.baseflow.com/permissions/methods');
@@ -103,9 +126,29 @@ Future<ProviderContainer> pumpPage(WidgetTester tester) async {
     );
   });
 
-  // Caisse fermée : l'encaissement propose de l'ouvrir.
   final cash = _MockCashRegister();
-  when(cash.getActiveSession).thenAnswer((_) async => null);
+  when(
+    cash.watchActiveSession,
+  ).thenAnswer((_) => Stream.value(registerOpen ? openSession : null));
+  when(
+    cash.getActiveSession,
+  ).thenAnswer((_) async => sessionAtSubmit ? openSession : null);
+
+  final router = GoRouter(
+    initialLocation: Routes.newSale,
+    routes: [
+      GoRoute(path: Routes.newSale, builder: (_, _) => const NewSalePage()),
+      GoRoute(
+        path: Routes.saleCheckout,
+        builder: (_, _) => const SaleCheckoutPage(),
+      ),
+      GoRoute(
+        path: Routes.saleScanner,
+        builder: (_, _) => const SaleScannerPage(),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
 
   await tester.pumpWidget(
     ProviderScope(
@@ -117,248 +160,312 @@ Future<ProviderContainer> pumpPage(WidgetTester tester) async {
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(0)),
         catalogRepositoryProvider.overrideWithValue(repo),
       ],
-      child: MaterialApp(theme: AppTheme.light(), home: const NewSalePage()),
+      child: MaterialApp.router(theme: AppTheme.light(), routerConfig: router),
     ),
   );
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(NewSalePage)));
 }
 
-/// Laisse expirer le toast de confirmation (minuteur de la page).
+/// Laisse expirer le toast (minuteur de la page).
 Future<void> settleToast(WidgetTester tester) async {
-  await tester.pump(const Duration(seconds: 3));
+  await tester.pump(const Duration(seconds: 5));
   await tester.pumpAndSettle();
+}
+
+PrimaryButton primaryButton(WidgetTester tester, String label) =>
+    tester.widget<PrimaryButton>(find.widgetWithText(PrimaryButton, label));
+
+/// Ajoute [times] fois Coca-Cola puis ouvre l'écran Encaisser.
+Future<void> openCheckoutWithCoca(WidgetTester tester, {int times = 2}) async {
+  for (var i = 0; i < times; i++) {
+    await tester.tap(find.text('Coca-Cola 33cl'));
+    await tester.pump();
+  }
+  await tester.tap(find.textContaining('Encaisser · '));
+  await tester.pumpAndSettle();
+  expect(find.byType(SaleCheckoutPage), findsOneWidget);
 }
 
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
 
-  testWidgets('panier vide : catalogue puis panier vide, scanner replié', (
-    tester,
-  ) async {
-    await pumpPage(tester);
-    expect(tester.takeException(), isNull);
-    expect(find.byType(ProductBrowser), findsOneWidget);
-    expect(find.text('Coca-Cola 33cl'), findsOneWidget);
-    expect(find.text('Ma boutique'), findsOneWidget);
-    // Le panier est sous le catalogue, dans le même défilement.
-    expect(find.text('Votre panier est vide'), findsOneWidget);
-    // Scanner replié par défaut : il s'ouvre à la demande.
-    expect(find.byType(SaleScannerPanel), findsNothing);
-    await tester.tap(find.byTooltip('Scanner un code-barres'));
-    await tester.pumpAndSettle();
-    expect(find.byType(SaleScannerPanel), findsOneWidget);
-  });
+  group('Vendre', () {
+    testWidgets('titre, catalogue et amorce du panier vide', (tester) async {
+      await pumpPage(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Vendre'), findsOneWidget);
+      expect(find.byType(ProductBrowser), findsOneWidget);
+      expect(find.text('Coca-Cola 33cl'), findsOneWidget);
+      expect(
+        find.text('Touchez un produit ou scannez-le pour commencer.'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Caisse fermée'), findsNothing);
+    });
 
-  testWidgets('les catégories filtrent le catalogue', (tester) async {
-    await pumpPage(tester);
-    expect(find.text('Fanta'), findsOneWidget);
+    testWidgets('les onglets de catégories filtrent le catalogue', (
+      tester,
+    ) async {
+      await pumpPage(tester);
+      expect(find.text('Fanta'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Boissons'));
-    await tester.pumpAndSettle();
-    expect(find.text('Fanta'), findsNothing);
-    expect(find.text('Coca-Cola 33cl'), findsOneWidget);
+      await tester.tap(find.text('Boissons'));
+      await tester.pumpAndSettle();
+      expect(find.text('Fanta'), findsNothing);
+      expect(find.text('Coca-Cola 33cl'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Tous'));
-    await tester.pumpAndSettle();
-    expect(find.text('Fanta'), findsOneWidget);
-  });
+      await tester.tap(find.text('Tous'));
+      await tester.pumpAndSettle();
+      expect(find.text('Fanta'), findsOneWidget);
+    });
 
-  testWidgets('le bouton + ajoute une unité au panier partagé', (tester) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await tester.pump();
+    testWidgets('toucher la ligne ajoute ; le stepper ajuste et retire', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      final cart = container.read(cartProvider.notifier);
 
-    expect(
-      container.read(cartProvider.notifier).quantityOf('Coca-Cola 33cl'),
-      1,
+      await tester.tap(find.text('Coca-Cola 33cl'));
+      await tester.pump();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 1);
+      expect(find.text('1 article'), findsOneWidget);
+      expect(find.text('Encaisser · ${formatFcfa(d('2000'))}'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pump();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 2);
+      await tester.tap(find.byTooltip('Diminuer'));
+      await tester.pump();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 1);
+
+      // À 1, « − » devient la corbeille : retrait annulable.
+      await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
+      await tester.pump();
+      expect(container.read(cartProvider).isEmpty, isTrue);
+      expect(find.text('Coca-Cola 33cl retiré du panier'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pump();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 1);
+      await settleToast(tester);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('pas d’ajout au-delà du stock', (tester) async {
+      final container = await pumpPage(tester);
+      await tester.tap(find.text('Eau 1,5L'));
+      await tester.pump();
+      await tester.tap(find.text('Eau 1,5L'));
+      await tester.pump();
+
+      expect(container.read(cartProvider.notifier).quantityOf('Eau 1,5L'), 1);
+      expect(find.text('Stock insuffisant · disponible : 1'), findsOneWidget);
+      await settleToast(tester);
+    });
+
+    testWidgets('produit en rupture : visible, non ajoutable', (tester) async {
+      final container = await pumpPage(tester);
+      expect(find.textContaining('Rupture'), findsOneWidget);
+      await tester.tap(find.text('Fanta'));
+      await tester.tap(find.byTooltip('Ajouter Fanta'));
+      await tester.pump();
+      expect(container.read(cartProvider).isEmpty, isTrue);
+    });
+
+    testWidgets('appui long : choix de quantité', (tester) async {
+      final container = await pumpPage(tester);
+      await tester.longPress(find.text('Coca-Cola 33cl'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      await tester.tap(find.text('Ajouter au panier'));
+      await tester.pumpAndSettle();
+      expect(
+        container.read(cartProvider.notifier).quantityOf('Coca-Cola 33cl'),
+        1,
+      );
+    });
+
+    testWidgets('la recherche remplace le catalogue, puis le rend', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      await tester.enterText(find.byType(TextField), 'eau');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductSearchResults), findsOneWidget);
+      expect(find.byType(ProductBrowser), findsNothing);
+      expect(find.text('Coca-Cola 33cl'), findsNothing);
+
+      // Ajout depuis la recherche : la recherche se vide, le catalogue revient.
+      await tester.tap(find.byTooltip('Ajouter Eau 1,5L'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductSearchResults), findsNothing);
+      expect(find.byType(ProductBrowser), findsOneWidget);
+      expect(container.read(cartProvider.notifier).quantityOf('Eau 1,5L'), 1);
+    });
+
+    testWidgets('caméra refusée : retour à la saisie du code', (tester) async {
+      await pumpPage(tester);
+      await tester.enterText(find.byType(TextField), 'xyz');
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpAndSettle();
+      expect(find.text('Aucun produit trouvé'), findsOneWidget);
+
+      await tester.tap(find.text('Scanner un code-barres'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SaleScannerPage), findsOneWidget);
+      expect(find.text('La caméra est bloquée'), findsOneWidget);
+
+      await tester.tap(find.text('Saisir le code à la main'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SaleScannerPage), findsNothing);
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.focusNode!.hasFocus, isTrue);
+    });
+
+    testWidgets(
+      'caisse fermée : annoncée, « Ouvrir la caisse », panier gardé',
+      (tester) async {
+        final container = await pumpPage(tester, registerOpen: false);
+        expect(
+          find.textContaining('Ouvrez-la pour pouvoir encaisser'),
+          findsOneWidget,
+        );
+        await tester.tap(find.text('Coca-Cola 33cl'));
+        await tester.pump();
+
+        await tester.tap(
+          find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Fond de caisse'), findsOneWidget);
+        expect(container.read(cartProvider).unitCount, 1);
+        expect(tester.takeException(), isNull);
+      },
     );
-    expect(find.text('Coca-Cola 33cl ajouté'), findsOneWidget);
-    // On reste sur le catalogue pour enchaîner les ajouts.
-    expect(find.byType(ProductBrowser), findsOneWidget);
-    expect(find.text('1 au panier'), findsOneWidget);
-    expect(find.text('1 article'), findsOneWidget);
-    await settleToast(tester);
   });
 
-  testWidgets('la carte ouvre le choix de quantité existant', (tester) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.text('Coca-Cola 33cl'));
-    await tester.pumpAndSettle();
+  group('Encaisser', () {
+    testWidgets('lignes, total, monnaie à rendre ou ce qui manque', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-    expect(find.byType(BottomSheet), findsOneWidget);
-    await tester.tap(find.textContaining('Ajouter · '));
-    await tester.pumpAndSettle();
-    expect(
-      container.read(cartProvider.notifier).quantityOf('Coca-Cola 33cl'),
-      1,
-    );
-    await settleToast(tester);
-  });
+      expect(find.text('ARTICLES · 2'), findsOneWidget);
+      expect(find.text('2 × ${formatFcfa(d('2000'))}'), findsOneWidget);
+      expect(find.text('À rendre au client'), findsOneWidget);
 
-  testWidgets('pas d’ajout au-delà du stock', (tester) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.byTooltip('Ajouter Eau 1,5L'));
-    await tester.pump();
-    await tester.tap(find.byTooltip('Ajouter Eau 1,5L'));
-    await tester.pump();
+      container.read(checkoutProvider.notifier).setCashReceived(d('500'));
+      await tester.pumpAndSettle();
+      expect(find.text('Il manque'), findsOneWidget);
+      expect(find.text(formatFcfa(d('3500'))), findsOneWidget);
+      expect(primaryButton(tester, 'Valider la vente').onPressed, isNull);
 
-    expect(container.read(cartProvider.notifier).quantityOf('Eau 1,5L'), 1);
-    expect(
-      find.text('Stock insuffisant · Stock disponible : 1'),
-      findsOneWidget,
-    );
+      container.read(checkoutProvider.notifier).setCashReceived(d('5000'));
+      await tester.pumpAndSettle();
+      expect(find.text('À rendre au client'), findsOneWidget);
+      expect(find.text(formatFcfa(d('1000'))), findsOneWidget);
+      expect(primaryButton(tester, 'Valider la vente').onPressed, isNotNull);
+      expect(tester.takeException(), isNull);
+    });
 
-    // La ligne du catalogue non plus n'ouvre pas la quantité quand tout est
-    // au panier (le panier, plus bas, affiche aussi le nom).
-    await settleToast(tester);
-    await tester.tap(find.text('Eau 1,5L').first);
-    await tester.pump();
-    expect(find.byType(BottomSheet), findsNothing);
-    await settleToast(tester);
-  });
+    testWidgets('mobile money : l’opérateur est choisi avant de valider', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-  testWidgets('produit en rupture : visible, non ajoutable', (tester) async {
-    final container = await pumpPage(tester);
-    expect(find.text('Rupture'), findsOneWidget);
-    await tester.tap(find.byTooltip('Ajouter Fanta'));
-    await tester.pump();
-    expect(container.read(cartProvider).isEmpty, isTrue);
-  });
+      await tester.tap(find.text('Mobile money'));
+      await tester.pumpAndSettle();
+      expect(find.text('Choisissez l’opérateur mobile money'), findsOneWidget);
+      expect(primaryButton(tester, 'Valider la vente').onPressed, isNull);
 
-  testWidgets('la recherche remplace le catalogue, puis le rend', (
-    tester,
-  ) async {
-    await pumpPage(tester);
-    await tester.enterText(find.byType(TextField), 'eau');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Wave'));
+      await tester.pumpAndSettle();
+      expect(container.read(checkoutProvider).method, PaymentMethod.wave);
+      expect(find.text('À recevoir · Wave'), findsOneWidget);
+      expect(primaryButton(tester, 'Valider la vente').onPressed, isNotNull);
+    });
 
-    expect(find.byType(ProductSearchResults), findsOneWidget);
-    expect(find.byType(ProductBrowser), findsNothing);
-    expect(find.text('Coca-Cola 33cl'), findsNothing);
+    testWidgets('mixte : le reste en mobile money se calcule seul', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-    // Ajout depuis la recherche : la recherche se vide, le catalogue revient.
-    await tester.tap(find.byTooltip('Ajouter Eau 1,5L'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ProductSearchResults), findsNothing);
-    expect(find.byType(ProductBrowser), findsOneWidget);
-    await settleToast(tester);
-  });
+      await tester.tap(find.text('Mixte'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '1000');
+      await tester.pumpAndSettle();
 
-  testWidgets('recherche sans résultat : propose le scanner', (tester) async {
-    await pumpPage(tester);
-    await tester.enterText(find.byType(TextField), 'xyz');
-    await tester.pump(const Duration(milliseconds: 300));
-    await tester.pumpAndSettle();
-    expect(find.text('Aucun produit trouvé'), findsOneWidget);
+      expect(container.read(checkoutProvider).mobileMoney, d('3000'));
+      expect(find.text('Complet'), findsOneWidget);
+      expect(primaryButton(tester, 'Valider la vente').onPressed, isNotNull);
+    });
 
-    await tester.tap(find.text('Scanner un code-barres'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ProductSearchResults), findsNothing);
-    expect(find.byType(SaleScannerPanel), findsOneWidget);
-  });
+    testWidgets('ligne modifiée en place ; retrait annulable', (tester) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-  testWidgets('espèces insuffisantes : la raison est rappelée en bas', (
-    tester,
-  ) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await settleToast(tester);
-    container
-        .read(checkoutProvider.notifier)
-        .setCashReceived(Decimal.parse('500'));
-    await tester.pumpAndSettle();
-    // Le champ espèces est plus bas dans le défilement : le panneau fixe
-    // rappelle pourquoi l'encaissement est bloqué.
-    expect(
-      find.descendant(
-        of: find.byType(SaleCheckoutPanel),
-        matching: find.text('Montant insuffisant'),
-      ),
-      findsOneWidget,
-    );
-  });
+      await tester.tap(find.text('Coca-Cola 33cl'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remise sur la ligne'), findsOneWidget);
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pump();
+      expect(
+        container.read(cartProvider.notifier).quantityOf('Coca-Cola 33cl'),
+        3,
+      );
 
-  testWidgets('caisse fermée : Encaisser propose l’ouverture, panier gardé', (
-    tester,
-  ) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await settleToast(tester);
-    container
-        .read(checkoutProvider.notifier)
-        .setCashReceived(Decimal.parse('5000'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Retirer'));
+      await tester.pumpAndSettle();
+      expect(container.read(cartProvider).isEmpty, isTrue);
+      expect(find.text('Panier vide'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(container.read(cartProvider).unitCount, 3);
+    });
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(SaleCheckoutPanel),
-        matching: find.byType(PrimaryButton),
-      ),
-    );
-    await tester.pumpAndSettle();
+    testWidgets('caisse fermée à la validation : ouverture, panier gardé', (
+      tester,
+    ) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-    expect(find.text('Fond de caisse'), findsOneWidget);
-    expect(
-      find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
-      findsOneWidget,
-    );
-    expect(container.read(cartProvider).unitCount, 1);
-    expect(
-      container.read(checkoutProvider).cashReceived,
-      Decimal.parse('5000'),
-    );
-    expect(tester.takeException(), isNull);
-  });
+      await tester.tap(find.widgetWithText(PrimaryButton, 'Valider la vente'));
+      await tester.pumpAndSettle();
+      expect(find.text('Fond de caisse'), findsOneWidget);
+      expect(container.read(cartProvider).unitCount, 2);
+      // Sous l'écran d'ouverture, l'encaissement reste en place.
+      expect(
+        find.byType(SaleCheckoutPage, skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
 
-  testWidgets('le panier reste accessible et modifiable', (tester) async {
-    final container = await pumpPage(tester);
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await tester.pump();
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await settleToast(tester);
+    testWidgets('Vider : confirmation, puis retour à Vendre', (tester) async {
+      final container = await pumpPage(tester);
+      await openCheckoutWithCoca(tester);
 
-    expect(find.text('2 au panier'), findsOneWidget);
-
-    // Le compteur du panneau fixe fait défiler jusqu'au panier.
-    await tester.tap(find.text('2 articles'));
-    await tester.pumpAndSettle();
-    expect(find.byType(SaleCart), findsOneWidget);
-    final header = tester.getRect(find.text('Panier en cours'));
-    expect(header.top, greaterThanOrEqualTo(0));
-    expect(header.bottom, lessThan(800));
-
-    container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 3);
-    await tester.pumpAndSettle();
-    expect(find.text('3 articles'), findsOneWidget);
-
-    // Un glissement vers la gauche retire la ligne, sans confirmation.
-    await tester.drag(find.byType(Dismissible), const Offset(-600, 0));
-    await tester.pumpAndSettle();
-    expect(container.read(cartProvider).isEmpty, isTrue);
-    expect(find.text('Votre panier est vide'), findsOneWidget);
-
-    // Le retrait s'annule depuis la pastille : la ligne revient telle quelle.
-    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
-    await tester.tap(find.widgetWithText(TextButton, 'Annuler'));
-    await tester.pumpAndSettle();
-    expect(container.read(cartProvider).unitCount, 3);
-    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
-
-    // À 1, « − » devient la corbeille : elle retire aussi la ligne, avec la
-    // même annulation possible.
-    container.read(cartProvider.notifier).updateQuantity('Coca-Cola 33cl', 1);
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('Diminuer'), findsNothing);
-    await tester.tap(find.byTooltip('Retirer Coca-Cola 33cl'));
-    await tester.pumpAndSettle();
-    expect(container.read(cartProvider).isEmpty, isTrue);
-    expect(find.text('Coca-Cola 33cl retiré'), findsOneWidget);
-    // La pastille d'annulation reste 4 s, puis disparaît.
-    await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
-    expect(find.text('Coca-Cola 33cl retiré'), findsNothing);
-    expect(tester.takeException(), isNull);
+      await tester.tap(find.text('Vider'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Les 2 articles seront retirés. Le stock n’est pas modifié.'),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.text('Vider le panier'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(container.read(cartProvider).isEmpty, isTrue);
+      expect(find.byType(SaleCheckoutPage), findsNothing);
+    });
   });
 }

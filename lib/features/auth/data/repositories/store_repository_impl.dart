@@ -51,30 +51,40 @@ class StoreRepositoryImpl implements StoreRepository {
 
   @override
   Future<Store?> getStore() async {
-    final name = await _storage.read(key: _StoreKeys.name);
-    if (name != null) {
-      return Store(
-        name: name,
-        address: await _storage.read(key: _StoreKeys.address),
-        ncc: await _storage.read(key: _StoreKeys.ncc),
-        isSubjectToVat:
-            await _storage.read(key: _StoreKeys.isSubjectToVat) == 'true',
-        receiptFooterText: await _storage.read(key: _StoreKeys.footerText),
-        phone: await _storage.read(key: _StoreKeys.phone),
-        logoVersion: await _storage.read(key: _StoreKeys.logoVersion),
-      );
-    }
+    final local = await _readLocal();
+    if (local != null) return local;
 
     // Cache vide (nouvel appareil, réinstallation, changement de compte) :
     // récupérer la boutique depuis le backend. Hors ligne ou pas encore de
     // boutique → null, comme avant.
     try {
       final store = (await remoteDataSource.getCurrentStore()).toDomain();
+      // La réponse peut arriver après un [saveStore] (serveur lent à
+      // l'inscription) : la saisie locale, plus récente, l'emporte, sinon
+      // « Ma boutique » écraserait le nom choisi.
+      final savedMeanwhile = await _readLocal();
+      if (savedMeanwhile != null) return savedMeanwhile;
       await _writeLocal(store);
       return store;
     } on Exception {
       return null;
     }
+  }
+
+  /// Boutique du cache local, null s'il est vide.
+  Future<Store?> _readLocal() async {
+    final name = await _storage.read(key: _StoreKeys.name);
+    if (name == null) return null;
+    return Store(
+      name: name,
+      address: await _storage.read(key: _StoreKeys.address),
+      ncc: await _storage.read(key: _StoreKeys.ncc),
+      isSubjectToVat:
+          await _storage.read(key: _StoreKeys.isSubjectToVat) == 'true',
+      receiptFooterText: await _storage.read(key: _StoreKeys.footerText),
+      phone: await _storage.read(key: _StoreKeys.phone),
+      logoVersion: await _storage.read(key: _StoreKeys.logoVersion),
+    );
   }
 
   @override

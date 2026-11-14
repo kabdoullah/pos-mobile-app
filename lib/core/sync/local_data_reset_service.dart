@@ -19,7 +19,7 @@ class LocalDataResetService {
   final BaseCacheManager? _imageCacheManager;
 
   /// Supprime produits, catégories, ventes et leurs lignes, retours et leurs
-  /// lignes, mouvements et sessions de caisse, file de sync et metadata.
+  /// lignes, mouvements, comptages et sessions de caisse, file de sync et metadata.
   /// Transaction unique : tout ou rien.
   Future<void> wipeBusinessData() async {
     await _db.transaction(() async {
@@ -28,6 +28,7 @@ class LocalDataResetService {
       await _db.delete(_db.saleItems).go();
       await _db.delete(_db.sales).go();
       await _db.delete(_db.cashMovements).go();
+      await _db.delete(_db.cashCountLines).go();
       await _db.delete(_db.cashSessions).go();
       await _db.delete(_db.products).go();
       await _db.delete(_db.categories).go();

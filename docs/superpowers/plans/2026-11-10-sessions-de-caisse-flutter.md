@@ -94,7 +94,7 @@
   - `rejected cash refund 2000 not counted, rejectedCashRefunds 2000` ;
   - `refund bigger than drawer gives negative balance (-2000)` ;
   - `decimal amounts 1500.50`.
-  
+
   Tests de `DeviceIdStorage` : `same id twice` et `id survives a new instance`, sur un `FlutterSecureStorage` mocké.
 - [ ] **Step 2:** FAIL attendu. **Step 3:** implémenter. **Step 4:** PASS attendu.
 - [ ] **Step 5: Commit** `feat(cash): domaine et calcul du solde théorique`.
@@ -124,7 +124,7 @@
   - `Future<CashSession> closeSession({required String sessionId, required Decimal countedAmount, String? note})` ;
   - `Stream<List<CashSession>> watchLocalHistory()` ;
   - `Future<void> applyServerClosure(String sessionId, CashSessionDetail detail)`, utilisée en Task 4.
-  
+
   Chaque écriture se fait dans une seule transaction Drift : ligne métier et entrée de file.
 - Use cases (exceptions typées `CashRegisterException` avec un `code`) :
   - **`OpenCashSessionUseCase`** : refus `session_already_open` si une session est déjà ouverte sur l'appareil, et `invalid_amount` si le montant est négatif.

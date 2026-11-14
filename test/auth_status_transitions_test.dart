@@ -197,6 +197,32 @@ void main() {
     expect(_status(first), isA<AuthPinSetupRequired>());
   });
 
+  test(
+    'inscription : accueil « boutique prête » à montrer, une fois',
+    () async {
+      final app = await _Device().launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.register(phone, 'secret123', email: 'awa@example.com');
+      await auth.proceedToPinSetup();
+      await auth.setupPin('2580');
+
+      final repo = app.read(authRepositoryProvider);
+      expect(await repo.isWelcomePending(), isTrue);
+      await repo.completeWelcome();
+      expect(await repo.isWelcomePending(), isFalse);
+    },
+  );
+
+  test('connexion d\'un autre compte : pas d\'accueil hérité', () async {
+    final device = _Device();
+    final app = await device.launch();
+    await app
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
+    await app.read(authProvider.notifier).login('+2250700000002', 'secret123');
+    expect(await app.read(authRepositoryProvider).isWelcomePending(), isFalse);
+  });
+
   test('boutique enregistrée puis app fermée → création du PIN', () async {
     final device = _Device();
     final first = await device.launch();
@@ -486,6 +512,71 @@ void main() {
       await relaunched.read(authProvider.notifier).login(phone, 'secret123');
 
       expect(_status(relaunched), isA<AuthPinRequired>());
+    });
+  });
+
+  group('code PIN oublié', () {
+    test('mot de passe vérifié → nouveau PIN, l\'ancien est oublié, '
+        'boutique conservée', () async {
+      final device = _Device();
+      final app = await device.launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.login(phone, 'secret123');
+      await auth.setupPin('2580');
+      auth.lock();
+      expect(_status(app), isA<AuthPinRequired>());
+      clearInteractions(device.storeRepo);
+
+      await auth.recoverPin('secret123');
+      final status = _status(app);
+      expect(status, isA<AuthPinSetupRequired>());
+      // Hors inscription : pas de retour vers la boutique.
+      expect((status! as AuthPinSetupRequired).canReturnToStoreSetup, isFalse);
+      // Même compte : la boutique en cache n'est pas effacée.
+      verifyNever(device.storeRepo.clearLocal);
+
+      await auth.setupPin('1470');
+      expect(_status(app), isA<AuthAuthenticated>());
+
+      // L'ancien PIN ne déverrouille plus, le nouveau oui.
+      auth.lock();
+      await auth.verifyPin('2580');
+      expect(_error(app), isA<WrongPin>());
+      await auth.verifyPin('1470');
+      expect(_status(app), isA<AuthAuthenticated>());
+    });
+
+    test('mot de passe faux → InvalidCredentials, rien ne change', () async {
+      final app = await _Device().launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.login(phone, 'secret123');
+      await auth.setupPin('2580');
+      auth.lock();
+
+      await expectLater(
+        auth.recoverPin('mauvais'),
+        throwsA(isA<InvalidCredentials>()),
+      );
+      expect(_status(app), isA<AuthPinRequired>());
+      await auth.verifyPin('2580');
+      expect(_status(app), isA<AuthAuthenticated>());
+    });
+
+    test('possible pendant un blocage du PIN, qui est levé', () async {
+      final app = await _Device().launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.login(phone, 'secret123');
+      await auth.setupPin('2580');
+      for (var i = 0; i < AppConfig.maxPinAttempts; i++) {
+        await auth.verifyPin('1111');
+      }
+      expect(_error(app), isA<PinLocked>());
+
+      await auth.recoverPin('secret123');
+      expect(_status(app), isA<AuthPinSetupRequired>());
+      await auth.setupPin('1470');
+      expect(_status(app), isA<AuthAuthenticated>());
+      expect(await auth.pinLockedUntil(), isNull);
     });
   });
 }

@@ -39,7 +39,7 @@ void main() {
     testWidgets('caisse : libellés avec quantité, thème $name', (tester) async {
       for (final (p, label) in [
         (product(stock: 24), 'Stock : 24'),
-        (product(stock: 3, minStock: 5), 'Faible : 3'),
+        (product(stock: 3, minStock: 5), 'Stock bas · 3'),
         (product(stock: 0), 'Rupture'),
         (product(stock: -2), 'Rupture'),
       ]) {
@@ -60,7 +60,7 @@ void main() {
     await pump(tester, product(stock: 24));
     expect(find.text('Disponible'), findsOneWidget);
     await pump(tester, product(stock: 3, minStock: 5));
-    expect(find.text('Stock faible'), findsOneWidget);
+    expect(find.text('Stock bas'), findsOneWidget);
     await pump(tester, product());
     expect(find.text('Non suivi'), findsOneWidget);
   });

@@ -251,10 +251,21 @@ void main() {
 
         await tester.tap(find.byTooltip('Augmenter'));
         await tester.pumpAndSettle();
+        // Étape 1 → 2 : l'état, le motif et le remboursement viennent après.
+        expect(find.text('Sera remis en stock'), findsNothing);
+        await tester.tap(find.text('Continuer'));
+        await tester.pumpAndSettle();
+        expect(find.text('Étape 2 sur 2'), findsOneWidget);
         expect(find.text('Sera remis en stock'), findsOneWidget);
         expect(find.text('Choisissez le motif'), findsOneWidget);
 
         await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
+
+        // Entièrement visible : sinon le panneau du bas peut couvrir le motif.
+
+        await tester.ensureVisible(find.text('Produit défectueux'));
+
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Produit défectueux'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Continuer'));
@@ -277,7 +288,7 @@ void main() {
         expect(find.text('Retour enregistré'), findsWidgets);
         // Actions fixées en bas, toujours visibles.
         expect(find.text('Imprimer le reçu de retour'), findsOneWidget);
-        expect(find.text('Terminer'), findsOneWidget);
+        expect(find.text('Terminé'), findsOneWidget);
         await tester.drag(find.byType(ListView), const Offset(0, -300));
         await tester.pumpAndSettle();
         expect(find.text('Enregistré · en attente de synchro'), findsOneWidget);
@@ -303,7 +314,12 @@ void main() {
       );
       await tester.tap(find.byTooltip('Augmenter'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
+      // Entièrement visible : sinon le panneau du bas peut couvrir le motif.
+      await tester.ensureVisible(find.text('Produit défectueux'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Produit défectueux'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continuer'));
@@ -315,7 +331,10 @@ void main() {
 
       expect(find.text('Fond de caisse'), findsOneWidget);
       expect(
-        find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+        find.widgetWithText(
+          PrimaryButton,
+          'Ouvrir avec ${formatFcfa(Decimal.zero)}',
+        ),
         findsOneWidget,
       );
       expect(repository.created, isEmpty);
@@ -351,6 +370,8 @@ void main() {
       );
       await tester.tap(find.byTooltip('Augmenter'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Autre'));
       await tester.pumpAndSettle();
 
@@ -369,15 +390,44 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca()]),
       );
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.textContaining('Vente payée en mixte'),
         100,
       );
       expect(find.textContaining('Vente payée en mixte'), findsOneWidget);
-      final cash = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, 'Espèces'),
+      final cash = tester.widget<QuickChoiceButton>(
+        find.widgetWithText(QuickChoiceButton, 'Espèces'),
       );
-      expect(cash.selected, isTrue);
+      expect(cash.isSelected, isTrue);
+    });
+
+    testWidgets('étape 2 : retour aux quantités, saisie gardée', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        SaleReturnPage(sale: sale()),
+        _FakeReturns(lines: [coca()]),
+      );
+      expect(find.text('Étape 1 sur 2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
+      expect(find.text('Étape 2 sur 2'), findsOneWidget);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Étape 1 sur 2'), findsOneWidget);
+      expect(find.byType(SaleReturnPage), findsOneWidget);
+      final stepper = tester.widget<QuantityStepper>(
+        find.byType(QuantityStepper),
+      );
+      expect(stepper.quantity, 1);
     });
 
     testWidgets('plus rien à retourner : écran explicite', (tester) async {
@@ -386,7 +436,10 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca(returned: 2)]),
       );
-      expect(find.text('Tout a déjà été retourné'), findsOneWidget);
+      expect(
+        find.text('Tous les articles ont déjà été retournés'),
+        findsOneWidget,
+      );
     });
   });
 }

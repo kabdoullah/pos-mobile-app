@@ -15,6 +15,7 @@ class AmountInput extends StatefulWidget {
     required this.onChanged,
     this.hint,
     this.errorText,
+    this.large = false,
     super.key,
   });
 
@@ -32,6 +33,9 @@ class AmountInput extends StatefulWidget {
 
   /// Erreur affichée sous le champ.
   final String? errorText;
+
+  /// Champ mis en avant (montant reçu) : 64 dp, chiffres 28/600.
+  final bool large;
 
   @override
   State<AmountInput> createState() => _AmountInputState();
@@ -84,6 +88,7 @@ class _AmountInputState extends State<AmountInput> {
       inputFormatters: fcfaAmountInputFormatters,
       textInputAction: TextInputAction.done,
       onChanged: _onTextChanged,
+      large: widget.large,
     );
   }
 }

@@ -1,35 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 
-/// Hauteur du bandeau caméra de la caisse.
-const double saleScannerPanelHeight = 168;
+/// Hauteur de la zone caméra du scanner de vente.
+const double saleScannerPanelHeight = 260;
 
-// La zone caméra reste sombre quel que soit le thème de l'app.
-const _cameraBackground = Color(0xFF0C0906);
-const _cameraOverlay = Color(0x991C1107);
-const _cameraForeground = Color(0xB3FFFFFF);
-// Or secondaire du thème, accent du viseur.
-const _viewfinderColor = Color(0xFFCA8A04);
-
-/// Bandeau caméra compact : scan en continu au-dessus du panier.
+/// Zone caméra du scanner de vente : image pleine largeur, cadre de visée au
+/// trait de la couleur de marque et consigne en bas.
 ///
 /// Le [MobileScanner] n'est monté que si [isActive] : le démonter libère la
-/// caméra (bottom sheet ouvert, page recouverte, bandeau replié).
+/// caméra (feuille ouverte, page recouverte).
 class SaleScannerPanel extends StatelessWidget {
-  /// Crée le bandeau caméra.
+  /// Crée la zone caméra.
   const SaleScannerPanel({
     required this.controller,
     required this.isActive,
     required this.isPermissionGranted,
     required this.isCheckingPermission,
-    required this.isTorchOn,
     required this.onDetect,
-    required this.onToggleTorch,
     required this.onOpenAppSettings,
+    required this.onManualEntry,
     super.key,
   });
 
@@ -45,125 +39,147 @@ class SaleScannerPanel extends StatelessWidget {
   /// Demande de permission en cours.
   final bool isCheckingPermission;
 
-  /// Torche allumée.
-  final bool isTorchOn;
-
   /// Appelé à chaque détection de code-barres.
   final void Function(BarcodeCapture) onDetect;
 
-  /// Allume ou éteint la torche.
-  final VoidCallback onToggleTorch;
-
   /// Ouvre les réglages système (permission refusée).
   final VoidCallback onOpenAppSettings;
+
+  /// Revient à la saisie du code au clavier (permission refusée).
+  final VoidCallback onManualEntry;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: saleScannerPanelHeight,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        child: ColoredBox(
-          color: _cameraBackground,
-          child: switch ((isCheckingPermission, isPermissionGranted)) {
-            (true, _) => const Center(child: AppLoadingIndicator()),
-            (false, false) => _PermissionDenied(onOpen: onOpenAppSettings),
-            _ when !isActive => const SizedBox.expand(),
-            _ => Stack(
-              fit: StackFit.expand,
-              children: [
+      child: ColoredBox(
+        color: AppColors.cameraBackground,
+        child: switch ((isCheckingPermission, isPermissionGranted)) {
+          (true, _) => const Center(child: AppLoadingIndicator()),
+          (false, false) => _PermissionDenied(
+            onOpen: onOpenAppSettings,
+            onManualEntry: onManualEntry,
+          ),
+          _ => Stack(
+            fit: StackFit.expand,
+            children: [
+              if (isActive)
                 MobileScanner(controller: controller, onDetect: onDetect),
-                const CustomPaint(painter: _ViewfinderPainter()),
-                Positioned(
-                  top: AppSpacing.xs,
-                  right: AppSpacing.xs,
-                  child: IconButton(
-                    tooltip: isTorchOn ? 'Éteindre la torche' : 'Torche',
-                    color: _cameraForeground,
-                    icon: Icon(
-                      isTorchOn ? Icons.flashlight_off : Icons.flashlight_on,
-                    ),
-                    onPressed: onToggleTorch,
+              const CustomPaint(painter: _ViewfinderPainter()),
+              Positioned(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                bottom: AppSpacing.md - 2,
+                child: Text(
+                  'Placez le code-barres dans le cadre',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.body.copyWith(
+                    fontSize: 15,
+                    color: AppColors.onCamera,
                   ),
                 ),
-              ],
-            ),
-          },
-        ),
+              ),
+            ],
+          ),
+        },
       ),
     );
   }
 }
 
 class _PermissionDenied extends StatelessWidget {
-  const _PermissionDenied({required this.onOpen});
+  const _PermissionDenied({required this.onOpen, required this.onManualEntry});
 
   final VoidCallback onOpen;
+  final VoidCallback onManualEntry;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          const Icon(Icons.no_photography_outlined, color: _cameraForeground),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              'Accès caméra refusé. Recherchez les produits par nom, ou '
-              'autorisez la caméra.',
-              style: AppTypography.bodySmall.copyWith(color: _cameraForeground),
+    final brand = AppColors.dark.action;
+    // Zone de hauteur fixe : défilante pour les écrans étroits et les grands
+    // textes (les deux actions passent alors sur deux lignes).
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.no_photography_outlined,
+              color: AppColors.onCamera,
             ),
-          ),
-          TextButton(
-            onPressed: onOpen,
-            style: TextButton.styleFrom(foregroundColor: _viewfinderColor),
-            child: const Text('Autoriser'),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'La caméra est bloquée',
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyStrong.copyWith(
+                color: AppColors.onCamera,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Autorisez l’accès à la caméra pour scanner les codes-barres.',
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.body.copyWith(color: AppColors.onCamera),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.sm,
+              children: [
+                TextButton(
+                  onPressed: onOpen,
+                  style: TextButton.styleFrom(foregroundColor: brand),
+                  child: const Text('Autoriser'),
+                ),
+                TextButton(
+                  onPressed: onManualEntry,
+                  style: TextButton.styleFrom(foregroundColor: brand),
+                  child: const Text('Saisir le code à la main'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Voile sombre percé d'un viseur horizontal (forme d'un code EAN) avec coins
-/// accentués.
+/// Voile sombre percé d'un cadre de visée horizontal (forme d'un code EAN),
+/// bordé de la couleur de marque.
 class _ViewfinderPainter extends CustomPainter {
   const _ViewfinderPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromCenter(
-      center: size.center(Offset.zero),
-      width: (size.width - AppSpacing.xxl).clamp(0, 280),
-      height: (size.height - AppSpacing.xl).clamp(0, 110),
+      center: size.center(Offset.zero).translate(0, -AppSpacing.sm),
+      width: (size.width - AppSpacing.xxl).clamp(0, 220),
+      height: (size.height - AppSpacing.xxl).clamp(0, 110),
     );
-    final hole = RRect.fromRectAndRadius(rect, const Radius.circular(12));
-
-    canvas.drawPath(
-      Path()
-        ..addRect(Offset.zero & size)
-        ..addRRect(hole)
-        ..fillType = PathFillType.evenOdd,
-      Paint()..color = _cameraOverlay,
+    final hole = RRect.fromRectAndRadius(
+      rect,
+      const Radius.circular(AppSpacing.radiusSm),
     );
 
-    final corner = Paint()
-      ..color = _viewfinderColor
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    const len = 20.0;
-    for (final (point, dx, dy) in [
-      (rect.topLeft, 1.0, 1.0),
-      (rect.topRight, -1.0, 1.0),
-      (rect.bottomLeft, 1.0, -1.0),
-      (rect.bottomRight, -1.0, -1.0),
-    ]) {
-      canvas
-        ..drawLine(point, point.translate(len * dx, 0), corner)
-        ..drawLine(point, point.translate(0, len * dy), corner);
-    }
+    canvas
+      ..drawPath(
+        Path()
+          ..addRect(Offset.zero & size)
+          ..addRRect(hole)
+          ..fillType = PathFillType.evenOdd,
+        Paint()..color = AppColors.cameraScrim,
+      )
+      ..drawRRect(
+        hole,
+        Paint()
+          ..color = AppColors.light.brand
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke,
+      );
   }
 
   @override

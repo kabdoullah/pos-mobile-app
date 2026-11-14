@@ -49,7 +49,7 @@ class CheckoutState {
   String? cashErrorFor(Decimal total) {
     final cash = cashReceived;
     if (method == PaymentMethod.cash && cash != null && cash < total) {
-      return 'Montant insuffisant';
+      return 'Inférieur au total. Ajoutez des espèces ou choisissez Mixte.';
     }
     return null;
   }
@@ -107,6 +107,22 @@ class Checkout extends _$Checkout {
       method: state.method,
       cashReceived: state.cashReceived,
       mobileMoney: amount,
+    );
+  }
+
+  /// Paiement mixte : enregistre les espèces reçues et en déduit la part
+  /// mobile money (le reste du [total], jamais négatif). Espèces vides : les
+  /// deux parts sont vidées.
+  void splitMixed(Decimal? cash, Decimal total) {
+    final rest = cash == null ? null : total - cash;
+    state = CheckoutState(
+      method: state.method,
+      cashReceived: cash,
+      mobileMoney: rest == null
+          ? null
+          : rest > Decimal.zero
+          ? rest
+          : Decimal.zero,
     );
   }
 

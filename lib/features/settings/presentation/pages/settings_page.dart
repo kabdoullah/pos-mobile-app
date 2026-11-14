@@ -9,7 +9,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
 import '../../../../app/theme/theme_mode_provider.dart';
 import '../../../../core/config.dart';
 import '../../../../core/network/error_mapper.dart';
@@ -47,16 +49,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _exporting = false;
   bool _syncing = false;
 
-  void _showMessage(String message, {bool isError = false}) {
-    final cs = Theme.of(context).colorScheme;
+  // Toast neutre (thème) même pour une erreur : l'aplat de couleur est
+  // réservé au message bloquant.
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? cs.error : null,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
   }
 
@@ -69,8 +68,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final storeAddress = store?.address;
     final footer = store?.receiptFooterText;
 
-    return AppScaffold(
-      title: 'Paramètres',
+    return Scaffold(
+      appBar: AppBar(
+        titleSpacing: AppSpacing.md,
+        title: const Text('Paramètres'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: AppSpacing.md),
+            child: OfflineStatusIndicator(),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         children: [
@@ -78,7 +86,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Commerce',
             children: [
               SettingsTile(
-                icon: Icons.storefront_outlined,
                 title: store == null ? 'Configurer ma boutique' : 'Mon magasin',
                 subtitle: Text(
                   store == null
@@ -101,7 +108,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               if (store != null)
                 SettingsTile(
-                  icon: Icons.receipt_long_outlined,
                   title: 'Reçus',
                   subtitle: Text(
                     footer == null || footer.isEmpty
@@ -119,9 +125,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Caisse',
             children: [
               SettingsTile(
-                icon: Icons.print_outlined,
                 title: 'Imprimante',
-                subtitle: Text(_printerLabel(ref.watch(printerProvider))),
+                subtitle: _PrinterStatus(state: ref.watch(printerProvider)),
                 showChevron: true,
                 onTap: () => context.push(Routes.bluetoothSetup),
               ),
@@ -131,59 +136,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             title: 'Application',
             children: [
               SettingsTile(
-                icon: Icons.cloud_sync_outlined,
                 title: 'Synchronisation',
                 subtitle: Text(_syncLabel()),
                 busy: _syncing,
                 onTap: _syncNow,
-                trailing: const Icon(Icons.refresh),
-              ),
-              SettingsTile(
-                icon: Icons.palette_outlined,
-                title: 'Apparence',
-                trailing: SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined, size: 18),
-                      tooltip: 'Clair',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto_outlined, size: 18),
-                      tooltip: 'Système',
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined, size: 18),
-                      tooltip: 'Sombre',
-                    ),
-                  ],
-                  selected: {ref.watch(themeModeProvider)},
-                  onSelectionChanged: (modes) =>
-                      ref.read(themeModeProvider.notifier).setMode(modes.first),
-                  showSelectedIcon: false,
-                  style: SegmentedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                  ),
+                trailing: TextButton(
+                  onPressed: _syncNow,
+                  child: const Text('Relancer'),
                 ),
               ),
               SettingsTile(
-                icon: Icons.file_download_outlined,
+                title: 'Apparence',
+                below: SegmentedControl<ThemeMode>(
+                  segments: const [
+                    (value: ThemeMode.light, label: 'Clair'),
+                    (value: ThemeMode.system, label: 'Système'),
+                    (value: ThemeMode.dark, label: 'Sombre'),
+                  ],
+                  selected: ref.watch(themeModeProvider),
+                  onChanged: ref.read(themeModeProvider.notifier).setMode,
+                ),
+              ),
+              SettingsTile(
                 title: 'Exporter les ventes',
                 subtitle: const Text('Fichier CSV à partager'),
                 busy: _exporting,
                 onTap: _exportCsv,
               ),
               SettingsTile(
-                icon: Icons.help_outline,
                 title: 'Revoir le tutoriel',
                 subtitle: const Text('Visite guidée de l’application'),
                 showChevron: true,
                 onTap: () => context.push(Routes.tutorial),
               ),
               SettingsTile(
-                icon: Icons.privacy_tip_outlined,
                 title: 'Politique de confidentialité',
                 trailing: const Icon(Icons.open_in_new, size: 18),
                 onTap: () => _openUrl(AppConfig.privacyPolicyUrl),
@@ -195,7 +181,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             children: [
               if (phone != null)
                 SettingsTile(
-                  icon: Icons.person_outline,
                   title: 'Mon compte',
                   subtitle: Text(
                     [
@@ -208,17 +193,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   showChevron: true,
-                  onTap: () => showSellerNameSheet(context, sellerName),
+                  onTap: () =>
+                      showSellerNameSheet(context, sellerName, phone: phone),
                 ),
               if (phone != null) const AccountEmailTile(),
+              SettingsTile(title: 'Se déconnecter', onTap: _confirmLogout),
               SettingsTile(
-                icon: Icons.logout_outlined,
-                title: 'Se déconnecter',
-                destructive: true,
-                onTap: _confirmLogout,
-              ),
-              SettingsTile(
-                icon: Icons.delete_forever_outlined,
                 title: 'Supprimer mon compte',
                 subtitle: const Text('Compte, boutique et ventes effacés'),
                 destructive: true,
@@ -230,14 +210,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
     );
   }
-
-  String _printerLabel(PrinterState state) => switch (state) {
-    PrinterConnected(:final name) => 'Connectée : $name',
-    PrinterConnecting() => 'Connexion…',
-    PrinterDisconnected(savedName: final name?) => name,
-    PrinterDisconnected() => 'Aucune imprimante configurée',
-    PrinterError() => 'Erreur de connexion — touchez pour vérifier',
-  };
 
   /// État de synchro en mots simples (jamais de jargon technique).
   String _syncLabel() {
@@ -274,10 +246,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _syncing = false);
     switch (ref.read(syncOrchestratorProvider)) {
       case SyncStatusError():
-        _showMessage(
-          'La synchronisation a échoué. Réessayez dans un instant.',
-          isError: true,
-        );
+        _showMessage('La synchronisation a échoué. Réessayez dans un instant.');
       case SyncStatusSyncing():
         _showMessage('Synchronisation déjà en cours…');
       case SyncStatusIdle():
@@ -288,10 +257,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _confirmLogout() async {
     // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
     // perdues au changement de compte.
-    final blockReason = await cashLogoutBlockReason(ref);
+    final block = await cashLogoutBlock(ref);
     if (!mounted) return;
-    if (blockReason != null) {
-      _showMessage(blockReason);
+    if (block != null) {
+      // La règle expliquée, avec l'action qui lève le blocage.
+      final act = await showConfirmDialog(
+        context,
+        title: block.title,
+        message: block.message,
+        confirmLabel: block.actionLabel,
+      );
+      if (!act || !mounted) return;
+      switch (block) {
+        case CashLogoutBlock.openSession:
+          unawaited(context.push(Routes.cashClose));
+        case CashLogoutBlock.closeAwaitingNote:
+          unawaited(context.push(Routes.cashRegister));
+        case CashLogoutBlock.pendingOperations:
+          await _syncNow();
+      }
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;
@@ -324,19 +308,55 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Supprimer votre compte ?',
-      message:
-          'Votre compte, votre boutique, votre catalogue et tout l’historique '
-          'des ventes et retours seront effacés définitivement, sur ce '
-          'téléphone et sur le serveur.'
-          '${pending > 0 ? ' Les modifications non synchronisées seront perdues.' : ''}'
-          ' Pensez à exporter vos ventes avant.',
-      confirmLabel: 'Continuer',
-      isDangerous: true,
+    final choice = await showDialog<_DeleteAccountChoice>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final colors = AppColors.of(context);
+        return AppDialog(
+          title: 'Supprimer votre compte ?',
+          message:
+              'La boutique, le catalogue et l’historique des ventes et '
+              'retours seront effacés, sur le serveur et sur ce téléphone.',
+          body: [
+            if (pending > 0)
+              Text(
+                pending == 1
+                    ? '1 modification n’est pas encore synchronisée.'
+                    : '$pending modifications ne sont pas encore '
+                          'synchronisées.',
+                style: AppTypography.bodyStrong.copyWith(color: colors.error),
+              ),
+          ],
+          actions: [
+            SecondaryButton(
+              label: 'Exporter les ventes d’abord',
+              onPressed: () =>
+                  Navigator.pop(context, _DeleteAccountChoice.export),
+            ),
+            PrimaryButton(
+              label: 'Continuer',
+              isDangerous: true,
+              onPressed: () =>
+                  Navigator.pop(context, _DeleteAccountChoice.proceed),
+            ),
+            AppDialogTextAction(
+              label: 'Annuler',
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      },
     );
-    if (confirmed && mounted) await showDeleteAccountSheet(context);
+    if (!mounted) return;
+    switch (choice) {
+      case _DeleteAccountChoice.export:
+        await _exportCsv();
+      case _DeleteAccountChoice.proceed:
+        await showDeleteAccountSheet(context);
+      case null:
+        break;
+    }
   }
 
   Future<void> _openUrl(String url) async {
@@ -393,10 +413,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       );
     } catch (e) {
       if (mounted) {
-        _showMessage('Export impossible : ${errorToFrench(e)}', isError: true);
+        _showMessage('Export impossible : ${errorToFrench(e)}');
       }
     } finally {
       if (mounted) setState(() => _exporting = false);
     }
   }
 }
+
+/// État de l'imprimante en point + mot.
+class _PrinterStatus extends StatelessWidget {
+  const _PrinterStatus({required this.state});
+
+  final PrinterState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, tone) = switch (state) {
+      PrinterConnected(:final name) => ('$name connectée', StatusTone.success),
+      PrinterConnecting() => ('Connexion…', StatusTone.neutral),
+      PrinterDisconnected(savedName: final name?) => (
+        '$name · non connectée',
+        StatusTone.neutral,
+      ),
+      PrinterDisconnected() => (
+        'Aucune imprimante configurée',
+        StatusTone.warning,
+      ),
+      PrinterError() => (
+        'Connexion échouée · touchez pour vérifier',
+        StatusTone.error,
+      ),
+    };
+    return StatusIndicator(label: label, tone: tone);
+  }
+}
+
+/// Choix du premier dialogue de suppression du compte.
+enum _DeleteAccountChoice { export, proceed }

@@ -19,6 +19,12 @@ abstract class _ProfileKeys {
   /// Pas sensible : SharedPreferences.
   static const String emailReminderSnoozedUntil =
       'email_reminder_snoozed_until';
+
+  /// Comptes (ids) qui ont masqué les « Premiers pas » de l'accueil. Lié au
+  /// compte, donc conservé au changement de compte : un autre compte ne
+  /// l'hérite pas, le même le retrouve en se reconnectant. Pas sensible :
+  /// SharedPreferences.
+  static const String firstStepsHiddenUsers = 'first_steps_hidden_users';
 }
 
 /// Implémentation de [ProfileRepository] : cache secure storage devant l'API
@@ -29,13 +35,18 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required this.remoteDataSource,
     FlutterSecureStorage? storage,
     SharedPreferencesAsync? prefs,
+    Future<String?> Function()? currentUserId,
   }) : _storage = storage ?? const FlutterSecureStorage(),
-       _prefs = prefs ?? SharedPreferencesAsync();
+       _prefs = prefs ?? SharedPreferencesAsync(),
+       _currentUserId = currentUserId ?? (() async => null);
 
   /// Data source distante (API `/users/me`).
   final AuthRemoteDataSource remoteDataSource;
   final FlutterSecureStorage _storage;
   final SharedPreferencesAsync _prefs;
+
+  /// Id du compte connecté (jeton), pour les préférences liées au compte.
+  final Future<String?> Function() _currentUserId;
 
   @override
   Future<String?> getDisplayName() async {
@@ -99,6 +110,30 @@ class ProfileRepositoryImpl implements ProfileRepository {
     _ProfileKeys.emailReminderSnoozedUntil,
     until.toIso8601String(),
   );
+
+  @override
+  Future<bool> firstStepsHidden() async {
+    final userId = await _currentUserId();
+    if (userId == null) return false;
+    final users = await _prefs.getStringList(
+      _ProfileKeys.firstStepsHiddenUsers,
+    );
+    return users?.contains(userId) ?? false;
+  }
+
+  @override
+  Future<void> hideFirstSteps() async {
+    final userId = await _currentUserId();
+    if (userId == null) return;
+    final users =
+        await _prefs.getStringList(_ProfileKeys.firstStepsHiddenUsers) ??
+        const <String>[];
+    if (users.contains(userId)) return;
+    await _prefs.setStringList(_ProfileKeys.firstStepsHiddenUsers, [
+      ...users,
+      userId,
+    ]);
+  }
 
   AccountEmail _toAccountEmail(UserMeDto me) =>
       AccountEmail(email: me.email, isVerified: me.emailVerifiedAt != null);

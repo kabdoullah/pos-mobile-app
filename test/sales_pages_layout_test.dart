@@ -122,15 +122,16 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '10452');
       await tester.pumpAndSettle();
-      expect(find.text('Reçu #10450'), findsNothing);
-      expect(find.text('Reçu #10452'), findsOneWidget);
+      expect(find.textContaining('Vente n° 10450'), findsNothing);
+      expect(find.textContaining('Vente n° 10452'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('onglet Ventes vide, thème $name', (tester) async {
       await pump(tester, const SalesHistoryPage(), theme: theme);
       expect(tester.takeException(), isNull);
-      expect(find.text('Faire une vente'), findsOneWidget);
+      expect(find.text('Aucune vente aujourd’hui'), findsOneWidget);
+      expect(find.text('Choisir des dates'), findsOneWidget);
     });
 
     testWidgets('ticket avec lignes, thème $name', (tester) async {

@@ -57,7 +57,7 @@ void main() {
       findsOneWidget,
     );
 
-    await tester.tap(find.textContaining('Ajouter · '));
+    await tester.tap(find.text('Ajouter'));
     await tester.pumpAndSettle();
     expect((result() as QuantityChosen?)?.quantity, 40);
   });
@@ -78,7 +78,7 @@ void main() {
     await tester.pump();
     expect(find.text('Stock disponible : 8'), findsOneWidget);
 
-    await tester.tap(find.textContaining('Ajouter · '));
+    await tester.tap(find.text('Ajouter'));
     await tester.pumpAndSettle();
     expect(find.byType(BottomSheet), findsOneWidget);
 
@@ -86,7 +86,7 @@ void main() {
     await tester.tap(find.byTooltip('Diminuer'));
     await tester.pump();
     expect(find.text('Stock disponible atteint'), findsOneWidget);
-    await tester.tap(find.textContaining('Ajouter · '));
+    await tester.tap(find.text('Ajouter'));
     await tester.pumpAndSettle();
     expect((result() as QuantityChosen?)?.quantity, 8);
   });
@@ -97,7 +97,7 @@ void main() {
       await tester.enterText(find.byType(TextField), text);
       await tester.pump();
       expect(find.text('Saisissez une quantité'), findsOneWidget);
-      await tester.tap(find.textContaining('Ajouter · '));
+      await tester.tap(find.text('Ajouter'));
       await tester.pumpAndSettle();
       expect(find.byType(BottomSheet), findsOneWidget);
     }
@@ -112,7 +112,7 @@ void main() {
     // Lettres retirées, virgule gardée visible pour être refusée.
     expect(fieldText(tester), '3,5');
     expect(find.text(wholeQuantityError), findsOneWidget);
-    await tester.tap(find.textContaining('Ajouter · '));
+    await tester.tap(find.text('Ajouter'));
     await tester.pumpAndSettle();
     expect(find.byType(BottomSheet), findsOneWidget);
   });

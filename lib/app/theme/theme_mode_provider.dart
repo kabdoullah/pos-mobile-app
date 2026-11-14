@@ -1,46 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-/// Persiste et expose le [ThemeMode] courant.
+import '../../core/storage/theme_mode_storage.dart';
+
+/// Stockage du thème choisi.
+final themeModeStorageProvider = Provider<ThemeModeStorage>(
+  (ref) => ThemeModeStorage(),
+);
+
+/// Expose le [ThemeMode] courant et persiste les changements.
 ///
-/// Persisté dans le secure storage (clé : `theme_mode`). Le mode enregistré
-/// est lu avant `runApp` ([ThemeModeNotifier.readSaved]) et injecté via
-/// [ThemeModeNotifier.new] : la première frame a déjà le bon thème. Sinon,
-/// un téléphone en mode sombre avec l'app réglée en clair afficherait un
-/// écran sombre entre le splash et la première page.
+/// Le mode enregistré est lu avant `runApp` (`ThemeModeStorage.read`) et
+/// injecté via [ThemeModeNotifier.new] : la première frame a déjà le bon
+/// thème. Sinon, un téléphone en mode sombre avec l'app réglée en clair
+/// afficherait un écran sombre entre le splash et la première page.
 class ThemeModeNotifier extends Notifier<ThemeMode> {
-  /// Crée le notifier avec le mode [initial] (lu avant `runApp`).
-  ThemeModeNotifier([this._initial = ThemeMode.system]);
-
-  static const _key = 'theme_mode';
-  static const _storage = FlutterSecureStorage();
+  /// Crée le notifier avec le mode [initial] (lu avant `runApp`). Clair par
+  /// défaut ; le sombre reste au choix dans Paramètres.
+  ThemeModeNotifier([this._initial = ThemeMode.light]);
 
   final ThemeMode _initial;
-
-  /// Lit le mode enregistré ; [ThemeMode.system] s'il n'y en a pas ou si la
-  /// lecture échoue.
-  static Future<ThemeMode> readSaved() async {
-    try {
-      final value = await _storage.read(key: _key);
-      return ThemeMode.values.firstWhere(
-        (m) => m.name == value,
-        orElse: () => ThemeMode.system,
-      );
-    } catch (_) {
-      return ThemeMode.system;
-    }
-  }
 
   @override
   ThemeMode build() => _initial;
 
-  /// Met à jour et persiste [mode].
+  /// Applique [mode] tout de suite, puis l'enregistre.
   Future<void> setMode(ThemeMode mode) async {
     state = mode;
-    try {
-      await _storage.write(key: _key, value: mode.name);
-    } catch (_) {}
+    await ref.read(themeModeStorageProvider).write(mode);
   }
 }
 

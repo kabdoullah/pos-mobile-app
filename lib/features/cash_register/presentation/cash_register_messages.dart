@@ -9,6 +9,8 @@ String cashRegisterMessage(String code) => switch (code) {
     'Une caisse est déjà ouverte sur cet appareil.',
   CashRegisterException.noOpenSession => 'Ouvrez la caisse avant de continuer.',
   CashRegisterException.invalidAmount => 'Saisissez un montant valide.',
+  CashRegisterException.countMismatch =>
+    'Le total ne correspond pas au comptage. Recomptez.',
   CashRegisterException.noteRequired => 'Ajoutez un commentaire.',
   CashRegisterException.noteTooLong =>
     'Commentaire trop long (${CashRegisterException.maxNoteLength} '

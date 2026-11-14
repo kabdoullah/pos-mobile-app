@@ -55,6 +55,59 @@ final class DeviceIdStorageProvider
 
 String _$deviceIdStorageHash() => r'e1118167a51c486c9e335d0c4d9f81ec91007f4a';
 
+/// Fournit le stockage du mode de comptage (billets et pièces / total).
+
+@ProviderFor(cashCountModeStorage)
+final cashCountModeStorageProvider = CashCountModeStorageProvider._();
+
+/// Fournit le stockage du mode de comptage (billets et pièces / total).
+
+final class CashCountModeStorageProvider
+    extends
+        $FunctionalProvider<
+          CashCountModeStorage,
+          CashCountModeStorage,
+          CashCountModeStorage
+        >
+    with $Provider<CashCountModeStorage> {
+  /// Fournit le stockage du mode de comptage (billets et pièces / total).
+  CashCountModeStorageProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cashCountModeStorageProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cashCountModeStorageHash();
+
+  @$internal
+  @override
+  $ProviderElement<CashCountModeStorage> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CashCountModeStorage create(Ref ref) {
+    return cashCountModeStorage(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CashCountModeStorage value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CashCountModeStorage>(value),
+    );
+  }
+}
+
+String _$cashCountModeStorageHash() =>
+    r'606990e8c2be3cad80eeafb12ac5dc8055f2e375';
+
 /// Fournit le repository des sessions de caisse (local d'abord, via drift).
 
 @ProviderFor(cashRegisterRepository)

@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/sync/sync_orchestrator.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_session_detail.dart';
@@ -29,10 +30,55 @@ Stream<CashSummary> cashSummary(Ref ref, String sessionId) =>
 Stream<List<CashMovement>> cashMovements(Ref ref, String sessionId) =>
     ref.watch(cashRegisterRepositoryProvider).watchMovements(sessionId);
 
+/// Observe le comptage [operation] de la session [sessionId] enregistré sur
+/// l'appareil, null sans billetterie.
+@riverpod
+Stream<CashCount?> localCashCount(
+  Ref ref,
+  String sessionId,
+  CashCountOperation operation,
+) => ref.watch(cashRegisterRepositoryProvider).watchCount(sessionId, operation);
+
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le dernier
+/// comptage »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// chaque ouverture de l'écran d'ouverture.
+@riverpod
+Future<CashCount?> lastClosingCount(Ref ref) =>
+    ref.watch(cashRegisterRepositoryProvider).lastClosingCount();
+
+/// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+/// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+/// ouverture ou clôture.
+@Riverpod(keepAlive: true)
+class CashCountByDenomination extends _$CashCountByDenomination {
+  @override
+  Future<bool> build() =>
+      ref.read(cashCountModeStorageProvider).readByDenomination();
+
+  /// Applique [byDenomination] tout de suite, puis l'enregistre.
+  Future<void> set(bool byDenomination) async {
+    state = AsyncData(byDenomination);
+    await ref
+        .read(cashCountModeStorageProvider)
+        .writeByDenomination(byDenomination);
+  }
+}
+
 /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
 @riverpod
 Stream<List<CashSession>> localCashSessionHistory(Ref ref) =>
     ref.watch(cashRegisterRepositoryProvider).watchLocalHistory();
+
+/// Session clôturée la plus récente de [history] ; `null` s'il n'y en a pas.
+CashSession? lastClosedSession(List<CashSession>? history) {
+  CashSession? last;
+  for (final session in history ?? const <CashSession>[]) {
+    final closedAt = session.closedAt;
+    if (closedAt == null) continue;
+    if (last == null || closedAt.isAfter(last.closedAt!)) last = session;
+  }
+  return last;
+}
 
 /// Observe la session [sessionId] enregistrée sur l'appareil, null si elle
 /// n'y est pas (session d'un autre téléphone).
@@ -138,13 +184,16 @@ class CashRegisterController extends _$CashRegisterController {
   @override
   void build() {}
 
-  /// Ouvre une session avec le fond de caisse [openingAmount].
+  /// Ouvre une session avec le fond de caisse [openingAmount] et, en mode
+  /// billetterie, son comptage [count].
   Future<CashSession> open({
     required Decimal openingAmount,
+    CashCount? count,
     String? note,
   }) async {
     final session = await ref.read(openCashSessionUseCaseProvider)(
       openingAmount: openingAmount,
+      count: count,
       note: note,
     );
     _syncIfOnline();
@@ -168,13 +217,16 @@ class CashRegisterController extends _$CashRegisterController {
     return movement;
   }
 
-  /// Clôture la session ouverte avec le montant compté [countedAmount].
+  /// Clôture la session ouverte avec le montant compté [countedAmount] et,
+  /// en mode billetterie, son comptage [count].
   Future<CashSession> close({
     required Decimal countedAmount,
+    CashCount? count,
     String? note,
   }) async {
     final session = await ref.read(closeCashSessionUseCaseProvider)(
       countedAmount: countedAmount,
+      count: count,
       note: note,
     );
     _syncIfOnline();

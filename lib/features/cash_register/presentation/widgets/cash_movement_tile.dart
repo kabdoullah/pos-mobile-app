@@ -10,9 +10,9 @@ import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
 import '../cash_register_messages.dart';
 
-/// Ligne d'un mouvement d'espèces : sens, motif, heure, commentaire et
-/// montant signé. Un mouvement refusé par le serveur est grisé et marqué
-/// « Refusé par le serveur » : il n'entre pas dans le solde.
+/// Ligne d'un mouvement d'espèces (liste à plat) : sens · motif, heure et
+/// commentaire, montant signé. Un mouvement refusé par le serveur est barré
+/// et marqué « Refusé » : il n'entre pas dans le solde.
 class CashMovementTile extends StatelessWidget {
   /// Crée la ligne du [movement].
   const CashMovementTile({required this.movement, super.key});
@@ -22,20 +22,14 @@ class CashMovementTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final colors = AppColors.of(context);
     final isIn = movement.type == CashMovementType.cashIn;
     final isRejected = movement.syncStatus == CashSyncStatus.rejected;
-    final color = isRejected
-        ? cs.onSurfaceVariant
-        : isIn
-        ? semantic.success
-        : cs.error;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
     final reason = cashMovementReasonLabel(movement.reason);
     final note = movement.note;
     final details = [
-      DateFormat('d MMM à HH:mm', 'fr_FR').format(movement.createdAt.toLocal()),
+      DateFormat('HH:mm', 'fr_FR').format(movement.createdAt.toLocal()),
       if (note != null && note.isNotEmpty) note,
     ].join(' · ');
     final rejectionCode = movement.rejectionCode;
@@ -54,26 +48,14 @@ class CashMovementTile extends StatelessWidget {
       label: semanticsLabel,
       excludeSemantics: true,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
+        constraints: const BoxConstraints(minHeight: 60),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  child: Icon(
-                    isIn ? Icons.south_west : Icons.north_east,
-                    size: 20,
-                    color: color,
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,34 +64,35 @@ class CashMovementTile extends StatelessWidget {
                       '$typeLabel · $reason',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.titleMedium,
+                      style: AppTypography.bodyStrong.copyWith(
+                        color: isRejected ? colors.textSecondary : null,
+                      ),
                     ),
-                    Text(details, style: muted),
+                    Text(details, style: meta),
                     if (isRejected)
-                      Text(
-                        rejectionCode == null
+                      StatusIndicator(
+                        label: rejectionCode == null
                             ? 'Refusé par le serveur'
                             : 'Refusé par le serveur · '
                                   '${cashRegisterMessage(rejectionCode)}',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: cs.error,
-                        ),
+                        tone: StatusTone.error,
                       )
                     else if (movement.syncStatus == CashSyncStatus.pending)
-                      Text('En attente de synchro', style: muted),
+                      const StatusIndicator(
+                        label: 'En attente de synchro',
+                        tone: StatusTone.warning,
+                      ),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    isIn ? '+ ' : '− ',
-                    style: AppTypography.bodyLarge.copyWith(color: color),
-                  ),
-                  AmountDisplay(amount: movement.amount, color: color),
-                ],
+              Text(
+                '${isIn ? '+' : '−'} ${formatFcfa(movement.amount)}',
+                style: AppTypography.bodyStrong.copyWith(
+                  color: isRejected ? colors.textSecondary : null,
+                  decoration: isRejected ? TextDecoration.lineThrough : null,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
               ),
             ],
           ),

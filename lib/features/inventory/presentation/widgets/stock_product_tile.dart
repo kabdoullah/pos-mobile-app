@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
-/// Ligne produit de l'onglet Stock (même schéma que la caisse) : nom, puis
-/// prix et badge de stock ; accès à l'ajustement à droite.
+/// Ligne produit de l'onglet Stock (liste à plat) : nom, prix de vente et
+/// d'achat, état ; quantité à droite et action rapide « Ajuster ».
+///
+/// Le prix d'achat s'affiche ici (écran de gestion), jamais en caisse
+/// (ADR-0009).
 class StockProductTile extends StatelessWidget {
-  /// Crée la carte.
+  /// Crée la ligne.
   const StockProductTile({
     required this.product,
     required this.onTap,
@@ -29,31 +32,32 @@ class StockProductTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final stock = product.currentStock;
     final onAdjust = this.onAdjust;
-    // Le badge affiche « Rupture » pour un stock négatif : l'écart
-    // d'inventaire reste lisible sous le prix.
-    final price = stock != null && stock < 0
-        ? '${formatFcfa(product.sellingPrice)} · Stock : $stock'
-        : formatFcfa(product.sellingPrice);
+    final purchase = product.purchasePrice;
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
+    final prices = purchase == null
+        ? 'Vente ${formatFcfa(product.sellingPrice)}'
+        : 'Vente ${formatAmount(product.sellingPrice)} · achat '
+              '${formatFcfa(purchase)}';
 
-    // Material propre : l'encre reste visible au-dessus du fond de la liste.
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: onTap,
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 64),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm,
             AppSpacing.xs,
-            AppSpacing.sm + AppSpacing.xs,
+            AppSpacing.sm,
           ),
           child: Row(
             children: [
-              ProductThumbnail(product: product, size: 48),
-              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,46 +66,41 @@ class StockProductTile extends StatelessWidget {
                       product.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
-                      ),
+                      style: AppTypography.bodyStrong.copyWith(height: 1.3),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          price,
-                          style: AppTypography.bodySmall.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontFeatures: AppTypography.tabularFigures,
-                          ),
-                        ),
-                        // Stock suivi : la quantité dans le badge
-                        // (« Stock : 24 », « Faible : 3 », « Rupture ») ;
-                        // sinon « Non suivi ».
-                        StockStatusBadge(
-                          product: product,
-                          showQuantity: stock != null,
-                        ),
-                      ],
-                    ),
+                    Text(prices, style: meta),
+                    StockStatusBadge(product: product),
                   ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    stock == null ? '—' : '$stock',
+                    style: AppTypography.bodyStrong.copyWith(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontFeatures: AppTypography.tabularFigures,
+                      color: stock != null && stock < 0 ? colors.error : null,
+                    ),
+                  ),
+                  if (stock != null) Text('en stock', style: meta),
+                ],
+              ),
               if (onAdjust != null)
-                IconButton(
-                  tooltip: 'Ajuster le stock de ${product.name}',
-                  // Saisie d'une entrée ou d'une sortie : distinct des
-                  // filtres et du crayon « Modifier » de la fiche produit.
-                  icon: Icon(Icons.edit_note, color: cs.primary),
-                  onPressed: onAdjust,
+                Semantics(
+                  label: 'Ajuster le stock de ${product.name}',
+                  button: true,
+                  excludeSemantics: true,
+                  child: TextButton(
+                    onPressed: onAdjust,
+                    child: const Text('Ajuster'),
+                  ),
                 )
               else
-                const SizedBox(width: AppSpacing.sm),
+                const SizedBox(width: 84),
             ],
           ),
         ),

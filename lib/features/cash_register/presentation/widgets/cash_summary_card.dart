@@ -1,16 +1,20 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/cash_session_detail.dart';
 import '../../domain/entities/cash_summary.dart';
 
-/// Solde théorique mis en avant, puis le détail de la formule : fond de
-/// caisse + ventes espèces + entrées − sorties − remboursements espèces.
+/// Solde du tiroir en chiffre héros, puis le calcul ligne par ligne (fond de
+/// caisse + ventes espèces + entrées − sorties − remboursements) et le mobile
+/// money, toujours à part (« Hors tiroir »). Bloc à plat, pleine largeur, avec
+/// ses propres marges.
 ///
-/// Un solde négatif s'affiche tel quel, en couleur d'erreur.
+/// Un solde négatif s'affiche tel quel, en couleur d'erreur, avec un statut
+/// explicite.
 class CashSummaryCard extends StatelessWidget {
   /// Crée la carte à partir de chaque terme de la formule.
   const CashSummaryCard({
@@ -24,7 +28,7 @@ class CashSummaryCard extends StatelessWidget {
     this.mobileMoneySales,
     this.expectedLabel = 'Solde théorique',
     this.caption,
-    this.elevated = true,
+    this.status,
     super.key,
   });
 
@@ -34,7 +38,7 @@ class CashSummaryCard extends StatelessWidget {
     Decimal? expectedAmount,
     String expectedLabel = 'Solde théorique',
     String? caption,
-    bool elevated = true,
+    Widget? status,
     Key? key,
   }) => CashSummaryCard(
     expectedAmount: expectedAmount ?? summary.expectedAmount,
@@ -47,7 +51,7 @@ class CashSummaryCard extends StatelessWidget {
     mobileMoneySales: summary.mobileMoneySales,
     expectedLabel: expectedLabel,
     caption: caption,
-    elevated: elevated,
+    status: status,
     key: key,
   );
 
@@ -57,7 +61,7 @@ class CashSummaryCard extends StatelessWidget {
     Decimal? expectedAmount,
     String expectedLabel = 'Solde théorique',
     String? caption,
-    bool elevated = true,
+    Widget? status,
     Key? key,
   }) => CashSummaryCard(
     expectedAmount: expectedAmount ?? summary.expectedAmount,
@@ -70,7 +74,7 @@ class CashSummaryCard extends StatelessWidget {
     mobileMoneySales: summary.mobileMoneySales,
     expectedLabel: expectedLabel,
     caption: caption,
-    elevated: elevated,
+    status: status,
     key: key,
   );
 
@@ -104,123 +108,114 @@ class CashSummaryCard extends StatelessWidget {
   /// Ligne discrète sous le solde (ex. date d'ouverture).
   final String? caption;
 
-  /// Surface élevée (objet principal de l'écran).
-  final bool elevated;
+  /// Statut au-dessus du solde (ex. « Ouverte depuis 7:45 »).
+  final Widget? status;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final colors = AppColors.of(context);
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
     final isNegative = expectedAmount < Decimal.zero;
     final count = cashSalesCount;
     final mobileMoney = mobileMoneySales;
     final caption = this.caption;
+    final status = this.status;
 
-    return AppCard(
-      elevated: elevated,
-      padding: AppSpacing.lg,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(expectedLabel, style: muted),
-          const SizedBox(height: AppSpacing.xs),
-          Semantics(
-            container: true,
-            label: '$expectedLabel : ${formatFcfa(expectedAmount)}',
-            excludeSemantics: true,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: AmountDisplay(
-                amount: expectedAmount,
-                size: AmountSize.hero,
-                color: isNegative ? cs.error : null,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (status != null) ...[
+                status,
+                const SizedBox(height: AppSpacing.sm + 2),
+              ],
+              Text(expectedLabel, style: meta),
+              Semantics(
+                container: true,
+                label: '$expectedLabel : ${formatFcfa(expectedAmount)}',
+                excludeSemantics: true,
+                child: Text(
+                  formatFcfa(expectedAmount),
+                  style: AppTypography.figureHero.copyWith(
+                    color: isNegative ? colors.error : colors.textPrimary,
+                  ),
+                ),
               ),
+              if (isNegative) ...[
+                const SizedBox(height: AppSpacing.xs),
+                const StatusIndicator(
+                  label:
+                      'Solde négatif : vérifiez les sorties et '
+                      'remboursements',
+                  tone: StatusTone.error,
+                ),
+              ],
+              if (caption != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Text(caption, style: meta),
+              ],
+            ],
+          ),
+        ),
+        const OverlineHeader('Calcul'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _line('Fond de caisse', openingAmount),
+              _line(
+                count == null
+                    ? 'Ventes en espèces'
+                    : 'Ventes en espèces ($count)',
+                cashSales,
+                sign: '+',
+              ),
+              _line('Entrées', cashIn, sign: '+'),
+              _line('Sorties', cashOut, sign: '−'),
+              _line('Remboursements', cashRefunds, sign: '−', last: true),
+            ],
+          ),
+        ),
+        if (mobileMoney != null && mobileMoney > Decimal.zero) ...[
+          const OverlineHeader('Hors tiroir'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: DefinitionRow(
+              label: 'Mobile money',
+              value: formatFcfa(mobileMoney),
+              showDivider: false,
             ),
           ),
-          if (isNegative) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Solde négatif : vérifiez les sorties et les remboursements.',
-              style: AppTypography.bodySmall.copyWith(color: cs.error),
-            ),
-          ],
-          if (caption != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(caption, style: muted),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          Divider(height: 1, color: cs.outlineVariant),
-          const SizedBox(height: AppSpacing.sm),
-          _FormulaLine(label: 'Fond de caisse', amount: openingAmount),
-          _FormulaLine(
-            label: count == null ? 'Ventes espèces' : 'Ventes espèces ($count)',
-            amount: cashSales,
-            sign: '+',
-          ),
-          _FormulaLine(label: 'Entrées', amount: cashIn, sign: '+'),
-          _FormulaLine(label: 'Sorties', amount: cashOut, sign: '−'),
-          _FormulaLine(
-            label: 'Remboursements espèces',
-            amount: cashRefunds,
-            sign: '−',
-          ),
-          if (mobileMoney != null && mobileMoney > Decimal.zero) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Mobile money : ${formatFcfa(mobileMoney)} (hors tiroir)',
-              style: muted,
-            ),
-          ],
         ],
-      ),
+      ],
     );
   }
-}
 
-/// Une ligne de la formule : libellé à gauche, montant signé à droite.
-class _FormulaLine extends StatelessWidget {
-  const _FormulaLine({required this.label, required this.amount, this.sign});
-
-  final String label;
-  final Decimal amount;
-  final String? sign;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final sign = this.sign;
+  /// Ligne de la formule, montant signé (« + 40 175 FCFA »).
+  static Widget _line(
+    String label,
+    Decimal amount, {
+    String? sign,
+    bool last = false,
+  }) {
     final spoken = switch (sign) {
       '+' => 'plus ',
       '−' => 'moins ',
       _ => '',
     };
-    return Semantics(
-      container: true,
-      label: '$label : $spoken${formatFcfa(amount)}',
-      excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                label,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            ),
-            if (sign != null)
-              Text(
-                '$sign ',
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
-              ),
-            AmountDisplay(amount: amount, size: AmountSize.small),
-          ],
-        ),
-      ),
+    return DefinitionRow(
+      label: label,
+      value: '${sign == null ? '' : '$sign '}${formatFcfa(amount)}',
+      showDivider: !last,
+      semanticsLabel: '$label : $spoken${formatFcfa(amount)}',
     );
   }
 }

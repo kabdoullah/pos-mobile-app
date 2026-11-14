@@ -108,14 +108,14 @@ String _$dailySummaryHash() => r'6ae9c0c466860e62c16e2e937e07c97bc371d7cb';
 
 /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
 ///
-/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+/// Alimente « Bénéfice estimé » et « Marge moyenne » de l'accueil.
 
 @ProviderFor(todayMarginSummary)
 final todayMarginSummaryProvider = TodayMarginSummaryProvider._();
 
 /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
 ///
-/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+/// Alimente « Bénéfice estimé » et « Marge moyenne » de l'accueil.
 
 final class TodayMarginSummaryProvider
     extends
@@ -127,7 +127,7 @@ final class TodayMarginSummaryProvider
     with $FutureModifier<MarginSummary>, $StreamProvider<MarginSummary> {
   /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
   ///
-  /// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+  /// Alimente « Bénéfice estimé » et « Marge moyenne » de l'accueil.
   TodayMarginSummaryProvider._()
     : super(
         from: null,
@@ -204,13 +204,13 @@ final class RecentSalesProvider
 String _$recentSalesHash() => r'873d362435a91ec85a763315a8a91ba61d9da61d';
 
 /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+/// heure locale) — donne l'heure de pointe (« Pic ») de l'accueil.
 
 @ProviderFor(todayHourlySales)
 final todayHourlySalesProvider = TodayHourlySalesProvider._();
 
 /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+/// heure locale) — donne l'heure de pointe (« Pic ») de l'accueil.
 
 final class TodayHourlySalesProvider
     extends
@@ -221,7 +221,7 @@ final class TodayHourlySalesProvider
         >
     with $FutureModifier<List<Decimal>>, $StreamProvider<List<Decimal>> {
   /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-  /// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+  /// heure locale) — donne l'heure de pointe (« Pic ») de l'accueil.
   TodayHourlySalesProvider._()
     : super(
         from: null,
@@ -249,6 +249,47 @@ final class TodayHourlySalesProvider
 }
 
 String _$todayHourlySalesHash() => r'f21d5e305c74dba9e5ba56e2f01ae8c602487e12';
+
+/// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
+/// des « Premiers pas » de l'accueil.
+
+@ProviderFor(hasAnySale)
+final hasAnySaleProvider = HasAnySaleProvider._();
+
+/// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
+/// des « Premiers pas » de l'accueil.
+
+final class HasAnySaleProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, Stream<bool>>
+    with $FutureModifier<bool>, $StreamProvider<bool> {
+  /// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
+  /// des « Premiers pas » de l'accueil.
+  HasAnySaleProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'hasAnySaleProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$hasAnySaleHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<bool> create(Ref ref) {
+    return hasAnySale(ref);
+  }
+}
+
+String _$hasAnySaleHash() => r'8bedc3957d9aa1991315532bf7f860da2ebed4ff';
 
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
 /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
@@ -296,3 +337,65 @@ final class HomeLowStockProvider
 }
 
 String _$homeLowStockHash() => r'1db951c11e8a82bf9e60705f2cd256bc42f231d1';
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+
+@ProviderFor(FirstStepsHidden)
+final firstStepsHiddenProvider = FirstStepsHiddenProvider._();
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+final class FirstStepsHiddenProvider
+    extends $AsyncNotifierProvider<FirstStepsHidden, bool> {
+  /// « Premiers pas » masqués par le compte connecté (préférence liée au
+  /// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+  /// Écrit par la section qui le regarde : pas de risque de libération pendant
+  /// l'écriture.
+  FirstStepsHiddenProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'firstStepsHiddenProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$firstStepsHiddenHash();
+
+  @$internal
+  @override
+  FirstStepsHidden create() => FirstStepsHidden();
+}
+
+String _$firstStepsHiddenHash() => r'1b42d3c6b2c38c1d9b4404d0dbed02439993c213';
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+
+abstract class _$FirstStepsHidden extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

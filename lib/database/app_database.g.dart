@@ -5383,6 +5383,403 @@ class CashMovementsCompanion extends UpdateCompanion<CashMovement> {
   }
 }
 
+class $CashCountLinesTable extends CashCountLines
+    with TableInfo<$CashCountLinesTable, CashCountLine> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CashCountLinesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _operationMeta = const VerificationMeta(
+    'operation',
+  );
+  @override
+  late final GeneratedColumn<String> operation = GeneratedColumn<String>(
+    'operation',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _denominationTypeMeta = const VerificationMeta(
+    'denominationType',
+  );
+  @override
+  late final GeneratedColumn<String> denominationType = GeneratedColumn<String>(
+    'denomination_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _denominationMeta = const VerificationMeta(
+    'denomination',
+  );
+  @override
+  late final GeneratedColumn<int> denomination = GeneratedColumn<int>(
+    'denomination',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    sessionId,
+    operation,
+    denominationType,
+    denomination,
+    quantity,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cash_count_lines';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CashCountLine> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('operation')) {
+      context.handle(
+        _operationMeta,
+        operation.isAcceptableOrUnknown(data['operation']!, _operationMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_operationMeta);
+    }
+    if (data.containsKey('denomination_type')) {
+      context.handle(
+        _denominationTypeMeta,
+        denominationType.isAcceptableOrUnknown(
+          data['denomination_type']!,
+          _denominationTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_denominationTypeMeta);
+    }
+    if (data.containsKey('denomination')) {
+      context.handle(
+        _denominationMeta,
+        denomination.isAcceptableOrUnknown(
+          data['denomination']!,
+          _denominationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_denominationMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {
+    sessionId,
+    operation,
+    denominationType,
+    denomination,
+  };
+  @override
+  CashCountLine map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CashCountLine(
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      operation: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operation'],
+      )!,
+      denominationType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}denomination_type'],
+      )!,
+      denomination: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}denomination'],
+      )!,
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      )!,
+    );
+  }
+
+  @override
+  $CashCountLinesTable createAlias(String alias) {
+    return $CashCountLinesTable(attachedDatabase, alias);
+  }
+}
+
+class CashCountLine extends DataClass implements Insertable<CashCountLine> {
+  /// Session de caisse parente.
+  final String sessionId;
+
+  /// `opening` ou `closing`.
+  final String operation;
+
+  /// `bill` ou `coin`, valeur de l'API.
+  final String denominationType;
+
+  /// Valeur faciale en FCFA.
+  final int denomination;
+
+  /// Quantité comptée (≥ 0).
+  final int quantity;
+  const CashCountLine({
+    required this.sessionId,
+    required this.operation,
+    required this.denominationType,
+    required this.denomination,
+    required this.quantity,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<String>(sessionId);
+    map['operation'] = Variable<String>(operation);
+    map['denomination_type'] = Variable<String>(denominationType);
+    map['denomination'] = Variable<int>(denomination);
+    map['quantity'] = Variable<int>(quantity);
+    return map;
+  }
+
+  CashCountLinesCompanion toCompanion(bool nullToAbsent) {
+    return CashCountLinesCompanion(
+      sessionId: Value(sessionId),
+      operation: Value(operation),
+      denominationType: Value(denominationType),
+      denomination: Value(denomination),
+      quantity: Value(quantity),
+    );
+  }
+
+  factory CashCountLine.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CashCountLine(
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      operation: serializer.fromJson<String>(json['operation']),
+      denominationType: serializer.fromJson<String>(json['denominationType']),
+      denomination: serializer.fromJson<int>(json['denomination']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<String>(sessionId),
+      'operation': serializer.toJson<String>(operation),
+      'denominationType': serializer.toJson<String>(denominationType),
+      'denomination': serializer.toJson<int>(denomination),
+      'quantity': serializer.toJson<int>(quantity),
+    };
+  }
+
+  CashCountLine copyWith({
+    String? sessionId,
+    String? operation,
+    String? denominationType,
+    int? denomination,
+    int? quantity,
+  }) => CashCountLine(
+    sessionId: sessionId ?? this.sessionId,
+    operation: operation ?? this.operation,
+    denominationType: denominationType ?? this.denominationType,
+    denomination: denomination ?? this.denomination,
+    quantity: quantity ?? this.quantity,
+  );
+  CashCountLine copyWithCompanion(CashCountLinesCompanion data) {
+    return CashCountLine(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      operation: data.operation.present ? data.operation.value : this.operation,
+      denominationType: data.denominationType.present
+          ? data.denominationType.value
+          : this.denominationType,
+      denomination: data.denomination.present
+          ? data.denomination.value
+          : this.denomination,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashCountLine(')
+          ..write('sessionId: $sessionId, ')
+          ..write('operation: $operation, ')
+          ..write('denominationType: $denominationType, ')
+          ..write('denomination: $denomination, ')
+          ..write('quantity: $quantity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    sessionId,
+    operation,
+    denominationType,
+    denomination,
+    quantity,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CashCountLine &&
+          other.sessionId == this.sessionId &&
+          other.operation == this.operation &&
+          other.denominationType == this.denominationType &&
+          other.denomination == this.denomination &&
+          other.quantity == this.quantity);
+}
+
+class CashCountLinesCompanion extends UpdateCompanion<CashCountLine> {
+  final Value<String> sessionId;
+  final Value<String> operation;
+  final Value<String> denominationType;
+  final Value<int> denomination;
+  final Value<int> quantity;
+  final Value<int> rowid;
+  const CashCountLinesCompanion({
+    this.sessionId = const Value.absent(),
+    this.operation = const Value.absent(),
+    this.denominationType = const Value.absent(),
+    this.denomination = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CashCountLinesCompanion.insert({
+    required String sessionId,
+    required String operation,
+    required String denominationType,
+    required int denomination,
+    required int quantity,
+    this.rowid = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       operation = Value(operation),
+       denominationType = Value(denominationType),
+       denomination = Value(denomination),
+       quantity = Value(quantity);
+  static Insertable<CashCountLine> custom({
+    Expression<String>? sessionId,
+    Expression<String>? operation,
+    Expression<String>? denominationType,
+    Expression<int>? denomination,
+    Expression<int>? quantity,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (operation != null) 'operation': operation,
+      if (denominationType != null) 'denomination_type': denominationType,
+      if (denomination != null) 'denomination': denomination,
+      if (quantity != null) 'quantity': quantity,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CashCountLinesCompanion copyWith({
+    Value<String>? sessionId,
+    Value<String>? operation,
+    Value<String>? denominationType,
+    Value<int>? denomination,
+    Value<int>? quantity,
+    Value<int>? rowid,
+  }) {
+    return CashCountLinesCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      operation: operation ?? this.operation,
+      denominationType: denominationType ?? this.denominationType,
+      denomination: denomination ?? this.denomination,
+      quantity: quantity ?? this.quantity,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (operation.present) {
+      map['operation'] = Variable<String>(operation.value);
+    }
+    if (denominationType.present) {
+      map['denomination_type'] = Variable<String>(denominationType.value);
+    }
+    if (denomination.present) {
+      map['denomination'] = Variable<int>(denomination.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashCountLinesCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('operation: $operation, ')
+          ..write('denominationType: $denominationType, ')
+          ..write('denomination: $denomination, ')
+          ..write('quantity: $quantity, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SyncQueueTable extends SyncQueue
     with TableInfo<$SyncQueueTable, SyncQueueData> {
   @override
@@ -6240,6 +6637,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $CashSessionsTable cashSessions = $CashSessionsTable(this);
   late final $CashMovementsTable cashMovements = $CashMovementsTable(this);
+  late final $CashCountLinesTable cashCountLines = $CashCountLinesTable(this);
   late final $SyncQueueTable syncQueue = $SyncQueueTable(this);
   late final $SyncMetadataTable syncMetadata = $SyncMetadataTable(this);
   @override
@@ -6255,6 +6653,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     saleReturnItems,
     cashSessions,
     cashMovements,
+    cashCountLines,
     syncQueue,
     syncMetadata,
   ];
@@ -8808,6 +9207,221 @@ typedef $$CashMovementsTableProcessedTableManager =
       CashMovement,
       PrefetchHooks Function()
     >;
+typedef $$CashCountLinesTableCreateCompanionBuilder =
+    CashCountLinesCompanion Function({
+      required String sessionId,
+      required String operation,
+      required String denominationType,
+      required int denomination,
+      required int quantity,
+      Value<int> rowid,
+    });
+typedef $$CashCountLinesTableUpdateCompanionBuilder =
+    CashCountLinesCompanion Function({
+      Value<String> sessionId,
+      Value<String> operation,
+      Value<String> denominationType,
+      Value<int> denomination,
+      Value<int> quantity,
+      Value<int> rowid,
+    });
+
+class $$CashCountLinesTableFilterComposer
+    extends Composer<_$AppDatabase, $CashCountLinesTable> {
+  $$CashCountLinesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operation => $composableBuilder(
+    column: $table.operation,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get denominationType => $composableBuilder(
+    column: $table.denominationType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get denomination => $composableBuilder(
+    column: $table.denomination,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CashCountLinesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CashCountLinesTable> {
+  $$CashCountLinesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operation => $composableBuilder(
+    column: $table.operation,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get denominationType => $composableBuilder(
+    column: $table.denominationType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get denomination => $composableBuilder(
+    column: $table.denomination,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CashCountLinesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CashCountLinesTable> {
+  $$CashCountLinesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<String> get operation =>
+      $composableBuilder(column: $table.operation, builder: (column) => column);
+
+  GeneratedColumn<String> get denominationType => $composableBuilder(
+    column: $table.denominationType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get denomination => $composableBuilder(
+    column: $table.denomination,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+}
+
+class $$CashCountLinesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CashCountLinesTable,
+          CashCountLine,
+          $$CashCountLinesTableFilterComposer,
+          $$CashCountLinesTableOrderingComposer,
+          $$CashCountLinesTableAnnotationComposer,
+          $$CashCountLinesTableCreateCompanionBuilder,
+          $$CashCountLinesTableUpdateCompanionBuilder,
+          (
+            CashCountLine,
+            BaseReferences<_$AppDatabase, $CashCountLinesTable, CashCountLine>,
+          ),
+          CashCountLine,
+          PrefetchHooks Function()
+        > {
+  $$CashCountLinesTableTableManager(
+    _$AppDatabase db,
+    $CashCountLinesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CashCountLinesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CashCountLinesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CashCountLinesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> sessionId = const Value.absent(),
+                Value<String> operation = const Value.absent(),
+                Value<String> denominationType = const Value.absent(),
+                Value<int> denomination = const Value.absent(),
+                Value<int> quantity = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashCountLinesCompanion(
+                sessionId: sessionId,
+                operation: operation,
+                denominationType: denominationType,
+                denomination: denomination,
+                quantity: quantity,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String sessionId,
+                required String operation,
+                required String denominationType,
+                required int denomination,
+                required int quantity,
+                Value<int> rowid = const Value.absent(),
+              }) => CashCountLinesCompanion.insert(
+                sessionId: sessionId,
+                operation: operation,
+                denominationType: denominationType,
+                denomination: denomination,
+                quantity: quantity,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CashCountLinesTable, CashCountLine>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CashCountLinesTable,
+                    CashCountLine
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CashCountLinesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CashCountLinesTable,
+      CashCountLine,
+      $$CashCountLinesTableFilterComposer,
+      $$CashCountLinesTableOrderingComposer,
+      $$CashCountLinesTableAnnotationComposer,
+      $$CashCountLinesTableCreateCompanionBuilder,
+      $$CashCountLinesTableUpdateCompanionBuilder,
+      (
+        CashCountLine,
+        BaseReferences<_$AppDatabase, $CashCountLinesTable, CashCountLine>,
+      ),
+      CashCountLine,
+      PrefetchHooks Function()
+    >;
 typedef $$SyncQueueTableCreateCompanionBuilder =
     SyncQueueCompanion Function({
       Value<int> id,
@@ -9284,6 +9898,8 @@ class $AppDatabaseManager {
       $$CashSessionsTableTableManager(_db, _db.cashSessions);
   $$CashMovementsTableTableManager get cashMovements =>
       $$CashMovementsTableTableManager(_db, _db.cashMovements);
+  $$CashCountLinesTableTableManager get cashCountLines =>
+      $$CashCountLinesTableTableManager(_db, _db.cashCountLines);
   $$SyncQueueTableTableManager get syncQueue =>
       $$SyncQueueTableTableManager(_db, _db.syncQueue);
   $$SyncMetadataTableTableManager get syncMetadata =>

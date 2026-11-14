@@ -95,8 +95,8 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
       setState(() {
         if (_isTrivialPin(_pin)) {
           _setError(
-            'Choisissez un PIN plus sécurisé.',
-            'Évitez les suites ou répétitions simples (1234, 0000…).',
+            'Code trop simple (1234, 0000…).',
+            'Choisissez-en un autre.',
           );
         } else {
           _firstPin = _pin;
@@ -110,7 +110,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     if (_pin != _firstPin) {
       // On recommence depuis le début : l'erreur peut venir du premier PIN.
       setState(() {
-        _setError('Les deux PIN ne correspondent pas.', 'Recommencez.');
+        _setError('Les deux codes sont différents.', 'Recommencez.');
         _pin = '';
         _firstPin = '';
         _step = 0;
@@ -200,12 +200,11 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 child: AuthHeader(
                   key: ValueKey(_step),
                   title: _step == 0
-                      ? 'Sécurisez votre caisse'
-                      : 'Confirmez votre PIN',
+                      ? 'Créez un code PIN'
+                      : 'Confirmez votre code PIN',
                   subtitle: _step == 0
-                      ? 'Votre PIN vous permettra de déverrouiller rapidement '
-                            'l\'application sur cet appareil.'
-                      : 'Saisissez à nouveau les 4 chiffres.',
+                      ? '4 chiffres pour déverrouiller la caisse rapidement.'
+                      : 'Saisissez le même code une seconde fois.',
                   centered: true,
                 ),
               ),
@@ -215,7 +214,10 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                 style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
               ),
               const SizedBox(height: AppSpacing.md),
-              PinDots(filledCount: _pin.length),
+              PinDots(
+                filledCount: _pin.length,
+                isError: !isLoading && title != null,
+              ),
               const SizedBox(height: AppSpacing.sm),
               PinMessage(title: title, detail: detail, isError: !isLoading),
               const Spacer(),

@@ -1,212 +1,248 @@
 import 'package:flutter/material.dart';
 
-/// Light-mode color palette — Cacao & Or.
+/// Palette « Cacao & Sauge » (refonte v2) : une instance claire, une sombre.
 ///
-/// Primary: brun cacao profond (`#92400E`) — autorité, premium, Côte d'Ivoire
-/// (#1 mondial cacao). Secondary: or/doré (`#CA8A04`) — prospérité, succès.
+/// Principe : une couleur = une intention. [action] (cacao) veut dire « agir »
+/// (bouton principal, lien, sélection) ; [success], [warning] et [error] sont
+/// des statuts, toujours accompagnés d'un mot. Le reste est neutre (sauge).
 ///
-/// **Règle critique :** [textOnSecondary] est sombre (`#1C1107`), jamais blanc
-/// sur or (contraste blanc/`#CA8A04` = 3.4:1 — insuffisant WCAG AA body text).
+/// Le [ColorScheme] du thème est construit à partir de ces jetons (voir
+/// `app_theme.dart`) : les widgets Material les reçoivent sans rien faire. Les
+/// jetons sans emplacement dans [ColorScheme] (canvas, surfaceSunken, brand,
+/// actionPressed…) se lisent avec [AppColors.of].
 ///
-/// For dark-mode counterparts and stock status colors, use [AppSemanticColors]
-/// via `Theme.of(context).extension<AppSemanticColors>()!`.
-class AppColors {
-  /// Empêche l'instanciation.
-  AppColors._();
-
-  // Primary — Brun cacao (Côte d'Ivoire #1 mondial cacao)
-  /// Couleur principale de la marque. WCAG AA 7,1:1 sur blanc.
-  static const Color primary = Color(0xFF92400E);
-
-  /// Variante plus foncée pour les états pressé/actif.
-  static const Color primaryDark = Color(0xFF78350F);
-
-  /// Teinte plus claire pour le survol et la couleur principale en mode sombre.
-  static const Color primaryLight = Color(0xFFFB923C);
-
-  /// Fond de conteneur avec la couleur principale en accent.
-  static const Color primaryContainer = Color(0xFFFEF3C7);
-
-  // Secondary — Or/Doré (prospérité — ≠ jaune MTN #FFCC00)
-  /// Couleur secondaire de la marque. Accent or pour les succès et mises en
-  /// avant.
-  static const Color secondary = Color(0xFFCA8A04);
-
-  /// Variante plus foncée pour les états pressés secondaires.
-  static const Color secondaryDark = Color(0xFF713F12);
-
-  /// Teinte plus claire pour les mises en avant secondaires.
-  static const Color secondaryLight = Color(0xFFFBBF24);
-
-  /// Fond de conteneur avec la couleur secondaire en accent.
-  static const Color secondaryContainer = Color(0xFFFEFCE8);
-
-  // Neutral Surfaces (légèrement ivoire-chaud)
-  /// Fond principal de l'app. Teinte ivoire chaude, moins fatigante pour les
-  /// yeux.
-  static const Color background = Color(0xFFFFFBF5);
-
-  /// Surface par défaut des cartes, dialogues, bottom sheets.
-  static const Color surface = Color(0xFFFFFFFF);
-
-  /// Surface variante pour le fond des champs et des chips.
-  static const Color surfaceVariant = Color(0xFFFEF9EE);
-
-  /// Couleur de bordure des champs et des limites d'UI.
-  static const Color border = Color(0xFFE7E5E4);
-
-  /// Couleur des séparateurs de section.
-  static const Color divider = Color(0xFFF5F0E8);
-
-  // Couleurs de texte
-  /// Texte principal. Quasi-noir chaud — lisibilité maximale sur surfaces
-  /// ivoire.
-  static const Color textPrimary = Color(0xFF1C1107);
-
-  /// Texte secondaire pour références, lieux, libellés secondaires.
-  static const Color textSecondary = Color(0xFF57534E);
-
-  /// Texte désactivé / placeholder.
-  static const Color textDisabled = Color(0xFFA8A29E);
-
-  /// Texte sur fonds de couleur principale (toujours blanc — cacao 7,1:1 sur
-  /// blanc).
-  static const Color textOnPrimary = Color(0xFFFFFFFF);
-
-  /// Texte sur fonds de couleur secondaire.
-  ///
-  /// **Doit être foncé** — blanc sur or `#CA8A04` = 3,4:1 (échoue WCAG AA pour
-  /// le corps de texte).
-  static const Color textOnSecondary = Color(0xFF1C1107);
-
-  // Couleurs sémantiques
-  /// Erreur / rupture de stock. WCAG AA sur blanc.
-  static const Color error = Color(0xFFBA1A1A);
-
-  /// Teinte de fond des conteneurs en état d'erreur.
-  static const Color errorContainer = Color(0xFFFFDAD6);
-
-  /// État de succès. Vert forêt — distinct de l'or secondaire.
-  static const Color success = Color(0xFF166534);
-
-  /// Teinte de fond des conteneurs en état de succès.
-  static const Color successContainer = Color(0xFFDCFCE7);
-
-  /// Avertissement / stock bas / réapprovisionnement nécessaire.
-  ///
-  /// Rouge-orangé — visuellement distinct de l'or secondaire `#CA8A04`.
-  static const Color warning = Color(0xFFEA580C);
-
-  /// Teinte de fond des conteneurs en état d'avertissement.
-  static const Color warningContainer = Color(0xFFFFEDD5);
-
-  // Fonds des badges de paiement — couleurs des marques tierces, adaptées clair/sombre
-  /// Fond du badge Orange Money.
-  static Color orangeMoneyBg(Brightness b) =>
-      b == Brightness.dark ? const Color(0xFF3D1A08) : const Color(0xFFFFF4ED);
-
-  /// Fond du badge MTN Mobile Money.
-  static Color mtnBg(Brightness b) =>
-      b == Brightness.dark ? const Color(0xFF362508) : const Color(0xFFFFFBEB);
-
-  /// Fond du badge Wave.
-  static Color waveBg(Brightness b) =>
-      b == Brightness.dark ? const Color(0xFF071830) : const Color(0xFFEFF6FF);
-
-  // Utilitaires
-  /// Voile (scrim) des modales et overlays.
-  static const Color scrim = Color(0x991C1107);
-
-  /// Contour des éléments inactifs.
-  static const Color inactive = Color(0xFFE7E5E4);
-
-  /// Fond sombre de l'overlay caméra coupée.
-  static const Color cameraBackground = Color(0xFF0C0906);
-}
-
-/// Couleurs sémantiques adaptées au mode sombre, absentes de [ColorScheme].
-///
-/// [ColorScheme.error]/[ColorScheme.errorContainer] couvrent déjà la rupture de
-/// stock, et [ColorScheme.tertiary]/[ColorScheme.tertiaryContainer] couvrent
-/// déjà l'avertissement/stock bas. Cette extension n'ajoute que ce pour quoi le
-/// [ColorScheme] de Material 3 n'a pas d'emplacement : un vrai vert « succès »
-/// pour stock ok / mouvement d'entrée — distinct de [ColorScheme.secondary]
-/// (or/doré), que l'app utilise déjà ailleurs pour les confirmations de type «
-/// à jour ».
-///
-/// Récupérer via `Theme.of(context).extension<AppSemanticColors>()!`.
+/// Le mode sombre n'est pas une inversion : fond vert-noir, surfaces par
+/// paliers de luminance, statuts éclaircis, action en cacao clair avec texte
+/// foncé. Tous les couples texte/fond passent l'AA (4,5:1) dans les deux modes.
 @immutable
-class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
-  /// Crée un jeu de couleurs sémantiques.
-  const AppSemanticColors({
+class AppColors extends ThemeExtension<AppColors> {
+  /// Crée un jeu de jetons de couleur.
+  const AppColors({
+    required this.canvas,
+    required this.surface,
+    required this.surfaceSunken,
+    required this.border,
+    required this.borderStrong,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textDisabled,
+    required this.brand,
+    required this.action,
+    required this.onAction,
+    required this.actionPressed,
+    required this.actionSubtle,
+    required this.onActionSubtle,
     required this.success,
-    required this.successContainer,
+    required this.warning,
+    required this.error,
+    required this.errorSubtle,
+    required this.onErrorSubtle,
     required this.elevationShadow,
-    required this.raisedSurface,
   });
 
-  /// Success / stock ok / mouvement d'entrée. WCAG AA on its own brightness's
-  /// surface color.
+  /// Fond d'écran.
+  final Color canvas;
+
+  /// Listes, champs, feuilles.
+  final Color surface;
+
+  /// Vignettes, piste du contrôle segmenté, état désactivé, recherche.
+  final Color surfaceSunken;
+
+  /// Filets et séparateurs.
+  final Color border;
+
+  /// Bord de champ, stepper, bouton secondaire (3:1 non-texte).
+  final Color borderStrong;
+
+  /// Texte et montants.
+  final Color textPrimary;
+
+  /// Libellés et métadonnées.
+  final Color textSecondary;
+
+  /// Texte désactivé seulement (jamais pour une information).
+  final Color textDisabled;
+
+  /// Couleur de marque : accents graphiques (3:1), jamais du texte.
+  final Color brand;
+
+  /// Bouton principal, lien, sélection.
+  final Color action;
+
+  /// Texte et icônes sur [action].
+  final Color onAction;
+
+  /// [action] pressé.
+  final Color actionPressed;
+
+  /// Fond d'une ligne sélectionnée.
+  final Color actionSubtle;
+
+  /// Texte sur [actionSubtle].
+  final Color onActionSubtle;
+
+  /// Statut positif (texte, point de statut).
   final Color success;
 
-  /// Teinte de fond des conteneurs en état de succès (chips, cercles d'icône).
-  final Color successContainer;
+  /// Statut d'alerte (texte, point de statut).
+  final Color warning;
 
-  /// Ombre des surfaces élevées (panneau d'encaissement, ticket, bouton
-  /// principal) : cacao en clair ; noire en sombre, où une ombre de la
-  /// couleur principale (ambre) ferait un halo.
+  /// Statut d'erreur (texte, point de statut).
+  final Color error;
+
+  /// Fond du message bloquant : le seul aplat sémantique.
+  final Color errorSubtle;
+
+  /// Texte du message bloquant.
+  final Color onErrorSubtle;
+
+  /// Ombre des éléments flottants (feuille, menu, toast). Transparente en
+  /// sombre : l'élévation s'y lit par un filet [border].
   final Color elevationShadow;
 
-  /// Fond des surfaces élevées : blanc en clair ; en sombre, un cran plus
-  /// clair que les surfaces — l'élévation se lit par le ton, pas l'ombre.
-  final Color raisedSurface;
-
-  /// Instance mode clair.
-  static const light = AppSemanticColors(
-    success: Color(0xFF166534), // vert forêt, WCAG AA sur blanc
-    successContainer: Color(0xFFDCFCE7),
-    elevationShadow: Color(0xFF92400E), // cacao
-    raisedSurface: Color(0xFFFFFFFF),
+  /// Mode clair (par défaut).
+  static const light = AppColors(
+    canvas: Color(0xFFF5F3EF),
+    surface: Color(0xFFFFFFFF),
+    surfaceSunken: Color(0xFFEFECE6),
+    border: Color(0xFFE8E5DE),
+    borderStrong: Color(0xFF8F9389),
+    textPrimary: Color(0xFF252923),
+    textSecondary: Color(0xFF5F635B),
+    textDisabled: Color(0xFFA3A79E),
+    brand: Color(0xFFC87942),
+    action: Color(0xFF9A5527),
+    onAction: Color(0xFFFFFFFF),
+    actionPressed: Color(0xFF7F4520),
+    actionSubtle: Color(0xFFF6E9DE),
+    onActionSubtle: Color(0xFF7F4520),
+    success: Color(0xFF1F7A52),
+    warning: Color(0xFF9A6200),
+    error: Color(0xFFC23B3B),
+    errorSubtle: Color(0xFFFBE7E5),
+    onErrorSubtle: Color(0xFFA63030),
+    elevationShadow: Color(0xFF252923),
   );
 
-  /// Instance mode sombre.
-  static const dark = AppSemanticColors(
-    success: Color(0xFF4ADE80), // green-400 — lisible sur surface quasi-noire
-    successContainer: Color(0xFF14532D),
-    elevationShadow: Color(0xFF000000),
-    raisedSurface: Color(
-      0xFF2A1B0C,
-    ), // entre surface et surfaceContainerHighest
+  /// Mode sombre.
+  static const dark = AppColors(
+    canvas: Color(0xFF141613),
+    surface: Color(0xFF1C1F1B),
+    surfaceSunken: Color(0xFF111310),
+    border: Color(0xFF2E322C),
+    borderStrong: Color(0xFF737869),
+    textPrimary: Color(0xFFEDEEE9),
+    textSecondary: Color(0xFFA3A79B),
+    textDisabled: Color(0xFF5C6157),
+    brand: Color(0xFFD08A55),
+    action: Color(0xFFE09A63),
+    onAction: Color(0xFF1A0F06),
+    actionPressed: Color(0xFFEBAE7E),
+    actionSubtle: Color(0xFF3A2617),
+    onActionSubtle: Color(0xFFF2C29A),
+    success: Color(0xFF4FBF8A),
+    warning: Color(0xFFE8B45C),
+    error: Color(0xFFF07A7A),
+    errorSubtle: Color(0xFF3A1A1A),
+    onErrorSubtle: Color(0xFFFFA3A3),
+    elevationShadow: Color(0x00000000),
   );
+
+  /// Fond du splash natif clair (`flutter_native_splash.yaml` : `color`).
+  /// L'écran de démarrage Flutter le reprend pour éviter un flash.
+  static const Color splashLight = Color(0xFFFFFBF5);
+
+  /// Fond du splash natif sombre (`flutter_native_splash.yaml` :
+  /// `color_dark`).
+  static const Color splashDark = Color(0xFF1C1107);
+
+  /// Voile posé sur l'image caméra du scanner, quel que soit le mode.
+  static const Color cameraScrim = Color(0x99141613);
+
+  /// Fond de la zone caméra (avant l'image, caméra en pause), quel que soit
+  /// le mode.
+  static const Color cameraBackground = Color(0xFF0B0C0A);
+
+  /// Texte posé sur la zone caméra, quel que soit le mode.
+  static const Color onCamera = Color(0xFFEDEEE9);
+
+  /// Jetons du thème courant.
+  static AppColors of(BuildContext context) =>
+      Theme.of(context).extension<AppColors>()!;
 
   @override
-  AppSemanticColors copyWith({
+  AppColors copyWith({
+    Color? canvas,
+    Color? surface,
+    Color? surfaceSunken,
+    Color? border,
+    Color? borderStrong,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textDisabled,
+    Color? brand,
+    Color? action,
+    Color? onAction,
+    Color? actionPressed,
+    Color? actionSubtle,
+    Color? onActionSubtle,
     Color? success,
-    Color? successContainer,
+    Color? warning,
+    Color? error,
+    Color? errorSubtle,
+    Color? onErrorSubtle,
     Color? elevationShadow,
-    Color? raisedSurface,
   }) {
-    return AppSemanticColors(
+    return AppColors(
+      canvas: canvas ?? this.canvas,
+      surface: surface ?? this.surface,
+      surfaceSunken: surfaceSunken ?? this.surfaceSunken,
+      border: border ?? this.border,
+      borderStrong: borderStrong ?? this.borderStrong,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textDisabled: textDisabled ?? this.textDisabled,
+      brand: brand ?? this.brand,
+      action: action ?? this.action,
+      onAction: onAction ?? this.onAction,
+      actionPressed: actionPressed ?? this.actionPressed,
+      actionSubtle: actionSubtle ?? this.actionSubtle,
+      onActionSubtle: onActionSubtle ?? this.onActionSubtle,
       success: success ?? this.success,
-      successContainer: successContainer ?? this.successContainer,
+      warning: warning ?? this.warning,
+      error: error ?? this.error,
+      errorSubtle: errorSubtle ?? this.errorSubtle,
+      onErrorSubtle: onErrorSubtle ?? this.onErrorSubtle,
       elevationShadow: elevationShadow ?? this.elevationShadow,
-      raisedSurface: raisedSurface ?? this.raisedSurface,
     );
   }
 
   @override
-  AppSemanticColors lerp(ThemeExtension<AppSemanticColors>? other, double t) {
-    if (other is! AppSemanticColors) return this;
-    return AppSemanticColors(
-      success: Color.lerp(success, other.success, t) ?? success,
-      successContainer:
-          Color.lerp(successContainer, other.successContainer, t) ??
-          successContainer,
-      elevationShadow:
-          Color.lerp(elevationShadow, other.elevationShadow, t) ??
-          elevationShadow,
-      raisedSurface:
-          Color.lerp(raisedSurface, other.raisedSurface, t) ?? raisedSurface,
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
+    Color l(Color a, Color b) => Color.lerp(a, b, t)!;
+    return AppColors(
+      canvas: l(canvas, other.canvas),
+      surface: l(surface, other.surface),
+      surfaceSunken: l(surfaceSunken, other.surfaceSunken),
+      border: l(border, other.border),
+      borderStrong: l(borderStrong, other.borderStrong),
+      textPrimary: l(textPrimary, other.textPrimary),
+      textSecondary: l(textSecondary, other.textSecondary),
+      textDisabled: l(textDisabled, other.textDisabled),
+      brand: l(brand, other.brand),
+      action: l(action, other.action),
+      onAction: l(onAction, other.onAction),
+      actionPressed: l(actionPressed, other.actionPressed),
+      actionSubtle: l(actionSubtle, other.actionSubtle),
+      onActionSubtle: l(onActionSubtle, other.onActionSubtle),
+      success: l(success, other.success),
+      warning: l(warning, other.warning),
+      error: l(error, other.error),
+      errorSubtle: l(errorSubtle, other.errorSubtle),
+      onErrorSubtle: l(onErrorSubtle, other.onErrorSubtle),
+      elevationShadow: l(elevationShadow, other.elevationShadow),
     );
   }
 }

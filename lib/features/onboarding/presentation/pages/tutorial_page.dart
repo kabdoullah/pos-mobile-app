@@ -1,22 +1,30 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/responsive/responsive.dart';
-import '../../../../core/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../app/theme/app_typography.dart';
+import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 
-/// Carrousel de tutoriel pour l'onboarding.
-///
-/// 4 écrans présentent les fonctionnalités principales :
-/// 1. Ajouter des produits
-/// 2. Faire des ventes
-/// 3. Imprimer des reçus
-/// 4. Consulter l'historique des ventes
+/// Une diapositive du tutoriel : un vrai morceau de l'app en miniature, une
+/// phrase utile et une astuce.
+typedef _Slide = ({
+  Widget Function() illustration,
+  String title,
+  String body,
+  String tipTitle,
+  String tip,
+});
+
+/// Tutoriel en 4 écrans concrets (produits, vente, reçu, suivi) : passable à
+/// tout moment, « Précédent » pour revenir. Revu depuis les Paramètres, il se
+/// termine par « Fermer » ; sinon il mène à l'accueil.
 class TutorialPage extends StatefulWidget {
-  /// Crée une page de tutoriel.
+  /// Crée le tutoriel.
   const TutorialPage({super.key});
 
   @override
@@ -24,148 +32,170 @@ class TutorialPage extends StatefulWidget {
 }
 
 class _TutorialPageState extends State<TutorialPage> {
-  late PageController _pageController;
-  int _currentPage = 0;
+  final _controller = PageController();
+  int _page = 0;
 
-  static const List<TutorialSlide> _slides = [
-    TutorialSlide(
-      title: 'Ajouter des produits',
-      description: 'Gérez votre catalogue directement dans l\'app.',
-      iconPainter: _StockIcon.new,
+  static final List<_Slide> _slides = [
+    (
+      illustration: () => const _ProductIllustration(),
+      title: 'Ajoutez vos produits',
+      body:
+          'Un nom et un prix suffisent. Le stock et le code-barres sont '
+          'facultatifs.',
+      tipTitle: 'Beaucoup de produits ?',
+      tip: 'Importez-les d’un coup depuis un fichier Excel (Stock › Importer).',
     ),
-    TutorialSlide(
-      title: 'Faire une vente',
-      description: 'Sélectionnez les articles et encaissez rapidement.',
-      iconPainter: _SaleIcon.new,
+    (
+      illustration: () => const _SaleIllustration(),
+      title: 'Ouvrez la caisse, puis vendez',
+      body:
+          'Chaque jour, ouvrez la caisse avec votre fond. Touchez un produit '
+          'pour l’ajouter, puis encaissez.',
+      tipTitle: 'Pas de réseau ?',
+      tip:
+          'Vous vendez quand même. Les ventes sont envoyées dès le retour de '
+          'la connexion.',
     ),
-    TutorialSlide(
-      title: 'Imprimer le reçu',
-      description: 'Connectez votre imprimante thermique sans fil.',
-      iconPainter: _ReceiptIcon.new,
+    (
+      illustration: () => const _ReceiptIllustration(),
+      title: 'Remettez le reçu',
+      body:
+          'Imprimez-le sur votre imprimante Bluetooth, ou envoyez-le en PDF au '
+          'client.',
+      tipTitle: 'Le reçu est facultatif.',
+      tip: 'Touchez « Nouvelle vente » pour servir le client suivant.',
     ),
-    TutorialSlide(
-      title: 'Consulter mes ventes',
-      description: 'Suivez vos revenus en temps réel et hors ligne.',
-      iconPainter: _TrendIcon.new,
-      isAccent: true,
+    (
+      illustration: () => const _FollowIllustration(),
+      title: 'Suivez vos ventes',
+      body:
+          'L’Accueil résume la journée. L’Historique garde chaque vente : '
+          'réimprimez un reçu ou enregistrez un retour.',
+      tipTitle: 'Le soir,',
+      tip:
+          'clôturez la caisse : l’app compare les espèces comptées au solde '
+          'attendu.',
     ),
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
   void dispose() {
-    _pageController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  void _nextSlide() {
-    if (_currentPage < _slides.length - 1) {
-      unawaited(
-        _pageController.nextPage(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        ),
-      );
+  /// Revu depuis les Paramètres : on revient ; sinon, l'accueil.
+  void _finish() {
+    if (context.canPop()) {
+      context.pop();
     } else {
-      if (mounted) {
-        context.go(Routes.home);
-      }
+      context.go(Routes.home);
     }
   }
 
+  void _goTo(int page) => unawaited(
+    _controller.animateToPage(
+      page,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    // ✨ un seul lookup — partagé par bouton Passer et dots
-    final cs = Theme.of(context).colorScheme;
-    final padding = responsiveValue(
-      context,
-      small: AppSpacing.md,
-      medium: AppSpacing.lg,
-    );
+    final colors = AppColors.of(context);
+    final total = _slides.length;
+    final isLast = _page == total - 1;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Bouton pour passer
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: EdgeInsets.all(padding),
-                child: TextButton.icon(
-                  onPressed: () => context.go(Routes.home),
-                  // ✨ foregroundColor héritée par icon et label — supprime 3 Theme.of calls
-                  style: TextButton.styleFrom(
-                    foregroundColor: cs.onSurfaceVariant,
-                  ),
-                  icon: const Icon(Icons.close),
-                  label: const Text('Passer'),
-                ),
-              ),
-            ),
-
-            // Carrousel
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (page) {
-                  setState(() => _currentPage = page);
-                },
-                itemCount: _slides.length,
-                itemBuilder: (context, index) {
-                  final slide = _slides[index];
-                  return _SlideBuilder(
-                    slide: slide,
-                    padding: padding,
-                    step: index + 1,
-                    totalSteps: _slides.length,
-                  );
-                },
-              ),
-            ),
-
-            // Indicateurs de page
             Padding(
-              padding: EdgeInsets.symmetric(vertical: padding),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.xs,
+                0,
+              ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _slides.length,
-                  (index) => Semantics(
-                    // ✨ annonce la position pour le lecteur d'écran
-                    label: 'Diapositive ${index + 1} sur ${_slides.length}',
-                    selected: _currentPage == index,
-                    excludeSemantics: true,
-                    child: AnimatedContainer(
-                      // ✨ transition fluide 8→28px au lieu d'un saut instantané
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      width: _currentPage == index ? 28 : 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(4),
-                        color: _currentPage == index ? cs.primary : cs.outline,
+                children: [
+                  Expanded(
+                    child: Text(
+                      '${_page + 1} sur $total',
+                      style: AppTypography.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                        fontFeatures: AppTypography.tabularFigures,
                       ),
                     ),
                   ),
+                  TextButton(onPressed: _finish, child: const Text('Passer')),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Semantics(
+                label: 'Écran ${_page + 1} sur $total',
+                excludeSemantics: true,
+                child: Row(
+                  children: [
+                    for (var i = 0; i < total; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: i <= _page ? colors.action : colors.border,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
-
-            // Bouton du bas
+            Expanded(
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: total,
+                onPageChanged: (page) => setState(() => _page = page),
+                itemBuilder: (context, index) =>
+                    _SlideView(slide: _slides[index]),
+              ),
+            ),
             Padding(
-              padding: EdgeInsets.all(padding),
-              child: PrimaryButton(
-                label: _currentPage == _slides.length - 1
-                    ? 'Commencer'
-                    : 'Suivant',
-                onPressed: _nextSlide,
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Row(
+                children: [
+                  if (_page > 0) ...[
+                    Expanded(
+                      child: SecondaryButton(
+                        label: 'Précédent',
+                        onPressed: () => _goTo(_page - 1),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                  ],
+                  Expanded(
+                    child: PrimaryButton(
+                      label: !isLast
+                          ? 'Suivant'
+                          : context.canPop()
+                          ? 'Fermer'
+                          : 'Terminer',
+                      onPressed: isLast ? _finish : () => _goTo(_page + 1),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -175,242 +205,296 @@ class _TutorialPageState extends State<TutorialPage> {
   }
 }
 
-/// Widget d'un écran du tutoriel.
-class _SlideBuilder extends StatelessWidget {
-  const _SlideBuilder({
-    required this.slide,
-    required this.padding,
-    required this.step,
-    required this.totalSteps,
-  });
+class _SlideView extends StatelessWidget {
+  const _SlideView({required this.slide});
 
-  final TutorialSlide slide;
-  final double padding;
-
-  /// Position (à partir de 1) de cet écran dans le parcours (ex. `2`).
-  final int step;
-
-  /// Nombre total d'écrans — le nombre d'étapes du parcours.
-  final int totalSteps;
+  final _Slide slide;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final color = slide.isAccent ? cs.secondary : cs.primary;
-    return Center(
-      // Défile si la diapositive ne tient pas (petit écran, grande police).
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Icône dessinée à la main — une par vraie action de caisse, pas un
-            // pictogramme générique.
-            Container(
-              width: 120,
-              height: 120,
-              alignment: Alignment.center,
+    final colors = AppColors.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Miniature décorative : le texte dit l'essentiel.
+          ExcludeSemantics(
+            child: DecoratedBox(
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+                color: colors.surfaceSunken,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
               ),
-              child: CustomPaint(
-                size: const Size(60, 60),
-                painter: slide.iconPainter(color),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-
-            // Surtitre — ces écrans suivent VRAIMENT l'ordre de travail d'un
-            // commerçant, donc le numéro d'étape apporte une vraie information, ce
-            // n'est pas de la décoration.
-            Text(
-              'Étape $step sur $totalSteps',
-              style: textTheme.labelMedium?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: slide.illustration(),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Titre — le seul endroit où l'onboarding a le droit d'être plus
-            // expressif que les écrans sobres de l'usage quotidien.
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: padding),
-              child: Text(
-                slide.title,
-                style: textTheme.displayMedium,
-                textAlign: TextAlign.center,
-              ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Semantics(
+            header: true,
+            child: Text(slide.title, style: AppTypography.figureLarge),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            slide.body,
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border.all(color: colors.border),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             ),
-            const SizedBox(height: AppSpacing.md),
-
-            // Description
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: padding),
-              child: Text(
-                slide.description,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm + 4),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '${slide.tipTitle} ',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    TextSpan(text: slide.tip),
+                  ],
                 ),
-                textAlign: TextAlign.center,
+                style: AppTypography.body.copyWith(fontSize: 15, height: 1.4),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Représente un écran du tutoriel.
-class TutorialSlide {
-  /// Constructeur.
-  const TutorialSlide({
-    required this.title,
-    required this.description,
-    required this.iconPainter,
-    this.isAccent = false,
-  });
+String _fcfa(int amount) => formatFcfa(Decimal.fromInt(amount));
 
-  /// Titre de l'écran.
-  final String title;
+/// Carte blanche d'une miniature, lignes séparées par des filets.
+class _MiniCard extends StatelessWidget {
+  const _MiniCard({required this.rows});
 
-  /// Description de l'écran.
-  final String description;
-
-  /// Construit l'icône dessinée à la main de l'écran, teintée de [Color].
-  final CustomPainter Function(Color color) iconPainter;
-
-  /// Utilise la couleur secondaire (accent) au lieu de la principale.
-  final bool isAccent;
-}
-
-/// Base des icônes dessinées à la main du tutoriel — un langage visuel propre,
-/// distinct du jeu d'icônes Material par défaut de l'app.
-abstract class _LineIcon extends CustomPainter {
-  const _LineIcon(this.color);
-
-  /// Couleur du trait, dictée par la couleur de thème de l'écran (principale ou
-  /// accent).
-  final Color color;
-
-  Paint get _stroke => Paint()
-    ..color = color
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2.75
-    ..strokeCap = StrokeCap.round
-    ..strokeJoin = StrokeJoin.round;
-
-  Paint get _fill => Paint()
-    ..color = color
-    ..style = PaintingStyle.fill;
+  final List<Widget> rows;
 
   @override
-  bool shouldRepaint(covariant _LineIcon oldDelegate) =>
-      oldDelegate.color != color;
-}
-
-/// Icône stock — une caisse ouverte, en cours de déballage, avec une petite
-/// marque « ajouter ».
-class _StockIcon extends _LineIcon {
-  const _StockIcon(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final crate = Path()
-      ..moveTo(10, 22)
-      ..lineTo(18, 12)
-      ..moveTo(36, 22)
-      ..lineTo(28, 12)
-      ..moveTo(8, 22)
-      ..lineTo(38, 22)
-      ..lineTo(38, 42)
-      ..lineTo(8, 42)
-      ..close()
-      ..moveTo(8, 30)
-      ..lineTo(38, 30);
-    canvas.drawPath(crate, _stroke);
-
-    canvas.drawCircle(const Offset(48, 14), 8, _stroke);
-    canvas.drawLine(const Offset(44, 14), const Offset(52, 14), _stroke);
-    canvas.drawLine(const Offset(48, 10), const Offset(48, 18), _stroke);
-  }
-}
-
-/// Icône vente — un terminal portatif avec un signal de paiement.
-class _SaleIcon extends _LineIcon {
-  const _SaleIcon(super.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final body = RRect.fromRectAndRadius(
-      const Rect.fromLTRB(14, 8, 38, 50),
-      const Radius.circular(6),
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Column(
+        children: [
+          for (final (i, row) in rows.indexed)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: i == rows.length - 1
+                    ? null
+                    : Border(bottom: BorderSide(color: colors.border)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm + 4,
+                  vertical: AppSpacing.sm + 2,
+                ),
+                child: row,
+              ),
+            ),
+        ],
+      ),
     );
-    canvas.drawRRect(body, _stroke);
-    canvas.drawLine(const Offset(18, 18), const Offset(34, 18), _stroke);
-    canvas.drawCircle(const Offset(26, 42), 2, _fill);
-
-    for (final radius in [6.0, 11.0]) {
-      canvas.drawArc(
-        Rect.fromCircle(center: const Offset(44, 8), radius: radius),
-        -1.0,
-        1.4,
-        false,
-        _stroke,
-      );
-    }
   }
 }
 
-/// Icône reçu — une imprimante d'où sort un ticket qui s'enroule.
-class _ReceiptIcon extends _LineIcon {
-  const _ReceiptIcon(super.color);
+/// Ligne libellé / valeur d'une miniature.
+class _MiniRow extends StatelessWidget {
+  const _MiniRow(this.label, this.value, {this.valueColor});
+
+  final String label;
+  final String value;
+  final Color? valueColor;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final printer = RRect.fromRectAndCorners(
-      const Rect.fromLTRB(9, 14, 43, 28),
-      topLeft: const Radius.circular(5),
-      topRight: const Radius.circular(5),
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.bodySmall.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: AppTypography.meta.copyWith(
+            fontWeight: FontWeight.w600,
+            color: valueColor ?? colors.textPrimary,
+            fontFeatures: AppTypography.tabularFigures,
+          ),
+        ),
+      ],
     );
-    canvas.drawRRect(printer, _stroke);
-
-    final receipt = Path()
-      ..moveTo(15, 28)
-      ..lineTo(15, 40)
-      ..lineTo(20, 45)
-      ..lineTo(25, 40)
-      ..lineTo(30, 45)
-      ..lineTo(37, 40)
-      ..lineTo(37, 28);
-    canvas.drawPath(receipt, _stroke);
-
-    canvas.drawLine(const Offset(19, 33), const Offset(33, 33), _stroke);
-    canvas.drawLine(const Offset(19, 37), const Offset(29, 37), _stroke);
   }
 }
 
-/// Icône tendance des ventes — trois barres croissantes, l'écran
-/// d'aboutissement.
-class _TrendIcon extends _LineIcon {
-  const _TrendIcon(super.color);
+class _ProductIllustration extends StatelessWidget {
+  const _ProductIllustration();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    const baseline = 46.0;
-    final bars = [
-      const Rect.fromLTRB(10, 34, 20, baseline),
-      const Rect.fromLTRB(25, 24, 35, baseline),
-      const Rect.fromLTRB(40, 12, 50, baseline),
-    ];
-    for (final bar in bars) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(bar, const Radius.circular(2)),
-        _stroke,
-      );
-    }
-    canvas.drawCircle(const Offset(45, 8), 2.5, _fill);
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return _MiniCard(
+      rows: [
+        const _MiniRow('Nom', 'Eau Awa 1.5L'),
+        _MiniRow('Prix de vente', _fcfa(325)),
+        const _MiniRow('Stock', '24'),
+        _MiniRow('Code-barres', 'Scanner', valueColor: colors.action),
+      ],
+    );
+  }
+}
+
+class _SaleIllustration extends StatelessWidget {
+  const _SaleIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StatusIndicator(
+          label: 'Caisse ouverte · fond ${_fcfa(10000)}',
+          tone: StatusTone.success,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        const _MiniCard(
+          rows: [
+            _MiniRow('Bacteril', '− 2 +'),
+            _MiniRow('Eau Awa 1.5L', '− 3 +'),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.action,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
+            child: Text(
+              'Encaisser · ${_fcfa(2975)}',
+              textAlign: TextAlign.center,
+              style: AppTypography.labelLarge.copyWith(
+                color: colors.onAction,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReceiptIllustration extends StatelessWidget {
+  const _ReceiptIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    Widget outlined(String label) => Expanded(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border.all(color: colors.borderStrong),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: AppTypography.meta.copyWith(color: colors.textPrimary),
+          ),
+        ),
+      ),
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _MiniCard(
+          rows: [
+            const _MiniRow('Reçu n° 1', ''),
+            _MiniRow('Bacteril × 2', _fcfa(2000)),
+            _MiniRow('Eau Awa × 3', _fcfa(975)),
+            _MiniRow('Total', _fcfa(2975)),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            outlined('Imprimer'),
+            const SizedBox(width: AppSpacing.sm),
+            outlined('Reçu PDF'),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _FollowIllustration extends StatelessWidget {
+  const _FollowIllustration();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border.all(color: colors.border),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm + 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Aujourd’hui · 2 ventes',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+                Text(_fcfa(14475), style: AppTypography.figureLarge),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _MiniCard(
+          rows: [
+            _MiniRow('Vente n° 2 · 10:35', _fcfa(11500)),
+            _MiniRow('Vente n° 1 · 10:33', _fcfa(2975)),
+          ],
+        ),
+      ],
+    );
   }
 }

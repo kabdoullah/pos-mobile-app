@@ -25,6 +25,10 @@ abstract class _TokenStorageKeys {
   /// configurer. Volontairement conservé par [SecureTokenStorage.clearTokens] :
   /// lié à un compte, il ne vaut que pour lui s'il se reconnecte.
   static const String storeSetupPendingUserId = 'store_setup_pending_user_id';
+
+  /// ID du compte qui vient d'être créé : accueil « boutique prête » et
+  /// tutoriel à montrer après le PIN.
+  static const String welcomePendingUserId = 'welcome_pending_user_id';
 }
 
 /// Implémentation concrète de TokenStorage avec flutter_secure_storage.
@@ -106,6 +110,20 @@ class SecureTokenStorage implements TokenStorage {
   /// Efface l'indicateur de configuration de la boutique en attente.
   Future<void> clearStoreSetupPending() =>
       _storage.delete(key: _TokenStorageKeys.storeSetupPendingUserId);
+
+  /// Marque l'accueil « boutique prête » comme à montrer pour [userId].
+  Future<void> saveWelcomePending(String userId) => _storage.write(
+    key: _TokenStorageKeys.welcomePendingUserId,
+    value: userId,
+  );
+
+  /// ID du compte dont l'accueil « boutique prête » reste à montrer.
+  Future<String?> getWelcomePendingUserId() =>
+      _storage.read(key: _TokenStorageKeys.welcomePendingUserId);
+
+  /// Efface l'indicateur d'accueil à montrer.
+  Future<void> clearWelcomePending() =>
+      _storage.delete(key: _TokenStorageKeys.welcomePendingUserId);
 
   /// Extrait user_id (sub) et store_id d'un access token JWT.
   /// Ne vérifie PAS la signature (responsabilité du serveur).

@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'cash_count.dart';
 import 'cash_movement.dart';
 import 'cash_session.dart';
 
@@ -47,8 +48,8 @@ sealed class CashServerSummary with _$CashServerSummary {
   }) = _CashServerSummary;
 }
 
-/// Session de caisse vue par le serveur : session, récapitulatif et
-/// mouvements (du plus récent au plus ancien).
+/// Session de caisse vue par le serveur : session, récapitulatif, mouvements
+/// (du plus récent au plus ancien) et billetterie.
 @freezed
 sealed class CashSessionDetail with _$CashSessionDetail {
   /// Crée un détail de session.
@@ -61,6 +62,12 @@ sealed class CashSessionDetail with _$CashSessionDetail {
 
     /// Mouvements, du plus récent au plus ancien.
     required List<CashMovement> movements,
+
+    /// Comptage d'ouverture, null sans billetterie.
+    CashCount? openingCount,
+
+    /// Comptage de clôture, null sans billetterie ou avant la clôture.
+    CashCount? closingCount,
   }) = _CashSessionDetail;
 }
 

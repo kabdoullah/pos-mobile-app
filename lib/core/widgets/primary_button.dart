@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'button_frame.dart';
 import '../../app/theme/app_colors.dart';
+import '../../app/theme/app_spacing.dart';
 
-/// Bouton d'action principal pleine largeur aux couleurs de la marque
-/// (brun cacao).
+/// Bouton d'action principal pleine largeur, couleur `action` (cacao), plat.
 ///
-/// Conçu pour l'accessibilité et une UX mobile d'abord. Hauteur minimale de 56
-/// dp pour des zones tactiles confortables. Gère les états de chargement et
-/// désactivé.
+/// 48 dp de haut, 56 dp dans le parcours de vente ([height]). Un seul par
+/// écran. Gère les états de chargement et désactivé.
 class PrimaryButton extends StatelessWidget {
   /// Crée un bouton principal.
   const PrimaryButton({
@@ -18,8 +17,17 @@ class PrimaryButton extends StatelessWidget {
     this.loadingLabel,
     this.icon,
     this.trailingIcon,
+    this.isDangerous = false,
+    this.height = AppSpacing.buttonHeightSm,
     super.key,
   });
+
+  /// Hauteur : 48 dp (v2) ; `AppSpacing.buttonHeight` (56 dp) pour les
+  /// actions du parcours de vente (Nouvelle vente, Encaisser, Valider, reçu).
+  final double height;
+
+  /// Action destructive (supprimer, vider) : fond `error` au lieu de `action`.
+  final bool isDangerous;
 
   /// Texte du bouton.
   final String label;
@@ -42,10 +50,11 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final isDisabled = onPressed == null;
 
     return ButtonFrame(
+      height: height,
       label: label,
       onPressed: onPressed,
       isLoading: isLoading,
@@ -53,26 +62,19 @@ class PrimaryButton extends StatelessWidget {
       icon: icon,
       trailingIcon: trailingIcon,
       backgroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.12)
-          : cs.primary,
-      // Désactivé : onPrimary sur le fond grisé était illisible (blanc sur
-      // gris clair, brun foncé sur brun en sombre).
+          ? colors.surfaceSunken
+          : isDangerous
+          ? colors.error
+          : colors.action,
       foregroundColor: isDisabled
-          ? cs.onSurface.withValues(alpha: 0.38)
-          : cs.onPrimary,
-      progressColor: cs.onPrimary,
-      boxShadow: isDisabled
-          ? const []
-          : [
-              BoxShadow(
-                color: Theme.of(context)
-                    .extension<AppSemanticColors>()!
-                    .elevationShadow
-                    .withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+          ? colors.textDisabled
+          : isDangerous
+          ? colors.surface
+          : colors.onAction,
+      progressColor: isDangerous ? colors.surface : colors.onAction,
+      pressedColor: isDangerous
+          ? colors.textPrimary.withValues(alpha: 0.12)
+          : colors.actionPressed,
     );
   }
 }

@@ -1,8 +1,13 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/utils/whole_number_input.dart';
+import 'package:mobile/core/widgets/index.dart';
+import 'package:mobile/features/catalog/domain/entities/product.dart';
+import 'package:mobile/features/catalog/domain/repositories/catalog_repository.dart';
+import 'package:mobile/features/catalog/providers/catalog_di_providers.dart';
 import 'package:mobile/features/inventory/domain/entities/stock_movement.dart';
 import 'package:mobile/features/inventory/domain/entities/stock_movement_page.dart';
 import 'package:mobile/features/inventory/domain/repositories/inventory_repository.dart';
@@ -12,6 +17,8 @@ import 'package:mobile/features/inventory/providers/inventory_di_providers.dart'
 import 'package:mocktail/mocktail.dart';
 
 class _MockInventoryRepository extends Mock implements InventoryRepository {}
+
+class _MockCatalog extends Mock implements CatalogRepository {}
 
 void main() {
   late _MockInventoryRepository repo;
@@ -101,5 +108,52 @@ void main() {
     await container.read(stockHistoryProvider('p1').future);
 
     verify(() => repo.getMovements(productId: 'p1')).called(2);
+  });
+
+  testWidgets('nouveau stock visible avant de valider, libellé selon le sens', (
+    tester,
+  ) async {
+    final catalog = _MockCatalog();
+    when(catalog.watchProducts).thenAnswer(
+      (_) => Stream.value([
+        Product(
+          id: 'p1',
+          name: 'Céleste',
+          sellingPrice: Decimal.fromInt(500),
+          currentStock: 3,
+          updatedAt: DateTime(2026),
+        ),
+      ]),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          inventoryRepositoryProvider.overrideWithValue(repo),
+          catalogRepositoryProvider.overrideWithValue(catalog),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const Scaffold(body: StockAdjustmentSheet(productId: 'p1')),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Céleste · 3 en stock'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, '5');
+    await tester.pump();
+    expect(find.bySemanticsLabel('Nouveau stock : 3 → 8'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ajouter 5 au stock'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Sortie'));
+    await tester.pump();
+    expect(find.bySemanticsLabel('Nouveau stock : 3 → -2'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Retirer 5 du stock'),
+      findsOneWidget,
+    );
   });
 }

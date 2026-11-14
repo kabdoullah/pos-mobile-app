@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -21,19 +22,19 @@ Future<bool> showCashMovementSheet(
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => CashMovementSheet(type: type),
   );
   return saved ?? false;
 }
 
-/// Feuille d'un mouvement d'espèces : montant, motif et commentaire
-/// (obligatoire pour le motif « Autre »).
+/// Feuille « Mouvement d'espèces » : sens (Entrée / Sortie), montant, motif
+/// et précision (obligatoire pour le motif « Autre »). Une sortie supérieure
+/// au solde du tiroir est expliquée et bloquée dès la saisie.
 class CashMovementSheet extends ConsumerStatefulWidget {
-  /// Crée la feuille pour un mouvement de sens [type].
+  /// Crée la feuille, ouverte sur le sens [type].
   const CashMovementSheet({required this.type, super.key});
 
-  /// Entrée ou sortie.
+  /// Sens proposé à l'ouverture (entrée ou sortie).
   final CashMovementType type;
 
   @override
@@ -50,7 +51,10 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
   String? _formError;
   bool _isLoading = false;
 
-  bool get _isIn => widget.type == CashMovementType.cashIn;
+  /// Sens choisi (modifiable dans la feuille).
+  late CashMovementType _type = widget.type;
+
+  bool get _isIn => _type == CashMovementType.cashIn;
 
   @override
   void dispose() {
@@ -80,7 +84,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
       await ref
           .read(cashRegisterControllerProvider.notifier)
           .recordMovement(
-            type: widget.type,
+            type: _type,
             reason: reason!,
             amount: amount!,
             note: _noteController.text,
@@ -111,114 +115,136 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final reasons = CashMovementReason.allowedFor(widget.type);
+    final colors = AppColors.of(context);
+    final reasons = CashMovementReason.allowedFor(_type);
     final noteRequired = _reason == CashMovementReason.other;
     final formError = _formError;
     final reasonError = _reasonError;
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+    final amount = _amount;
+    // Solde du tiroir : une sortie ne peut pas le dépasser (même règle que le
+    // use case, vérifiée ici pendant la saisie).
+    final sessionId = ref.watch(activeCashSessionProvider).value?.id;
+    final balance = sessionId == null
+        ? null
+        : ref.watch(cashSummaryProvider(sessionId)).value?.expectedAmount;
+    final exceedsBalance =
+        !_isIn && amount != null && balance != null && amount > balance;
+    final amountError = exceedsBalance
+        ? 'Le tiroir contient ${formatFcfa(balance)}. Une sortie ne peut pas '
+              'dépasser ce montant.'
+        : _amountError;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.md,
+          right: AppSpacing.md,
+          top: AppSpacing.lg,
+          bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
         ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
-            top: AppSpacing.lg,
-            bottom: AppSpacing.lg + MediaQuery.viewInsetsOf(context).bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  _isIn ? "Entrée d'espèces" : "Sortie d'espèces",
-                  style: AppTypography.titleMedium,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                "Mouvement d'espèces",
+                style: AppTypography.sectionTitle,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SegmentedControl<CashMovementType>(
+                segments: const [
+                  (value: CashMovementType.cashIn, label: 'Entrée'),
+                  (value: CashMovementType.cashOut, label: 'Sortie'),
+                ],
+                selected: _type,
+                onChanged: (type) => setState(() {
+                  if (type == _type) return;
+                  _type = type;
+                  // Les motifs dépendent du sens.
+                  _reason = null;
+                  _reasonError = null;
+                  _amountError = null;
+                }),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                _isIn
+                    ? 'Argent ajouté dans le tiroir, hors ventes.'
+                    : 'Argent retiré du tiroir, hors remboursements.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AmountInput(
+                label: 'Montant',
+                hint: '0',
+                value: amount,
+                errorText: amountError,
+                large: true,
+                onChanged: (value) => setState(() {
+                  _amount = value;
+                  _amountError = null;
+                }),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const Text('Motif', style: AppTypography.bodyStrong),
+              const SizedBox(height: AppSpacing.xs + 2),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final reason in reasons)
+                    QuickChoiceButton(
+                      label: cashMovementReasonLabel(reason),
+                      isSelected: _reason == reason,
+                      onTap: () => setState(() {
+                        _reason = reason;
+                        _reasonError = null;
+                        _noteError = null;
+                      }),
+                    ),
+                ],
+              ),
+              if (reasonError != null) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  _isIn
-                      ? 'Argent ajouté dans le tiroir, hors ventes.'
-                      : 'Argent retiré du tiroir, hors remboursements.',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: cs.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AmountInput(
-                  label: 'Montant',
-                  hint: '0',
-                  value: _amount,
-                  errorText: _amountError,
-                  onChanged: (value) => setState(() {
-                    _amount = value;
-                    _amountError = null;
-                  }),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                const Text('Motif', style: AppTypography.labelLarge),
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final reason in reasons)
-                      ChoiceChip(
-                        label: Text(cashMovementReasonLabel(reason)),
-                        selected: _reason == reason,
-                        materialTapTargetSize: MaterialTapTargetSize.padded,
-                        onSelected: (_) => setState(() {
-                          _reason = reason;
-                          _reasonError = null;
-                          _noteError = null;
-                        }),
-                      ),
-                  ],
-                ),
-                if (reasonError != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    reasonError,
-                    style: AppTypography.errorText.copyWith(color: cs.error),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.md),
-                AppTextField(
-                  label: noteRequired
-                      ? 'Commentaire (obligatoire)'
-                      : 'Commentaire (facultatif)',
-                  controller: _noteController,
-                  errorText: _noteError,
-                  maxLines: 2,
-                  maxLength: CashRegisterException.maxNoteLength,
-                  onChanged: (_) {
-                    if (_noteError != null) setState(() => _noteError = null);
-                  },
-                ),
-                if (formError != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    formError,
-                    style: AppTypography.errorText.copyWith(color: cs.error),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.lg),
-                PrimaryButton(
-                  label: _isIn
-                      ? "Enregistrer l'entrée"
-                      : 'Enregistrer la sortie',
-                  icon: _isIn ? Icons.south_west : Icons.north_east,
-                  isLoading: _isLoading,
-                  onPressed: _isLoading ? null : _submit,
+                  reasonError,
+                  style: AppTypography.errorText.copyWith(color: colors.error),
                 ),
               ],
-            ),
+              const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+              AppTextField(
+                label: noteRequired
+                    ? 'Préciser (obligatoire)'
+                    : 'Préciser (facultatif)',
+                controller: _noteController,
+                errorText: _noteError,
+                maxLines: 2,
+                maxLength: CashRegisterException.maxNoteLength,
+                onChanged: (_) {
+                  if (_noteError != null) setState(() => _noteError = null);
+                },
+              ),
+              if (formError != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  formError,
+                  style: AppTypography.errorText.copyWith(color: colors.error),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              PrimaryButton(
+                label: amount == null || amount <= Decimal.zero
+                    ? (_isIn ? "Enregistrer l'entrée" : 'Enregistrer la sortie')
+                    : _isIn
+                    ? 'Ajouter ${formatFcfa(amount)}'
+                    : 'Retirer ${formatFcfa(amount)}',
+                isLoading: _isLoading,
+                onPressed: _isLoading || exceedsBalance ? null : _submit,
+              ),
+            ],
           ),
         ),
       ),

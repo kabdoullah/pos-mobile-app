@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../../core/sync/sync_providers.dart';
 import '../../../../core/widgets/index.dart';
-import '../../../cash_register/presentation/cash_logout_guard.dart';
 import '../../domain/entities/pin_failure.dart';
 import '../../providers/store_provider.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/auth_layout.dart';
+import '../widgets/forgot_pin_sheet.dart';
 import '../widgets/pin_numpad.dart';
 
 /// Écran de déverrouillage quotidien par PIN, pavé numérique personnalisé.
@@ -116,70 +116,11 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
     // Succès : le routeur ouvre l'accueil. Échec : voir le listen de build().
   }
 
-  Future<void> _confirmSwitchAccount() async {
-    // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
-    // perdues au changement de compte.
-    final blockReason = await cashLogoutBlockReason(ref);
-    if (!mounted) return;
-    if (blockReason != null) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(
-          SnackBar(
-            content: Text(blockReason),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      return;
-    }
-    final pending = await _pendingSalesCount();
-    if (!mounted) return;
-    final confirmed = await showConfirmDialog(
-      context,
-      title: 'Changer de compte ?',
-      message: [
-        'Vous devrez vous reconnecter avec les identifiants du nouveau '
-            'compte. Le PIN de cet appareil sera supprimé.',
-        // Si un autre compte se connecte, la synchro efface les données
-        // locales de l'ancien compte (ventes, retours, produits non envoyés).
-        if (pending == 1)
-          '1 modification pas encore synchronisée : déverrouillez et '
-              'synchronisez d\'abord, sinon elle sera effacée si un autre '
-              'compte se connecte.',
-        if (pending > 1)
-          '$pending modifications pas encore synchronisées : déverrouillez et '
-              'synchronisez d\'abord, sinon elles seront effacées si un autre '
-              'compte se connecte.',
-      ].join('\n\n'),
-      confirmLabel: 'Changer de compte',
-      isDangerous: pending > 0,
-    );
-    // Le routeur ouvre la connexion dès que l'état passe à Unauthenticated.
-    if (confirmed && mounted) {
-      await ref.read(authProvider.notifier).logout();
-    }
-  }
-
-  /// Ventes pas encore envoyées au serveur. Lu à la demande : l'écran PIN
-  /// n'a pas à ouvrir la base locale pour rien.
-  Future<int> _pendingSalesCount() async {
-    // Garde le provider (auto-dispose) en vie le temps de la lecture.
-    final sub = ref.listenManual(pendingSyncCountProvider, (_, _) {});
-    try {
-      return await ref.read(pendingSyncCountProvider.future);
-    } on Object {
-      return 0;
-    } finally {
-      sub.close();
-    }
-  }
-
   static String _greeting() => DateTime.now().hour < 18 ? 'Bonjour' : 'Bonsoir';
 
   static String _formatRemaining(Duration d) {
-    final minutes = d.inMinutes;
-    final seconds = d.inSeconds % 60;
-    return minutes > 0 ? '$minutes min $seconds s' : '$seconds s';
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '${d.inMinutes}:$seconds';
   }
 
   /// Message sous les points : vérification, tentatives restantes, blocage.
@@ -189,14 +130,16 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
       final remaining = lockedUntil.difference(DateTime.now());
       return (
         'PIN temporairement bloqué',
-        'Réessayez dans ${_formatRemaining(remaining)}.',
+        'Pour protéger la caisse, le PIN est bloqué '
+            '${AppConfig.pinLockoutMinutes} minutes. Votre panier en cours est '
+            'conservé. Réessayer dans ${_formatRemaining(remaining)}.',
       );
     }
     if (authValue.isLoading) return (null, 'Vérification…');
     return switch (authValue.error) {
       WrongPin(remainingAttempts: 1) => (
         'Dernière tentative',
-        'Après cet essai, le PIN sera temporairement bloqué.',
+        'Avant un blocage de ${AppConfig.pinLockoutMinutes} minutes.',
       ),
       WrongPin(:final remainingAttempts) => (
         'PIN incorrect',
@@ -261,7 +204,11 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             const SizedBox(height: AppSpacing.md),
             SlideTransition(
               position: _shakeAnimation,
-              child: PinDots(filledCount: _pin.length),
+              child: PinDots(
+                filledCount: _pin.length,
+                isError:
+                    isLocked || (authValue.hasError && !authValue.isLoading),
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             PinMessage(
@@ -278,10 +225,11 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
               enabled: !isLoading && !isLocked,
             ),
             const SizedBox(height: AppSpacing.xs),
+            // Toujours accessible, même pendant un blocage : le mot de passe
+            // du compte remplace le PIN.
             TextButton(
-              onPressed: isLoading ? null : _confirmSwitchAccount,
-              style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
-              child: const Text('Changer de compte'),
+              onPressed: isLoading ? null : () => showForgotPinSheet(context),
+              child: const Text('Code PIN oublié ?'),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],

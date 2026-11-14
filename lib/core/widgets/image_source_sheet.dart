@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../app/theme/app_spacing.dart';
+
 /// Côté maximal envoyé au serveur : la photo est redimensionnée sur le
 /// téléphone avant l'envoi (données mobiles), le serveur la ramène ensuite à
 /// 512 px (ADR-0008).
@@ -18,11 +20,11 @@ Future<Object?> showImageSourceSheet(
 }) async {
   final choice = await showModalBottomSheet<Object>(
     context: context,
-    showDragHandle: true,
     builder: (context) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: AppSpacing.sm),
           ListTile(title: Text(title)),
           ListTile(
             leading: const Icon(Icons.photo_camera_outlined),

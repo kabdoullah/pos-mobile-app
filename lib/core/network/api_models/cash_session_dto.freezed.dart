@@ -875,9 +875,547 @@ as bool,
 
 
 /// @nodoc
+mixin _$CashCountLineDto {
+
+@JsonKey(name: 'denomination_type') String get denominationType; String get denomination; int get quantity; String get subtotal;
+/// Create a copy of CashCountLineDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CashCountLineDtoCopyWith<CashCountLineDto> get copyWith => _$CashCountLineDtoCopyWithImpl<CashCountLineDto>(this as CashCountLineDto, _$identity);
+
+  /// Serializes this CashCountLineDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashCountLineDto&&(identical(other.denominationType, denominationType) || other.denominationType == denominationType)&&(identical(other.denomination, denomination) || other.denomination == denomination)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.subtotal, subtotal) || other.subtotal == subtotal));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,denominationType,denomination,quantity,subtotal);
+
+@override
+String toString() {
+  return 'CashCountLineDto(denominationType: $denominationType, denomination: $denomination, quantity: $quantity, subtotal: $subtotal)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CashCountLineDtoCopyWith<$Res>  {
+  factory $CashCountLineDtoCopyWith(CashCountLineDto value, $Res Function(CashCountLineDto) _then) = _$CashCountLineDtoCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'denomination_type') String denominationType, String denomination, int quantity, String subtotal
+});
+
+
+
+
+}
+/// @nodoc
+class _$CashCountLineDtoCopyWithImpl<$Res>
+    implements $CashCountLineDtoCopyWith<$Res> {
+  _$CashCountLineDtoCopyWithImpl(this._self, this._then);
+
+  final CashCountLineDto _self;
+  final $Res Function(CashCountLineDto) _then;
+
+/// Create a copy of CashCountLineDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? denominationType = null,Object? denomination = null,Object? quantity = null,Object? subtotal = null,}) {
+  return _then(CashCountLineDto(
+denominationType: null == denominationType ? _self.denominationType : denominationType // ignore: cast_nullable_to_non_nullable
+as String,denomination: null == denomination ? _self.denomination : denomination // ignore: cast_nullable_to_non_nullable
+as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as int,subtotal: null == subtotal ? _self.subtotal : subtotal // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CashCountLineDto].
+extension CashCountLineDtoPatterns on CashCountLineDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CashCountLineDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CashCountLineDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CashCountLineDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountLineDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CashCountLineDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountLineDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'denomination_type')  String denominationType,  String denomination,  int quantity,  String subtotal)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CashCountLineDto() when $default != null:
+return $default(_that.denominationType,_that.denomination,_that.quantity,_that.subtotal);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'denomination_type')  String denominationType,  String denomination,  int quantity,  String subtotal)  $default,) {final _that = this;
+switch (_that) {
+case _CashCountLineDto():
+return $default(_that.denominationType,_that.denomination,_that.quantity,_that.subtotal);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'denomination_type')  String denominationType,  String denomination,  int quantity,  String subtotal)?  $default,) {final _that = this;
+switch (_that) {
+case _CashCountLineDto() when $default != null:
+return $default(_that.denominationType,_that.denomination,_that.quantity,_that.subtotal);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CashCountLineDto implements CashCountLineDto {
+  const _CashCountLineDto({@JsonKey(name: 'denomination_type') required this.denominationType, required this.denomination, required this.quantity, required this.subtotal});
+  factory _CashCountLineDto.fromJson(Map<String, dynamic> json) => _$CashCountLineDtoFromJson(json);
+
+@override@JsonKey(name: 'denomination_type') final  String denominationType;
+@override final  String denomination;
+@override final  int quantity;
+@override final  String subtotal;
+
+/// Create a copy of CashCountLineDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CashCountLineDtoCopyWith<_CashCountLineDto> get copyWith => __$CashCountLineDtoCopyWithImpl<_CashCountLineDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CashCountLineDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashCountLineDto&&(identical(other.denominationType, denominationType) || other.denominationType == denominationType)&&(identical(other.denomination, denomination) || other.denomination == denomination)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&(identical(other.subtotal, subtotal) || other.subtotal == subtotal));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,denominationType,denomination,quantity,subtotal);
+
+@override
+String toString() {
+  return 'CashCountLineDto(denominationType: $denominationType, denomination: $denomination, quantity: $quantity, subtotal: $subtotal)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CashCountLineDtoCopyWith<$Res> implements $CashCountLineDtoCopyWith<$Res> {
+  factory _$CashCountLineDtoCopyWith(_CashCountLineDto value, $Res Function(_CashCountLineDto) _then) = __$CashCountLineDtoCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'denomination_type') String denominationType, String denomination, int quantity, String subtotal
+});
+
+
+
+
+}
+/// @nodoc
+class __$CashCountLineDtoCopyWithImpl<$Res>
+    implements _$CashCountLineDtoCopyWith<$Res> {
+  __$CashCountLineDtoCopyWithImpl(this._self, this._then);
+
+  final _CashCountLineDto _self;
+  final $Res Function(_CashCountLineDto) _then;
+
+/// Create a copy of CashCountLineDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? denominationType = null,Object? denomination = null,Object? quantity = null,Object? subtotal = null,}) {
+  return _then(_CashCountLineDto(
+denominationType: null == denominationType ? _self.denominationType : denominationType // ignore: cast_nullable_to_non_nullable
+as String,denomination: null == denomination ? _self.denomination : denomination // ignore: cast_nullable_to_non_nullable
+as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as int,subtotal: null == subtotal ? _self.subtotal : subtotal // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$CashCountDto {
+
+ List<CashCountLineDto> get lines;@JsonKey(name: 'bills_total') String get billsTotal;@JsonKey(name: 'coins_total') String get coinsTotal; String get total;
+/// Create a copy of CashCountDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CashCountDtoCopyWith<CashCountDto> get copyWith => _$CashCountDtoCopyWithImpl<CashCountDto>(this as CashCountDto, _$identity);
+
+  /// Serializes this CashCountDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashCountDto&&const DeepCollectionEquality().equals(other.lines, lines)&&(identical(other.billsTotal, billsTotal) || other.billsTotal == billsTotal)&&(identical(other.coinsTotal, coinsTotal) || other.coinsTotal == coinsTotal)&&(identical(other.total, total) || other.total == total));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(lines),billsTotal,coinsTotal,total);
+
+@override
+String toString() {
+  return 'CashCountDto(lines: $lines, billsTotal: $billsTotal, coinsTotal: $coinsTotal, total: $total)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CashCountDtoCopyWith<$Res>  {
+  factory $CashCountDtoCopyWith(CashCountDto value, $Res Function(CashCountDto) _then) = _$CashCountDtoCopyWithImpl;
+@useResult
+$Res call({
+ List<CashCountLineDto> lines,@JsonKey(name: 'bills_total') String billsTotal,@JsonKey(name: 'coins_total') String coinsTotal, String total
+});
+
+
+
+
+}
+/// @nodoc
+class _$CashCountDtoCopyWithImpl<$Res>
+    implements $CashCountDtoCopyWith<$Res> {
+  _$CashCountDtoCopyWithImpl(this._self, this._then);
+
+  final CashCountDto _self;
+  final $Res Function(CashCountDto) _then;
+
+/// Create a copy of CashCountDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? lines = null,Object? billsTotal = null,Object? coinsTotal = null,Object? total = null,}) {
+  return _then(CashCountDto(
+lines: null == lines ? _self.lines : lines // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineDto>,billsTotal: null == billsTotal ? _self.billsTotal : billsTotal // ignore: cast_nullable_to_non_nullable
+as String,coinsTotal: null == coinsTotal ? _self.coinsTotal : coinsTotal // ignore: cast_nullable_to_non_nullable
+as String,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CashCountDto].
+extension CashCountDtoPatterns on CashCountDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CashCountDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CashCountDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CashCountDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CashCountDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<CashCountLineDto> lines, @JsonKey(name: 'bills_total')  String billsTotal, @JsonKey(name: 'coins_total')  String coinsTotal,  String total)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CashCountDto() when $default != null:
+return $default(_that.lines,_that.billsTotal,_that.coinsTotal,_that.total);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<CashCountLineDto> lines, @JsonKey(name: 'bills_total')  String billsTotal, @JsonKey(name: 'coins_total')  String coinsTotal,  String total)  $default,) {final _that = this;
+switch (_that) {
+case _CashCountDto():
+return $default(_that.lines,_that.billsTotal,_that.coinsTotal,_that.total);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<CashCountLineDto> lines, @JsonKey(name: 'bills_total')  String billsTotal, @JsonKey(name: 'coins_total')  String coinsTotal,  String total)?  $default,) {final _that = this;
+switch (_that) {
+case _CashCountDto() when $default != null:
+return $default(_that.lines,_that.billsTotal,_that.coinsTotal,_that.total);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CashCountDto implements CashCountDto {
+  const _CashCountDto({required  List<CashCountLineDto> lines, @JsonKey(name: 'bills_total') required this.billsTotal, @JsonKey(name: 'coins_total') required this.coinsTotal, required this.total}): _lines = lines;
+  factory _CashCountDto.fromJson(Map<String, dynamic> json) => _$CashCountDtoFromJson(json);
+
+ final  List<CashCountLineDto> _lines;
+@override List<CashCountLineDto> get lines {
+  if (_lines is EqualUnmodifiableListView) return _lines;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_lines);
+}
+
+@override@JsonKey(name: 'bills_total') final  String billsTotal;
+@override@JsonKey(name: 'coins_total') final  String coinsTotal;
+@override final  String total;
+
+/// Create a copy of CashCountDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CashCountDtoCopyWith<_CashCountDto> get copyWith => __$CashCountDtoCopyWithImpl<_CashCountDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CashCountDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashCountDto&&const DeepCollectionEquality().equals(other._lines, _lines)&&(identical(other.billsTotal, billsTotal) || other.billsTotal == billsTotal)&&(identical(other.coinsTotal, coinsTotal) || other.coinsTotal == coinsTotal)&&(identical(other.total, total) || other.total == total));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_lines),billsTotal,coinsTotal,total);
+
+@override
+String toString() {
+  return 'CashCountDto(lines: $lines, billsTotal: $billsTotal, coinsTotal: $coinsTotal, total: $total)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CashCountDtoCopyWith<$Res> implements $CashCountDtoCopyWith<$Res> {
+  factory _$CashCountDtoCopyWith(_CashCountDto value, $Res Function(_CashCountDto) _then) = __$CashCountDtoCopyWithImpl;
+@override @useResult
+$Res call({
+ List<CashCountLineDto> lines,@JsonKey(name: 'bills_total') String billsTotal,@JsonKey(name: 'coins_total') String coinsTotal, String total
+});
+
+
+
+
+}
+/// @nodoc
+class __$CashCountDtoCopyWithImpl<$Res>
+    implements _$CashCountDtoCopyWith<$Res> {
+  __$CashCountDtoCopyWithImpl(this._self, this._then);
+
+  final _CashCountDto _self;
+  final $Res Function(_CashCountDto) _then;
+
+/// Create a copy of CashCountDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? lines = null,Object? billsTotal = null,Object? coinsTotal = null,Object? total = null,}) {
+  return _then(_CashCountDto(
+lines: null == lines ? _self._lines : lines // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineDto>,billsTotal: null == billsTotal ? _self.billsTotal : billsTotal // ignore: cast_nullable_to_non_nullable
+as String,coinsTotal: null == coinsTotal ? _self.coinsTotal : coinsTotal // ignore: cast_nullable_to_non_nullable
+as String,total: null == total ? _self.total : total // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$CashSessionDetailDto {
 
- CashSessionDto get session; CashSummaryDto get summary; List<CashMovementDto> get movements;
+ CashSessionDto get session; CashSummaryDto get summary; List<CashMovementDto> get movements;@JsonKey(name: 'opening_count') CashCountDto? get openingCount;@JsonKey(name: 'closing_count') CashCountDto? get closingCount;
 /// Create a copy of CashSessionDetailDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -890,16 +1428,16 @@ $CashSessionDetailDtoCopyWith<CashSessionDetailDto> get copyWith => _$CashSessio
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionDetailDto&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other.movements, movements));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionDetailDto&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other.movements, movements)&&(identical(other.openingCount, openingCount) || other.openingCount == openingCount)&&(identical(other.closingCount, closingCount) || other.closingCount == closingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(movements));
+int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(movements),openingCount,closingCount);
 
 @override
 String toString() {
-  return 'CashSessionDetailDto(session: $session, summary: $summary, movements: $movements)';
+  return 'CashSessionDetailDto(session: $session, summary: $summary, movements: $movements, openingCount: $openingCount, closingCount: $closingCount)';
 }
 
 
@@ -910,11 +1448,11 @@ abstract mixin class $CashSessionDetailDtoCopyWith<$Res>  {
   factory $CashSessionDetailDtoCopyWith(CashSessionDetailDto value, $Res Function(CashSessionDetailDto) _then) = _$CashSessionDetailDtoCopyWithImpl;
 @useResult
 $Res call({
- CashSessionDto session, CashSummaryDto summary, List<CashMovementDto> movements
+ CashSessionDto session, CashSummaryDto summary, List<CashMovementDto> movements,@JsonKey(name: 'opening_count') CashCountDto? openingCount,@JsonKey(name: 'closing_count') CashCountDto? closingCount
 });
 
 
-$CashSessionDtoCopyWith<$Res> get session;$CashSummaryDtoCopyWith<$Res> get summary;
+$CashSessionDtoCopyWith<$Res> get session;$CashSummaryDtoCopyWith<$Res> get summary;$CashCountDtoCopyWith<$Res>? get openingCount;$CashCountDtoCopyWith<$Res>? get closingCount;
 
 }
 /// @nodoc
@@ -927,12 +1465,14 @@ class _$CashSessionDetailDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionDetailDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? session = null,Object? summary = null,Object? movements = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? session = null,Object? summary = null,Object? movements = null,Object? openingCount = freezed,Object? closingCount = freezed,}) {
   return _then(CashSessionDetailDto(
 session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as CashSessionDto,summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as CashSummaryDto,movements: null == movements ? _self.movements : movements // ignore: cast_nullable_to_non_nullable
-as List<CashMovementDto>,
+as List<CashMovementDto>,openingCount: freezed == openingCount ? _self.openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as CashCountDto?,closingCount: freezed == closingCount ? _self.closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as CashCountDto?,
   ));
 }
 /// Create a copy of CashSessionDetailDto
@@ -952,6 +1492,30 @@ $CashSummaryDtoCopyWith<$Res> get summary {
   
   return $CashSummaryDtoCopyWith<$Res>(_self.summary, (value) {
     return _then(_self.copyWith(summary: value));
+  });
+}/// Create a copy of CashSessionDetailDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CashCountDtoCopyWith<$Res>? get openingCount {
+    if (_self.openingCount == null) {
+    return null;
+  }
+
+  return $CashCountDtoCopyWith<$Res>(_self.openingCount!, (value) {
+    return _then(_self.copyWith(openingCount: value));
+  });
+}/// Create a copy of CashSessionDetailDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CashCountDtoCopyWith<$Res>? get closingCount {
+    if (_self.closingCount == null) {
+    return null;
+  }
+
+  return $CashCountDtoCopyWith<$Res>(_self.closingCount!, (value) {
+    return _then(_self.copyWith(closingCount: value));
   });
 }
 }
@@ -1032,10 +1596,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements, @JsonKey(name: 'opening_count')  CashCountDto? openingCount, @JsonKey(name: 'closing_count')  CashCountDto? closingCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CashSessionDetailDto() when $default != null:
-return $default(_that.session,_that.summary,_that.movements);case _:
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);case _:
   return orElse();
 
 }
@@ -1053,10 +1617,10 @@ return $default(_that.session,_that.summary,_that.movements);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements, @JsonKey(name: 'opening_count')  CashCountDto? openingCount, @JsonKey(name: 'closing_count')  CashCountDto? closingCount)  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionDetailDto():
-return $default(_that.session,_that.summary,_that.movements);}
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1070,10 +1634,10 @@ return $default(_that.session,_that.summary,_that.movements);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( CashSessionDto session,  CashSummaryDto summary,  List<CashMovementDto> movements, @JsonKey(name: 'opening_count')  CashCountDto? openingCount, @JsonKey(name: 'closing_count')  CashCountDto? closingCount)?  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionDetailDto() when $default != null:
-return $default(_that.session,_that.summary,_that.movements);case _:
+return $default(_that.session,_that.summary,_that.movements,_that.openingCount,_that.closingCount);case _:
   return null;
 
 }
@@ -1085,7 +1649,7 @@ return $default(_that.session,_that.summary,_that.movements);case _:
 @JsonSerializable()
 
 class _CashSessionDetailDto implements CashSessionDetailDto {
-  const _CashSessionDetailDto({required this.session, required this.summary, required  List<CashMovementDto> movements}): _movements = movements;
+  const _CashSessionDetailDto({required this.session, required this.summary, required  List<CashMovementDto> movements, @JsonKey(name: 'opening_count') this.openingCount, @JsonKey(name: 'closing_count') this.closingCount}): _movements = movements;
   factory _CashSessionDetailDto.fromJson(Map<String, dynamic> json) => _$CashSessionDetailDtoFromJson(json);
 
 @override final  CashSessionDto session;
@@ -1097,6 +1661,8 @@ class _CashSessionDetailDto implements CashSessionDetailDto {
   return EqualUnmodifiableListView(_movements);
 }
 
+@override@JsonKey(name: 'opening_count') final  CashCountDto? openingCount;
+@override@JsonKey(name: 'closing_count') final  CashCountDto? closingCount;
 
 /// Create a copy of CashSessionDetailDto
 /// with the given fields replaced by the non-null parameter values.
@@ -1111,16 +1677,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionDetailDto&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._movements, _movements));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionDetailDto&&(identical(other.session, session) || other.session == session)&&(identical(other.summary, summary) || other.summary == summary)&&const DeepCollectionEquality().equals(other._movements, _movements)&&(identical(other.openingCount, openingCount) || other.openingCount == openingCount)&&(identical(other.closingCount, closingCount) || other.closingCount == closingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(_movements));
+int get hashCode => Object.hash(runtimeType,session,summary,const DeepCollectionEquality().hash(_movements),openingCount,closingCount);
 
 @override
 String toString() {
-  return 'CashSessionDetailDto(session: $session, summary: $summary, movements: $movements)';
+  return 'CashSessionDetailDto(session: $session, summary: $summary, movements: $movements, openingCount: $openingCount, closingCount: $closingCount)';
 }
 
 
@@ -1131,11 +1697,11 @@ abstract mixin class _$CashSessionDetailDtoCopyWith<$Res> implements $CashSessio
   factory _$CashSessionDetailDtoCopyWith(_CashSessionDetailDto value, $Res Function(_CashSessionDetailDto) _then) = __$CashSessionDetailDtoCopyWithImpl;
 @override @useResult
 $Res call({
- CashSessionDto session, CashSummaryDto summary, List<CashMovementDto> movements
+ CashSessionDto session, CashSummaryDto summary, List<CashMovementDto> movements,@JsonKey(name: 'opening_count') CashCountDto? openingCount,@JsonKey(name: 'closing_count') CashCountDto? closingCount
 });
 
 
-@override $CashSessionDtoCopyWith<$Res> get session;@override $CashSummaryDtoCopyWith<$Res> get summary;
+@override $CashSessionDtoCopyWith<$Res> get session;@override $CashSummaryDtoCopyWith<$Res> get summary;@override $CashCountDtoCopyWith<$Res>? get openingCount;@override $CashCountDtoCopyWith<$Res>? get closingCount;
 
 }
 /// @nodoc
@@ -1148,12 +1714,14 @@ class __$CashSessionDetailDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionDetailDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? session = null,Object? summary = null,Object? movements = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? session = null,Object? summary = null,Object? movements = null,Object? openingCount = freezed,Object? closingCount = freezed,}) {
   return _then(_CashSessionDetailDto(
 session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as CashSessionDto,summary: null == summary ? _self.summary : summary // ignore: cast_nullable_to_non_nullable
 as CashSummaryDto,movements: null == movements ? _self._movements : movements // ignore: cast_nullable_to_non_nullable
-as List<CashMovementDto>,
+as List<CashMovementDto>,openingCount: freezed == openingCount ? _self.openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as CashCountDto?,closingCount: freezed == closingCount ? _self.closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as CashCountDto?,
   ));
 }
 
@@ -1174,6 +1742,30 @@ $CashSummaryDtoCopyWith<$Res> get summary {
   
   return $CashSummaryDtoCopyWith<$Res>(_self.summary, (value) {
     return _then(_self.copyWith(summary: value));
+  });
+}/// Create a copy of CashSessionDetailDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CashCountDtoCopyWith<$Res>? get openingCount {
+    if (_self.openingCount == null) {
+    return null;
+  }
+
+  return $CashCountDtoCopyWith<$Res>(_self.openingCount!, (value) {
+    return _then(_self.copyWith(openingCount: value));
+  });
+}/// Create a copy of CashSessionDetailDto
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$CashCountDtoCopyWith<$Res>? get closingCount {
+    if (_self.closingCount == null) {
+    return null;
+  }
+
+  return $CashCountDtoCopyWith<$Res>(_self.closingCount!, (value) {
+    return _then(_self.copyWith(closingCount: value));
   });
 }
 }
@@ -1451,7 +2043,7 @@ as bool,
 /// @nodoc
 mixin _$CashSessionOpenRequestDto {
 
- String get id;@JsonKey(name: 'device_id') String get deviceId;@JsonKey(name: 'opening_amount') String get openingAmount;@JsonKey(name: 'opening_note') String? get openingNote;@JsonKey(name: 'opened_at') String get openedAt;
+ String get id;@JsonKey(name: 'device_id') String get deviceId;@JsonKey(name: 'opening_amount') String get openingAmount;@JsonKey(name: 'opening_note') String? get openingNote;@JsonKey(name: 'opened_at') String get openedAt;@JsonKey(name: 'opening_count', includeIfNull: false) List<CashCountLineRequestDto>? get openingCount;
 /// Create a copy of CashSessionOpenRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1464,16 +2056,16 @@ $CashSessionOpenRequestDtoCopyWith<CashSessionOpenRequestDto> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionOpenRequestDto&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.openingAmount, openingAmount) || other.openingAmount == openingAmount)&&(identical(other.openingNote, openingNote) || other.openingNote == openingNote)&&(identical(other.openedAt, openedAt) || other.openedAt == openedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionOpenRequestDto&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.openingAmount, openingAmount) || other.openingAmount == openingAmount)&&(identical(other.openingNote, openingNote) || other.openingNote == openingNote)&&(identical(other.openedAt, openedAt) || other.openedAt == openedAt)&&const DeepCollectionEquality().equals(other.openingCount, openingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,openingAmount,openingNote,openedAt);
+int get hashCode => Object.hash(runtimeType,id,deviceId,openingAmount,openingNote,openedAt,const DeepCollectionEquality().hash(openingCount));
 
 @override
 String toString() {
-  return 'CashSessionOpenRequestDto(id: $id, deviceId: $deviceId, openingAmount: $openingAmount, openingNote: $openingNote, openedAt: $openedAt)';
+  return 'CashSessionOpenRequestDto(id: $id, deviceId: $deviceId, openingAmount: $openingAmount, openingNote: $openingNote, openedAt: $openedAt, openingCount: $openingCount)';
 }
 
 
@@ -1484,7 +2076,7 @@ abstract mixin class $CashSessionOpenRequestDtoCopyWith<$Res>  {
   factory $CashSessionOpenRequestDtoCopyWith(CashSessionOpenRequestDto value, $Res Function(CashSessionOpenRequestDto) _then) = _$CashSessionOpenRequestDtoCopyWithImpl;
 @useResult
 $Res call({
- String id,@JsonKey(name: 'device_id') String deviceId,@JsonKey(name: 'opening_amount') String openingAmount,@JsonKey(name: 'opening_note') String? openingNote,@JsonKey(name: 'opened_at') String openedAt
+ String id,@JsonKey(name: 'device_id') String deviceId,@JsonKey(name: 'opening_amount') String openingAmount,@JsonKey(name: 'opening_note') String? openingNote,@JsonKey(name: 'opened_at') String openedAt,@JsonKey(name: 'opening_count', includeIfNull: false) List<CashCountLineRequestDto>? openingCount
 });
 
 
@@ -1501,14 +2093,15 @@ class _$CashSessionOpenRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionOpenRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? openingAmount = null,Object? openingNote = freezed,Object? openedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? deviceId = null,Object? openingAmount = null,Object? openingNote = freezed,Object? openedAt = null,Object? openingCount = freezed,}) {
   return _then(CashSessionOpenRequestDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
 as String,openingAmount: null == openingAmount ? _self.openingAmount : openingAmount // ignore: cast_nullable_to_non_nullable
 as String,openingNote: freezed == openingNote ? _self.openingNote : openingNote // ignore: cast_nullable_to_non_nullable
 as String?,openedAt: null == openedAt ? _self.openedAt : openedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,openingCount: freezed == openingCount ? _self.openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineRequestDto>?,
   ));
 }
 
@@ -1590,10 +2183,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt, @JsonKey(name: 'opening_count', includeIfNull: false)  List<CashCountLineRequestDto>? openingCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CashSessionOpenRequestDto() when $default != null:
-return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt);case _:
+return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt,_that.openingCount);case _:
   return orElse();
 
 }
@@ -1611,10 +2204,10 @@ return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt, @JsonKey(name: 'opening_count', includeIfNull: false)  List<CashCountLineRequestDto>? openingCount)  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionOpenRequestDto():
-return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt);}
+return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt,_that.openingCount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -1628,10 +2221,10 @@ return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id, @JsonKey(name: 'device_id')  String deviceId, @JsonKey(name: 'opening_amount')  String openingAmount, @JsonKey(name: 'opening_note')  String? openingNote, @JsonKey(name: 'opened_at')  String openedAt, @JsonKey(name: 'opening_count', includeIfNull: false)  List<CashCountLineRequestDto>? openingCount)?  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionOpenRequestDto() when $default != null:
-return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt);case _:
+return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_that.openedAt,_that.openingCount);case _:
   return null;
 
 }
@@ -1643,7 +2236,7 @@ return $default(_that.id,_that.deviceId,_that.openingAmount,_that.openingNote,_t
 @JsonSerializable()
 
 class _CashSessionOpenRequestDto implements CashSessionOpenRequestDto {
-  const _CashSessionOpenRequestDto({required this.id, @JsonKey(name: 'device_id') required this.deviceId, @JsonKey(name: 'opening_amount') required this.openingAmount, @JsonKey(name: 'opening_note') this.openingNote, @JsonKey(name: 'opened_at') required this.openedAt});
+  const _CashSessionOpenRequestDto({required this.id, @JsonKey(name: 'device_id') required this.deviceId, @JsonKey(name: 'opening_amount') required this.openingAmount, @JsonKey(name: 'opening_note') this.openingNote, @JsonKey(name: 'opened_at') required this.openedAt, @JsonKey(name: 'opening_count', includeIfNull: false)  List<CashCountLineRequestDto>? openingCount}): _openingCount = openingCount;
   factory _CashSessionOpenRequestDto.fromJson(Map<String, dynamic> json) => _$CashSessionOpenRequestDtoFromJson(json);
 
 @override final  String id;
@@ -1651,6 +2244,15 @@ class _CashSessionOpenRequestDto implements CashSessionOpenRequestDto {
 @override@JsonKey(name: 'opening_amount') final  String openingAmount;
 @override@JsonKey(name: 'opening_note') final  String? openingNote;
 @override@JsonKey(name: 'opened_at') final  String openedAt;
+ final  List<CashCountLineRequestDto>? _openingCount;
+@override@JsonKey(name: 'opening_count', includeIfNull: false) List<CashCountLineRequestDto>? get openingCount {
+  final value = _openingCount;
+  if (value == null) return null;
+  if (_openingCount is EqualUnmodifiableListView) return _openingCount;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 
 /// Create a copy of CashSessionOpenRequestDto
 /// with the given fields replaced by the non-null parameter values.
@@ -1665,16 +2267,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionOpenRequestDto&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.openingAmount, openingAmount) || other.openingAmount == openingAmount)&&(identical(other.openingNote, openingNote) || other.openingNote == openingNote)&&(identical(other.openedAt, openedAt) || other.openedAt == openedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionOpenRequestDto&&(identical(other.id, id) || other.id == id)&&(identical(other.deviceId, deviceId) || other.deviceId == deviceId)&&(identical(other.openingAmount, openingAmount) || other.openingAmount == openingAmount)&&(identical(other.openingNote, openingNote) || other.openingNote == openingNote)&&(identical(other.openedAt, openedAt) || other.openedAt == openedAt)&&const DeepCollectionEquality().equals(other._openingCount, _openingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,deviceId,openingAmount,openingNote,openedAt);
+int get hashCode => Object.hash(runtimeType,id,deviceId,openingAmount,openingNote,openedAt,const DeepCollectionEquality().hash(_openingCount));
 
 @override
 String toString() {
-  return 'CashSessionOpenRequestDto(id: $id, deviceId: $deviceId, openingAmount: $openingAmount, openingNote: $openingNote, openedAt: $openedAt)';
+  return 'CashSessionOpenRequestDto(id: $id, deviceId: $deviceId, openingAmount: $openingAmount, openingNote: $openingNote, openedAt: $openedAt, openingCount: $openingCount)';
 }
 
 
@@ -1685,7 +2287,7 @@ abstract mixin class _$CashSessionOpenRequestDtoCopyWith<$Res> implements $CashS
   factory _$CashSessionOpenRequestDtoCopyWith(_CashSessionOpenRequestDto value, $Res Function(_CashSessionOpenRequestDto) _then) = __$CashSessionOpenRequestDtoCopyWithImpl;
 @override @useResult
 $Res call({
- String id,@JsonKey(name: 'device_id') String deviceId,@JsonKey(name: 'opening_amount') String openingAmount,@JsonKey(name: 'opening_note') String? openingNote,@JsonKey(name: 'opened_at') String openedAt
+ String id,@JsonKey(name: 'device_id') String deviceId,@JsonKey(name: 'opening_amount') String openingAmount,@JsonKey(name: 'opening_note') String? openingNote,@JsonKey(name: 'opened_at') String openedAt,@JsonKey(name: 'opening_count', includeIfNull: false) List<CashCountLineRequestDto>? openingCount
 });
 
 
@@ -1702,14 +2304,15 @@ class __$CashSessionOpenRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionOpenRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? openingAmount = null,Object? openingNote = freezed,Object? openedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? deviceId = null,Object? openingAmount = null,Object? openingNote = freezed,Object? openedAt = null,Object? openingCount = freezed,}) {
   return _then(_CashSessionOpenRequestDto(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,deviceId: null == deviceId ? _self.deviceId : deviceId // ignore: cast_nullable_to_non_nullable
 as String,openingAmount: null == openingAmount ? _self.openingAmount : openingAmount // ignore: cast_nullable_to_non_nullable
 as String,openingNote: freezed == openingNote ? _self.openingNote : openingNote // ignore: cast_nullable_to_non_nullable
 as String?,openedAt: null == openedAt ? _self.openedAt : openedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,openingCount: freezed == openingCount ? _self._openingCount : openingCount // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineRequestDto>?,
   ));
 }
 
@@ -1992,7 +2595,7 @@ as String,
 /// @nodoc
 mixin _$CashSessionCloseRequestDto {
 
-@JsonKey(name: 'counted_amount') String get countedAmount;@JsonKey(name: 'client_expected_amount') String get clientExpectedAmount;@JsonKey(name: 'closing_note') String? get closingNote;@JsonKey(name: 'closed_at') String get closedAt;
+@JsonKey(name: 'counted_amount') String get countedAmount;@JsonKey(name: 'client_expected_amount') String get clientExpectedAmount;@JsonKey(name: 'closing_note') String? get closingNote;@JsonKey(name: 'closed_at') String get closedAt;@JsonKey(name: 'closing_count', includeIfNull: false) List<CashCountLineRequestDto>? get closingCount;
 /// Create a copy of CashSessionCloseRequestDto
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -2005,16 +2608,16 @@ $CashSessionCloseRequestDtoCopyWith<CashSessionCloseRequestDto> get copyWith => 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionCloseRequestDto&&(identical(other.countedAmount, countedAmount) || other.countedAmount == countedAmount)&&(identical(other.clientExpectedAmount, clientExpectedAmount) || other.clientExpectedAmount == clientExpectedAmount)&&(identical(other.closingNote, closingNote) || other.closingNote == closingNote)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashSessionCloseRequestDto&&(identical(other.countedAmount, countedAmount) || other.countedAmount == countedAmount)&&(identical(other.clientExpectedAmount, clientExpectedAmount) || other.clientExpectedAmount == clientExpectedAmount)&&(identical(other.closingNote, closingNote) || other.closingNote == closingNote)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&const DeepCollectionEquality().equals(other.closingCount, closingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,countedAmount,clientExpectedAmount,closingNote,closedAt);
+int get hashCode => Object.hash(runtimeType,countedAmount,clientExpectedAmount,closingNote,closedAt,const DeepCollectionEquality().hash(closingCount));
 
 @override
 String toString() {
-  return 'CashSessionCloseRequestDto(countedAmount: $countedAmount, clientExpectedAmount: $clientExpectedAmount, closingNote: $closingNote, closedAt: $closedAt)';
+  return 'CashSessionCloseRequestDto(countedAmount: $countedAmount, clientExpectedAmount: $clientExpectedAmount, closingNote: $closingNote, closedAt: $closedAt, closingCount: $closingCount)';
 }
 
 
@@ -2025,7 +2628,7 @@ abstract mixin class $CashSessionCloseRequestDtoCopyWith<$Res>  {
   factory $CashSessionCloseRequestDtoCopyWith(CashSessionCloseRequestDto value, $Res Function(CashSessionCloseRequestDto) _then) = _$CashSessionCloseRequestDtoCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'counted_amount') String countedAmount,@JsonKey(name: 'client_expected_amount') String clientExpectedAmount,@JsonKey(name: 'closing_note') String? closingNote,@JsonKey(name: 'closed_at') String closedAt
+@JsonKey(name: 'counted_amount') String countedAmount,@JsonKey(name: 'client_expected_amount') String clientExpectedAmount,@JsonKey(name: 'closing_note') String? closingNote,@JsonKey(name: 'closed_at') String closedAt,@JsonKey(name: 'closing_count', includeIfNull: false) List<CashCountLineRequestDto>? closingCount
 });
 
 
@@ -2042,13 +2645,14 @@ class _$CashSessionCloseRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionCloseRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? countedAmount = null,Object? clientExpectedAmount = null,Object? closingNote = freezed,Object? closedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? countedAmount = null,Object? clientExpectedAmount = null,Object? closingNote = freezed,Object? closedAt = null,Object? closingCount = freezed,}) {
   return _then(CashSessionCloseRequestDto(
 countedAmount: null == countedAmount ? _self.countedAmount : countedAmount // ignore: cast_nullable_to_non_nullable
 as String,clientExpectedAmount: null == clientExpectedAmount ? _self.clientExpectedAmount : clientExpectedAmount // ignore: cast_nullable_to_non_nullable
 as String,closingNote: freezed == closingNote ? _self.closingNote : closingNote // ignore: cast_nullable_to_non_nullable
 as String?,closedAt: null == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,closingCount: freezed == closingCount ? _self.closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineRequestDto>?,
   ));
 }
 
@@ -2130,10 +2734,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt, @JsonKey(name: 'closing_count', includeIfNull: false)  List<CashCountLineRequestDto>? closingCount)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _CashSessionCloseRequestDto() when $default != null:
-return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt);case _:
+return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt,_that.closingCount);case _:
   return orElse();
 
 }
@@ -2151,10 +2755,10 @@ return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt, @JsonKey(name: 'closing_count', includeIfNull: false)  List<CashCountLineRequestDto>? closingCount)  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionCloseRequestDto():
-return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt);}
+return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt,_that.closingCount);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -2168,10 +2772,10 @@ return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'counted_amount')  String countedAmount, @JsonKey(name: 'client_expected_amount')  String clientExpectedAmount, @JsonKey(name: 'closing_note')  String? closingNote, @JsonKey(name: 'closed_at')  String closedAt, @JsonKey(name: 'closing_count', includeIfNull: false)  List<CashCountLineRequestDto>? closingCount)?  $default,) {final _that = this;
 switch (_that) {
 case _CashSessionCloseRequestDto() when $default != null:
-return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt);case _:
+return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote,_that.closedAt,_that.closingCount);case _:
   return null;
 
 }
@@ -2183,13 +2787,22 @@ return $default(_that.countedAmount,_that.clientExpectedAmount,_that.closingNote
 @JsonSerializable()
 
 class _CashSessionCloseRequestDto implements CashSessionCloseRequestDto {
-  const _CashSessionCloseRequestDto({@JsonKey(name: 'counted_amount') required this.countedAmount, @JsonKey(name: 'client_expected_amount') required this.clientExpectedAmount, @JsonKey(name: 'closing_note') this.closingNote, @JsonKey(name: 'closed_at') required this.closedAt});
+  const _CashSessionCloseRequestDto({@JsonKey(name: 'counted_amount') required this.countedAmount, @JsonKey(name: 'client_expected_amount') required this.clientExpectedAmount, @JsonKey(name: 'closing_note') this.closingNote, @JsonKey(name: 'closed_at') required this.closedAt, @JsonKey(name: 'closing_count', includeIfNull: false)  List<CashCountLineRequestDto>? closingCount}): _closingCount = closingCount;
   factory _CashSessionCloseRequestDto.fromJson(Map<String, dynamic> json) => _$CashSessionCloseRequestDtoFromJson(json);
 
 @override@JsonKey(name: 'counted_amount') final  String countedAmount;
 @override@JsonKey(name: 'client_expected_amount') final  String clientExpectedAmount;
 @override@JsonKey(name: 'closing_note') final  String? closingNote;
 @override@JsonKey(name: 'closed_at') final  String closedAt;
+ final  List<CashCountLineRequestDto>? _closingCount;
+@override@JsonKey(name: 'closing_count', includeIfNull: false) List<CashCountLineRequestDto>? get closingCount {
+  final value = _closingCount;
+  if (value == null) return null;
+  if (_closingCount is EqualUnmodifiableListView) return _closingCount;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(value);
+}
+
 
 /// Create a copy of CashSessionCloseRequestDto
 /// with the given fields replaced by the non-null parameter values.
@@ -2204,16 +2817,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionCloseRequestDto&&(identical(other.countedAmount, countedAmount) || other.countedAmount == countedAmount)&&(identical(other.clientExpectedAmount, clientExpectedAmount) || other.clientExpectedAmount == clientExpectedAmount)&&(identical(other.closingNote, closingNote) || other.closingNote == closingNote)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashSessionCloseRequestDto&&(identical(other.countedAmount, countedAmount) || other.countedAmount == countedAmount)&&(identical(other.clientExpectedAmount, clientExpectedAmount) || other.clientExpectedAmount == clientExpectedAmount)&&(identical(other.closingNote, closingNote) || other.closingNote == closingNote)&&(identical(other.closedAt, closedAt) || other.closedAt == closedAt)&&const DeepCollectionEquality().equals(other._closingCount, _closingCount));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,countedAmount,clientExpectedAmount,closingNote,closedAt);
+int get hashCode => Object.hash(runtimeType,countedAmount,clientExpectedAmount,closingNote,closedAt,const DeepCollectionEquality().hash(_closingCount));
 
 @override
 String toString() {
-  return 'CashSessionCloseRequestDto(countedAmount: $countedAmount, clientExpectedAmount: $clientExpectedAmount, closingNote: $closingNote, closedAt: $closedAt)';
+  return 'CashSessionCloseRequestDto(countedAmount: $countedAmount, clientExpectedAmount: $clientExpectedAmount, closingNote: $closingNote, closedAt: $closedAt, closingCount: $closingCount)';
 }
 
 
@@ -2224,7 +2837,7 @@ abstract mixin class _$CashSessionCloseRequestDtoCopyWith<$Res> implements $Cash
   factory _$CashSessionCloseRequestDtoCopyWith(_CashSessionCloseRequestDto value, $Res Function(_CashSessionCloseRequestDto) _then) = __$CashSessionCloseRequestDtoCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'counted_amount') String countedAmount,@JsonKey(name: 'client_expected_amount') String clientExpectedAmount,@JsonKey(name: 'closing_note') String? closingNote,@JsonKey(name: 'closed_at') String closedAt
+@JsonKey(name: 'counted_amount') String countedAmount,@JsonKey(name: 'client_expected_amount') String clientExpectedAmount,@JsonKey(name: 'closing_note') String? closingNote,@JsonKey(name: 'closed_at') String closedAt,@JsonKey(name: 'closing_count', includeIfNull: false) List<CashCountLineRequestDto>? closingCount
 });
 
 
@@ -2241,13 +2854,277 @@ class __$CashSessionCloseRequestDtoCopyWithImpl<$Res>
 
 /// Create a copy of CashSessionCloseRequestDto
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? countedAmount = null,Object? clientExpectedAmount = null,Object? closingNote = freezed,Object? closedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? countedAmount = null,Object? clientExpectedAmount = null,Object? closingNote = freezed,Object? closedAt = null,Object? closingCount = freezed,}) {
   return _then(_CashSessionCloseRequestDto(
 countedAmount: null == countedAmount ? _self.countedAmount : countedAmount // ignore: cast_nullable_to_non_nullable
 as String,clientExpectedAmount: null == clientExpectedAmount ? _self.clientExpectedAmount : clientExpectedAmount // ignore: cast_nullable_to_non_nullable
 as String,closingNote: freezed == closingNote ? _self.closingNote : closingNote // ignore: cast_nullable_to_non_nullable
 as String?,closedAt: null == closedAt ? _self.closedAt : closedAt // ignore: cast_nullable_to_non_nullable
-as String,
+as String,closingCount: freezed == closingCount ? _self._closingCount : closingCount // ignore: cast_nullable_to_non_nullable
+as List<CashCountLineRequestDto>?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
+mixin _$CashCountLineRequestDto {
+
+@JsonKey(name: 'denomination_type') String get denominationType; int get denomination; int get quantity;
+/// Create a copy of CashCountLineRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$CashCountLineRequestDtoCopyWith<CashCountLineRequestDto> get copyWith => _$CashCountLineRequestDtoCopyWithImpl<CashCountLineRequestDto>(this as CashCountLineRequestDto, _$identity);
+
+  /// Serializes this CashCountLineRequestDto to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is CashCountLineRequestDto&&(identical(other.denominationType, denominationType) || other.denominationType == denominationType)&&(identical(other.denomination, denomination) || other.denomination == denomination)&&(identical(other.quantity, quantity) || other.quantity == quantity));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,denominationType,denomination,quantity);
+
+@override
+String toString() {
+  return 'CashCountLineRequestDto(denominationType: $denominationType, denomination: $denomination, quantity: $quantity)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $CashCountLineRequestDtoCopyWith<$Res>  {
+  factory $CashCountLineRequestDtoCopyWith(CashCountLineRequestDto value, $Res Function(CashCountLineRequestDto) _then) = _$CashCountLineRequestDtoCopyWithImpl;
+@useResult
+$Res call({
+@JsonKey(name: 'denomination_type') String denominationType, int denomination, int quantity
+});
+
+
+
+
+}
+/// @nodoc
+class _$CashCountLineRequestDtoCopyWithImpl<$Res>
+    implements $CashCountLineRequestDtoCopyWith<$Res> {
+  _$CashCountLineRequestDtoCopyWithImpl(this._self, this._then);
+
+  final CashCountLineRequestDto _self;
+  final $Res Function(CashCountLineRequestDto) _then;
+
+/// Create a copy of CashCountLineRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? denominationType = null,Object? denomination = null,Object? quantity = null,}) {
+  return _then(CashCountLineRequestDto(
+denominationType: null == denominationType ? _self.denominationType : denominationType // ignore: cast_nullable_to_non_nullable
+as String,denomination: null == denomination ? _self.denomination : denomination // ignore: cast_nullable_to_non_nullable
+as int,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as int,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [CashCountLineRequestDto].
+extension CashCountLineRequestDtoPatterns on CashCountLineRequestDto {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _CashCountLineRequestDto value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _CashCountLineRequestDto value)  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _CashCountLineRequestDto value)?  $default,){
+final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'denomination_type')  String denominationType,  int denomination,  int quantity)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto() when $default != null:
+return $default(_that.denominationType,_that.denomination,_that.quantity);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'denomination_type')  String denominationType,  int denomination,  int quantity)  $default,) {final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto():
+return $default(_that.denominationType,_that.denomination,_that.quantity);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'denomination_type')  String denominationType,  int denomination,  int quantity)?  $default,) {final _that = this;
+switch (_that) {
+case _CashCountLineRequestDto() when $default != null:
+return $default(_that.denominationType,_that.denomination,_that.quantity);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _CashCountLineRequestDto implements CashCountLineRequestDto {
+  const _CashCountLineRequestDto({@JsonKey(name: 'denomination_type') required this.denominationType, required this.denomination, required this.quantity});
+  factory _CashCountLineRequestDto.fromJson(Map<String, dynamic> json) => _$CashCountLineRequestDtoFromJson(json);
+
+@override@JsonKey(name: 'denomination_type') final  String denominationType;
+@override final  int denomination;
+@override final  int quantity;
+
+/// Create a copy of CashCountLineRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$CashCountLineRequestDtoCopyWith<_CashCountLineRequestDto> get copyWith => __$CashCountLineRequestDtoCopyWithImpl<_CashCountLineRequestDto>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$CashCountLineRequestDtoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _CashCountLineRequestDto&&(identical(other.denominationType, denominationType) || other.denominationType == denominationType)&&(identical(other.denomination, denomination) || other.denomination == denomination)&&(identical(other.quantity, quantity) || other.quantity == quantity));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,denominationType,denomination,quantity);
+
+@override
+String toString() {
+  return 'CashCountLineRequestDto(denominationType: $denominationType, denomination: $denomination, quantity: $quantity)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$CashCountLineRequestDtoCopyWith<$Res> implements $CashCountLineRequestDtoCopyWith<$Res> {
+  factory _$CashCountLineRequestDtoCopyWith(_CashCountLineRequestDto value, $Res Function(_CashCountLineRequestDto) _then) = __$CashCountLineRequestDtoCopyWithImpl;
+@override @useResult
+$Res call({
+@JsonKey(name: 'denomination_type') String denominationType, int denomination, int quantity
+});
+
+
+
+
+}
+/// @nodoc
+class __$CashCountLineRequestDtoCopyWithImpl<$Res>
+    implements _$CashCountLineRequestDtoCopyWith<$Res> {
+  __$CashCountLineRequestDtoCopyWithImpl(this._self, this._then);
+
+  final _CashCountLineRequestDto _self;
+  final $Res Function(_CashCountLineRequestDto) _then;
+
+/// Create a copy of CashCountLineRequestDto
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? denominationType = null,Object? denomination = null,Object? quantity = null,}) {
+  return _then(_CashCountLineRequestDto(
+denominationType: null == denominationType ? _self.denominationType : denominationType // ignore: cast_nullable_to_non_nullable
+as String,denomination: null == denomination ? _self.denomination : denomination // ignore: cast_nullable_to_non_nullable
+as int,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

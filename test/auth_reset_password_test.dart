@@ -247,7 +247,7 @@ void main() {
       await _fill(tester, _newPassword, 'autre1234');
       await _submit(tester);
 
-      expect(find.text('Les mots de passe ne correspondent pas.'), findsOne);
+      expect(find.text('Les deux mots de passe sont différents.'), findsOne);
       verifyNever(
         () => repo.resetPassword(
           token: any(named: 'token'),
@@ -262,7 +262,7 @@ void main() {
       await _fill(tester, 'court', 'court');
       await _submit(tester);
 
-      expect(find.text('Au moins 8 caractères.'), findsOne);
+      expect(find.text('Trop court : au moins 8 caractères.'), findsOne);
       verifyNever(
         () => repo.resetPassword(
           token: any(named: 'token'),

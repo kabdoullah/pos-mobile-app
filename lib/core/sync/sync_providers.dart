@@ -3,6 +3,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../database/database_provider.dart';
 import '../network/network_providers.dart';
+import '../storage/device_id_storage.dart';
+import 'cash_session_restore.dart';
 import 'cash_sync_remote_datasource.dart';
 import 'local_data_reset_service.dart';
 import 'pull_service.dart';
@@ -68,3 +70,11 @@ ImageFileCache imageFileCache(Ref ref) => ImageFileCache();
 CashRegisterRemoteDataSource cashRegisterRemoteDataSource(Ref ref) {
   return CashRegisterRemoteDataSource(ref.watch(dioProvider));
 }
+
+/// Restaure les sessions de caisse de l'appareil après un pull complet.
+@riverpod
+CashSessionRestorer cashSessionRestorer(Ref ref) => CashSessionRestorer(
+  db: ref.read(databaseProvider),
+  remote: ref.read(cashRegisterRemoteDataSourceProvider),
+  deviceIdStorage: DeviceIdStorage(),
+);

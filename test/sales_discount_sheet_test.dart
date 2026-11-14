@@ -46,8 +46,9 @@ Future<DiscountSheetResult? Function()> openSheet(
   return () => result;
 }
 
-FilledButton applyButton(WidgetTester tester) =>
-    tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Appliquer'));
+PrimaryButton applyButton(WidgetTester tester) => tester.widget<PrimaryButton>(
+  find.widgetWithText(PrimaryButton, 'Appliquer'),
+);
 
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
@@ -58,14 +59,13 @@ void main() {
   ]) {
     testWidgets('pourcentage choisi en un appui, thème $name', (tester) async {
       final result = await openSheet(tester, gross: '10000', theme: theme);
-      // Pas de clavier à l'ouverture : aucun champ de saisie.
-      expect(find.byType(TextField), findsNothing);
       expect(applyButton(tester).onPressed, isNull);
 
       await tester.tap(find.text('10 %'));
       await tester.pump();
       expect(find.text('−${formatFcfa(d('1000'))}'), findsOneWidget);
       expect(find.text(formatFcfa(d('9000'))), findsOneWidget);
+      expect(find.text('Nouveau total'), findsOneWidget);
 
       await tester.tap(find.text('Appliquer'));
       await tester.pumpAndSettle();
@@ -82,11 +82,11 @@ void main() {
     await tester.tap(find.text('Montant'));
     await tester.pump();
 
-    expect(find.text(formatFcfa(d('1000'))), findsOneWidget);
-    expect(find.text(formatFcfa(d('2000'))), findsNothing);
-    expect(find.text(formatFcfa(d('5000'))), findsNothing);
+    expect(find.text(formatAmount(d('1000'))), findsOneWidget);
+    expect(find.text(formatAmount(d('2000'))), findsNothing);
+    expect(find.text(formatAmount(d('5000'))), findsNothing);
 
-    await tester.tap(find.text(formatFcfa(d('500'))));
+    await tester.tap(find.text(formatAmount(d('500'))));
     await tester.pump();
     await tester.tap(find.text('Appliquer'));
     await tester.pumpAndSettle();
@@ -96,12 +96,10 @@ void main() {
     );
   });
 
-  testWidgets('« Autre » : saisie libre validée', (tester) async {
+  testWidgets('saisie libre validée', (tester) async {
     final result = await openSheet(tester, gross: '1500');
     await tester.tap(find.text('Montant'));
     await tester.pump();
-    await tester.tap(find.text('Autre'));
-    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), '2000');
     await tester.pump();
@@ -118,14 +116,12 @@ void main() {
     );
   });
 
-  testWidgets('« Autre » en montant : une virgule est refusée, pas recollée', (
+  testWidgets('montant : une virgule est refusée, pas recollée', (
     tester,
   ) async {
     await openSheet(tester, gross: '10000');
     await tester.tap(find.text('Montant'));
     await tester.pump();
-    await tester.tap(find.text('Autre'));
-    await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField), '50,5');
     await tester.pump();
@@ -135,21 +131,7 @@ void main() {
     expect(find.text('−${formatFcfa(d('505'))}'), findsNothing);
   });
 
-  testWidgets('réduction existante : choix présélectionné', (tester) async {
-    await openSheet(
-      tester,
-      gross: '10000',
-      initial: Discount(type: DiscountType.percentage, value: d('15')),
-    );
-    final chip = tester.widget<ChoiceChip>(
-      find.widgetWithText(ChoiceChip, '15 %'),
-    );
-    expect(chip.selected, isTrue);
-    expect(find.byType(TextField), findsNothing);
-    expect(applyButton(tester).onPressed, isNotNull);
-  });
-
-  testWidgets('réduction existante hors choix : ouverte en saisie libre', (
+  testWidgets('réduction existante : valeur reprise, applicable', (
     tester,
   ) async {
     await openSheet(
@@ -158,18 +140,19 @@ void main() {
       initial: Discount(type: DiscountType.percentage, value: d('12.5')),
     );
     expect(find.widgetWithText(TextField, '12.5'), findsOneWidget);
+    expect(find.text('−${formatFcfa(d('1250'))}'), findsOneWidget);
     expect(applyButton(tester).onPressed, isNotNull);
   });
 
-  testWidgets('retirer la réduction', (tester) async {
+  testWidgets('retirer la remise', (tester) async {
     final result = await openSheet(
       tester,
       gross: '10000',
       initial: Discount(type: DiscountType.amount, value: d('500')),
     );
-    await tester.ensureVisible(find.text('Retirer la réduction'));
+    await tester.ensureVisible(find.text('Retirer la remise'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Retirer la réduction'));
+    await tester.tap(find.text('Retirer la remise'));
     await tester.pumpAndSettle();
     expect(result(), isNotNull);
     expect(result()!.discount, isNull);

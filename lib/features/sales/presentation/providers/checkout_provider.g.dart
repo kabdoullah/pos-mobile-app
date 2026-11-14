@@ -50,7 +50,7 @@ final class CheckoutProvider
   }
 }
 
-String _$checkoutHash() => r'45297df590ccb47f6b68d337cc0b7d4932ad0af7';
+String _$checkoutHash() => r'0fc911b35d21693f98c23c2a865e5c1b2566569c';
 
 /// Brouillon de paiement de l'écran de caisse.
 ///

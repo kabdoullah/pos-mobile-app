@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 
+import '../entities/cash_count.dart';
 import '../entities/cash_session.dart';
 import '../repositories/cash_register_repository.dart';
 import 'open_cash_session_usecase.dart';
@@ -12,7 +13,10 @@ class CloseCashSessionUseCase {
   /// Repository des sessions de caisse.
   final CashRegisterRepository repository;
 
-  /// Clôture la session ouverte avec [countedAmount] (≥ 0).
+  /// Clôture la session ouverte avec [countedAmount] (≥ 0) et, en mode
+  /// billetterie, le comptage [count] dont il est le total. Le solde
+  /// théorique n'est jamais ajusté au comptage : l'écart est
+  /// `countedAmount − solde théorique`.
   ///
   /// Le solde théorique local au moment de la clôture (éventuellement
   /// négatif) devient `client_expected_amount` ; la date de clôture est
@@ -20,11 +24,13 @@ class CloseCashSessionUseCase {
   /// renvoyée à l'identique à chaque retry.
   ///
   /// Lève [CashRegisterException] : `no_open_session` sans session ouverte,
-  /// `invalid_amount` si le montant compté est négatif, `note_required` si
+  /// `invalid_amount` si le montant compté est négatif, `count_mismatch` si
+  /// le total du comptage n'est pas [countedAmount], `note_required` si
   /// l'écart n'est pas nul et le commentaire vide, `note_too_long` au-delà
   /// de 500 caractères. Le repository revérifie l'écart dans sa transaction.
   Future<CashSession> call({
     required Decimal countedAmount,
+    CashCount? count,
     String? note,
   }) async {
     final session = await repository.getActiveSession();
@@ -34,6 +40,7 @@ class CloseCashSessionUseCase {
     if (countedAmount < Decimal.zero) {
       throw const CashRegisterException(CashRegisterException.invalidAmount);
     }
+    checkCountMatches(count, countedAmount);
     final summary = await repository.watchSummary(session.id).first;
     final cleanNote = cleanCashNote(note);
     if (countedAmount != summary.expectedAmount && cleanNote == null) {
@@ -42,6 +49,7 @@ class CloseCashSessionUseCase {
     return repository.closeSession(
       sessionId: session.id,
       countedAmount: countedAmount,
+      closingCount: count,
       note: cleanNote,
     );
   }

@@ -11,6 +11,7 @@ import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/discount.dart';
 import '../../domain/entities/margin_summary.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
+import '../../domain/entities/sale_item_brief.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../models/sale_mappers.dart';
 
@@ -241,12 +242,7 @@ class SalesRepositoryImpl implements SalesRepository {
     DateTime startDate,
     DateTime endDate,
   ) {
-    final rangeStart = DateTime(startDate.year, startDate.month, startDate.day);
-    final rangeEnd = DateTime(
-      endDate.year,
-      endDate.month,
-      endDate.day,
-    ).add(const Duration(days: 1));
+    final (rangeStart, rangeEnd) = _dayBounds(startDate, endDate);
 
     return (db.select(db.sales)
           ..where(
@@ -262,6 +258,48 @@ class SalesRepositoryImpl implements SalesRepository {
           ]))
         .watch()
         .map((rows) => rows.map((s) => s.toDomain()).toList());
+  }
+
+  @override
+  Stream<Map<String, List<SaleItemBrief>>> watchSaleItemsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final (rangeStart, rangeEnd) = _dayBounds(startDate, endDate);
+    final query =
+        db.select(db.saleItems).join([
+          drift.innerJoin(db.sales, db.sales.id.equalsExp(db.saleItems.saleId)),
+        ])..where(
+          db.sales.createdAt.isBiggerOrEqualValue(rangeStart) &
+              db.sales.createdAt.isSmallerThanValue(rangeEnd),
+        );
+    return query.watch().map((rows) {
+      final bySale = <String, List<SaleItemBrief>>{};
+      for (final row in rows) {
+        final item = row.readTable(db.saleItems);
+        bySale
+            .putIfAbsent(item.saleId, () => [])
+            .add(
+              SaleItemBrief(
+                productName: item.productName,
+                quantity: item.quantity,
+              ),
+            );
+      }
+      return bySale;
+    });
+  }
+
+  /// Bornes [début du premier jour, début du lendemain du dernier jour)
+  /// en heure locale.
+  static (DateTime, DateTime) _dayBounds(DateTime startDate, DateTime endDate) {
+    final start = DateTime(startDate.year, startDate.month, startDate.day);
+    final end = DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+    ).add(const Duration(days: 1));
+    return (start, end);
   }
 
   @override
@@ -305,6 +343,15 @@ class SalesRepositoryImpl implements SalesRepository {
 
     return sales.map((s) => s.toDomain()).toList();
   }
+
+  @override
+  Stream<bool> watchHasSales() => db
+      .customSelect(
+        'SELECT EXISTS(SELECT 1 FROM sales) AS has_sales',
+        readsFrom: {db.sales},
+      )
+      .watchSingle()
+      .map((row) => row.read<int>('has_sales') == 1);
 
   @override
   Stream<DailyStats> watchTodayStats() {

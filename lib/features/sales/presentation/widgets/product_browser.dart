@@ -1,36 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
-import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
+import 'sale_product_row.dart';
 
-// Largeur minimale d'une carte en grille : une colonne (liste) sur téléphone,
-// jusqu'à 3 sur tablette.
-const double _minCardWidth = 320;
+// Largeur minimale d'une cellule en grille : une colonne (liste) sur
+// téléphone, jusqu'à 3 sur tablette.
+const double _minCellWidth = 320;
 const int _maxColumns = 3;
-// Hauteur d'une carte en grille à l'échelle de texte 1 (suit la taille de
+// Hauteur d'une cellule en grille à l'échelle de texte 1 (suit la taille de
 // police système pour éviter les débordements).
-const double _cardHeight = 132;
-const double _thumbSize = 48;
+const double _cellHeight = 88;
 
-/// Catalogue parcourable de la caisse, sous forme de slivers à insérer dans le
-/// défilement de la page : en-tête « Produits · N » puis cartes produit
-/// (liste sur téléphone, grille sur tablette).
+/// Catalogue de l'écran Vendre, sous forme de sliver : une liste à plat de
+/// lignes produit (grille sur tablette).
 ///
 /// Ne connaît ni le panier ni les règles de stock : les contrôles d'ajout
-/// (stock restant, message « Stock insuffisant ») restent dans la page, via
-/// [onQuickAdd] et [onProductTap]. [cartQuantities] ne sert qu'à l'affichage.
+/// (stock restant, message « Stock insuffisant ») restent dans la page.
+/// [cartQuantities] ne sert qu'à l'affichage.
 class ProductBrowser extends StatelessWidget {
-  /// Crée le catalogue de la caisse.
+  /// Crée le catalogue de l'écran Vendre.
   const ProductBrowser({
     required this.products,
-    required this.onProductTap,
-    required this.onQuickAdd,
+    required this.onAdd,
+    required this.onDecrease,
+    required this.onEditQuantity,
     required this.onRetry,
     required this.onAddProduct,
     this.categoryId,
@@ -41,11 +40,14 @@ class ProductBrowser extends StatelessWidget {
   /// Produits du catalogue local (flux drift).
   final AsyncValue<List<Product>> products;
 
-  /// Ouvre le choix de quantité du produit.
-  final ValueChanged<Product> onProductTap;
+  /// Ajoute une unité du produit (toucher la ligne).
+  final ValueChanged<Product> onAdd;
 
-  /// Ajoute une unité du produit.
-  final ValueChanged<Product> onQuickAdd;
+  /// Retire une unité du produit (stepper).
+  final ValueChanged<Product> onDecrease;
+
+  /// Ouvre la saisie détaillée de la quantité.
+  final ValueChanged<Product> onEditQuantity;
 
   /// Relance le chargement après une erreur.
   final VoidCallback onRetry;
@@ -67,11 +69,14 @@ class ProductBrowser extends StatelessWidget {
       final all = products.requireValue;
       if (all.isEmpty) {
         return SliverFillRemaining(
+          hasScrollBody: false,
           child: EmptyState(
-            icon: Icons.inventory_2_outlined,
-            title: 'Aucun produit disponible',
-            message: 'Ajoutez votre premier produit pour commencer à vendre.',
-            actionLabel: 'Ajouter un produit',
+            graphic: const PackageIcon(size: 32),
+            title: 'Aucun produit pour l’instant',
+            message:
+                'Ajoutez vos produits une fois ; ensuite, un toucher suffit '
+                'pour vendre.',
+            actionLabel: 'Créer un produit',
             onAction: onAddProduct,
           ),
         );
@@ -81,29 +86,27 @@ class ProductBrowser extends StatelessWidget {
         filter: StockFilter.all,
         categoryId: categoryId,
       );
-      return SliverMainAxisGroup(
-        slivers: [
-          _Header(count: list.length),
-          if (list.isEmpty)
-            const _Message('Aucun produit dans cette catégorie.')
-          else
-            _ProductGrid(
-              itemCount: list.length,
-              itemBuilder: (context, index) {
-                final product = list[index];
-                return _ProductCard(
-                  product: product,
-                  inCart: cartQuantities[product.id] ?? 0,
-                  onTap: onProductTap,
-                  onQuickAdd: onQuickAdd,
-                );
-              },
-            ),
-        ],
+      if (list.isEmpty) {
+        return const _Message('Aucun produit dans cette catégorie.');
+      }
+      return _ProductList(
+        itemCount: list.length,
+        itemBuilder: (context, index) {
+          final product = list[index];
+          return SaleProductRow(
+            key: ValueKey(product.id),
+            product: product,
+            inCart: cartQuantities[product.id] ?? 0,
+            onAdd: () => onAdd(product),
+            onDecrease: () => onDecrease(product),
+            onEditQuantity: () => onEditQuantity(product),
+          );
+        },
       );
     }
     if (products.hasError) {
       return SliverFillRemaining(
+        hasScrollBody: false,
         child: EmptyState(
           icon: Icons.error_outline,
           title: 'Impossible de charger les produits',
@@ -113,25 +116,14 @@ class ProductBrowser extends StatelessWidget {
         ),
       );
     }
-    return _ProductGrid(
+    return _ProductList(
       itemCount: 6,
-      itemBuilder: (_, _) =>
-          const SkeletonBox(height: 72, radius: AppSpacing.radiusMd),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.count});
-
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      sliver: SliverToBoxAdapter(
-        child: SectionHeader(title: 'Produits', count: count),
+      itemBuilder: (_, _) => const Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: SkeletonBox(height: 48, radius: AppSpacing.radiusSm),
       ),
     );
   }
@@ -151,7 +143,7 @@ class _Message extends StatelessWidget {
           text,
           textAlign: TextAlign.center,
           style: AppTypography.bodyMedium.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            color: AppColors.of(context).textSecondary,
           ),
         ),
       ),
@@ -159,47 +151,37 @@ class _Message extends StatelessWidget {
   }
 }
 
-/// Liste (une colonne) ou grille paresseuse selon la largeur disponible.
-///
-/// Sur téléphone, les produits forment une seule surface à plat, séparée par
-/// des filets : l'œil parcourt une liste, pas une pile de cartes.
-class _ProductGrid extends StatelessWidget {
-  const _ProductGrid({required this.itemCount, required this.itemBuilder});
+/// Liste pleine largeur séparée par des filets, ou grille selon la largeur.
+class _ProductList extends StatelessWidget {
+  const _ProductList({required this.itemCount, required this.itemBuilder});
 
   final int itemCount;
-  final NullableIndexedWidgetBuilder itemBuilder;
+  final IndexedWidgetBuilder itemBuilder;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final height = MediaQuery.textScalerOf(context).scale(_cardHeight);
-    final radius = BorderRadius.circular(AppSpacing.radiusMd);
-    final surface = BoxDecoration(
-      color: cs.surface,
-      borderRadius: radius,
-      border: Border.all(color: cs.outlineVariant),
-    );
-    return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        0,
-        AppSpacing.md,
-        AppSpacing.md,
-      ),
-      sliver: SliverLayoutBuilder(
-        builder: (context, constraints) {
-          final columns = (constraints.crossAxisExtent / _minCardWidth)
-              .floor()
-              .clamp(1, _maxColumns);
-          if (columns == 1) {
-            // Liste : hauteur naturelle, pas de risque de débordement.
-            return SliverAppListGroup(
-              itemCount: itemCount,
-              dividerIndent: AppSpacing.md + _thumbSize + AppSpacing.sm,
-              itemBuilder: (context, index) => itemBuilder(context, index)!,
-            );
-          }
-          return SliverGrid.builder(
+    final colors = AppColors.of(context);
+    final divider = BorderSide(color: colors.border);
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final columns = (constraints.crossAxisExtent / _minCellWidth)
+            .floor()
+            .clamp(1, _maxColumns);
+        if (columns == 1) {
+          // Liste : hauteur naturelle, pas de risque de débordement.
+          return SliverList.builder(
+            itemCount: itemCount,
+            itemBuilder: (context, index) => DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(border: Border(bottom: divider)),
+              child: itemBuilder(context, index),
+            ),
+          );
+        }
+        final height = MediaQuery.textScalerOf(context).scale(_cellHeight);
+        return SliverPadding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          sliver: SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: columns,
               mainAxisExtent: height,
@@ -208,149 +190,19 @@ class _ProductGrid extends StatelessWidget {
             ),
             itemCount: itemCount,
             itemBuilder: (context, index) => DecoratedBox(
-              decoration: surface,
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(
+                border: Border.fromBorderSide(divider),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+              ),
               child: ClipRRect(
-                borderRadius: radius,
-                child: itemBuilder(context, index),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                child: Center(child: itemBuilder(context, index)),
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-/// Ligne produit : photo, nom, puis prix, stock et quantité au panier ; un
-/// bouton « + » carré ajoute une unité.
-///
-/// Le prix d'achat n'est jamais affiché en caisse (ADR-0009).
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({
-    required this.product,
-    required this.inCart,
-    required this.onTap,
-    required this.onQuickAdd,
-  });
-
-  final Product product;
-  final int inCart;
-  final ValueChanged<Product> onTap;
-  final ValueChanged<Product> onQuickAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final stock = product.currentStock;
-    final outOfStock = stock != null && stock <= 0;
-
-    // Material propre : l'encre reste visible au-dessus du fond de la liste.
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: outOfStock ? null : () => onTap(product),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm + AppSpacing.xs,
-            AppSpacing.sm,
-            AppSpacing.sm + AppSpacing.xs,
           ),
-          child: Row(
-            children: [
-              Opacity(
-                opacity: outOfStock ? 0.5 : 1,
-                child: ProductThumbnail(product: product, size: _thumbSize),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
-                        color: outOfStock ? cs.onSurfaceVariant : cs.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          formatFcfa(product.sellingPrice),
-                          maxLines: 1,
-                          style: AppTypography.labelLarge.copyWith(
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: AppTypography.tabularFigures,
-                            color: outOfStock
-                                ? cs.onSurfaceVariant
-                                : cs.primary,
-                          ),
-                        ),
-                        StockStatusBadge(product: product, showQuantity: true),
-                        if (inCart > 0) _InCartPill(quantity: inCart),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton.filledTonal(
-                tooltip: 'Ajouter ${product.name}',
-                onPressed: outOfStock ? null : () => onQuickAdd(product),
-                icon: const Icon(Icons.add),
-                style: IconButton.styleFrom(
-                  // secondaryContainer (or très pâle) disparaît sur fond blanc.
-                  backgroundColor: cs.primaryContainer,
-                  foregroundColor: cs.onPrimaryContainer,
-                  minimumSize: const Size.square(AppSpacing.iconButtonSize),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Pastille « N au panier » : l'ajout est visible même si le panier est plus
-/// bas dans la page.
-class _InCartPill extends StatelessWidget {
-  const _InCartPill({required this.quantity});
-
-  final int quantity;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: cs.primaryContainer,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 2,
-        ),
-        child: Text(
-          '$quantity au panier',
-          style: AppTypography.labelSmall.copyWith(
-            color: cs.onPrimaryContainer,
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

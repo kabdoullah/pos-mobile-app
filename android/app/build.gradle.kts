@@ -15,7 +15,9 @@ if (keyPropertiesFile.exists()) {
 
 android {
     namespace = "ci.pos.macaisse"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android exige la compilation contre l'API 37
+    // (rétrocompatible : targetSdk reste celui de Flutter).
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

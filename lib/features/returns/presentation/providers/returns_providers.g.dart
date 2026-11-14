@@ -334,7 +334,7 @@ final class SaleReturnSubmissionProvider
 }
 
 String _$saleReturnSubmissionHash() =>
-    r'fb333177f4f35d421ceaea36338df6b588dda23b';
+    r'8f601be805529546bb027813add699ef6c54a305';
 
 /// Enregistre un retour.
 ///

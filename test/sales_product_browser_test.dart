@@ -37,8 +37,8 @@ final catalog = [
 
 /// Appels reçus par le catalogue.
 class Calls {
-  final taps = <String>[];
-  final quickAdds = <String>[];
+  final adds = <String>[];
+  final edits = <String>[];
   int retries = 0;
   int addProduct = 0;
 }
@@ -67,8 +67,9 @@ Future<Calls> pump(
                 products: products,
                 categoryId: categoryId,
                 cartQuantities: cartQuantities,
-                onProductTap: (p) => calls.taps.add(p.id),
-                onQuickAdd: (p) => calls.quickAdds.add(p.id),
+                onAdd: (p) => calls.adds.add(p.id),
+                onDecrease: (_) {},
+                onEditQuantity: (p) => calls.edits.add(p.id),
                 onRetry: () => calls.retries++,
                 onAddProduct: () => calls.addProduct++,
               ),
@@ -99,29 +100,33 @@ void main() {
     ('clair', AppTheme.light()),
     ('sombre', AppTheme.dark()),
   ]) {
-    testWidgets('affiche nom, prix de vente et stock, thème $name', (
+    testWidgets('nom, prix ; stock seulement bas ou épuisé, thème $name', (
       tester,
     ) async {
       await pump(tester, AsyncData(catalog), theme: theme);
       expect(tester.takeException(), isNull);
       expect(find.text('Coca-Cola 33cl'), findsOneWidget);
-      expect(find.text(formatFcfa(Decimal.parse('2000'))), findsOneWidget);
-      expect(find.text('Produits'), findsOneWidget);
-      expect(find.text('4'), findsOneWidget);
-      expect(find.text('Stock : 24'), findsOneWidget);
-      expect(find.text('Faible : 3'), findsOneWidget);
-      expect(find.text('Rupture'), findsOneWidget);
+      expect(
+        find.textContaining(formatFcfa(Decimal.parse('2000'))),
+        findsOneWidget,
+      );
+      expect(find.textContaining('24'), findsNothing);
+      expect(find.textContaining('Stock bas · 3'), findsOneWidget);
+      expect(find.textContaining('Rupture'), findsOneWidget);
       // Le prix d'achat n'apparaît jamais en caisse.
       expect(find.textContaining('1 234'), findsNothing);
     });
   }
 
-  testWidgets('le bouton + ajoute, la carte ouvre la quantité', (tester) async {
+  testWidgets('toucher la ligne ajoute, l’appui long ouvre la quantité', (
+    tester,
+  ) async {
     final calls = await pump(tester, AsyncData(catalog));
-    await tester.tap(find.byTooltip('Ajouter Coca-Cola 33cl'));
-    await tester.tap(find.text('Pain'));
-    expect(calls.quickAdds, ['Coca-Cola 33cl']);
-    expect(calls.taps, ['Pain']);
+    await tester.tap(find.text('Coca-Cola 33cl'));
+    await tester.tap(find.byTooltip('Ajouter Pain'));
+    await tester.longPress(find.text('Savon'));
+    expect(calls.adds, ['Coca-Cola 33cl', 'Pain']);
+    expect(calls.edits, ['Savon']);
   });
 
   testWidgets('produit en rupture : visible mais non ajoutable', (
@@ -130,14 +135,15 @@ void main() {
     final calls = await pump(tester, AsyncData(catalog));
     await tester.tap(find.byTooltip('Ajouter Fanta'));
     await tester.tap(find.text('Fanta'));
-    expect(calls.quickAdds, isEmpty);
-    expect(calls.taps, isEmpty);
+    await tester.longPress(find.text('Fanta'));
+    expect(calls.adds, isEmpty);
+    expect(calls.edits, isEmpty);
   });
 
   testWidgets('catalogue vide : invite à créer un produit', (tester) async {
     final calls = await pump(tester, const AsyncData(<Product>[]));
-    expect(find.text('Aucun produit disponible'), findsOneWidget);
-    await tester.tap(find.text('Ajouter un produit'));
+    expect(find.text('Aucun produit pour l’instant'), findsOneWidget);
+    await tester.tap(find.text('Créer un produit'));
     expect(calls.addProduct, 1);
   });
 
@@ -176,8 +182,9 @@ void main() {
                 slivers: [
                   ProductBrowser(
                     products: ref.watch(products),
-                    onProductTap: (_) {},
-                    onQuickAdd: (_) {},
+                    onAdd: (_) {},
+                    onDecrease: (_) {},
+                    onEditQuantity: (_) {},
                     onRetry: () {},
                     onAddProduct: () {},
                   ),
@@ -197,23 +204,24 @@ void main() {
     expect(find.text('Impossible de charger les produits'), findsNothing);
   });
 
-  testWidgets('catégorie : seuls ses produits, compteur ajusté', (
-    tester,
-  ) async {
+  testWidgets('catégorie : seuls ses produits', (tester) async {
     await pump(tester, AsyncData(catalog), categoryId: 'boissons');
     expect(find.text('Coca-Cola 33cl'), findsOneWidget);
     expect(find.text('Fanta'), findsOneWidget);
     expect(find.text('Pain'), findsNothing);
-    expect(find.text('2'), findsOneWidget);
   });
 
-  testWidgets('quantité déjà au panier affichée sur la carte', (tester) async {
+  testWidgets('au panier : stepper avec la quantité à la place du +', (
+    tester,
+  ) async {
     await pump(
       tester,
       AsyncData(catalog),
       cartQuantities: const {'Coca-Cola 33cl': 2},
     );
-    expect(find.text('2 au panier'), findsOneWidget);
+    expect(find.byType(QuantityStepper), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.byTooltip('Ajouter Coca-Cola 33cl'), findsNothing);
   });
 
   testWidgets('liste sur téléphone, grille sur tablette', (tester) async {

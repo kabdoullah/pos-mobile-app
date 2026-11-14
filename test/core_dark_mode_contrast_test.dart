@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mobile/app/theme/app_colors.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/widgets/index.dart';
 
@@ -80,21 +82,21 @@ void main() {
       final dialogSurface =
           theme.dialogTheme.backgroundColor ??
           theme.colorScheme.surfaceContainerHigh;
-      final cancel = tester.widget<Text>(find.text('Annuler'));
+      // Couleur effectivement peinte (style du thème fusionné).
+      Color painted(String text) => tester
+          .renderObject<RenderParagraph>(find.text(text))
+          .text
+          .style!
+          .color!;
+
       expect(
-        contrast(cancel.style!.color!, dialogSurface),
+        contrast(painted('Annuler'), dialogSurface),
         greaterThanOrEqualTo(4.5),
       );
 
-      final confirm = tester.widget<ElevatedButton>(
-        find.ancestor(
-          of: find.text('Vider'),
-          matching: find.byType(ElevatedButton),
-        ),
-      );
-      final bg = confirm.style!.backgroundColor!.resolve({})!;
-      final fg = confirm.style!.foregroundColor!.resolve({})!;
-      expect(contrast(fg, bg), greaterThanOrEqualTo(4.5));
+      // Action destructive : texte `surface` sur fond `error`.
+      final bg = AppColors.of(tester.element(find.text('Vider'))).error;
+      expect(contrast(painted('Vider'), bg), greaterThanOrEqualTo(4.5));
     });
   }
 }

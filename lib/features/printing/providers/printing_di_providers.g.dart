@@ -68,3 +68,56 @@ final class PrinterRepositoryProvider
 }
 
 String _$printerRepositoryHash() => r'12dc50495b14aa16f4be73503fba9626d3b6cd7b';
+
+/// Fournit le stockage de l'imprimante mémorisée.
+
+@ProviderFor(savedPrinterRepository)
+final savedPrinterRepositoryProvider = SavedPrinterRepositoryProvider._();
+
+/// Fournit le stockage de l'imprimante mémorisée.
+
+final class SavedPrinterRepositoryProvider
+    extends
+        $FunctionalProvider<
+          SavedPrinterRepository,
+          SavedPrinterRepository,
+          SavedPrinterRepository
+        >
+    with $Provider<SavedPrinterRepository> {
+  /// Fournit le stockage de l'imprimante mémorisée.
+  SavedPrinterRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'savedPrinterRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$savedPrinterRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<SavedPrinterRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SavedPrinterRepository create(Ref ref) {
+    return savedPrinterRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SavedPrinterRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SavedPrinterRepository>(value),
+    );
+  }
+}
+
+String _$savedPrinterRepositoryHash() =>
+    r'08c1bdda2a17051fbc2c6312fed9fd6a36f68361';

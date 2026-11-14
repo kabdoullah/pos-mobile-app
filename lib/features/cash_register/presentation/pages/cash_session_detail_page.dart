@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_session_detail.dart';
@@ -14,6 +16,7 @@ import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 import '../widgets/cash_movement_tile.dart';
+import '../widgets/cash_count_details.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/cash_summary_card.dart';
 import '../widgets/discrepancy_badge.dart';
@@ -90,11 +93,25 @@ class CashSessionDetailPage extends ConsumerWidget {
                 ),
                 notices: _serverNotices(detail),
                 movements: detail.movements,
+                openingCount: detail.openingCount,
+                closingCount: detail.closingCount,
               ),
       );
     }
 
-    return AppScaffold(title: 'Session de caisse', body: body);
+    final openedAt = (localSession ?? remote.value?.session)?.openedAt;
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: Text(
+          openedAt == null
+              ? 'Session de caisse'
+              : 'Session du '
+                    '${DateFormat('d MMM', 'fr_FR').format(openedAt.toLocal())}',
+        ),
+      ),
+      body: body,
+    );
   }
 }
 
@@ -147,6 +164,22 @@ class _LocalSessionBody extends ConsumerWidget {
     final localSummary = ref.watch(cashSummaryProvider(session.id));
     final localMovements = ref.watch(cashMovementsProvider(session.id));
     final serverDetail = this.serverDetail;
+    // Comptages : ceux de l'appareil, sinon ceux du serveur (session
+    // restaurée).
+    final openingCount =
+        ref
+            .watch(
+              localCashCountProvider(session.id, CashCountOperation.opening),
+            )
+            .value ??
+        serverDetail?.openingCount;
+    final closingCount =
+        ref
+            .watch(
+              localCashCountProvider(session.id, CashCountOperation.closing),
+            )
+            .value ??
+        serverDetail?.closingCount;
     final frozenExpected = session.expectedAmount;
     final rejectedRefunds = localSummary.value?.rejectedCashRefunds;
     final rejectionCode = session.rejectionCode;
@@ -161,7 +194,10 @@ class _LocalSessionBody extends ConsumerWidget {
       );
     } else {
       summary = localSummary.when(
-        loading: () => const SkeletonBox(height: 280),
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: SkeletonBox(height: 280),
+        ),
         error: (e, _) => CashNoticeBanner(
           level: CashNoticeLevel.error,
           message: cashRegisterErrorMessage(e),
@@ -205,9 +241,10 @@ class _LocalSessionBody extends ConsumerWidget {
       if (rejectedRefunds != null && rejectedRefunds > Decimal.zero)
         CashNoticeBanner(
           level: CashNoticeLevel.warning,
+          title: 'Retour refusé',
           message:
-              'Retour refusé : ${formatFcfa(rejectedRefunds)} rendus non '
-              'comptés',
+              '${formatFcfa(rejectedRefunds)} rendus non comptés dans le '
+              'solde.',
         ),
     ];
 
@@ -217,11 +254,14 @@ class _LocalSessionBody extends ConsumerWidget {
       notices: notices,
       movements: serverDetail?.movements ?? localMovements.value,
       movementsError: serverDetail == null && localMovements.hasError,
+      openingCount: openingCount,
+      closingCount: closingCount,
     );
   }
 }
 
-/// Mise en page commune : avertissements, chiffres, clôture, mouvements.
+/// Mise en page commune : avertissements en tête, statut, chiffres,
+/// comptage d'ouverture, clôture et son comptage, mouvements.
 class _SessionBody extends StatelessWidget {
   const _SessionBody({
     required this.session,
@@ -229,11 +269,17 @@ class _SessionBody extends StatelessWidget {
     required this.notices,
     required this.movements,
     this.movementsError = false,
+    this.openingCount,
+    this.closingCount,
   });
 
   final CashSession session;
   final Widget summary;
   final List<Widget> notices;
+
+  /// Billetterie d'ouverture et de clôture ; null en « Total seulement ».
+  final CashCount? openingCount;
+  final CashCount? closingCount;
 
   /// Mouvements ; null pendant le chargement.
   final List<CashMovement>? movements;
@@ -241,58 +287,84 @@ class _SessionBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final movements = this.movements;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.xl,
+    final isClosed = session.status == CashSessionStatus.closed;
+    final (syncLabel, syncTone) = switch (session) {
+      CashSession(rejectionCode: _?) => ('Refusée', StatusTone.error),
+      CashSession(syncStatus: CashSyncStatus.pending) => (
+        'En attente de synchro',
+        StatusTone.warning,
       ),
+      _ => ('Synchronisée', StatusTone.success),
+    };
+    return ListView(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
       children: [
-        for (final notice in notices) ...[
-          notice,
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        if (notices.isNotEmpty) const SizedBox(height: AppSpacing.sm),
-        summary,
-        if (session.status == CashSessionStatus.closed) ...[
-          const SizedBox(height: AppSpacing.md),
-          _ClosingCard(session: session),
-        ],
-        const SizedBox(height: AppSpacing.lg),
-        SectionHeader(
-          title: 'Mouvements',
-          count: movements == null || movements.isEmpty
-              ? null
-              : movements.length,
+        ...notices,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
+          child: Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
+            children: [
+              StatusIndicator(
+                label: isClosed ? 'Clôturée' : 'En cours',
+                tone: isClosed ? StatusTone.success : StatusTone.neutral,
+              ),
+              StatusIndicator(label: syncLabel, tone: syncTone),
+            ],
+          ),
         ),
+        summary,
+        if (openingCount case final count?)
+          CashCountDetails(
+            title:
+                "Comptage d'ouverture · "
+                '${DateFormat.Hm('fr_FR').format(session.openedAt.toLocal())}',
+            count: count,
+            collapsible: true,
+          ),
+        if (isClosed) _Closing(session: session),
+        if (closingCount case final count?)
+          CashCountDetails(
+            title: switch (session.closedAt) {
+              final closedAt? =>
+                'Comptage de clôture · '
+                    '${DateFormat.Hm('fr_FR').format(closedAt.toLocal())}',
+              null => 'Comptage de clôture',
+            },
+            count: count,
+          ),
+        const OverlineHeader('Mouvements'),
         if (movementsError)
           const CashNoticeBanner(
             level: CashNoticeLevel.error,
             message: 'Impossible de lire les mouvements.',
           )
         else if (movements == null)
-          const SkeletonBox(height: 120)
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: SkeletonBox(height: 120),
+          )
         else if (movements.isEmpty)
-          Text(
-            "Aucune entrée ni sortie d'espèces.",
-            style: AppTypography.bodyMedium.copyWith(
-              color: cs.onSurfaceVariant,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Text(
+              "Aucune entrée ni sortie d'espèces.",
+              style: AppTypography.body.copyWith(color: colors.textSecondary),
             ),
           )
         else
-          AppListGroup(
-            dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+          FlatList(
             children: [
               for (final movement in movements)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  child: CashMovementTile(movement: movement),
-                ),
+                CashMovementTile(movement: movement),
             ],
           ),
       ],
@@ -300,60 +372,64 @@ class _SessionBody extends StatelessWidget {
   }
 }
 
-/// Résultat de la clôture : montant compté, écart, date et commentaire.
-class _ClosingCard extends StatelessWidget {
-  const _ClosingCard({required this.session});
+/// Résultat de la clôture : heure, montant compté, écart et commentaire.
+class _Closing extends StatelessWidget {
+  const _Closing({required this.session});
 
   final CashSession session;
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant);
+    final colors = AppColors.of(context);
     final counted = session.countedAmount;
     final discrepancy = session.discrepancyAmount;
     final closedAt = session.closedAt;
     final note = session.closingNote;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('Clôture', style: AppTypography.titleMedium),
-          if (closedAt != null)
-            Text(
-              DateFormat(
-                "'Le' d MMM yyyy 'à' HH:mm",
-                'fr_FR',
-              ).format(closedAt.toLocal()),
-              style: muted,
-            ),
-          if (counted != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Semantics(
-              container: true,
-              label: 'Montant compté : ${formatFcfa(counted)}',
-              excludeSemantics: true,
-              child: Row(
-                children: [
-                  Expanded(child: Text('Montant compté', style: muted)),
-                  AmountDisplay(amount: counted),
-                ],
-              ),
-            ),
-          ],
-          if (discrepancy != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: DiscrepancyBadge(discrepancy: discrepancy),
-            ),
-          ],
-          if (note != null && note.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text('Commentaire : $note', style: muted),
-          ],
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OverlineHeader(
+          closedAt == null
+              ? 'Clôture'
+              : 'Clôture · ${DateFormat.Hm('fr_FR').format(closedAt.toLocal())}',
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (counted != null)
+                DefinitionRow(label: 'Compté', value: formatFcfa(counted)),
+              if (discrepancy != null)
+                DefinitionRow(
+                  label: discrepancyRowLabel(discrepancy),
+                  value: signedDiscrepancy(discrepancy),
+                  color: discrepancyTone(discrepancy).colorIn(context),
+                  semanticsLabel: discrepancyLabel(discrepancy),
+                  showDivider: note != null && note.isNotEmpty,
+                ),
+              if (note != null && note.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.sm + 3,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Commentaire',
+                        style: AppTypography.body.copyWith(
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                      Text(note, style: AppTypography.body),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -431,7 +507,6 @@ class _ClosingNoteRequiredBannerState
           const SizedBox(height: AppSpacing.sm),
           PrimaryButton(
             label: 'Renvoyer la clôture',
-            icon: Icons.send_outlined,
             isLoading: _isLoading,
             onPressed: _isLoading ? null : _resubmit,
           ),
@@ -449,9 +524,11 @@ class _DetailSkeleton extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: const [
-        SkeletonBox(height: 280),
-        SizedBox(height: AppSpacing.md),
-        SkeletonBox(height: 120),
+        SkeletonBox(width: 160, height: 16),
+        SizedBox(height: AppSpacing.sm),
+        SkeletonBox(width: 220, height: 32),
+        SizedBox(height: AppSpacing.lg),
+        SkeletonBox(height: 200),
       ],
     );
   }

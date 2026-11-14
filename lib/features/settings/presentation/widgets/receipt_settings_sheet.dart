@@ -23,7 +23,6 @@ Future<void> showReceiptSettingsSheet(BuildContext context, Store store) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => ReceiptSettingsSheet(store: store),
   );
 }
@@ -93,14 +92,14 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Reçus', style: AppTypography.titleLarge),
+              const Text('Reçus', style: AppTypography.sectionTitle),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Nom, adresse, téléphone et NCC viennent de « Mon magasin » ; '
@@ -209,7 +208,7 @@ class _TicketPreview extends StatelessWidget {
                 ),
               Text(
                 store.name,
-                style: style.copyWith(fontWeight: FontWeight.bold),
+                style: style.copyWith(fontWeight: FontWeight.w600),
               ),
               if (ncc != null && ncc.isNotEmpty) Text('NCC: $ncc'),
               if (address != null && address.isNotEmpty) Text(address),

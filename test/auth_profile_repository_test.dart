@@ -184,4 +184,48 @@ void main() {
       verify(() => prefs.remove('email_reminder_snoozed_until')).called(1);
     });
   });
+
+  group('premiers pas masqués, liés au compte', () {
+    late Map<String, List<String>> lists;
+    late String? userId;
+    late ProfileRepositoryImpl perUser;
+
+    setUp(() {
+      lists = {};
+      userId = 'u1';
+      when(() => prefs.getStringList(any())).thenAnswer(
+        (inv) async => lists[inv.positionalArguments.first as String],
+      );
+      when(() => prefs.setStringList(any(), any())).thenAnswer((inv) async {
+        lists[inv.positionalArguments[0] as String] =
+            inv.positionalArguments[1] as List<String>;
+      });
+      perUser = ProfileRepositoryImpl(
+        remoteDataSource: remote,
+        prefs: prefs,
+        currentUserId: () async => userId,
+      );
+    });
+
+    test('masqué pour ce compte, gardé après déconnexion', () async {
+      expect(await perUser.firstStepsHidden(), isFalse);
+      await perUser.hideFirstSteps();
+      // Déconnexion puis reconnexion du même compte.
+      await perUser.clearLocal();
+      expect(await perUser.firstStepsHidden(), isTrue);
+    });
+
+    test('un autre compte ne l\'hérite pas', () async {
+      await perUser.hideFirstSteps();
+      userId = 'u2';
+      expect(await perUser.firstStepsHidden(), isFalse);
+    });
+
+    test('sans compte connecté : rien n\'est masqué ni écrit', () async {
+      userId = null;
+      await perUser.hideFirstSteps();
+      expect(await perUser.firstStepsHidden(), isFalse);
+      expect(lists, isEmpty);
+    });
+  });
 }

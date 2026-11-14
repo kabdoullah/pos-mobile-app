@@ -81,23 +81,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!_submitted || _phoneValid) return _serverError(RegisterField.phone);
     return _phone.isEmpty
         ? 'Saisissez votre numéro de téléphone.'
-        : isValidLocalPhoneCi(_phone)
-        ? 'Saisissez un numéro mobile (01, 05 ou 07).'
-        : 'Numéro à 10 chiffres, ex. 07 00 00 00 00.';
+        : '10 chiffres, commençant par 01, 05 ou 07.';
   }
 
   String? get _emailError {
     if (!_submitted || _emailValid) return _serverError(RegisterField.email);
     return _email.isEmpty
-        ? 'Saisissez votre adresse email.'
-        : 'Adresse email invalide.';
+        ? 'Saisissez votre adresse e-mail.'
+        : 'Adresse e-mail invalide. Ex. : boutique@gmail.com';
   }
 
   String? get _passwordError {
     if (!_submitted || _passwordValid) return null;
     return _password.isEmpty
         ? 'Choisissez un mot de passe.'
-        : 'Au moins $_minPasswordLength caractères.';
+        : 'Trop court : au moins $_minPasswordLength caractères.';
   }
 
   /// Signalé dès que la confirmation est aussi longue que le mot de passe
@@ -108,7 +106,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       return _submitted ? 'Confirmez votre mot de passe.' : null;
     }
     return _submitted || _confirm.length >= _password.length
-        ? 'Les mots de passe ne correspondent pas.'
+        ? 'Les deux mots de passe sont différents.'
         : null;
   }
 
@@ -187,8 +185,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Email',
-                hint: 'Pour récupérer votre mot de passe',
+                label: 'E-mail',
+                hint: 'Ex. : boutique@gmail.com',
+                // Sous le champ (maquette) : l'indice coupait la phrase.
+                helper: Text(
+                  'Pour récupérer votre mot de passe en cas d’oubli.',
+                  style: AppTypography.meta.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 errorText: _emailError,
@@ -208,7 +213,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 autofillHints: const [AutofillHints.newPassword],
                 onChanged: (_) => _onEdited(),
                 helper: ValidationHint(
-                  label: 'Au moins $_minPasswordLength caractères',
+                  label: _passwordValid
+                      ? 'Longueur minimale atteinte'
+                      : 'Au moins $_minPasswordLength caractères',
                   isMet: _passwordValid,
                 ),
               ),
@@ -225,7 +232,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 onSubmitted: (_) => _register(),
                 helper: _passwordsMatch
                     ? const ValidationHint(
-                        label: 'Les mots de passe correspondent',
+                        label: 'Les deux mots de passe sont identiques',
                         isMet: true,
                       )
                     : null,
@@ -239,7 +246,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Vous avez déjà un compte ?',
+                'J’ai déjà un compte',
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMedium.copyWith(
                   color: cs.onSurfaceVariant,
