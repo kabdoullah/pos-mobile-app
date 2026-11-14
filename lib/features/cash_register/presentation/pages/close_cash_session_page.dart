@@ -25,17 +25,41 @@ import '../widgets/discrepancy_badge.dart';
 /// total seulement) sans le solde attendu, puis récapitulatif avec l'écart
 /// (équilibrée, excédent, déficit), commentaire obligatoire en cas d'écart et
 /// confirmation.
-class CloseCashSessionPage extends ConsumerWidget {
+class CloseCashSessionPage extends ConsumerStatefulWidget {
   /// Crée l'écran de clôture.
   const CloseCashSessionPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CloseCashSessionPage> createState() =>
+      _CloseCashSessionPageState();
+}
+
+class _CloseCashSessionPageState extends ConsumerState<CloseCashSessionPage> {
+  /// Étape affichée par le formulaire : récapitulatif (2) ou comptage (1).
+  bool _onSummary = false;
+
+  @override
+  Widget build(BuildContext context) {
     final active = ref.watch(activeCashSessionProvider);
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
+        // Au récapitulatif, le retour revient au comptage (PopScope du
+        // formulaire).
+        leading: BackButton(onPressed: () => Navigator.of(context).maybePop()),
         title: const Text('Clôturer la caisse'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: Center(
+              child: Text(
+                'Étape ${_onSummary ? 2 : 1} sur 2',
+                style: AppTypography.meta.copyWith(
+                  color: AppColors.of(context).textSecondary,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: active.when(
         loading: () => const _CloseSkeleton(),
@@ -66,7 +90,12 @@ class CloseCashSessionPage extends ConsumerWidget {
               actionLabel: 'Réessayer',
               onAction: () => ref.invalidate(cashSummaryProvider(session.id)),
             ),
-            data: (summary) => _CloseForm(session: session, summary: summary),
+            data: (summary) => _CloseForm(
+              session: session,
+              summary: summary,
+              onStepChanged: (onSummary) =>
+                  setState(() => _onSummary = onSummary),
+            ),
           );
         },
       ),
@@ -75,10 +104,18 @@ class CloseCashSessionPage extends ConsumerWidget {
 }
 
 class _CloseForm extends ConsumerStatefulWidget {
-  const _CloseForm({required this.session, required this.summary});
+  const _CloseForm({
+    required this.session,
+    required this.summary,
+    required this.onStepChanged,
+  });
 
   final CashSession session;
   final CashSummary summary;
+
+  /// Signale le passage au récapitulatif (vrai) ou au comptage (faux), pour
+  /// l'indicateur d'étape de la barre de titre.
+  final ValueChanged<bool> onStepChanged;
 
   @override
   ConsumerState<_CloseForm> createState() => _CloseFormState();
@@ -134,6 +171,7 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
       if (!_noteRequired) _noteError = null;
       _showSummary = true;
     });
+    widget.onStepChanged(true);
   }
 
   Future<void> _submit() async {
@@ -202,26 +240,16 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     return PopScope(
       canPop: !_showSummary,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) setState(() => _showSummary = false);
+        if (!didPop) _backToCount();
       },
       child: _showSummary ? _buildSummary(context) : _buildCount(context),
     );
   }
 
-  Widget _stepLabel(BuildContext context, String text) => Padding(
-    padding: const EdgeInsets.fromLTRB(
-      AppSpacing.md,
-      AppSpacing.xs,
-      AppSpacing.md,
-      0,
-    ),
-    child: Text(
-      text,
-      style: AppTypography.meta.copyWith(
-        color: AppColors.of(context).textSecondary,
-      ),
-    ),
-  );
+  void _backToCount() {
+    setState(() => _showSummary = false);
+    widget.onStepChanged(false);
+  }
 
   /// Étape 1 : comptage, sans le solde attendu.
   Widget _buildCount(BuildContext context) {
@@ -237,7 +265,6 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
           child: ListView(
             padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             children: [
-              _stepLabel(context, 'Étape 1 sur 2'),
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -294,6 +321,7 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
           ),
         ),
         CashCountTotalBar(
+          showTotal: byDenomination,
           label: byDenomination && breakdown.isNotEmpty
               ? 'Total compté · $breakdown'
               : 'Total compté',
@@ -325,7 +353,6 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
           child: ListView(
             padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             children: [
-              _stepLabel(context, 'Étape 2 sur 2'),
               if (summary.rejectedCashRefunds > Decimal.zero)
                 Padding(
                   padding: const EdgeInsets.only(top: AppSpacing.sm),
@@ -368,7 +395,7 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () => setState(() => _showSummary = false),
+                      onPressed: _backToCount,
                       child: const Text('Modifier'),
                     ),
                   ],

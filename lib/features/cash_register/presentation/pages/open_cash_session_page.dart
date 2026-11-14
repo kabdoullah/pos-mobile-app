@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
@@ -117,6 +118,17 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
     _amountError = null;
   });
 
+  /// « Samedi 14 novembre · matin » : jour du comptage et moment.
+  static String _countMoment(DateTime now) {
+    final day = DateFormat('EEEE d MMMM', 'fr_FR').format(now);
+    final moment = now.hour < 12
+        ? 'matin'
+        : now.hour < 18
+        ? 'après-midi'
+        : 'soir';
+    return '${day[0].toUpperCase()}${day.substring(1)} · $moment';
+  }
+
   /// Comptage de la dernière clôture ramené aux coupures proposées.
   static CashCount _resumable(CashCount last) {
     var count = CashCount.empty();
@@ -161,15 +173,19 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
                     AppSpacing.md,
                     AppSpacing.md,
                   ),
+                  // Raison de l'ouverture si elle interrompt une action,
+                  // sinon le moment du comptage (« Samedi 14 novembre ·
+                  // matin »).
                   child: Text(
-                    widget.message ??
-                        (byDenomination
-                            ? 'Comptez les billets et les pièces du tiroir.'
-                            : 'Comptez les espèces présentes dans le tiroir '
-                                  'et saisissez le total.'),
-                    style: AppTypography.body.copyWith(
-                      color: colors.textSecondary,
-                    ),
+                    widget.message ?? _countMoment(DateTime.now()),
+                    style: widget.message == null
+                        ? AppTypography.meta.copyWith(
+                            fontSize: 15,
+                            color: colors.textSecondary,
+                          )
+                        : AppTypography.body.copyWith(
+                            color: colors.textSecondary,
+                          ),
                   ),
                 ),
                 Padding(
@@ -309,6 +325,7 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
             ),
           ),
           CashCountTotalBar(
+            showTotal: byDenomination,
             label: byDenomination && breakdown.isNotEmpty
                 ? 'Fond de caisse · $breakdown'
                 : 'Fond de caisse',

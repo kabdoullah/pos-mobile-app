@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/storage/cash_count_mode_storage.dart';
@@ -149,7 +150,8 @@ void main() {
       serverRecalculated: false,
     );
 
-    setUpAll(() {
+    setUpAll(() async {
+      await initializeDateFormatting('fr_FR');
       registerFallbackValue(Decimal.zero);
       registerFallbackValue(CashCount.empty());
     });

@@ -20,6 +20,7 @@ class QuantityStepper extends StatelessWidget {
     this.removeTooltip,
     this.onValueTap,
     this.valueWidth,
+    this.highlightColor,
     super.key,
   });
 
@@ -50,6 +51,10 @@ class QuantityStepper extends StatelessWidget {
   /// un [field] qui accepte plusieurs chiffres (billetterie).
   final double? valueWidth;
 
+  /// Cadre de 2 dp de cette couleur (saisie en cours, avertissement) ;
+  /// `null` = filet habituel.
+  final Color? highlightColor;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -58,7 +63,9 @@ class QuantityStepper extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border.all(color: cs.outline),
+        border: highlightColor == null
+            ? Border.all(color: cs.outline)
+            : Border.all(color: highlightColor!, width: 2),
         borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
       ),
       child: Row(

@@ -598,14 +598,26 @@ void main() {
       );
       await pumpCash(tester, '/cash/sessions/s1', online: false);
 
-      expect(find.textContaining("COMPTAGE D'OUVERTURE"), findsOneWidget);
-      expect(find.text('COMPTAGE DE CLÔTURE'), findsOneWidget);
+      // Ouverture repliée : total et détail en une ligne, dépliable.
+      expect(find.text('${formatFcfa(d('10000'))} · 1 billet'), findsOneWidget);
+      expect(find.text('× 1'), findsNothing);
+      await tester.tap(find.textContaining("Comptage d'ouverture"));
+      await tester.pumpAndSettle();
+      expect(find.text('× 1'), findsOneWidget);
+
+      // Clôture dépliée : grille coupure · quantité · sous-total.
+      expect(find.textContaining('COMPTAGE DE CLÔTURE'), findsOneWidget);
+      expect(find.text('× 4'), findsOneWidget);
+      expect(find.text('Pièce ${formatAmount(d('500'))}'), findsOneWidget);
+      expect(find.text('× 18'), findsOneWidget);
+      expect(find.text(formatFcfa(d('9000'))), findsWidgets);
       expect(
-        find.text('Billet ${formatAmount(d('10000'))} × 4'),
+        find.text(
+          'Billets ${formatFcfa(d('40000'))} · '
+          'Pièces ${formatFcfa(d('9000'))}',
+        ),
         findsOneWidget,
       );
-      expect(find.text('Pièce ${formatAmount(d('500'))} × 18'), findsOneWidget);
-      expect(find.text(formatFcfa(d('9000'))), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 

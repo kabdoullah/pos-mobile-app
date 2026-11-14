@@ -137,6 +137,15 @@ class _DenominationRowState extends State<_DenominationRow> {
     text: _textOf(widget.quantity),
   );
 
+  /// Focus du champ : la ligne en cours de saisie est mise en évidence.
+  final _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(() => setState(() {}));
+  }
+
   /// Saisie refusée (au-delà du plafond) ; la quantité précédente est gardée.
   bool _invalid = false;
 
@@ -155,6 +164,7 @@ class _DenominationRowState extends State<_DenominationRow> {
 
   @override
   void dispose() {
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -179,7 +189,19 @@ class _DenominationRowState extends State<_DenominationRow> {
       fontFeatures: AppTypography.tabularFigures,
     );
 
-    return Padding(
+    // Ligne en cours de saisie : trait d'accent à gauche, sans décaler le
+    // contenu.
+    return Container(
+      // Toujours présente (transparente hors focus) : la retirer changerait
+      // l'arbre et recréerait le champ en pleine saisie.
+      foregroundDecoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: _focusNode.hasFocus ? colors.action : Colors.transparent,
+            width: 3,
+          ),
+        ),
+      ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.xs,
@@ -203,6 +225,11 @@ class _DenominationRowState extends State<_DenominationRow> {
               QuantityStepper(
                 quantity: quantity,
                 valueWidth: 56,
+                highlightColor: _focusNode.hasFocus
+                    ? colors.action
+                    : widget.unusual
+                    ? colors.warning
+                    : null,
                 onDecrease: isZero
                     ? null
                     : () => widget.onChanged(quantity - 1),
@@ -213,6 +240,7 @@ class _DenominationRowState extends State<_DenominationRow> {
                   label: 'Nombre de ${kind}s de $valueLabel',
                   child: TextField(
                     controller: _controller,
+                    focusNode: _focusNode,
                     onChanged: _onTyped,
                     keyboardType: TextInputType.number,
                     // « Suivant » passe à la coupure suivante.
@@ -307,8 +335,13 @@ class CashCountTotalBar extends StatelessWidget {
     required this.label,
     required this.amount,
     required this.action,
+    this.showTotal = true,
     super.key,
   });
+
+  /// Ligne de total affichée ; masquée en « Total seulement », où le
+  /// montant est déjà dans le champ et dans le bouton.
+  final bool showTotal;
 
   /// Libellé du total.
   final String label;
@@ -341,33 +374,35 @@ class CashCountTotalBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Semantics(
-                liveRegion: true,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        label,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.meta.copyWith(
-                          color: colors.textSecondary,
+              if (showTotal) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.meta.copyWith(
+                            color: colors.textSecondary,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      amount == null ? '—' : formatFcfa(amount),
-                      style: AppTypography.sectionTitle.copyWith(
-                        fontFeatures: AppTypography.tabularFigures,
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        amount == null ? '—' : formatFcfa(amount),
+                        style: AppTypography.sectionTitle.copyWith(
+                          fontFeatures: AppTypography.tabularFigures,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.sm),
+              ],
               action,
             ],
           ),

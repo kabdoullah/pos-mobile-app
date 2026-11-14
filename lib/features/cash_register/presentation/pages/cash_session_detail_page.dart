@@ -328,10 +328,19 @@ class _SessionBody extends StatelessWidget {
                 "Comptage d'ouverture · "
                 '${DateFormat.Hm('fr_FR').format(session.openedAt.toLocal())}',
             count: count,
+            collapsible: true,
           ),
         if (isClosed) _Closing(session: session),
         if (closingCount case final count?)
-          CashCountDetails(title: 'Comptage de clôture', count: count),
+          CashCountDetails(
+            title: switch (session.closedAt) {
+              final closedAt? =>
+                'Comptage de clôture · '
+                    '${DateFormat.Hm('fr_FR').format(closedAt.toLocal())}',
+              null => 'Comptage de clôture',
+            },
+            count: count,
+          ),
         const OverlineHeader('Mouvements'),
         if (movementsError)
           const CashNoticeBanner(
