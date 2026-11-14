@@ -50,7 +50,7 @@ final class SyncOrchestratorProvider
   }
 }
 
-String _$syncOrchestratorHash() => r'407d6b394258748bf1a90b758a65d6c7de77c747';
+String _$syncOrchestratorHash() => r'6f7edf1ce4880e280f2f3ca34771b1fdabc2cfef';
 
 /// Orchestre la synchro bidirectionnelle : surveille la connectivité, déclenche
 /// des synchros périodiques et enchaîne l'envoi avant la récupération pour
