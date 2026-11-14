@@ -330,6 +330,19 @@ class _ClosedContent extends ConsumerWidget {
             '${counted == null ? '' : ' · ${formatFcfa(counted)}'}',
             style: meta,
           ),
+          // Caisse fermée : seul accès à l'historique des sessions (détail,
+          // comptages, écarts).
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => context.push(Routes.cashHistory),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, AppSpacing.minTapTarget),
+              ),
+              child: const Text('Voir les sessions de caisse'),
+            ),
+          ),
         ],
       ],
     );
