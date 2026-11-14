@@ -47,7 +47,10 @@ class OverlineHeader extends StatelessWidget {
       padding: padding,
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 32),
+        // spaceBetween : la place laissée par un titre court revient avant
+        // l'indication, qui reste collée au bord droit.
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Titre long (petit écran, grande police) : il passe à la ligne
             // au lieu de déborder.

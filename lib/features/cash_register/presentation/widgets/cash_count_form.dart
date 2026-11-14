@@ -223,7 +223,17 @@ class _DenominationRowState extends State<_DenominationRow> {
                       LengthLimitingTextInputFormatter(6),
                     ],
                     style: figures,
-                    decoration: InputDecoration.collapsed(
+                    // Sans cadre : le stepper encadre déjà la quantité (les
+                    // bordures du thème s'appliqueraient sinon).
+                    decoration: InputDecoration(
+                      isDense: true,
+                      filled: false,
+                      contentPadding: EdgeInsets.zero,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
                       hintText: '0',
                       hintStyle: figures.copyWith(
                         color: colors.textSecondary,
