@@ -217,10 +217,19 @@ class _NumpadKey extends StatelessWidget {
     final colors = AppColors.of(context);
     final onTap = this.onTap;
     final radius = BorderRadius.circular(AppSpacing.radiusSm);
+    final handleTap = onTap == null
+        ? null
+        : () {
+            unawaited(HapticFeedback.selectionClick());
+            onTap();
+          };
     return Semantics(
       button: true,
       enabled: onTap != null,
       label: semanticLabel,
+      // L'action vit sur ce nœud : `excludeSemantics` masque celle de
+      // l'InkWell, et TalkBack ne pourrait sinon pas activer la touche.
+      onTap: handleTap,
       excludeSemantics: true,
       child: Material(
         color: plain ? Colors.transparent : colors.surface,
@@ -230,12 +239,7 @@ class _NumpadKey extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: radius,
-          onTap: onTap == null
-              ? null
-              : () {
-                  unawaited(HapticFeedback.selectionClick());
-                  onTap();
-                },
+          onTap: handleTap,
           child: SizedBox(height: 56, child: Center(child: child)),
         ),
       ),

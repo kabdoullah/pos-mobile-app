@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -103,6 +104,26 @@ void main() {
     expect(storage.values['store_name'], 'Boutique Awa');
     expect(storage.values['store_ncc'], 'CI-123');
   });
+
+  test(
+    'réponse serveur lente après une saisie : le nom saisi est gardé',
+    () async {
+      // Inscription : la boutique par défaut (« Ma boutique ») revient du
+      // serveur après que le commerçant a enregistré son nom.
+      final reply = Completer<StoreDto>();
+      when(() => remote.getCurrentStore()).thenAnswer((_) => reply.future);
+      when(
+        () => remote.updateStore(any()),
+      ).thenAnswer((_) async => _remoteStore);
+
+      final pending = repo.getStore();
+      await repo.saveStore(const Store(name: 'Boutik', isSubjectToVat: false));
+      reply.complete(_remoteStore.copyWith(name: 'Ma boutique'));
+
+      expect((await pending)?.name, 'Boutik');
+      expect(storage.values['store_name'], 'Boutik');
+    },
+  );
 
   test('empty cache and backend unreachable: returns null', () async {
     when(() => remote.getCurrentStore()).thenThrow(Exception('offline'));
