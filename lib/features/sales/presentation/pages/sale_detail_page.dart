@@ -259,12 +259,9 @@ class SaleDetailPage extends ConsumerWidget {
       await shareSaleReceiptPdf(ref, sale);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorToFrench(e)),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorToFrench(e))));
       }
     }
   }

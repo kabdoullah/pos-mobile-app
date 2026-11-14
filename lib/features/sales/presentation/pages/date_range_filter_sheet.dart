@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -136,57 +137,49 @@ class _DateRangeFilterSheetState extends State<DateRangeFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final dateFormat = DateFormat('dd MMM yyyy', 'fr_FR');
+    final dateFormat = DateFormat('dd/MM/yyyy', 'fr_FR');
+    const presets = [
+      (preset: _DatePreset.today, label: 'Aujourd’hui'),
+      (preset: _DatePreset.yesterday, label: 'Hier'),
+      (preset: _DatePreset.last7Days, label: '7 derniers jours'),
+      (preset: _DatePreset.thisMonth, label: 'Ce mois-ci'),
+      (preset: _DatePreset.custom, label: 'Personnalisé'),
+    ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
+    return SafeArea(
+      child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.md,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: cs.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const Text(
-                'Filtrer par période',
-                style: AppTypography.titleMedium,
-              ),
+              const Text('Période', style: AppTypography.sectionTitle),
               const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
+              // Choix unique : liste à puces radio (pas de chips), une
+              // période rapide s'applique dès qu'on la touche.
+              AppListGroup(
+                dividerIndent: 0,
                 children: [
-                  _presetChip('Aujourd\'hui', _DatePreset.today),
-                  _presetChip('Hier', _DatePreset.yesterday),
-                  _presetChip('7 derniers jours', _DatePreset.last7Days),
-                  _presetChip('Ce mois-ci', _DatePreset.thisMonth),
-                  _presetChip('Personnalisé', _DatePreset.custom),
+                  for (final p in presets)
+                    _PeriodOption(
+                      label: p.label,
+                      isSelected: _preset == p.preset,
+                      onTap: () => _selectPreset(p.preset),
+                    ),
                 ],
               ),
               if (_preset == _DatePreset.custom) ...[
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(
-                      child: _CustomDateField(
+                      child: _DateField(
                         label: 'Du',
                         value: dateFormat.format(_customStart),
                         onTap: () => _pickCustomDate(isStart: true),
@@ -194,7 +187,7 @@ class _DateRangeFilterSheetState extends State<DateRangeFilterSheet> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: _CustomDateField(
+                      child: _DateField(
                         label: 'Au',
                         value: dateFormat.format(_customEnd),
                         onTap: () => _pickCustomDate(isStart: false),
@@ -203,7 +196,10 @@ class _DateRangeFilterSheetState extends State<DateRangeFilterSheet> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                PrimaryButton(label: 'Appliquer', onPressed: _applyCustomRange),
+                PrimaryButton(
+                  label: 'Afficher les ventes',
+                  onPressed: _applyCustomRange,
+                ),
               ],
             ],
           ),
@@ -211,19 +207,74 @@ class _DateRangeFilterSheetState extends State<DateRangeFilterSheet> {
       ),
     );
   }
+}
 
-  Widget _presetChip(String label, _DatePreset preset) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: _preset == preset,
-      showCheckmark: false,
-      onSelected: (_) => _selectPreset(preset),
+/// Ligne d'une liste à choix unique : puce radio dessinée (cercle à bord
+/// fort, plein trait d'action quand choisi) et libellé.
+class _PeriodOption extends StatelessWidget {
+  const _PeriodOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Semantics(
+      inMutuallyExclusiveGroup: true,
+      selected: isSelected,
+      button: true,
+      excludeSemantics: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 52),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Row(
+              children: [
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 120),
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? colors.action : colors.borderStrong,
+                      width: isSelected ? 6 : 2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: isSelected
+                        ? AppTypography.body.copyWith(
+                            fontWeight: FontWeight.w600,
+                          )
+                        : AppTypography.body,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _CustomDateField extends StatelessWidget {
-  const _CustomDateField({
+/// Champ de date : libellé au-dessus, boîte de champ 48 dp ; ouvre le
+/// sélecteur de date.
+class _DateField extends StatelessWidget {
+  const _DateField({
     required this.label,
     required this.value,
     required this.onTap,
@@ -235,41 +286,42 @@ class _CustomDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          border: Border.all(color: cs.outlineVariant),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: AppTypography.labelSmall.copyWith(
-                color: cs.onSurfaceVariant,
+    final colors = AppColors.of(context);
+    final radius = BorderRadius.circular(AppSpacing.radiusSm);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(label, style: AppTypography.bodyStrong),
+        const SizedBox(height: 6),
+        Semantics(
+          button: true,
+          label: '$label : $value',
+          excludeSemantics: true,
+          child: Material(
+            color: colors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: radius,
+              side: BorderSide(color: colors.borderStrong),
+            ),
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: radius,
+              child: Container(
+                height: AppSpacing.inputHeight,
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: AppTypography.body.copyWith(
+                    color: colors.textPrimary,
+                    fontFeatures: AppTypography.tabularFigures,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: cs.primary),
-                const SizedBox(width: AppSpacing.xs),
-                Text(value, style: AppTypography.bodyMedium),
-              ],
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

@@ -29,32 +29,25 @@ Future<void> resendEmailVerification(
   String email,
 ) async {
   final messenger = ScaffoldMessenger.of(context);
-  final cs = Theme.of(context).colorScheme;
   String message;
-  var isError = false;
   try {
     await ref.read(accountEmailStatusProvider.notifier).resendVerification();
     message = 'Lien envoyé à $email. Ouvrez-le pour confirmer votre adresse.';
   } catch (e) {
     message = errorToFrench(e);
-    isError = true;
   }
-  _showResult(messenger, cs, message, isError: isError);
+  _showResult(messenger, message);
 }
 
-void _showResult(
-  ScaffoldMessengerState messenger,
-  ColorScheme cs,
-  String message, {
-  bool isError = false,
-}) {
+/// Toast neutre (thème), succès comme erreur : l'aplat de couleur est
+/// réservé au message bloquant.
+void _showResult(ScaffoldMessengerState messenger, String message) {
   messenger
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: isError ? cs.error : null,
         duration: const Duration(seconds: 5),
       ),
     );
@@ -110,7 +103,6 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
     if (_emailError != null || _passwordError != null) return;
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
-    final cs = Theme.of(context).colorScheme;
     final email = _email;
     try {
       await ref
@@ -120,7 +112,6 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
       Navigator.of(context).pop();
       _showResult(
         messenger,
-        cs,
         'Lien envoyé à ${email.toLowerCase()}. Ouvrez-le pour confirmer '
         'votre adresse.',
       );

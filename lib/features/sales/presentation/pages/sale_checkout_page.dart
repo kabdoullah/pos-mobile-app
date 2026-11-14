@@ -188,7 +188,13 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
   /// paiement sont gardés. Le commerçant ouvre la caisse puis valide de
   /// nouveau lui-même.
   Future<void> _openCashSession() async {
-    final opened = await showOpenCashSessionSheet(context);
+    final opened = await showOpenCashSessionSheet(
+      context,
+      title: 'Ouvrez la caisse pour encaisser',
+      message:
+          'La vente n’a pas été enregistrée. Votre panier est gardé : comptez '
+          'le tiroir, ouvrez la caisse, puis validez de nouveau.',
+    );
     if (opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

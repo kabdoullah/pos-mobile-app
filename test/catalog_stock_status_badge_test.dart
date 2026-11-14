@@ -39,7 +39,7 @@ void main() {
     testWidgets('caisse : libellés avec quantité, thème $name', (tester) async {
       for (final (p, label) in [
         (product(stock: 24), 'Stock : 24'),
-        (product(stock: 3, minStock: 5), 'Faible : 3'),
+        (product(stock: 3, minStock: 5), 'Stock bas · 3'),
         (product(stock: 0), 'Rupture'),
         (product(stock: -2), 'Rupture'),
       ]) {

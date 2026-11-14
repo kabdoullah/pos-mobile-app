@@ -13,11 +13,19 @@ import '../providers/cash_register_providers.dart';
 
 /// Ouvre la feuille « Ouvrir la caisse ». Renvoie `true` si une session a
 /// été ouverte.
-Future<bool> showOpenCashSessionSheet(BuildContext context) async {
+///
+/// [title] et [message] remplacent l'en-tête quand l'ouverture interrompt
+/// une action (encaisser, rembourser) : on dit pourquoi la caisse est
+/// demandée et que rien n'a été enregistré.
+Future<bool> showOpenCashSessionSheet(
+  BuildContext context, {
+  String? title,
+  String? message,
+}) async {
   final opened = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => const OpenCashSessionSheet(),
+    builder: (_) => OpenCashSessionSheet(title: title, message: message),
   );
   return opened ?? false;
 }
@@ -25,7 +33,13 @@ Future<bool> showOpenCashSessionSheet(BuildContext context) async {
 /// Feuille d'ouverture de caisse : fond de caisse et commentaire facultatif.
 class OpenCashSessionSheet extends ConsumerStatefulWidget {
   /// Crée une [OpenCashSessionSheet].
-  const OpenCashSessionSheet({super.key});
+  const OpenCashSessionSheet({this.title, this.message, super.key});
+
+  /// Titre contextuel, « Ouvrir la caisse » par défaut.
+  final String? title;
+
+  /// Explication contextuelle, consigne de comptage par défaut.
+  final String? message;
 
   @override
   ConsumerState<OpenCashSessionSheet> createState() =>
@@ -114,11 +128,15 @@ class _OpenCashSessionSheetState extends ConsumerState<OpenCashSessionSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Ouvrir la caisse', style: AppTypography.sectionTitle),
+              Text(
+                widget.title ?? 'Ouvrir la caisse',
+                style: AppTypography.sectionTitle,
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Comptez les espèces présentes dans le tiroir et saisissez le '
-                'total.',
+                widget.message ??
+                    'Comptez les espèces présentes dans le tiroir et '
+                        'saisissez le total.',
                 style: AppTypography.body.copyWith(color: colors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),

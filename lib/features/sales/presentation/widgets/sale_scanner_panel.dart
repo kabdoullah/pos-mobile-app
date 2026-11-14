@@ -96,36 +96,53 @@ class _PermissionDenied extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brand = AppColors.dark.action;
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.no_photography_outlined, color: AppColors.onCamera),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Accès à la caméra refusé.',
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyStrong.copyWith(color: AppColors.onCamera),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: AppSpacing.sm,
-            children: [
-              TextButton(
-                onPressed: onOpen,
-                style: TextButton.styleFrom(foregroundColor: brand),
-                child: const Text('Autoriser'),
+    // Zone de hauteur fixe : défilante pour les écrans étroits et les grands
+    // textes (les deux actions passent alors sur deux lignes).
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.no_photography_outlined,
+              color: AppColors.onCamera,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'La caméra est bloquée',
+              textAlign: TextAlign.center,
+              style: AppTypography.bodyStrong.copyWith(
+                color: AppColors.onCamera,
               ),
-              TextButton(
-                onPressed: onManualEntry,
-                style: TextButton.styleFrom(foregroundColor: brand),
-                child: const Text('Saisir le code à la main'),
-              ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Autorisez l’accès à la caméra pour scanner les codes-barres.',
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.body.copyWith(color: AppColors.onCamera),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.sm,
+              children: [
+                TextButton(
+                  onPressed: onOpen,
+                  style: TextButton.styleFrom(foregroundColor: brand),
+                  child: const Text('Autoriser'),
+                ),
+                TextButton(
+                  onPressed: onManualEntry,
+                  style: TextButton.styleFrom(foregroundColor: brand),
+                  child: const Text('Saisir le code à la main'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -7,7 +7,7 @@ import '../../domain/entities/product.dart';
 /// Non suivi.
 ///
 /// Avec [showQuantity] (caisse), le badge porte la quantité — « Stock : 24 »,
-/// « Faible : 3 », « Rupture » — et disparaît si le stock n'est pas suivi.
+/// « Stock bas · 3 », « Rupture » — et disparaît si le stock n'est pas suivi.
 class StockStatusBadge extends StatelessWidget {
   /// Crée le badge pour [product].
   const StockStatusBadge({
@@ -35,7 +35,7 @@ class StockStatusBadge extends StatelessWidget {
     final (label, tone) = switch (level) {
       StockLevel.outOfStock => ('Rupture', StatusTone.error),
       StockLevel.low => (
-        showQuantity ? 'Faible : $stock' : 'Stock bas',
+        showQuantity ? 'Stock bas · $stock' : 'Stock bas',
         StatusTone.warning,
       ),
       StockLevel.normal => (

@@ -421,10 +421,15 @@ void main() {
 
       await pumpSettings(tester);
 
+      // Dialogue : la règle et l'action utile (clôturer).
+      expect(find.text('Clôturez d’abord la caisse'), findsOneWidget);
       expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
+        find.text(
+          'Vous ne pouvez pas vous déconnecter tant que la caisse est ouverte.',
+        ),
         findsOneWidget,
       );
+      expect(find.text('Clôturer la caisse'), findsOneWidget);
       expect(find.text('Se déconnecter ?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -460,13 +465,17 @@ void main() {
       await pumpSettings(tester);
 
       expect(
+        find.text('Déconnexion impossible pour l’instant'),
+        findsOneWidget,
+      );
+      expect(
         find.text(
           'Des opérations de caisse ne sont pas encore synchronisées. '
-          'Connectez-vous à internet et synchronisez avant de vous '
-          'déconnecter.',
+          'Connectez-vous à internet, puis réessayez.',
         ),
         findsOneWidget,
       );
+      expect(find.text('Synchroniser maintenant'), findsOneWidget);
       expect(find.text('Se déconnecter ?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -479,10 +488,7 @@ void main() {
       await pumpSettings(tester);
 
       expect(find.text('Se déconnecter ?'), findsOneWidget);
-      expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
-        findsNothing,
-      );
+      expect(find.text('Clôturez d’abord la caisse'), findsNothing);
     });
   });
 

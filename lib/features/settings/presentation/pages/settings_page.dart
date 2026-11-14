@@ -47,16 +47,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _exporting = false;
   bool _syncing = false;
 
-  void _showMessage(String message, {bool isError = false}) {
-    final cs = Theme.of(context).colorScheme;
+  // Toast neutre (thème) même pour une erreur : l'aplat de couleur est
+  // réservé au message bloquant.
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: isError ? cs.error : null,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
   }
 
@@ -246,10 +243,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     setState(() => _syncing = false);
     switch (ref.read(syncOrchestratorProvider)) {
       case SyncStatusError():
-        _showMessage(
-          'La synchronisation a échoué. Réessayez dans un instant.',
-          isError: true,
-        );
+        _showMessage('La synchronisation a échoué. Réessayez dans un instant.');
       case SyncStatusSyncing():
         _showMessage('Synchronisation déjà en cours…');
       case SyncStatusIdle():
@@ -260,10 +254,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _confirmLogout() async {
     // Caisse ouverte ou opérations de caisse non envoyées : elles seraient
     // perdues au changement de compte.
-    final blockReason = await cashLogoutBlockReason(ref);
+    final block = await cashLogoutBlock(ref);
     if (!mounted) return;
-    if (blockReason != null) {
-      _showMessage(blockReason);
+    if (block != null) {
+      // La règle expliquée, avec l'action qui lève le blocage.
+      final act = await showConfirmDialog(
+        context,
+        title: block.title,
+        message: block.message,
+        confirmLabel: block.actionLabel,
+      );
+      if (!act || !mounted) return;
+      switch (block) {
+        case CashLogoutBlock.openSession:
+          unawaited(context.push(Routes.cashClose));
+        case CashLogoutBlock.closeAwaitingNote:
+          unawaited(context.push(Routes.cashRegister));
+        case CashLogoutBlock.pendingOperations:
+          await _syncNow();
+      }
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;
@@ -365,7 +374,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       );
     } catch (e) {
       if (mounted) {
-        _showMessage('Export impossible : ${errorToFrench(e)}', isError: true);
+        _showMessage('Export impossible : ${errorToFrench(e)}');
       }
     } finally {
       if (mounted) setState(() => _exporting = false);

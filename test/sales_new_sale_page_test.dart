@@ -316,7 +316,7 @@ void main() {
       await tester.tap(find.text('Scanner un code-barres'));
       await tester.pumpAndSettle();
       expect(find.byType(SaleScannerPage), findsOneWidget);
-      expect(find.text('Accès à la caméra refusé.'), findsOneWidget);
+      expect(find.text('La caméra est bloquée'), findsOneWidget);
 
       await tester.tap(find.text('Saisir le code à la main'));
       await tester.pumpAndSettle();

@@ -17,7 +17,7 @@ import '../providers/cash_register_providers.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/discrepancy_badge.dart';
 
-/// « Sessions de caisse » : liste à plat du serveur en ligne (tous les
+/// « Historique des caisses » : liste à plat du serveur en ligne (tous les
 /// téléphones, paginée), sessions de ce téléphone hors ligne.
 class CashSessionHistoryPage extends ConsumerWidget {
   /// Crée l'historique.
@@ -29,7 +29,7 @@ class CashSessionHistoryPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('Sessions de caisse'),
+        title: const Text('Historique des caisses'),
       ),
       body: online.when(
         loading: () => const _HistorySkeleton(),
