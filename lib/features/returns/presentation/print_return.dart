@@ -23,7 +23,6 @@ Future<void> printReturnReceipt(
 }) async {
   final names = {for (final l in lines) l.saleItemId: l.productName};
   final messenger = ScaffoldMessenger.of(context);
-  final errorColor = Theme.of(context).colorScheme.error;
   try {
     await ref
         .read(printerProvider.notifier)
@@ -61,13 +60,9 @@ Future<void> printReturnReceipt(
         ),
       );
     } else {
-      messenger.showSnackBar(
-        SnackBar(content: Text(e.userMessage), backgroundColor: errorColor),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
     }
   } catch (e) {
-    messenger.showSnackBar(
-      SnackBar(content: Text(errorToFrench(e)), backgroundColor: errorColor),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(errorToFrench(e))));
   }
 }

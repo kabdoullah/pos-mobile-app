@@ -6,6 +6,7 @@ import '../entities/cart_item.dart';
 import '../entities/discount.dart';
 import '../entities/margin_summary.dart';
 import '../entities/sale.dart';
+import '../entities/sale_item_brief.dart';
 
 /// Totaux agrégés d'une journée — calculés en SQL.
 ///
@@ -59,6 +60,10 @@ abstract class SalesRepository {
   /// Observe les totaux agrégés du jour — réémet à chaque vente ou retour.
   Stream<DailyStats> watchTodayStats();
 
+  /// Observe s'il existe au moins une vente sur l'appareil (« Premiers pas » :
+  /// première vente faite). Requête légère, sans charger les ventes.
+  Stream<bool> watchHasSales();
+
   /// Retourne toutes les ventes créées dans [startDate, endDate] inclus (fuseau
   /// horaire local de l'appareil).
   Future<List<Sale>> getSalesByDateRange(DateTime startDate, DateTime endDate);
@@ -66,6 +71,14 @@ abstract class SalesRepository {
   /// Observe toutes les ventes créées dans [startDate, endDate] inclus — réémet
   /// à chaque changement.
   Stream<List<Sale>> watchSalesByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  );
+
+  /// Observe les articles des ventes créées dans [startDate, endDate] inclus,
+  /// groupés par id de vente (résumé et recherche par produit de
+  /// l'historique). Une vente sans articles locaux est absente.
+  Stream<Map<String, List<SaleItemBrief>>> watchSaleItemsByDateRange(
     DateTime startDate,
     DateTime endDate,
   );

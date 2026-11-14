@@ -13,7 +13,7 @@ import 'package:mobile/features/auth/presentation/providers/auth_providers.dart'
 import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
 import 'package:mobile/features/cash_register/domain/repositories/cash_register_repository.dart';
 import 'package:mobile/features/cash_register/presentation/providers/cash_register_providers.dart';
-import 'package:mobile/features/cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import 'package:mobile/features/cash_register/presentation/pages/open_cash_session_page.dart';
 import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
 import 'package:mobile/features/returns/domain/entities/returnable_line.dart';
@@ -30,6 +30,21 @@ import 'package:mobile/features/sales/presentation/providers/sales_providers.dar
 import 'package:mobile/features/sales/providers/sales_di_providers.dart';
 import 'package:mobile/features/settings/presentation/pages/settings_page.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:mobile/core/storage/cash_count_mode_storage.dart';
+import 'package:mobile/core/widgets/index.dart';
+
+/// Mode de comptage en mémoire (le stockage sécurisé n'existe pas en test).
+class _MemoryCountMode extends Fake implements CashCountModeStorage {
+  _MemoryCountMode({required this.byDenomination});
+
+  bool byDenomination;
+
+  @override
+  Future<bool> readByDenomination() async => byDenomination;
+
+  @override
+  Future<void> writeByDenomination(bool value) async => byDenomination = value;
+}
 
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
@@ -421,10 +436,15 @@ void main() {
 
       await pumpSettings(tester);
 
+      // Dialogue : la règle et l'action utile (clôturer).
+      expect(find.text('Clôturez d’abord la caisse'), findsOneWidget);
       expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
+        find.text(
+          'Vous ne pouvez pas vous déconnecter tant que la caisse est ouverte.',
+        ),
         findsOneWidget,
       );
+      expect(find.text('Clôturer la caisse'), findsOneWidget);
       expect(find.text('Se déconnecter ?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -460,13 +480,17 @@ void main() {
       await pumpSettings(tester);
 
       expect(
+        find.text('Déconnexion impossible pour l’instant'),
+        findsOneWidget,
+      );
+      expect(
         find.text(
           'Des opérations de caisse ne sont pas encore synchronisées. '
-          'Connectez-vous à internet et synchronisez avant de vous '
-          'déconnecter.',
+          'Connectez-vous à internet, puis réessayez.',
         ),
         findsOneWidget,
       );
+      expect(find.text('Synchroniser maintenant'), findsOneWidget);
       expect(find.text('Se déconnecter ?'), findsNothing);
       expect(tester.takeException(), isNull);
     });
@@ -479,10 +503,7 @@ void main() {
       await pumpSettings(tester);
 
       expect(find.text('Se déconnecter ?'), findsOneWidget);
-      expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
-        findsNothing,
-      );
+      expect(find.text('Clôturez d’abord la caisse'), findsNothing);
     });
   });
 
@@ -524,18 +545,23 @@ void main() {
       bool dark = false,
     }) async {
       late Future<bool> result;
+      when(cash.lastClosingCount).thenAnswer((_) async => null);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             cashRegisterRepositoryProvider.overrideWithValue(cash),
             isOnlineProvider.overrideWith((ref) => Stream.value(false)),
+            // Parcours « Total seulement » : saisie directe du fond.
+            cashCountModeStorageProvider.overrideWithValue(
+              _MemoryCountMode(byDenomination: false),
+            ),
           ],
           child: MaterialApp(
             theme: dark ? AppTheme.dark() : AppTheme.light(),
             home: Scaffold(
               body: Builder(
                 builder: (context) => TextButton(
-                  onPressed: () => result = showOpenCashSessionSheet(context),
+                  onPressed: () => result = showOpenCashSession(context),
                   child: const Text('ouvrir'),
                 ),
               ),
@@ -559,11 +585,11 @@ void main() {
       final result = await pumpSheet(tester);
 
       await tester.enterText(find.byType(TextField).first, '15000');
-      await tester.tap(find.text('Ouvrir la caisse').last);
+      await tester.tap(find.byType(PrimaryButton));
       await tester.pumpAndSettle();
 
       expect(await result, isTrue);
-      expect(find.text('Fond de caisse'), findsNothing);
+      expect(find.byType(OpenCashSessionPage), findsNothing);
       verify(
         () => cash.openSession(openingAmount: d('15000'), note: null),
       ).called(1);
@@ -574,7 +600,7 @@ void main() {
       await pumpSheet(tester);
 
       await tester.enterText(find.byType(TextField).first, '15000');
-      await tester.tap(find.text('Ouvrir la caisse').last);
+      await tester.tap(find.byType(PrimaryButton));
       await tester.pumpAndSettle();
 
       expect(
@@ -595,8 +621,9 @@ void main() {
       addTearDown(tester.view.reset);
       await pumpSheet(tester, dark: true);
 
-      expect(find.text('Fond de caisse'), findsOneWidget);
-      expect(find.text('Commentaire (facultatif)'), findsOneWidget);
+      // Libellé du champ et de la barre de total.
+      expect(find.text('Fond de caisse'), findsWidgets);
+      expect(find.text('Ajouter un commentaire'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

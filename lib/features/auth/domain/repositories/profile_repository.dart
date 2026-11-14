@@ -33,6 +33,14 @@ abstract interface class ProfileRepository {
   /// Masque le rappel « email » de l'accueil jusqu'à [until].
   Future<void> snoozeEmailReminder(DateTime until);
 
+  /// True si le compte connecté a masqué les « Premiers pas » de l'accueil
+  /// sur cet appareil (gardé s'il se reconnecte, jamais hérité par un autre
+  /// compte).
+  Future<bool> firstStepsHidden();
+
+  /// Masque les « Premiers pas » de l'accueil pour le compte connecté.
+  Future<void> hideFirstSteps();
+
   /// Vide le cache local (changement de compte).
   Future<void> clearLocal();
 }

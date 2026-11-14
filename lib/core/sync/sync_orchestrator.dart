@@ -49,6 +49,12 @@ class SyncStatusError extends SyncStatus {
 @Riverpod(keepAlive: true)
 class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
   bool _isSyncing = false;
+
+  /// Sessions de caisse à restaurer depuis le serveur : une fois par
+  /// lancement (répare un appareil déjà effacé) et après chaque pull
+  /// complet ; gardé tant que la restauration échoue. Sans risque : rien de
+  /// local n'est écrasé.
+  bool _cashRestorePending = true;
   Timer? _periodicTimer;
   Timer? _debounceTimer;
   Timer? _startupTimer;
@@ -264,6 +270,21 @@ class SyncOrchestrator extends _$SyncOrchestrator with WidgetsBindingObserver {
 
       _logger.d('Sync step: pull changes');
       await pullService.pullChanges(forceFullPull: effectiveFullPull);
+
+      // `/sync/changes` ne transporte pas les sessions de caisse : après un
+      // effacement local, la session ouverte et la dernière clôture de
+      // l'appareil sont relues à part.
+      if (effectiveFullPull) _cashRestorePending = true;
+      if (_cashRestorePending) {
+        try {
+          await ref.read(cashSessionRestorerProvider).restore();
+          _cashRestorePending = false;
+        } catch (e, st) {
+          // Non bloquant : la synchro reste réussie, nouvel essai au
+          // prochain passage.
+          _logger.w('Cash session restore failed', error: e, stackTrace: st);
+        }
+      }
 
       _logger.d('Sync completed successfully');
       await _purgeSyncedEntries();

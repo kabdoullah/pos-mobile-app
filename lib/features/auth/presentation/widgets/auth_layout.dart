@@ -5,7 +5,6 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/responsive/responsive.dart';
-import '../../../../core/widgets/index.dart';
 
 /// Squelette commun des écrans d'authentification : barre d'état adaptée au
 /// thème, zone sûre, largeur de lecture limitée sur tablette.
@@ -41,11 +40,7 @@ class AuthScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final header = this.header;
-    // Bandeau sous la barre d'état : les icônes suivent sa couleur.
-    final isDark = header != null
-        ? ThemeData.estimateBrightnessForColor(theme.colorScheme.primary) ==
-              Brightness.dark
-        : theme.brightness == Brightness.dark;
+    final isDark = theme.brightness == Brightness.dark;
     final gutter = responsiveValue(
       context,
       small: AppSpacing.md,
@@ -123,55 +118,46 @@ class _ReadingWidth extends StatelessWidget {
   }
 }
 
-/// Bandeau d'entrée de l'app : nom de l'app en grand sur fond cacao, bord
-/// inférieur dentelé comme le haut d'un ticket de caisse — le même motif que
-/// les reçus à l'écran. Réservé à l'écran de connexion.
+/// Marque de l'app en tête des écrans d'entrée (connexion, nouveau mot de
+/// passe) : pastille couleur de marque et nom « Ma Caisse », sobre.
 class AuthBrandBand extends StatelessWidget {
-  /// Crée le bandeau.
+  /// Crée la marque.
   const AuthBrandBand({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final top = MediaQuery.paddingOf(context).top;
     final gutter = responsiveValue(
       context,
       small: AppSpacing.md,
       medium: AppSpacing.lg,
     );
-    return ClipPath(
-      clipper: const ZigzagClipper(),
-      child: ColoredBox(
-        color: cs.primary,
-        child: _ReadingWidth(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              gutter,
-              top + AppSpacing.xxl,
-              gutter,
-              AppSpacing.xl + ZigzagClipper.toothHeight,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    'Ma Caisse',
-                    style: AppTypography.displayMedium.copyWith(
-                      color: cs.onPrimary,
-                    ),
-                  ),
+    return _ReadingWidth(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(gutter, top + AppSpacing.xl, gutter, 0),
+        child: Semantics(
+          header: true,
+          label: 'Ma Caisse',
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: colors.brand,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Ventes, stock et reçus de votre boutique.',
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: cs.onPrimary.withValues(alpha: 0.85),
-                  ),
+                child: const SizedBox.square(dimension: 28),
+              ),
+              const SizedBox(width: AppSpacing.sm + 2),
+              Text(
+                'Ma Caisse',
+                style: AppTypography.bodyStrong.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colors.textPrimary,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -213,7 +199,10 @@ class AuthHeader extends StatelessWidget {
           child: Text(
             title,
             textAlign: align,
-            style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+            style: AppTypography.figureLarge.copyWith(
+              color: cs.onSurface,
+              fontFeatures: const [],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -260,16 +249,18 @@ class AuthBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
+    // Erreur : seul aplat de couleur (message bloquant). Avertissement : note
+    // à plat bordée, icône dans la couleur d'alerte.
     final (background, foreground, icon) = switch (tone) {
       AuthBannerTone.error => (
-        cs.errorContainer,
-        cs.onErrorContainer,
+        colors.errorSubtle,
+        colors.onErrorSubtle,
         Icons.error_outline_rounded,
       ),
       AuthBannerTone.warning => (
-        cs.tertiaryContainer,
-        cs.onTertiaryContainer,
+        colors.surface,
+        colors.textPrimary,
         Icons.schedule_rounded,
       ),
     };
@@ -281,12 +272,23 @@ class AuthBanner extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          border: tone == AuthBannerTone.warning
+              ? Border.all(color: colors.border)
+              : null,
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ExcludeSemantics(child: Icon(icon, color: foreground, size: 20)),
+            ExcludeSemantics(
+              child: Icon(
+                icon,
+                color: tone == AuthBannerTone.warning
+                    ? colors.warning
+                    : foreground,
+                size: 20,
+              ),
+            ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
@@ -328,7 +330,7 @@ class ValidationHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final success = Theme.of(context).extension<AppSemanticColors>()!.success;
+    final success = AppColors.of(context).success;
     final color = isMet ? success : cs.onSurfaceVariant;
     return Semantics(
       label: '$label : ${isMet ? 'respecté' : 'non respecté'}',

@@ -9,6 +9,7 @@ import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/margin_summary.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
+import '../../../auth/providers/auth_di_providers.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
 part 'home_providers.g.dart';
@@ -41,7 +42,7 @@ Stream<DailyStats> dailySummary(Ref ref) {
 
 /// Diffuse chiffre d'affaires, coût d'achat et marge brute du jour (ADR-0009).
 ///
-/// Prêt pour le tableau de bord ; aucun écran ne l'affiche encore.
+/// Alimente « Bénéfice estimé » et « Marge moyenne » de l'accueil.
 @riverpod
 Stream<MarginSummary> todayMarginSummary(Ref ref) {
   final today = ref.watch(todayProvider);
@@ -60,7 +61,7 @@ Stream<List<Sale>> recentSales(Ref ref) {
 }
 
 /// Diffuse le montant des ventes du jour heure par heure (24 cases, index =
-/// heure locale) — alimente le mini-graphique sous le chiffre d'affaires.
+/// heure locale) — donne l'heure de pointe (« Pic ») de l'accueil.
 @riverpod
 Stream<List<Decimal>> todayHourlySales(Ref ref) {
   final today = ref.watch(todayProvider);
@@ -80,6 +81,12 @@ List<Decimal> salesByHour(Iterable<Sale> sales) {
   }
   return totals;
 }
+
+/// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
+/// des « Premiers pas » de l'accueil.
+@riverpod
+Stream<bool> hasAnySale(Ref ref) =>
+    ref.watch(salesRepositoryProvider).watchHasSales();
 
 /// Diffuse les produits en rupture ou sous leur seuil, ruptures d'abord —
 /// alimente la section « Stock faible » de l'accueil (aperçu + compteur).
@@ -102,4 +109,22 @@ int? cashSharePercent(DailyStats stats) {
   final collected = stats.cashTotal + stats.mobileMoneyTotal;
   if (collected == Decimal.zero) return null;
   return (stats.cashTotal * Decimal.fromInt(100) / collected).round().toInt();
+}
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+@riverpod
+class FirstStepsHidden extends _$FirstStepsHidden {
+  @override
+  Future<bool> build() =>
+      ref.read(profileRepositoryProvider).firstStepsHidden();
+
+  /// Masque la section, tout de suite à l'écran puis sur l'appareil.
+  Future<void> hide() async {
+    final repository = ref.read(profileRepositoryProvider);
+    state = const AsyncData(true);
+    await repository.hideFirstSteps();
+  }
 }

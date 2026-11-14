@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
@@ -26,6 +27,8 @@ class StockHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final productId = this.productId;
     final historyState = ref.watch(stockHistoryProvider(productId));
+    final colors = AppColors.of(context);
+    final divider = BorderSide(color: colors.border);
     final notifier = ref.read(stockHistoryProvider(productId).notifier);
     // Vue globale : les mouvements ne portent que l'id du produit, on affiche
     // son nom depuis le catalogue local.
@@ -37,23 +40,28 @@ class StockHistoryPage extends ConsumerWidget {
           }
         : const <String, String>{};
 
-    return AppScaffold(
-      title: productId == null ? 'Mouvements de stock' : 'Historique du stock',
-      floatingActionButton: productId == null
-          ? null
-          : FloatingActionButton(
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: Text(
+          productId == null ? 'Mouvements de stock' : 'Historique du stock',
+        ),
+        actions: [
+          if (productId != null)
+            TextButton(
               onPressed: () => showStockAdjustmentSheet(context, productId),
-              tooltip: 'Ajuster le stock',
-              child: const Icon(Icons.tune),
+              child: const Text('Ajuster'),
             ),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: notifier.refresh,
         child: historyState.when(
           loading: () => ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
             children: [
-              AppListGroup(
-                dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
+              FlatList(
                 children: [
                   for (var i = 0; i < 6; i++) const _MovementSkeleton(),
                 ],
@@ -63,10 +71,11 @@ class StockHistoryPage extends ConsumerWidget {
           error: (_, _) => _FullHeight(
             child: EmptyState(
               icon: Icons.cloud_off_outlined,
-              title: 'Impossible de charger les mouvements',
+              title: 'Disponible en ligne uniquement',
               message:
-                  'Vérifiez votre connexion puis réessayez. Le stock affiché '
-                  'reste disponible hors ligne.',
+                  "L'historique des mouvements et les ajustements de stock "
+                  'demandent une connexion internet. Le stock affiché reste '
+                  'disponible hors ligne.',
               actionLabel: 'Réessayer',
               onAction: notifier.refresh,
             ),
@@ -104,27 +113,28 @@ class StockHistoryPage extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    sliver: SliverAppListGroup(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
+                    sliver: SliverList.builder(
                       itemCount: movements.length,
-                      dividerIndent: AppSpacing.md + 36 + AppSpacing.md,
                       itemBuilder: (context, index) {
                         final movement = movements[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.md,
+                        return DecoratedBox(
+                          position: DecorationPosition.foreground,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: index == 0 ? divider : BorderSide.none,
+                              bottom: divider,
+                            ),
                           ),
-                          child: StockMovementTile(
-                            movement: movement,
-                            productName: productId == null
-                                ? names[movement.productId] ??
-                                      'Produit supprimé'
-                                : null,
+                          child: ColoredBox(
+                            color: colors.surface,
+                            child: StockMovementTile(
+                              movement: movement,
+                              productName: productId == null
+                                  ? names[movement.productId] ??
+                                        'Produit supprimé'
+                                  : null,
+                            ),
                           ),
                         );
                       },
@@ -195,8 +205,6 @@ class _MovementSkeleton extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SkeletonBox(width: 36, height: 36, radius: AppSpacing.radiusFull),
-          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

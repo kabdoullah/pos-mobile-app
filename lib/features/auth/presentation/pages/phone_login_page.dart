@@ -57,7 +57,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
       _phoneError = phone.isEmpty
           ? 'Saisissez votre numéro de téléphone.'
           : !isValidLocalPhoneCi(phone)
-          ? 'Numéro à 10 chiffres, ex. 07 00 00 00 00.'
+          ? '10 chiffres, commençant par 01, 05 ou 07.'
           : null;
       _passwordError = _passwordController.text.isEmpty
           ? 'Saisissez votre mot de passe.'
@@ -122,7 +122,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
                   padding: EdgeInsets.only(bottom: AppSpacing.lg),
                   child: AuthBanner(
                     title: 'Votre session a expiré',
-                    message: 'Reconnectez-vous pour continuer.',
+                    message: 'Reconnectez-vous ; votre code PIN est conservé.',
                     tone: AuthBannerTone.warning,
                   ),
                 ),

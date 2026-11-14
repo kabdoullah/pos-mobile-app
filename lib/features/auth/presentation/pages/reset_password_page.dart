@@ -77,7 +77,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     if (!_submitted || _passwordValid) return null;
     return _password.isEmpty
         ? 'Choisissez un mot de passe.'
-        : 'Au moins $_minPasswordLength caractères.';
+        : 'Trop court : au moins $_minPasswordLength caractères.';
   }
 
   String? get _confirmError {
@@ -86,7 +86,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
       return _submitted ? 'Confirmez votre mot de passe.' : null;
     }
     return _submitted || _confirm.length >= _password.length
-        ? 'Les mots de passe ne correspondent pas.'
+        ? 'Les deux mots de passe sont différents.'
         : null;
   }
 
@@ -198,7 +198,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             autofillHints: const [AutofillHints.newPassword],
             onChanged: (_) => _onEdited(),
             helper: ValidationHint(
-              label: 'Au moins $_minPasswordLength caractères',
+              label: _passwordValid
+                  ? 'Longueur minimale atteinte'
+                  : 'Au moins $_minPasswordLength caractères',
               isMet: _passwordValid,
             ),
           ),
@@ -214,10 +216,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             onChanged: (_) => _onEdited(),
             onSubmitted: (_) => _submit(),
             helper: _passwordsMatch
-                ? const ValidationHint(
-                    label: 'Les mots de passe correspondent',
-                    isMet: true,
-                  )
+                ? const ValidationHint(label: 'Identiques', isMet: true)
                 : null,
           ),
           const SizedBox(height: AppSpacing.xl),

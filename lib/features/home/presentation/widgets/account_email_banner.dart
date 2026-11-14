@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
-import '../../../auth/domain/entities/account_email.dart';
+import '../../../../core/widgets/index.dart';
 import '../../../auth/presentation/widgets/account_email_sheet.dart';
 import '../../../auth/providers/account_email_provider.dart';
 
@@ -47,134 +48,111 @@ class _AccountEmailBannerState extends ConsumerState<AccountEmailBanner> {
     final account = ref.watch(emailReminderProvider).value;
     if (account == null) return const SizedBox.shrink();
 
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final email = account.email;
-    final (title, actionLabel, icon) = switch (account) {
-      AccountEmail(email: null) => (
-        'Ajoutez un email',
-        'Ajouter mon email',
-        Icons.alternate_email_rounded,
-      ),
-      AccountEmail(email: _?) => (
-        'Confirmez votre email',
-        'Renvoyer le lien',
-        Icons.mark_email_unread_outlined,
-      ),
-    };
-    final foreground = cs.onTertiaryContainer;
-    final bodyStyle = AppTypography.bodyMedium.copyWith(color: foreground);
+    final bodyStyle = AppTypography.body.copyWith(fontSize: 15, height: 1.4);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Semantics(
-        container: true,
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: cs.tertiaryContainer,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-            border: Border.all(color: cs.tertiary, width: 1.5),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const OverlineHeader('Compte'),
+        Semantics(
+          container: true,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(
+                top: BorderSide(color: colors.border),
+                bottom: BorderSide(color: colors.border),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.xs,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ExcludeSemantics(
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundColor: cs.tertiary,
-                      child: Icon(icon, color: cs.onTertiary, size: 22),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Semantics(
-                          header: true,
-                          child: Text(
-                            title,
-                            style: AppTypography.titleMedium.copyWith(
-                              color: foreground,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        if (email == null)
-                          Text(
-                            'Sans email, vous ne pourrez pas récupérer votre '
-                            'mot de passe en cas d’oubli.',
-                            style: bodyStyle,
-                          )
-                        else
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                const TextSpan(
-                                  text: 'Ouvrez le lien envoyé à ',
-                                ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: email == null
+                            ? Text(
+                                'Ajoutez un e-mail pour récupérer votre '
+                                'compte en cas d’oubli du mot de passe.',
+                                style: bodyStyle,
+                              )
+                            : Text.rich(
                                 TextSpan(
-                                  text: email,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  children: [
+                                    const TextSpan(
+                                      text:
+                                          'Confirmez votre e-mail : ouvrez '
+                                          'le lien envoyé à ',
+                                    ),
+                                    TextSpan(
+                                      text: email,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const TextSpan(text: '.'),
+                                  ],
                                 ),
-                                const TextSpan(
-                                  text:
-                                      ' pour pouvoir récupérer votre mot de '
-                                      'passe en cas d’oubli.',
-                                ),
-                              ],
-                            ),
-                            style: bodyStyle,
+                                style: bodyStyle,
+                              ),
+                      ),
+                      if (_sending)
+                        const Padding(
+                          padding: EdgeInsets.all(AppSpacing.md),
+                          child: SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                      ],
-                    ),
+                        )
+                      else
+                        TextButton(
+                          onPressed: email == null
+                              ? () => showAccountEmailSheet(context)
+                              : () => _resend(email),
+                          child: Text(email == null ? 'Ajouter' : 'Renvoyer'),
+                        ),
+                    ],
+                  ),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    children: [
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: colors.textSecondary,
+                          padding: EdgeInsets.zero,
+                        ),
+                        onPressed: () =>
+                            ref.read(emailReminderProvider.notifier).snooze(),
+                        child: const Text('Plus tard'),
+                      ),
+                      if (email != null)
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: colors.textSecondary,
+                          ),
+                          onPressed: () => showAccountEmailSheet(
+                            context,
+                            currentEmail: email,
+                          ),
+                          child: const Text('Corriger l’adresse'),
+                        ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              FilledButton.icon(
-                onPressed: _sending
-                    ? null
-                    : email == null
-                    ? () => showAccountEmailSheet(context)
-                    : () => _resend(email),
-                icon: _sending
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(email == null ? Icons.add_rounded : Icons.send),
-                label: Text(actionLabel),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    style: TextButton.styleFrom(foregroundColor: foreground),
-                    onPressed: () =>
-                        ref.read(emailReminderProvider.notifier).snooze(),
-                    child: const Text('Plus tard'),
-                  ),
-                  if (email != null)
-                    TextButton(
-                      style: TextButton.styleFrom(foregroundColor: foreground),
-                      onPressed: () =>
-                          showAccountEmailSheet(context, currentEmail: email),
-                      child: const Text('Corriger l’adresse'),
-                    ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 

@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/providers/connectivity_provider.dart';
@@ -15,7 +17,7 @@ import '../providers/cash_register_providers.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/discrepancy_badge.dart';
 
-/// Historique des sessions de caisse : liste du serveur en ligne (tous les
+/// « Historique des caisses » : liste à plat du serveur en ligne (tous les
 /// téléphones, paginée), sessions de ce téléphone hors ligne.
 class CashSessionHistoryPage extends ConsumerWidget {
   /// Crée l'historique.
@@ -24,8 +26,11 @@ class CashSessionHistoryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final online = ref.watch(isOnlineProvider);
-    return AppScaffold(
-      title: 'Historique des caisses',
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Historique des caisses'),
+      ),
       body: online.when(
         loading: () => const _HistorySkeleton(),
         // Connectivité inconnue : on montre ce qui est sur le téléphone.
@@ -74,10 +79,13 @@ class _RemoteHistory extends ConsumerWidget {
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.md,
+              ),
               children: [
                 _SessionList(sessions: sessions),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.sm),
                 // Bouton en plus du défilement : une première page courte ne
                 // déclenche aucun défilement.
                 if (notifier.hasMore)
@@ -113,16 +121,11 @@ class _LocalHistory extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            0,
-          ),
-          child: CashNoticeBanner(
-            message: 'Hors ligne : sessions de ce téléphone uniquement',
-          ),
+        const CashNoticeBanner(
+          title: 'Hors ligne',
+          message:
+              'Sessions de ce téléphone uniquement. Le détail des mouvements '
+              's’affichera au retour du réseau.',
         ),
         Expanded(
           child: local.when(
@@ -137,7 +140,7 @@ class _LocalHistory extends ConsumerWidget {
             data: (sessions) => sessions.isEmpty
                 ? const _EmptyHistory()
                 : ListView(
-                    padding: const EdgeInsets.all(AppSpacing.md),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     children: [_SessionList(sessions: sessions)],
                   ),
           ),
@@ -154,7 +157,7 @@ class _SessionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppListGroup(
+    return FlatList(
       children: [
         for (final session in sessions) _SessionTile(session: session),
       ],
@@ -162,7 +165,9 @@ class _SessionList extends StatelessWidget {
   }
 }
 
-/// Une session : dates, statut et écart de clôture.
+/// Une session : jour, horaires et montant (fond ou compté), puis le statut
+/// en point + mot (En cours, Refusée, En attente de synchro, Équilibrée,
+/// Excédent, Écart).
 class _SessionTile extends StatelessWidget {
   const _SessionTile({required this.session});
 
@@ -170,23 +175,27 @@ class _SessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
-    final dateFormat = DateFormat('d MMM yyyy à HH:mm', 'fr_FR');
-    final closedAt = session.closedAt;
-    final discrepancy = session.discrepancyAmount;
+    final colors = AppColors.of(context);
+    final time = DateFormat.Hm('fr_FR');
+    final openedAt = session.openedAt.toLocal();
+    final closedAt = session.closedAt?.toLocal();
+    final counted = session.countedAmount;
     final isOpen = session.status == CashSessionStatus.open;
-    final subtitle = isOpen
-        ? 'En cours'
-        : closedAt == null
-        ? 'Clôturée'
-        : 'Clôturée le ${dateFormat.format(closedAt.toLocal())}';
+    final day = toBeginningOfSentenceCase(
+      DateFormat('EEEE d MMMM', 'fr_FR').format(openedAt),
+      'fr_FR',
+    );
+    final details = isOpen || closedAt == null
+        ? 'Ouverte à ${time.format(openedAt)} · fond '
+              '${formatAmount(session.openingAmount)}'
+        : '${time.format(openedAt)} → ${time.format(closedAt)}'
+              '${counted == null ? '' : ' · compté ${formatAmount(counted)}'}';
     return InkWell(
       onTap: () => context.push(
         Routes.cashSessionDetail.replaceFirst(':id', session.id),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: AppSpacing.buttonHeight),
+        constraints: const BoxConstraints(minHeight: 60),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
@@ -198,33 +207,55 @@ class _SessionTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Text(day, style: AppTypography.bodyStrong),
                     Text(
-                      'Ouverte le ${dateFormat.format(session.openedAt.toLocal())}',
-                      style: AppTypography.titleMedium,
+                      details,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: colors.textSecondary,
+                        fontFeatures: AppTypography.tabularFigures,
+                      ),
                     ),
-                    Text(subtitle, style: muted),
-                    if (session.rejectionCode != null)
-                      Text(
-                        'Refusée par le serveur',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: cs.error,
-                        ),
-                      )
-                    else if (session.syncStatus == CashSyncStatus.pending)
-                      Text('En attente de synchro', style: muted),
-                    if (!isOpen && discrepancy != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      DiscrepancyBadge(discrepancy: discrepancy),
-                    ],
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              const SizedBox(width: AppSpacing.sm),
+              _SessionStatus(session: session),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+/// Statut d'une session dans la liste.
+class _SessionStatus extends StatelessWidget {
+  const _SessionStatus({required this.session});
+
+  final CashSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final discrepancy = session.discrepancyAmount;
+    final (label, tone) = switch (session) {
+      CashSession(status: CashSessionStatus.open) => (
+        'En cours',
+        StatusTone.success,
+      ),
+      CashSession(rejectionCode: _?) => ('Refusée', StatusTone.error),
+      CashSession(syncStatus: CashSyncStatus.pending) => (
+        'En attente de synchro',
+        StatusTone.warning,
+      ),
+      _ when discrepancy == null => ('Clôturée', StatusTone.neutral),
+      _ when discrepancy == Decimal.zero => ('Équilibrée', StatusTone.success),
+      _ when discrepancy > Decimal.zero => (
+        'Excédent ${signedDiscrepancy(discrepancy)}',
+        StatusTone.warning,
+      ),
+      _ => ('Écart ${signedDiscrepancy(discrepancy)}', StatusTone.error),
+    };
+    return StatusIndicator(label: label, tone: tone);
   }
 }
 
@@ -267,7 +298,7 @@ class _HistorySkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
         for (var i = 0; i < 5; i++) ...const [
-          SkeletonBox(height: 72),
+          SkeletonBox(height: 56),
           SizedBox(height: AppSpacing.sm),
         ],
       ],

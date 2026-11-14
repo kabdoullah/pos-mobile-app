@@ -74,214 +74,253 @@ class _ProductDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final isTracked = product.currentStock != null;
+    final colors = AppColors.of(context);
+    final meta = AppTypography.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontFeatures: AppTypography.tabularFigures,
+    );
+    final stock = product.currentStock;
+    final isTracked = stock != null;
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
     final categoryName = (ref.watch(categoriesProvider).value ?? const [])
         .where((c) => c.id == product.categoryId)
         .firstOrNull
         ?.name;
     final editRoute = Routes.productEdit.replaceFirst(':id', product.id);
     final margin = product.unitMargin;
-    final marginColor = margin == null
-        ? null
-        : margin < Decimal.zero
-        ? cs.error
-        : Theme.of(context).extension<AppSemanticColors>()!.success;
+    final purchase = product.purchasePrice;
+    final minStock = product.minStock;
 
-    return AppScaffold(
-      title: product.name,
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          _PhotoSection(product: product),
-          const SizedBox(height: AppSpacing.md),
-          Text(product.name, style: AppTypography.titleLarge),
-          const SizedBox(height: AppSpacing.xs),
-          // AmountDisplay centre son texte : aligné à gauche sous le nom.
-          Align(
-            alignment: Alignment.centerLeft,
-            child: AmountDisplay(
-              amount: product.sellingPrice,
-              size: AmountSize.large,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AppCard(
-            child: Column(
-              children: [
-                _InfoRow(
-                  label: 'Stock',
-                  value: isTracked ? '${product.currentStock}' : 'Non suivi',
-                  trailing: StockStatusBadge(product: product),
-                ),
-                _InfoRow(
-                  label: "Seuil d'alerte",
-                  value: product.minStock?.toString() ?? 'Aucun',
-                ),
-                _InfoRow(label: 'Catégorie', value: categoryName ?? 'Aucune'),
-                _InfoRow(
-                  label: 'Code-barres',
-                  value: product.barcode ?? 'Aucun',
-                ),
-              ],
-            ),
-          ),
-          if (!isTracked) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Le stock de ce produit n\'est pas suivi. Indiquez un stock '
-              'initial dans « Modifier » pour le suivre.',
-              style: AppTypography.bodySmall.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          // Prix et marge : informations internes au commerçant (ADR-0009).
-          AppCard(
-            child: Column(
-              children: [
-                _InfoRow(
-                  label: "Prix d'achat",
-                  value: product.purchasePrice == null
-                      ? 'Non renseigné'
-                      : formatFcfa(product.purchasePrice!),
-                ),
-                _InfoRow(
-                  label: 'Prix de vente',
-                  value: formatFcfa(product.sellingPrice),
-                ),
-                _InfoRow(
-                  label: 'Marge',
-                  value: margin == null
-                      ? '—'
-                      : margin > Decimal.zero
-                      ? '+${formatFcfa(margin)}'
-                      : formatFcfa(margin),
-                  valueColor: marginColor,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (isTracked) ...[
-            PrimaryButton(
-              label: 'Ajuster le stock',
-              icon: Icons.tune,
-              onPressed: () => showStockAdjustmentSheet(context, product.id),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
-          OutlinedButton.icon(
+    return Scaffold(
+      appBar: AppBar(
+        leading: const BackButton(),
+        title: const Text('Produit'),
+        actions: [
+          TextButton(
             onPressed: () => context.push(editRoute),
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Modifier'),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(AppSpacing.buttonHeightSm),
-            ),
+            child: const Text('Modifier'),
           ),
-          if (isTracked) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _RecentMovements(productId: product.id),
-          ],
+          const SizedBox(width: AppSpacing.xs),
         ],
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.trailing,
-    this.valueColor,
-  });
-
-  final String label;
-  final String value;
-  final Widget? trailing;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final trailing = this.trailing;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            label,
-            style: AppTypography.bodyMedium.copyWith(
-              color: cs.onSurfaceVariant,
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.lg,
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: _PhotoSection(product: product),
+                ),
+                const OverlineHeader('Stock'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: isTracked
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '$stock',
+                                  style: AppTypography.figureHero.copyWith(
+                                    color: stock < 0 ? colors.error : null,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Flexible(
+                                  child: Text(
+                                    minStock == null
+                                        ? 'en stock'
+                                        : 'en stock · alerte à $minStock',
+                                    style: meta,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            StockStatusBadge(product: product),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            StockStatusBadge(product: product),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              'Le stock de ce produit n\'est pas suivi. '
+                              'Indiquez un stock initial dans « Modifier » '
+                              'pour le suivre.',
+                              style: meta,
+                            ),
+                          ],
+                        ),
+                ),
+                // Prix et marge : informations internes au commerçant
+                // (ADR-0009), jamais affichées en caisse.
+                const OverlineHeader('Prix'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DefinitionRow(
+                        label: 'Prix de vente',
+                        value: formatFcfa(product.sellingPrice),
+                      ),
+                      DefinitionRow(
+                        label: "Prix d'achat",
+                        value: purchase == null
+                            ? 'Non renseigné'
+                            : formatFcfa(purchase),
+                      ),
+                      DefinitionRow(
+                        label: 'Marge par unité',
+                        value: margin == null
+                            ? '—'
+                            : margin > Decimal.zero
+                            ? '+ ${formatFcfa(margin)}'
+                            : margin < Decimal.zero
+                            ? '− ${formatFcfa(margin.abs())}'
+                            : formatFcfa(margin),
+                        color: margin == null
+                            ? null
+                            : margin < Decimal.zero
+                            ? colors.error
+                            : colors.success,
+                        showDivider: false,
+                      ),
+                    ],
+                  ),
+                ),
+                const OverlineHeader('Informations'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DefinitionRow(
+                        label: 'Catégorie',
+                        value: categoryName ?? 'Aucune',
+                      ),
+                      DefinitionRow(
+                        label: 'Code-barres',
+                        value: product.barcode ?? 'Aucun',
+                        showDivider: false,
+                      ),
+                    ],
+                  ),
+                ),
+                if (isTracked)
+                  _RecentMovements(productId: product.id, isOnline: isOnline),
+              ],
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          // Valeur calée à droite, comme une colonne de ticket.
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: AppTypography.bodyLarge.copyWith(
-                fontWeight: FontWeight.w600,
-                color: valueColor,
-                fontFeatures: AppTypography.tabularFigures,
+          if (isTracked)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: colors.surface,
+                border: Border(top: BorderSide(color: colors.border)),
+              ),
+              child: SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm + AppSpacing.xs,
+                  ),
+                  // Mouvements serveur uniquement : l'ajustement demande une
+                  // connexion, dit sans bloquer le reste de l'écran.
+                  child: PrimaryButton(
+                    label: isOnline
+                        ? 'Ajuster le stock'
+                        : 'Ajuster le stock · en ligne uniquement',
+                    onPressed: isOnline
+                        ? () => showStockAdjustmentSheet(context, product.id)
+                        : null,
+                  ),
+                ),
               ),
             ),
-          ),
-          if (trailing != null) ...[
-            const SizedBox(width: AppSpacing.sm),
-            trailing,
-          ],
         ],
       ),
     );
   }
 }
 
-/// Aperçu des derniers mouvements — données serveur : en ligne uniquement.
+/// Aperçu des derniers mouvements — données serveur : en ligne uniquement,
+/// signalé sans bloquer.
 class _RecentMovements extends ConsumerWidget {
-  const _RecentMovements({required this.productId});
+  const _RecentMovements({required this.productId, required this.isOnline});
 
   final String productId;
+  final bool isOnline;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final history = ref.watch(stockHistoryProvider(productId));
-    final muted = AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant);
+    final meta = AppTypography.body.copyWith(color: colors.textSecondary);
+    final offlineNote = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Text(
+        "L'historique des mouvements et l'ajustement du stock demandent une "
+        'connexion internet. Les ventes, elles, continuent normalement.',
+        style: meta,
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(
-          title: 'Derniers mouvements',
-          actionLabel: 'Voir tout',
+        OverlineHeader(
+          'Derniers mouvements',
+          actionLabel: isOnline ? 'Voir tout' : null,
           onAction: () => context.push(
             Routes.productStockHistory.replaceFirst(':id', productId),
           ),
         ),
         history.when(
-          loading: () => const SkeletonBox(height: 64),
-          error: (_, _) => Row(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: SkeletonBox(height: 64),
+          ),
+          error: (_, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  "L'historique est disponible avec une connexion internet.",
-                  style: muted,
+              offlineNote,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: TextButton(
+                  onPressed: () =>
+                      ref.invalidate(stockHistoryProvider(productId)),
+                  child: const Text('Réessayer'),
                 ),
-              ),
-              TextButton(
-                onPressed: () =>
-                    ref.invalidate(stockHistoryProvider(productId)),
-                child: const Text('Réessayer'),
               ),
             ],
           ),
           data: (movements) => movements.isEmpty
-              ? Text('Aucun mouvement pour ce produit.', style: muted)
-              : Column(
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: Text('Aucun mouvement pour ce produit.', style: meta),
+                )
+              : FlatList(
                   children: [
                     for (final movement in movements.take(
                       _movementPreviewCount,
@@ -345,31 +384,46 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final hasPhoto = widget.product.imageVersion != null;
     return Row(
       children: [
-        ProductThumbnail(product: widget.product, size: 96),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: _busy
-              ? const Align(
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox.square(
+        Semantics(
+          button: true,
+          label: hasPhoto ? 'Changer la photo' : 'Ajouter une photo',
+          excludeSemantics: true,
+          child: InkWell(
+            onTap: _busy ? null : _edit,
+            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                ProductThumbnail(product: widget.product, size: 72),
+                if (_busy)
+                  const SizedBox.square(
                     dimension: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                )
-              : Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: _edit,
-                    icon: const Icon(Icons.photo_camera_outlined),
-                    label: Text(
-                      widget.product.imageVersion == null
-                          ? 'Ajouter une photo'
-                          : 'Changer la photo',
-                    ),
-                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.product.name, style: AppTypography.sectionTitle),
+              Text(
+                hasPhoto
+                    ? 'Toucher la photo pour la changer'
+                    : 'Toucher pour ajouter une photo',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
                 ),
+              ),
+            ],
+          ),
         ),
       ],
     );

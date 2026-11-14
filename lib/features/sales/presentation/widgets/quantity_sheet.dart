@@ -1,11 +1,13 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/utils/whole_number_input.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/discount.dart';
+import 'choice_row.dart';
 
 /// Choix fait dans la feuille de quantité.
 sealed class QuantitySheetResult {
@@ -21,18 +23,14 @@ final class QuantityChosen extends QuantitySheetResult {
   final int quantity;
 }
 
-/// Le vendeur veut appliquer (ou modifier) une réduction sur la ligne.
-final class DiscountRequested extends QuantitySheetResult {
-  /// Crée le résultat.
-  const DiscountRequested();
-}
+/// Quantités proposées en un appui (celles au-delà du stock sont masquées).
+const _quantityPresets = [1, 5, 10, 25];
 
-/// Ouvre une feuille compacte de choix de quantité (`null` si fermée sans
-/// valider). La quantité se règle avec [-]/[+] ou se tape au clavier.
+/// Ouvre la feuille de quantité (`null` si fermée sans valider) : la quantité
+/// se règle avec [-]/[+], se tape au clavier ou se choisit parmi 1, 5, 10, 25.
 ///
-/// [maxQuantity] `null` = pas de limite de stock. [offerDiscount] affiche
-/// l'action « Réduction » (ligne déjà dans le panier) ; [discount] est la
-/// réduction actuelle de la ligne, prise en compte dans le total affiché.
+/// [maxQuantity] `null` = pas de limite de stock. [discount] est la réduction
+/// actuelle de la ligne, prise en compte dans le total affiché.
 Future<QuantitySheetResult?> showQuantitySheet(
   BuildContext context, {
   required String productName,
@@ -41,12 +39,10 @@ Future<QuantitySheetResult?> showQuantitySheet(
   int initialQuantity = 1,
   int? maxQuantity,
   int? stock,
-  bool offerDiscount = false,
   Discount? discount,
 }) {
   return showModalBottomSheet<QuantitySheetResult>(
     context: context,
-    showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _QuantitySheet(
       productName: productName,
@@ -55,7 +51,6 @@ Future<QuantitySheetResult?> showQuantitySheet(
       initialQuantity: initialQuantity,
       maxQuantity: maxQuantity,
       stock: stock,
-      offerDiscount: offerDiscount,
       discount: discount,
     ),
   );
@@ -69,7 +64,6 @@ class _QuantitySheet extends StatefulWidget {
     required this.initialQuantity,
     required this.maxQuantity,
     required this.stock,
-    required this.offerDiscount,
     required this.discount,
   });
 
@@ -79,7 +73,6 @@ class _QuantitySheet extends StatefulWidget {
   final int initialQuantity;
   final int? maxQuantity;
   final int? stock;
-  final bool offerDiscount;
   final Discount? discount;
 
   @override
@@ -141,13 +134,18 @@ class _QuantitySheetState extends State<_QuantitySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final max = widget.maxQuantity;
     final quantity = _quantity;
     final error = _errorFor(quantity, max);
     final gross = widget.unitPrice * Decimal.fromInt(quantity ?? 0);
     final discountAmount =
         widget.discount?.fitTo(gross)?.amountOn(gross) ?? Decimal.zero;
+    final presets = [
+      for (final preset in _quantityPresets)
+        if (max == null || preset <= max) preset,
+    ];
+    final stock = widget.stock;
 
     return Padding(
       // Le clavier numérique ne doit pas masquer le bouton de validation.
@@ -156,7 +154,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),
@@ -164,23 +162,23 @@ class _QuantitySheetState extends State<_QuantitySheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(widget.productName, style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.xs),
-              Row(
-                children: [
-                  AmountDisplay(amount: widget.unitPrice),
-                  const Spacer(),
-                  if (widget.stock != null)
-                    Text(
-                      'Stock : ${widget.stock}',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurfaceVariant,
-                      ),
-                    ),
-                ],
+              Text(widget.productName, style: AppTypography.sectionTitle),
+              const SizedBox(height: 2),
+              Text(
+                [
+                  '${formatFcfa(widget.unitPrice)} l’unité',
+                  if (stock != null) '$stock en stock',
+                ].join(' · '),
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Center(
+              const SizedBox(height: AppSpacing.md),
+              const Text('Quantité', style: AppTypography.bodyStrong),
+              const SizedBox(height: AppSpacing.xs + 2),
+              Align(
+                alignment: Alignment.centerLeft,
                 child: QuantityStepper(
                   quantity: quantity ?? 0,
                   large: true,
@@ -201,9 +199,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                       keyboardType: TextInputType.number,
                       textInputAction: TextInputAction.done,
                       textAlign: TextAlign.center,
-                      style: AppTypography.titleLarge.copyWith(
-                        fontFeatures: AppTypography.tabularFigures,
-                      ),
+                      style: AppTypography.figureLarge,
                       // Virgule gardée visible pour être refusée, jamais
                       // recollée aux chiffres (« 2,5 » ≠ 25).
                       inputFormatters: wholeNumberInputFormatters(maxLength: 5),
@@ -214,8 +210,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                       ),
                       onChanged: _onTyped,
                       onSubmitted: (_) => _confirm(),
-                      // La pilule du sélecteur sert de cadre : ni fond ni
-                      // contour, sinon deux cadres s'emboîtent.
+                      // Le cadre du stepper suffit : ni fond ni contour.
                       decoration: const InputDecoration(
                         isDense: true,
                         hintText: '0',
@@ -235,42 +230,81 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   error ?? 'Stock disponible atteint',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: error == null ? cs.onSurfaceVariant : cs.error,
+                  style: AppTypography.meta.copyWith(
+                    color: error == null ? colors.textSecondary : colors.error,
                   ),
                 ),
               ],
-              if (discountAmount > Decimal.zero) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Réduction −${formatFcfa(discountAmount)}',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall.copyWith(color: cs.primary),
+              if (presets.length > 1) ...[
+                const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+                ChoiceRow<int>(
+                  choices: [
+                    for (final preset in presets)
+                      (value: preset, label: '$preset'),
+                  ],
+                  selected: quantity,
+                  onSelected: _step,
                 ),
               ],
-              const SizedBox(height: AppSpacing.lg),
-              if (widget.offerDiscount) ...[
-                OutlinedButton.icon(
-                  onPressed: () =>
-                      Navigator.of(context).pop(const DiscountRequested()),
-                  icon: const Icon(Icons.local_offer_outlined),
-                  label: Text(
-                    widget.discount == null
-                        ? 'Réduction'
-                        : 'Modifier la réduction',
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+              const SizedBox(height: AppSpacing.sm),
+              _LineTotal(
+                total: gross - discountAmount,
+                discountAmount: discountAmount,
+              ),
+              const SizedBox(height: AppSpacing.sm),
               PrimaryButton(
-                label:
-                    '${widget.confirmLabel} · '
-                    '${formatFcfa(gross - discountAmount)}',
+                label: widget.confirmLabel,
                 onPressed: error == null ? _confirm : null,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// « Total de la ligne », réduction de la ligne déduite.
+class _LineTotal extends StatelessWidget {
+  const _LineTotal({required this.total, required this.discountAmount});
+
+  final Decimal total;
+  final Decimal discountAmount;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                discountAmount > Decimal.zero
+                    ? 'Total de la ligne (remise '
+                          '−${formatAmount(discountAmount)})'
+                    : 'Total de la ligne',
+                style: AppTypography.body.copyWith(
+                  color: colors.textSecondary,
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              ),
+            ),
+            Text(
+              formatFcfa(total),
+              style: AppTypography.bodyStrong.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
+            ),
+          ],
         ),
       ),
     );

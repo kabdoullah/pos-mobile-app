@@ -11,6 +11,7 @@ import '../../../../core/sync/cash_sync_closure.dart';
 import '../../../../core/sync/sync_queue_repository.dart';
 import '../../../../database/app_database.dart' as drift_db;
 import '../../domain/cash_balance_calculator.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_labels.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
@@ -192,6 +193,7 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
   @override
   Future<CashSession> openSession({
     required Decimal openingAmount,
+    CashCount? openingCount,
     String? note,
   }) async {
     final id = _uuid.v4();
@@ -218,6 +220,9 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
               syncStatus: const drift.Value('pending'),
             ),
           );
+      if (openingCount != null) {
+        await _insertCount(id, CashCountOperation.opening, openingCount);
+      }
       await syncQueue.enqueueCashSessionOpen(
         sessionId: id,
         payload: cashSessionOpenPayload(
@@ -226,6 +231,7 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           openingAmount: openingAmount,
           openingNote: note,
           openedAt: openedAt,
+          openingCount: openingCount,
         ),
       );
     });
@@ -304,6 +310,7 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
   Future<CashSession> closeSession({
     required String sessionId,
     required Decimal countedAmount,
+    CashCount? closingCount,
     String? note,
   }) async {
     await db.transaction(() async {
@@ -346,6 +353,9 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           rejectionCode: const drift.Value(null),
         ),
       );
+      if (closingCount != null) {
+        await _insertCount(sessionId, CashCountOperation.closing, closingCount);
+      }
       await syncQueue.enqueueCashSessionClose(
         sessionId: sessionId,
         payload: cashSessionClosePayload(
@@ -354,12 +364,57 @@ class CashRegisterRepositoryImpl implements CashRegisterRepository {
           clientExpectedAmount: expected,
           closingNote: note,
           closedAt: closedAt,
+          closingCount: closingCount,
         ),
       );
     });
 
     return (await _sessionRow(sessionId))!.toDomain();
   }
+
+  @override
+  Stream<CashCount?> watchCount(
+    String sessionId,
+    CashCountOperation operation,
+  ) => _countQuery(sessionId, operation).watch().map(cashCountFromRows);
+
+  @override
+  Future<CashCount?> lastClosingCount() async {
+    final last =
+        await (db.select(db.cashSessions)
+              ..where((s) => s.closedAt.isNotNull())
+              ..orderBy([(s) => drift.OrderingTerm.desc(s.closedAt)])
+              ..limit(1))
+            .getSingleOrNull();
+    if (last == null) return null;
+    return cashCountFromRows(
+      await _countQuery(last.id, CashCountOperation.closing).get(),
+    );
+  }
+
+  drift.SimpleSelectStatement<
+    drift_db.$CashCountLinesTable,
+    drift_db.CashCountLine
+  >
+  _countQuery(String sessionId, CashCountOperation operation) =>
+      db.select(db.cashCountLines)..where(
+        (l) =>
+            l.sessionId.equals(sessionId) &
+            l.operation.equals(cashCountOperationToString(operation)),
+      );
+
+  /// Écrit les lignes d'un comptage ; à appeler dans la transaction de
+  /// l'ouverture ou de la clôture.
+  Future<void> _insertCount(
+    String sessionId,
+    CashCountOperation operation,
+    CashCount count,
+  ) => db.batch(
+    (b) => b.insertAll(
+      db.cashCountLines,
+      cashCountCompanions(sessionId, operation, count),
+    ),
+  );
 
   @override
   Stream<List<CashSession>> watchLocalHistory() {

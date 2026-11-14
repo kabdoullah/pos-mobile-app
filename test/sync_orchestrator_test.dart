@@ -16,6 +16,7 @@ import 'package:mobile/features/auth/domain/entities/user.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/database/database_provider.dart';
+import 'package:mobile/core/sync/cash_session_restore.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
 
 class MockPushService extends Mock implements PushService {}
@@ -23,6 +24,8 @@ class MockPushService extends Mock implements PushService {}
 class MockPullService extends Mock implements PullService {}
 
 class MockTokenStorage extends Mock implements TokenStorage {}
+
+class MockCashRestorer extends Mock implements CashSessionRestorer {}
 
 /// syncNow() ne s'exécute que pour une session authentifiée.
 class _AuthenticatedAuth extends Auth {
@@ -37,10 +40,13 @@ void main() {
   group('SyncOrchestrator', () {
     late MockPushService mockPushService;
     late MockPullService mockPullService;
+    late MockCashRestorer mockRestorer;
 
     setUp(() {
       mockPushService = MockPushService();
       mockPullService = MockPullService();
+      mockRestorer = MockCashRestorer();
+      when(() => mockRestorer.restore()).thenAnswer((_) async {});
 
       when(
         () => mockPushService.pushPendingSales(),
@@ -81,6 +87,7 @@ void main() {
         overrides: [
           pushServiceProvider.overrideWithValue(push ?? mockPushService),
           pullServiceProvider.overrideWithValue(mockPullService),
+          cashSessionRestorerProvider.overrideWithValue(mockRestorer),
           isOnlineProvider.overrideWith(
             (_) => Stream.value(true).asBroadcastStream(),
           ),
@@ -217,6 +224,33 @@ void main() {
         expect((finalState as SyncStatusIdle).lastSyncAt, isNotNull);
       },
     );
+
+    test('lancement et pull complet : sessions de caisse restaurées ; un '
+        'échec ne fait pas échouer la synchro et est réessayé', () async {
+      final container = await makeContainer();
+      final orchestrator = container.read(syncOrchestratorProvider.notifier);
+
+      // Première synchro du lancement : restauration une fois, puis plus
+      // pour une synchro ordinaire.
+      await orchestrator.syncNow();
+      verify(() => mockRestorer.restore()).called(1);
+      await orchestrator.syncNow();
+      verifyNever(() => mockRestorer.restore());
+
+      when(() => mockRestorer.restore()).thenThrow(Exception('offline'));
+      await orchestrator.syncNow(forceFullPull: true);
+      verify(() => mockRestorer.restore()).called(1);
+      expect(container.read(syncOrchestratorProvider), isA<SyncStatusIdle>());
+
+      // Synchro suivante (pas un pull complet) : nouvel essai, réussi.
+      when(() => mockRestorer.restore()).thenAnswer((_) async {});
+      await orchestrator.syncNow();
+      verify(() => mockRestorer.restore()).called(1);
+
+      // Puis plus rien à restaurer.
+      await orchestrator.syncNow();
+      verifyNever(() => mockRestorer.restore());
+    });
 
     test('syncNow on error sets SyncStatusError', () async {
       final errorMockPushService = MockPushService();

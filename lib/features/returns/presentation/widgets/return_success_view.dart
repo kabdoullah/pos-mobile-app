@@ -39,143 +39,133 @@ class ReturnSuccessView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
-    final semantic = Theme.of(context).extension<AppSemanticColors>()!;
+    final colors = AppColors.of(context);
     final live = ref
         .watch(saleReturnsProvider(sale.id))
         .value
         ?.where((r) => r.id == saved.id)
         .firstOrNull;
     final r = live ?? saved;
-    final status = switch (r.syncStatus) {
-      ReturnSyncStatus.synced => 'Synchronisé',
-      ReturnSyncStatus.pending => 'Enregistré · en attente de synchro',
-      ReturnSyncStatus.rejected => returnRejectionMessage(r.rejectionCode),
+    final (String status, StatusTone tone) = switch (r.syncStatus) {
+      ReturnSyncStatus.synced => ('Synchronisé', StatusTone.success),
+      ReturnSyncStatus.pending => (
+        'Enregistré · en attente de synchro',
+        StatusTone.warning,
+      ),
+      ReturnSyncStatus.rejected => (
+        returnRejectionMessage(r.rejectionCode),
+        StatusTone.error,
+      ),
     };
+    final restocked = r.lines
+        .where((l) => l.restocked)
+        .fold(0, (sum, l) => sum + l.quantity);
 
-    // Actions fixées en bas : visibles même sur un petit écran avec la
-    // bannière hors ligne.
+    // Actions fixées en bas : visibles même sur un petit écran.
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
             children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 56,
-                color: semantic.success,
-              ),
+              Icon(Icons.check_circle_outline, size: 32, color: colors.success),
               const SizedBox(height: AppSpacing.sm),
+              const Text('Retour enregistré', style: AppTypography.screenTitle),
               Text(
-                r.returnNumber > 0
-                    ? 'Retour #${r.returnNumber}'
-                    : 'Retour enregistré',
-                textAlign: TextAlign.center,
-                style: AppTypography.titleLarge,
+                'La vente n° ${sale.receiptNumber} n’est pas modifiée.',
+                style: AppTypography.body.copyWith(color: colors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),
-              Center(
-                child: AmountDisplay(
-                  amount: r.refundAmount,
-                  size: AmountSize.large,
+              DefinitionRow(
+                label: 'N° de retour',
+                value: r.returnNumber > 0 ? '#${r.returnNumber}' : 'À venir',
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colors.border)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.sm + 3,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Synchro',
+                          style: AppTypography.body.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      Flexible(
+                        child: StatusIndicator(label: status, tone: tone),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              Text(
-                'remboursé · ${r.refundMethod.label}',
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+              DefinitionRow(
+                label: 'Remboursé · ${r.refundMethod.label}',
+                value: formatFcfa(r.refundAmount),
               ),
-              const SizedBox(height: AppSpacing.md),
-              _Info(label: 'Vente', value: '#${sale.receiptNumber}'),
-              _Info(
+              DefinitionRow(
                 label: 'Date',
                 value: DateFormat(
                   'dd/MM/yyyy HH:mm',
                   'fr_FR',
                 ).format(r.createdAt.toLocal()),
               ),
-              _Info(
-                label: 'Statut',
-                value: status,
-                color: r.syncStatus == ReturnSyncStatus.rejected
-                    ? cs.error
-                    : null,
+              DefinitionRow(
+                label: 'Stock',
+                value: restocked == 0
+                    ? 'Rien remis en stock'
+                    : '+ $restocked remis en stock',
+                showDivider: false,
               ),
             ],
           ),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                PrimaryButton(
-                  label: 'Imprimer le reçu de retour',
-                  icon: Icons.print_outlined,
-                  onPressed: () => printReturnReceipt(
-                    context,
-                    ref,
-                    sale: sale,
-                    saleReturn: r,
-                    lines: lines,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton(
-                  onPressed: onDone,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(
-                      AppSpacing.buttonHeightSm,
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border(top: BorderSide(color: colors.border)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm + AppSpacing.xs,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PrimaryButton(
+                    label: 'Imprimer le reçu de retour',
+                    onPressed: () => printReturnReceipt(
+                      context,
+                      ref,
+                      sale: sale,
+                      saleReturn: r,
+                      lines: lines,
                     ),
                   ),
-                  child: const Text('Terminer'),
-                ),
-              ],
+                  const SizedBox(height: AppSpacing.sm),
+                  SecondaryButton(label: 'Terminé', onPressed: onDone),
+                ],
+              ),
             ),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _Info extends StatelessWidget {
-  const _Info({required this.label, required this.value, this.color});
-
-  final String label;
-  final String value;
-  final Color? color;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: AppTypography.labelLarge.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

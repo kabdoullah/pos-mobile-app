@@ -48,6 +48,13 @@ class AppSearchBar extends StatelessWidget {
       textInputAction: TextInputAction.search,
       elevation: const WidgetStatePropertyAll(0),
       backgroundColor: WidgetStatePropertyAll(cs.surfaceContainerHigh),
+      // v2 : champ en creux r8, sans bordure ni pilule.
+      shape: WidgetStatePropertyAll(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        ),
+      ),
+      side: const WidgetStatePropertyAll(BorderSide.none),
       constraints: const BoxConstraints(minHeight: AppSpacing.inputHeight),
       padding: const WidgetStatePropertyAll(
         EdgeInsets.only(left: AppSpacing.md, right: AppSpacing.xs),

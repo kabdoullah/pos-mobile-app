@@ -1,4 +1,3 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -63,6 +62,16 @@ class _FakeAuth extends Auth {
 
   @override
   Future<DateTime?> pinLockedUntil() async => null;
+
+  /// Mots de passe transmis à [recoverPin].
+  final recoverAttempts = <String>[];
+
+  @override
+  Future<void> recoverPin(String password) async {
+    recoverAttempts.add(password);
+    if (password != 'secret123') throw const InvalidCredentials();
+    state = const AsyncData(AuthPinSetupRequired());
+  }
 
   @override
   Future<void> logout() async {
@@ -186,7 +195,10 @@ void main() {
       await tester.tap(find.text('Se connecter'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Téléphone ou mot de passe incorrect.'), findsOneWidget);
+      expect(
+        find.text('Vérifiez le numéro et le mot de passe, puis réessayez.'),
+        findsOneWidget,
+      );
       expect(find.text('Connexion impossible'), findsNothing);
       expect(find.text('07 00 00 00 01'), findsOneWidget);
     });
@@ -226,13 +238,16 @@ void main() {
       await tester.enterText(fields.at(3), 'secret124');
       await tester.pump();
       expect(
-        find.text('Les mots de passe ne correspondent pas.'),
+        find.text('Les deux mots de passe sont différents.'),
         findsOneWidget,
       );
 
       await tester.enterText(fields.at(3), 'secret123');
       await tester.pump();
-      expect(find.text('Les mots de passe correspondent'), findsOneWidget);
+      expect(
+        find.text('Les deux mots de passe sont identiques'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('email obligatoire : pas d\'inscription sans adresse', (
@@ -248,7 +263,7 @@ void main() {
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pump();
-      expect(find.text('Saisissez votre adresse email.'), findsOneWidget);
+      expect(find.text('Saisissez votre adresse e-mail.'), findsOneWidget);
       expect(auth.registeredEmail, isNull);
 
       await tester.enterText(fields.at(1), 'awa@example.com');
@@ -324,8 +339,8 @@ void main() {
         status: const AuthPinSetupRequired(),
       );
       await _tapDigits(tester, '1234');
-      expect(find.text('Choisissez un PIN plus sécurisé.'), findsOneWidget);
-      expect(find.text('Sécurisez votre caisse'), findsOneWidget);
+      expect(find.text('Code trop simple (1234, 0000…).'), findsOneWidget);
+      expect(find.text('Créez un code PIN'), findsOneWidget);
     });
 
     testWidgets('hors inscription : ni étapes ni retour', (tester) async {
@@ -371,68 +386,39 @@ void main() {
 
       await _tapDigits(tester, '1111');
       expect(find.text('PIN temporairement bloqué'), findsOneWidget);
-      expect(find.textContaining('Réessayez dans 4 min'), findsOneWidget);
+      expect(find.textContaining('Réessayer dans 4:'), findsOneWidget);
 
       // Pavé désactivé pendant le blocage : la saisie est ignorée.
       await _tapDigits(tester, '1');
       expect(find.bySemanticsLabel('0 chiffre saisi sur 4'), findsOneWidget);
     });
 
-    testWidgets('changer de compte : confirmation puis déconnexion', (
+    testWidgets('code PIN oublié : mot de passe vérifié, sinon refusé', (
       tester,
     ) async {
       final auth = await _pump(
         tester,
         const PinLoginPage(),
         status: const AuthPinRequired(),
-        pendingSales: 2,
       );
 
-      await tester.tap(find.text('Changer de compte'));
+      await tester.tap(find.text('Code PIN oublié ?'));
       await tester.pumpAndSettle();
-      expect(find.text('Changer de compte ?'), findsOneWidget);
-      expect(find.textContaining('2 modifications pas encore'), findsOneWidget);
+      expect(find.text('Code PIN oublié'), findsOneWidget);
 
-      await tester.tap(find.text('Annuler'));
+      await tester.enterText(find.byType(TextField), 'mauvais');
+      await tester.tap(find.text('Vérifier et choisir un nouveau PIN'));
       await tester.pumpAndSettle();
-      expect(auth.loggedOut, isFalse);
+      expect(find.text('Mot de passe incorrect.'), findsOneWidget);
+      expect(auth.state.value, isA<AuthPinRequired>());
 
-      await tester.tap(find.text('Changer de compte'));
+      await tester.enterText(find.byType(TextField), 'secret123');
+      await tester.tap(find.text('Vérifier et choisir un nouveau PIN'));
       await tester.pumpAndSettle();
-      await tester.tap(
-        find.widgetWithText(ElevatedButton, 'Changer de compte'),
-      );
-      await tester.pumpAndSettle();
-      expect(auth.loggedOut, isTrue);
-    });
-
-    testWidgets('changer de compte : refusé tant que la caisse est ouverte', (
-      tester,
-    ) async {
-      final auth = await _pump(
-        tester,
-        const PinLoginPage(),
-        status: const AuthPinRequired(),
-        cashSession: CashSession(
-          id: 'session-1',
-          deviceId: 'device-1',
-          status: CashSessionStatus.open,
-          openingAmount: Decimal.zero,
-          openedAt: DateTime.utc(2026),
-          syncStatus: CashSyncStatus.synced,
-          serverRecalculated: false,
-        ),
-      );
-
-      await tester.tap(find.text('Changer de compte'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Clôturez la caisse avant de vous déconnecter.'),
-        findsOneWidget,
-      );
-      expect(find.text('Changer de compte ?'), findsNothing);
-      expect(auth.loggedOut, isFalse);
+      expect(auth.recoverAttempts, ['mauvais', 'secret123']);
+      expect(auth.state.value, isA<AuthPinSetupRequired>());
+      expect(find.text('Code PIN oublié'), findsNothing);
+      expect(tester.takeException(), isNull);
     });
   });
 }

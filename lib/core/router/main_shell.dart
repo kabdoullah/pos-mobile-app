@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/theme/app_colors.dart';
+import '../../app/theme/app_spacing.dart';
+import '../../app/theme/app_typography.dart';
+import '../widgets/stroke_icon.dart';
+
 /// Onglets de la [MainShell], dans l'ordre des branches de la
 /// [StatefulShellRoute] (`app_router.dart`) et des destinations ci-dessous —
 /// à garder synchronisés. Utiliser `ShellBranch.x.index` avec `goBranch`.
@@ -8,7 +13,7 @@ enum ShellBranch {
   /// Accueil (dashboard).
   home,
 
-  /// Caisse (vente).
+  /// Vendre (caisse).
   sale,
 
   /// Vue d'ensemble du stock.
@@ -21,14 +26,12 @@ enum ShellBranch {
   settings,
 }
 
-/// Coquille principale : Scaffold + [NavigationBar] Material 3 pilotés par
+/// Coquille principale : Scaffold + [_AppBottomNav] pilotés par
 /// [StatefulNavigationShell].
 ///
 /// Chaque onglet correspond à une branche de la [StatefulShellRoute] déclarée
 /// dans `app_router.dart` — l'état de navigation (index actif, pile de chaque
 /// branche) est géré nativement par go_router, plus besoin de provider dédié.
-/// Le style de la barre (couleurs, indicateur, typographie) vient du thème
-/// Cacao & Or via `navigationBarTheme` (voir `core/theme/app_theme.dart`).
 class MainShell extends StatelessWidget {
   /// Crée la coquille principale à partir de la shell de navigation active.
   const MainShell({required this.navigationShell, super.key});
@@ -41,41 +44,125 @@ class MainShell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: _AppBottomNav(
         selectedIndex: navigationShell.currentIndex,
         // `initialLocation: true` quand on retape l'onglet déjà actif :
         // réinitialise la branche à sa route de départ.
-        onDestinationSelected: (index) => navigationShell.goBranch(
+        onSelected: (index) => navigationShell.goBranch(
           index,
           initialLocation: index == navigationShell.currentIndex,
         ),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Accueil',
+      ),
+    );
+  }
+}
+
+/// Destinations, dans l'ordre de [ShellBranch].
+/// Pictogrammes dessinés de la maquette : le même au trait, actif ou non
+/// (seules la couleur et la graisse du libellé changent).
+const _destinations = <(DesignIcon, String)>[
+  (DesignIcon.home, 'Accueil'),
+  (DesignIcon.sell, 'Vendre'),
+  (DesignIcon.stock, 'Stock'),
+  (DesignIcon.history, 'Historique'),
+  (DesignIcon.settings, 'Paramètres'),
+];
+
+/// Barre de navigation v2 (remplace `NavigationBar`) : plate, 64 dp, filet
+/// en haut, libellés toujours visibles ; l'onglet actif est marqué par un
+/// trait `action` de 2 dp au-dessus de lui (pas d'indicateur en pilule).
+class _AppBottomNav extends StatelessWidget {
+  const _AppBottomNav({required this.selectedIndex, required this.onSelected});
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.border)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              for (final (index, (icon, label)) in _destinations.indexed)
+                Expanded(
+                  child: _NavItem(
+                    icon: icon,
+                    label: label,
+                    selected: index == selectedIndex,
+                    onTap: () => onSelected(index),
+                  ),
+                ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.point_of_sale_outlined),
-            selectedIcon: Icon(Icons.point_of_sale),
-            label: 'Caisse',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2),
-            label: 'Stock',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Historique',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Paramètres',
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final DesignIcon icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final color = selected ? colors.textPrimary : colors.textSecondary;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                StrokeIcon(icon, color: color),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: color,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+            if (selected)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: FractionallySizedBox(
+                  widthFactor: 0.44,
+                  child: Container(height: 2, color: colors.action),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

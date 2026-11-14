@@ -110,7 +110,7 @@ class InvalidCredentials implements Exception {
   const InvalidCredentials();
 
   @override
-  String toString() => 'Téléphone ou mot de passe incorrect.';
+  String toString() => 'Vérifiez le numéro et le mot de passe, puis réessayez.';
 }
 
 /// Champ du formulaire d'inscription auquel le serveur rattache un refus.
@@ -481,6 +481,38 @@ class Auth extends _$Auth {
     });
     // La synchro part d'elle-même au passage en Authenticated (écouteur de
     // SyncOrchestrator) : la lire ici créerait une dépendance circulaire.
+  }
+
+  /// « Code PIN oublié » : le mot de passe du compte, revérifié par le
+  /// serveur (connexion requise), remplace le PIN. Le PIN de l'appareil est
+  /// oublié et l'app passe à la création d'un nouveau PIN.
+  ///
+  /// Même compte : boutique, panier et données locales sont conservés. Le PIN
+  /// n'est jamais envoyé au serveur. Lève [InvalidCredentials] si le mot de
+  /// passe est faux, sinon le message de l'erreur (réseau…) : rien ne change
+  /// alors et l'écran PIN reste affiché.
+  Future<void> recoverPin(String password) async {
+    final repo = ref.read(authRepositoryProvider);
+    final phone = (await repo.getCurrentUser())?.phoneNumber ?? '';
+    if (phone.isEmpty) {
+      throw 'Compte introuvable sur ce téléphone. Utilisez « Changer de '
+          'compte ».';
+    }
+    try {
+      await repo.login(phoneNumber: phone, password: password);
+    } on StoreSuspendedException catch (e) {
+      _logger.w('[Auth.recoverPin] Refused: store suspended');
+      await _rememberSuspension(e);
+      state = AsyncData(AuthStoreSuspended.from(e));
+      return;
+    } on UnauthorizedException {
+      throw const InvalidCredentials();
+    } catch (e) {
+      throw errorToFrench(e);
+    }
+    await repo.forgetPin();
+    _logger.i('[Auth.recoverPin] Password verified, new PIN required');
+    state = const AsyncData(AuthPinSetupRequired());
   }
 
   /// Déconnecte l'utilisateur courant.

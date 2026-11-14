@@ -124,13 +124,13 @@ void main() {
     testWidgets('onglet Stock, thème $name', (tester) async {
       await pump(tester, const StockOverviewPage(), theme: theme);
       expect(tester.takeException(), isNull);
-      expect(
-        find.textContaining('Valeur du stock', findRichText: true),
-        findsOneWidget,
-      );
+      expect(find.textContaining('valeur du stock'), findsOneWidget);
 
-      // Filtre « Ruptures » depuis sa puce, qui porte le compteur.
-      await tester.tap(find.textContaining('Ruptures ·', findRichText: true));
+      // Filtre « Ruptures » depuis son onglet, qui porte le compteur.
+      // Onglets en ligne défilante : on amène l'onglet à l'écran.
+      await tester.ensureVisible(find.textContaining('Ruptures '));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('Ruptures '));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Rupture'),
@@ -149,11 +149,12 @@ void main() {
 
     testWidgets('filtre par catégorie dans Stock, thème $name', (tester) async {
       await pump(tester, const StockOverviewPage(), theme: theme);
-      await tester.scrollUntilVisible(
-        find.text('Toutes catégories'),
-        200,
-        scrollable: _list,
-      );
+      // L'onglet « Catégorie » ouvre le choix de la catégorie.
+      await tester.ensureVisible(find.text('Catégorie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Catégorie'));
+      await tester.pumpAndSettle();
+      expect(find.text('Toutes les catégories'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -166,7 +167,7 @@ void main() {
     testWidgets('fiche produit, thème $name', (tester) async {
       await pump(tester, const ProductDetailPage(productId: '2'), theme: theme);
       expect(tester.takeException(), isNull);
-      expect(find.text('Stock faible'), findsOneWidget);
+      expect(find.text('Stock bas'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Vente'),
         200,
@@ -187,7 +188,7 @@ void main() {
       // La section des mouvements est sous le bloc prix : elle ne se
       // construit (et ne charge) qu'une fois atteinte.
       await tester.scrollUntilVisible(
-        find.text('Derniers mouvements'),
+        find.text('DERNIERS MOUVEMENTS'),
         200,
         scrollable: _list,
       );

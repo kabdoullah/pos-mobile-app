@@ -58,6 +58,9 @@ class AuthRepositoryImpl implements AuthRepository {
       // Persisté : si l'app est fermée avant la configuration de la boutique,
       // le prochain lancement y revient au lieu de passer au PIN.
       await tokenStorage.saveStoreSetupPending(userId);
+      // Accueil « boutique prête » + tutoriel après le PIN : seulement pour
+      // une inscription, pas pour une connexion sur un nouvel appareil.
+      await tokenStorage.saveWelcomePending(userId);
       return User(
         id: userId,
         phoneNumber: phoneNumber,
@@ -168,6 +171,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> forgetPin() => pinStorage.clearPin();
+
+  @override
   Future<void> deleteAccount(String password) async {
     try {
       await dataSource.deleteMe(DeleteAccountRequestDto(password: password));
@@ -202,6 +208,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<void> completeStoreSetup() => tokenStorage.clearStoreSetupPending();
+
+  @override
+  Future<bool> isWelcomePending() async {
+    final pendingUserId = await tokenStorage.getWelcomePendingUserId();
+    if (pendingUserId == null) return false;
+    return pendingUserId == await tokenStorage.getUserId();
+  }
+
+  @override
+  Future<void> completeWelcome() => tokenStorage.clearWelcomePending();
 
   @override
   Future<void> refreshTokens() async {

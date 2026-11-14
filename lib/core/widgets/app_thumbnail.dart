@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
+import 'stroke_icon.dart';
 
-/// Vignette carrée d'une image, ou pictogramme si aucune image, pendant le
-/// chargement ou en cas d'erreur.
+/// Vignette carrée d'une image, ou pictogramme « colis » de la maquette v2 si
+/// aucune image, pendant le chargement ou en cas d'erreur.
 class AppThumbnail extends StatelessWidget {
   /// Crée une vignette de [size] points.
-  const AppThumbnail({
-    required this.image,
-    this.size = 44,
-    this.placeholder = Icons.inventory_2_outlined,
-    super.key,
-  });
+  const AppThumbnail({required this.image, this.size = 44, super.key});
 
   /// Image affichée (null = pictogramme).
   final ImageProvider? image;
@@ -19,18 +16,15 @@ class AppThumbnail extends StatelessWidget {
   /// Côté de la vignette.
   final double size;
 
-  /// Pictogramme affiché sans image.
-  final IconData placeholder;
-
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final image = this.image;
     // Décodage à la taille affichée : pas d'image pleine résolution en mémoire.
     final cacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
     final fallback = ColoredBox(
-      color: cs.surfaceContainerHighest,
-      child: Icon(placeholder, size: size * 0.5, color: cs.onSurfaceVariant),
+      color: colors.surfaceSunken,
+      child: Center(child: PackageIcon(size: size * 0.5)),
     );
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),

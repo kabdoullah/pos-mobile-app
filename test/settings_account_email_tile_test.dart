@@ -49,7 +49,7 @@ void main() {
     );
 
     expect(find.textContaining('Non confirmée'), findsOneWidget);
-    await tester.tap(find.text('Adresse email'));
+    await tester.tap(find.text('Adresse e-mail'));
     await tester.pumpAndSettle();
 
     expect(status.resendCalls, 1);
@@ -72,7 +72,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Adresse email'));
+    await tester.tap(find.text('Adresse e-mail'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Trop de tentatives'), findsOneWidget);
@@ -87,7 +87,7 @@ void main() {
     );
 
     expect(find.text('awa@example.com · Confirmée'), findsOneWidget);
-    await tester.tap(find.text('Adresse email'));
+    await tester.tap(find.text('Adresse e-mail'));
     await tester.pumpAndSettle();
     expect(status.resendCalls, 0);
   });
@@ -101,7 +101,7 @@ void main() {
     );
 
     expect(find.textContaining('Aucun email'), findsOneWidget);
-    await tester.tap(find.text('Adresse email'));
+    await tester.tap(find.text('Adresse e-mail'));
     await tester.pumpAndSettle();
     expect(find.text('Ajouter un email'), findsOneWidget);
   });

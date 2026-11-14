@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../auth/domain/entities/store.dart';
 import '../../domain/repositories/printer_repository.dart';
+import '../../domain/repositories/saved_printer_repository.dart';
 import '../../providers/printing_di_providers.dart';
 import '../../../auth/providers/seller_profile_provider.dart';
 import '../../../auth/providers/store_provider.dart';
@@ -14,15 +14,6 @@ import '../../../returns/domain/entities/sale_return.dart';
 import '../../../sales/domain/entities/sale.dart';
 
 part 'printer_provider.g.dart';
-
-/// Clés de stockage des préférences d'imprimante dans flutter_secure_storage.
-abstract class _PrinterKeys {
-  /// Clé de l'adresse MAC de l'imprimante enregistrée.
-  static const String mac = 'printer_mac';
-
-  /// Clé du nom de l'imprimante enregistrée.
-  static const String name = 'printer_name';
-}
 
 /// État scellé de l'imprimante Bluetooth.
 sealed class PrinterState {
@@ -36,10 +27,10 @@ class PrinterDisconnected extends PrinterState {
   /// Crée un état [PrinterDisconnected].
   const PrinterDisconnected({this.savedMac, this.savedName});
 
-  /// Adresse MAC enregistrée dans le secure storage, s'il y en a une.
+  /// Adresse MAC de l'imprimante mémorisée, s'il y en a une.
   final String? savedMac;
 
-  /// Nom de l'appareil enregistré dans le secure storage, s'il y en a un.
+  /// Nom de l'imprimante mémorisée, s'il y en a un.
   final String? savedName;
 }
 
@@ -80,7 +71,6 @@ class PrinterError extends PrinterState {
 /// recréée (puis libérée) à chaque impression.
 @Riverpod(keepAlive: true)
 class Printer extends _$Printer {
-  static const _storage = FlutterSecureStorage();
   static final _log = Logger();
 
   @override
@@ -102,11 +92,8 @@ class Printer extends _$Printer {
 
   /// Imprimante enregistrée lors du dernier [connect] réussi, lue depuis le
   /// stockage (et non depuis [state], qui ne l'a peut-être pas encore chargée).
-  Future<({String mac, String name})?> _readSavedPrinter() async {
-    final mac = await _storage.read(key: _PrinterKeys.mac);
-    if (mac == null) return null;
-    return (mac: mac, name: await _storage.read(key: _PrinterKeys.name) ?? mac);
-  }
+  Future<SavedPrinter?> _readSavedPrinter() =>
+      ref.read(savedPrinterRepositoryProvider).read();
 
   /// Se connecte à l'appareil BT [mac] affiché sous le nom [name].
   ///
@@ -117,8 +104,10 @@ class Printer extends _$Printer {
     try {
       final service = ref.read(printerRepositoryProvider);
       await service.connect(mac);
-      await _storage.write(key: _PrinterKeys.mac, value: mac);
-      await _storage.write(key: _PrinterKeys.name, value: name);
+      await ref.read(savedPrinterRepositoryProvider).save((
+        mac: mac,
+        name: name,
+      ));
       state = PrinterConnected(mac: mac, name: name);
       _log.i('Printer connected: $name ($mac)');
     } on PrintException catch (e) {
@@ -208,8 +197,7 @@ class Printer extends _$Printer {
   /// La prochaine impression demandera de choisir une imprimante.
   Future<void> forget() async {
     await ref.read(printerRepositoryProvider).disconnect();
-    await _storage.delete(key: _PrinterKeys.mac);
-    await _storage.delete(key: _PrinterKeys.name);
+    await ref.read(savedPrinterRepositoryProvider).clear();
     state = const PrinterDisconnected();
   }
 
@@ -230,7 +218,7 @@ class Printer extends _$Printer {
 
     // Reconnexion automatique à l'imprimante enregistrée si non connecté.
     final current = state;
-    final ({String mac, String name}) printer;
+    final SavedPrinter printer;
     if (current is PrinterConnected) {
       printer = (mac: current.mac, name: current.name);
     } else {

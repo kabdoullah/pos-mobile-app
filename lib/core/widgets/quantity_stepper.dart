@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
-/// Sélecteur de quantité ( − n + ) dans une pilule bordée ; la valeur s'anime
-/// à chaque changement.
+/// Sélecteur de quantité ( − n + ) dans un cadre bordé r8 ; la valeur s'anime
+/// à chaque changement. Avec [onValueTap], toucher le chiffre ouvre la saisie
+/// détaillée (feuille de quantité).
 class QuantityStepper extends StatelessWidget {
   /// Crée un sélecteur de quantité. Un callback `null` désactive le bouton.
   const QuantityStepper({
@@ -17,6 +18,9 @@ class QuantityStepper extends StatelessWidget {
     this.large = false,
     this.field,
     this.removeTooltip,
+    this.onValueTap,
+    this.valueWidth,
+    this.highlightColor,
     super.key,
   });
 
@@ -40,15 +44,29 @@ class QuantityStepper extends StatelessWidget {
   /// panier) ; `null` = « − » reste « Diminuer ».
   final String? removeTooltip;
 
+  /// Toucher la valeur (saisie détaillée) ; `null` = valeur non interactive.
+  final VoidCallback? onValueTap;
+
+  /// Largeur de la valeur ; par défaut 32 (96 en [large]). Plus large pour
+  /// un [field] qui accepte plusieurs chiffres (billetterie).
+  final double? valueWidth;
+
+  /// Cadre de 2 dp de cette couleur (saisie en cours, avertissement) ;
+  /// `null` = filet habituel.
+  final Color? highlightColor;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final valueWidth = large ? 96.0 : 32.0;
+    final valueWidth = this.valueWidth ?? (large ? 96.0 : 32.0);
     final removes = removeTooltip != null && quantity <= 1;
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: cs.outline),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+        color: cs.surface,
+        border: highlightColor == null
+            ? Border.all(color: cs.outline)
+            : Border.all(color: highlightColor!, width: 2),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -59,8 +77,9 @@ class QuantityStepper extends StatelessWidget {
             onPressed: onDecrease,
             large: large,
           ),
-          SizedBox(
+          _ValueBox(
             width: valueWidth,
+            onTap: field == null ? onValueTap : null,
             child:
                 field ??
                 AnimatedSwitcher(
@@ -111,7 +130,7 @@ class _StepButton extends StatelessWidget {
     final onPressed = this.onPressed;
     return IconButton(
       tooltip: tooltip,
-      color: Theme.of(context).colorScheme.primary,
+      color: Theme.of(context).colorScheme.onSurface,
       icon: Icon(icon, size: large ? 20 : 18),
       // Compact (lignes de panier) : boutons de 44 dp, la cible tactile
       // minimale. Sans shrinkWrap, Material 3 les porte à 48 dp.
@@ -133,6 +152,37 @@ class _StepButton extends StatelessWidget {
               unawaited(HapticFeedback.selectionClick());
               onPressed();
             },
+    );
+  }
+}
+
+/// Zone de la valeur : touchable (saisie détaillée) quand [onTap] est fourni.
+class _ValueBox extends StatelessWidget {
+  const _ValueBox({
+    required this.width,
+    required this.onTap,
+    required this.child,
+  });
+
+  final double width;
+  final VoidCallback? onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final box = SizedBox(width: width, child: child);
+    final onTap = this.onTap;
+    if (onTap == null) return box;
+    return Semantics(
+      button: true,
+      label: 'Modifier la quantité',
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: AppSpacing.minTapTarget,
+          child: Center(child: box),
+        ),
+      ),
     );
   }
 }

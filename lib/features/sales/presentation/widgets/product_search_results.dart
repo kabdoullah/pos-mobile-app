@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
+import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
-import '../../../catalog/presentation/widgets/product_thumbnail.dart';
-import '../../../catalog/presentation/widgets/stock_status_badge.dart';
+import '../providers/cart_provider.dart';
 import '../providers/sales_providers.dart';
+import 'sale_product_row.dart';
 
-/// Résultats de recherche de la caisse, affichés à la place du panier pendant
-/// la saisie.
+/// Résultats de recherche de l'écran Vendre, affichés à la place du catalogue
+/// pendant la saisie. Mêmes lignes que le catalogue.
 class ProductSearchResults extends ConsumerWidget {
   /// Crée la liste de résultats pour [query].
   const ProductSearchResults({
     required this.query,
-    required this.onQuickAdd,
-    required this.onOpen,
+    required this.onAdd,
+    required this.onDecrease,
+    required this.onEditQuantity,
     this.onScan,
     super.key,
   });
@@ -25,18 +25,25 @@ class ProductSearchResults extends ConsumerWidget {
   final String query;
 
   /// Ajoute une unité du produit.
-  final ValueChanged<Product> onQuickAdd;
+  final ValueChanged<Product> onAdd;
 
-  /// Ouvre le choix de quantité du produit.
-  final ValueChanged<Product> onOpen;
+  /// Retire une unité du produit.
+  final ValueChanged<Product> onDecrease;
+
+  /// Ouvre la saisie détaillée de la quantité.
+  final ValueChanged<Product> onEditQuantity;
 
   /// Propose le scanner quand aucun produit ne correspond ; masqué si `null`.
   final VoidCallback? onScan;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final colors = AppColors.of(context);
     final results = ref.watch(saleProductSearchProvider(query));
+    final inCart = {
+      for (final item in ref.watch(cartProvider).items)
+        item.productId: item.quantity,
+    };
 
     return results.when(
       loading: () => const Center(child: AppLoadingIndicator()),
@@ -55,49 +62,22 @@ class ProductSearchResults extends ConsumerWidget {
             onAction: onScan,
           );
         }
-        return ListView.separated(
+        final divider = BorderSide(color: colors.border);
+        return ListView.builder(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           itemCount: products.length,
-          separatorBuilder: (_, _) => Divider(
-            height: 1,
-            indent: AppSpacing.md,
-            endIndent: AppSpacing.md,
-            color: cs.outlineVariant,
-          ),
           itemBuilder: (context, index) {
             final product = products[index];
-            final stock = product.currentStock;
-            final outOfStock = stock != null && stock <= 0;
-            return ListTile(
-              enabled: !outOfStock,
-              onTap: () => onOpen(product),
-              leading: ProductThumbnail(product: product),
-              title: Text(
-                product.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.titleMedium,
-              ),
-              subtitle: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      formatFcfa(product.sellingPrice),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: outOfStock ? cs.onSurfaceVariant : cs.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  StockStatusBadge(product: product, showQuantity: true),
-                ],
-              ),
-              trailing: IconButton.filledTonal(
-                tooltip: 'Ajouter ${product.name}',
-                icon: const Icon(Icons.add),
-                onPressed: outOfStock ? null : () => onQuickAdd(product),
+            return DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(border: Border(bottom: divider)),
+              child: SaleProductRow(
+                key: ValueKey(product.id),
+                product: product,
+                inCart: inCart[product.id] ?? 0,
+                onAdd: () => onAdd(product),
+                onDecrease: () => onDecrease(product),
+                onEditQuantity: () => onEditQuantity(product),
               ),
             );
           },

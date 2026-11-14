@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-import '../../../../app/theme/app_typography.dart';
 import '../../../../core/config.dart';
 import '../../../../core/widgets/index.dart';
 import '../providers/update_required_provider.dart';
@@ -56,27 +54,13 @@ class _UpdateRequiredDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return AlertDialog(
-      icon: Icon(Icons.system_update_outlined, size: 48, color: cs.primary),
-      title: Text(
-        'Mise à jour requise',
-        style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
-        textAlign: TextAlign.center,
-      ),
-      content: Text(
-        'Une nouvelle version de l’application est disponible. Mettez-la à '
-        'jour pour continuer à l’utiliser. Vos ventes et données sont '
-        'conservées.',
-        style: AppTypography.bodyLarge.copyWith(color: cs.onSurface),
-        textAlign: TextAlign.center,
-      ),
-      actionsPadding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        0,
-        AppSpacing.lg,
-        AppSpacing.lg,
-      ),
+    // Une seule sortie : pas d'« Annuler », le dialogue reste affiché.
+    return AppDialog(
+      title: 'Mise à jour requise',
+      message:
+          'Cette version de Ma Caisse n’est plus prise en charge. Installez '
+          'la nouvelle version pour continuer. Vos ventes et données sont '
+          'conservées.',
       actions: [PrimaryButton(label: 'Mettre à jour', onPressed: _openStore)],
     );
   }

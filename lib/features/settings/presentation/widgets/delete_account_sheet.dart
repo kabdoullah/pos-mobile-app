@@ -13,7 +13,6 @@ Future<void> showDeleteAccountSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
     builder: (_) => const DeleteAccountSheet(),
   );
 }
@@ -75,7 +74,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
-            0,
+            AppSpacing.lg,
             AppSpacing.md,
             AppSpacing.md,
           ),
@@ -83,8 +82,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Supprimer mon compte',
-                style: AppTypography.titleLarge,
+                'Confirmez avec votre mot de passe',
+                style: AppTypography.sectionTitle,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(

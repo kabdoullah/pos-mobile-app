@@ -142,7 +142,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
         // Voile avec découpe du viseur — le remplissage evenOdd laisse la zone
         // de scan dégagée
         const CustomPaint(
-          painter: _ScanOverlayPainter(overlayColor: AppColors.scrim),
+          painter: _ScanOverlayPainter(overlayColor: AppColors.cameraScrim),
         ),
         Center(
           child: Column(

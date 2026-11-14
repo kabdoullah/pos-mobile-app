@@ -49,5 +49,6 @@ StoreRepository storeRepository(Ref ref) {
 ProfileRepository profileRepository(Ref ref) {
   return ProfileRepositoryImpl(
     remoteDataSource: ref.read(authRemoteDataSourceProvider),
+    currentUserId: ref.read(secureTokenStorageProvider).getUserId,
   );
 }

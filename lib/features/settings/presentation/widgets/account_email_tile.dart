@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
 import '../../../auth/domain/entities/account_email.dart';
 import '../../../auth/presentation/widgets/account_email_sheet.dart';
 import '../../../auth/providers/account_email_provider.dart';
@@ -25,14 +27,12 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
     final status = ref.watch(accountEmailStatusProvider);
-    final warning = TextStyle(color: cs.error);
+    final warning = TextStyle(color: AppColors.of(context).warning);
 
     return switch (status) {
       AsyncData(value: AccountEmail(email: null)) => SettingsTile(
-        icon: Icons.email_outlined,
-        title: 'Adresse email',
+        title: 'Adresse e-mail',
         subtitle: Text(
           'Aucun email — touchez pour en ajouter un',
           style: warning,
@@ -42,8 +42,7 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
       ),
       AsyncData(value: AccountEmail(:final email?, isVerified: true)) =>
         SettingsTile(
-          icon: Icons.mark_email_read_outlined,
-          title: 'Adresse email',
+          title: 'Adresse e-mail',
           subtitle: Text(
             '$email · Confirmée',
             maxLines: 1,
@@ -51,8 +50,7 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
           ),
         ),
       AsyncData(value: AccountEmail(:final email?)) => SettingsTile(
-        icon: Icons.mark_email_unread_outlined,
-        title: 'Adresse email',
+        title: 'Adresse e-mail',
         subtitle: Text(
           '$email · Non confirmée — touchez pour renvoyer le lien',
           style: warning,
@@ -68,14 +66,12 @@ class _AccountEmailTileState extends ConsumerState<AccountEmailTile> {
         ),
       ),
       AsyncError() => SettingsTile(
-        icon: Icons.email_outlined,
-        title: 'Adresse email',
+        title: 'Adresse e-mail',
         subtitle: const Text('Indisponible — touchez pour réessayer'),
         onTap: () => ref.invalidate(accountEmailStatusProvider),
       ),
       _ => const SettingsTile(
-        icon: Icons.email_outlined,
-        title: 'Adresse email',
+        title: 'Adresse e-mail',
         subtitle: Text('Chargement…'),
       ),
     };
