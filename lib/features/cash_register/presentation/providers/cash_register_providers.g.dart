@@ -319,15 +319,15 @@ final class LocalCashCountFamily extends $Family
   String toString() => r'localCashCountProvider';
 }
 
-/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le dernier
+/// comptage »), null si elle n'a pas de billetterie. Auto-dispose : relu à
 /// chaque ouverture de l'écran d'ouverture.
 
 @ProviderFor(lastClosingCount)
 final lastClosingCountProvider = LastClosingCountProvider._();
 
-/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le dernier
+/// comptage »), null si elle n'a pas de billetterie. Auto-dispose : relu à
 /// chaque ouverture de l'écran d'ouverture.
 
 final class LastClosingCountProvider
@@ -338,8 +338,8 @@ final class LastClosingCountProvider
           FutureOr<CashCount?>
         >
     with $FutureModifier<CashCount?>, $FutureProvider<CashCount?> {
-  /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-  /// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+  /// Comptage de la dernière clôture de l'appareil (« Reprendre le dernier
+  /// comptage »), null si elle n'a pas de billetterie. Auto-dispose : relu à
   /// chaque ouverture de l'écran d'ouverture.
   LastClosingCountProvider._()
     : super(

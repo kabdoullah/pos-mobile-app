@@ -39,8 +39,8 @@ Stream<CashCount?> localCashCount(
   CashCountOperation operation,
 ) => ref.watch(cashRegisterRepositoryProvider).watchCount(sessionId, operation);
 
-/// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// Comptage de la dernière clôture de l'appareil (« Reprendre le dernier
+/// comptage »), null si elle n'a pas de billetterie. Auto-dispose : relu à
 /// chaque ouverture de l'écran d'ouverture.
 @riverpod
 Future<CashCount?> lastClosingCount(Ref ref) =>

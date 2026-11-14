@@ -192,16 +192,14 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets("reprendre le comptage d'hier soir puis ouvrir", (
-      tester,
-    ) async {
+    testWidgets('reprendre le dernier comptage puis ouvrir', (tester) async {
       final yesterday = CashCount.empty()
           .withQuantity(bill10000, 2)
           .withQuantity(bill5000, 1);
       when(cash.lastClosingCount).thenAnswer((_) async => yesterday);
       await pumpPage(tester);
 
-      await tester.tap(find.textContaining("Reprendre le comptage d'hier"));
+      await tester.tap(find.textContaining('Reprendre le dernier comptage'));
       await tester.pumpAndSettle();
       expect(find.text('Fond de caisse · 3 billets'), findsOneWidget);
 

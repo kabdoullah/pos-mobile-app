@@ -216,7 +216,7 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
                           onPressed: () => setState(() => _count = resumable),
                           icon: const Icon(Icons.history, size: 20),
                           label: Text(
-                            "Reprendre le comptage d'hier soir · "
+                            'Reprendre le dernier comptage · '
                             '${formatFcfa(resumable.total)}',
                           ),
                         ),
