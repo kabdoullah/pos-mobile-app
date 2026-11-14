@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
@@ -118,9 +119,8 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
   static String _greeting() => DateTime.now().hour < 18 ? 'Bonjour' : 'Bonsoir';
 
   static String _formatRemaining(Duration d) {
-    final minutes = d.inMinutes;
-    final seconds = d.inSeconds % 60;
-    return minutes > 0 ? '$minutes min $seconds s' : '$seconds s';
+    final seconds = (d.inSeconds % 60).toString().padLeft(2, '0');
+    return '${d.inMinutes}:$seconds';
   }
 
   /// Message sous les points : vérification, tentatives restantes, blocage.
@@ -130,14 +130,16 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
       final remaining = lockedUntil.difference(DateTime.now());
       return (
         'PIN temporairement bloqué',
-        'Réessayez dans ${_formatRemaining(remaining)}.',
+        'Pour protéger la caisse, le PIN est bloqué '
+            '${AppConfig.pinLockoutMinutes} minutes. Votre panier en cours est '
+            'conservé. Réessayer dans ${_formatRemaining(remaining)}.',
       );
     }
     if (authValue.isLoading) return (null, 'Vérification…');
     return switch (authValue.error) {
       WrongPin(remainingAttempts: 1) => (
         'Dernière tentative',
-        'Après cet essai, le PIN sera temporairement bloqué.',
+        'Avant un blocage de ${AppConfig.pinLockoutMinutes} minutes.',
       ),
       WrongPin(:final remainingAttempts) => (
         'PIN incorrect',

@@ -81,9 +81,9 @@ class _ForgotPinSheetState extends ConsumerState<ForgotPinSheet> {
             const Text('Code PIN oublié', style: AppTypography.sectionTitle),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Saisissez le mot de passe de votre compte, puis choisissez un '
-              'nouveau code PIN. Votre panier et vos données sont conservés. '
-              'Une connexion internet est nécessaire.',
+              'Confirmez votre identité avec le mot de passe du compte, puis '
+              'choisissez un nouveau code PIN. Votre panier en cours est '
+              'conservé. Une connexion internet est nécessaire.',
               style: AppTypography.body.copyWith(color: colors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.md),

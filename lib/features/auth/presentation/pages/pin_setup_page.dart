@@ -95,8 +95,8 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
       setState(() {
         if (_isTrivialPin(_pin)) {
           _setError(
-            'Choisissez un PIN plus sécurisé.',
-            'Évitez les suites ou répétitions simples (1234, 0000…).',
+            'Code trop simple (1234, 0000…).',
+            'Choisissez-en un autre.',
           );
         } else {
           _firstPin = _pin;
@@ -110,7 +110,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
     if (_pin != _firstPin) {
       // On recommence depuis le début : l'erreur peut venir du premier PIN.
       setState(() {
-        _setError('Les deux PIN ne correspondent pas.', 'Recommencez.');
+        _setError('Les deux codes sont différents.', 'Recommencez.');
         _pin = '';
         _firstPin = '';
         _step = 0;

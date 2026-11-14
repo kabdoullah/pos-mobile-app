@@ -195,7 +195,10 @@ void main() {
       await tester.tap(find.text('Se connecter'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Téléphone ou mot de passe incorrect.'), findsOneWidget);
+      expect(
+        find.text('Vérifiez le numéro et le mot de passe, puis réessayez.'),
+        findsOneWidget,
+      );
       expect(find.text('Connexion impossible'), findsNothing);
       expect(find.text('07 00 00 00 01'), findsOneWidget);
     });
@@ -235,13 +238,16 @@ void main() {
       await tester.enterText(fields.at(3), 'secret124');
       await tester.pump();
       expect(
-        find.text('Les mots de passe ne correspondent pas.'),
+        find.text('Les deux mots de passe sont différents.'),
         findsOneWidget,
       );
 
       await tester.enterText(fields.at(3), 'secret123');
       await tester.pump();
-      expect(find.text('Les mots de passe correspondent'), findsOneWidget);
+      expect(
+        find.text('Les deux mots de passe sont identiques'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('email obligatoire : pas d\'inscription sans adresse', (
@@ -257,7 +263,7 @@ void main() {
       await tester.ensureVisible(submit);
       await tester.tap(submit);
       await tester.pump();
-      expect(find.text('Saisissez votre adresse email.'), findsOneWidget);
+      expect(find.text('Saisissez votre adresse e-mail.'), findsOneWidget);
       expect(auth.registeredEmail, isNull);
 
       await tester.enterText(fields.at(1), 'awa@example.com');
@@ -333,7 +339,7 @@ void main() {
         status: const AuthPinSetupRequired(),
       );
       await _tapDigits(tester, '1234');
-      expect(find.text('Choisissez un PIN plus sécurisé.'), findsOneWidget);
+      expect(find.text('Code trop simple (1234, 0000…).'), findsOneWidget);
       expect(find.text('Créez un code PIN'), findsOneWidget);
     });
 
@@ -380,7 +386,7 @@ void main() {
 
       await _tapDigits(tester, '1111');
       expect(find.text('PIN temporairement bloqué'), findsOneWidget);
-      expect(find.textContaining('Réessayez dans 4 min'), findsOneWidget);
+      expect(find.textContaining('Réessayer dans 4:'), findsOneWidget);
 
       // Pavé désactivé pendant le blocage : la saisie est ignorée.
       await _tapDigits(tester, '1');

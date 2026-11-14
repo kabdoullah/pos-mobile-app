@@ -53,7 +53,7 @@ Future<_MockRepo> _open(WidgetTester tester) async {
 
 Future<void> _send(WidgetTester tester, String email) async {
   await tester.enterText(find.byType(TextField), email);
-  await tester.tap(find.text('Envoyer'));
+  await tester.tap(find.text('Envoyer le lien'));
   await tester.pump();
 }
 
@@ -127,7 +127,10 @@ void main() {
 
       verify(() => repo.sendPasswordReset(_email)).called(1);
       expect(find.byType(AlertDialog), findsNothing);
-      expect(find.textContaining('Vérifiez votre boîte mail'), findsOneWidget);
+      expect(
+        find.textContaining('Le lien est valable 1 heure'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('adresse refusée par le serveur : message traduit sous le '

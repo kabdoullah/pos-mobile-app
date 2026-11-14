@@ -80,8 +80,8 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text(
-            'Si cette adresse est confirmée, un email vous a été envoyé. '
-            'Vérifiez votre boîte mail.',
+            'Vérifiez vos e-mails : si cette adresse est confirmée, un e-mail '
+            'vous a été envoyé. Le lien est valable 1 heure.',
           ),
           duration: Duration(seconds: 4),
         ),
@@ -114,11 +114,12 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Saisissez l\'email de récupération renseigné à l\'inscription.',
+              'Saisissez l’e-mail de récupération de votre compte. Nous y '
+              'enverrons un lien pour choisir un nouveau mot de passe.',
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
-              label: 'Adresse email de récupération',
+              label: 'E-mail',
               hint: 'votre@email.com',
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
@@ -177,7 +178,7 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
                       Text('Envoi…'),
                     ],
                   )
-                : const Text('Envoyer'),
+                : const Text('Envoyer le lien'),
           ),
         ],
       ),

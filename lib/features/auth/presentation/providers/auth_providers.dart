@@ -110,7 +110,7 @@ class InvalidCredentials implements Exception {
   const InvalidCredentials();
 
   @override
-  String toString() => 'Téléphone ou mot de passe incorrect.';
+  String toString() => 'Vérifiez le numéro et le mot de passe, puis réessayez.';
 }
 
 /// Champ du formulaire d'inscription auquel le serveur rattache un refus.
