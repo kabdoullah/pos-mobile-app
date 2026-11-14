@@ -400,6 +400,24 @@ void main() {
       paymentMethod: PaymentMethod.cash,
     );
 
+    test('articles par vente sur une plage de jours', () async {
+      final sale = await sellTwoCocas();
+      final today = DateTime.now();
+
+      final items = await repository
+          .watchSaleItemsByDateRange(today, today)
+          .first;
+      expect(items.keys, [sale.id]);
+      expect(items[sale.id]!.single.quantity, 2);
+
+      // Plage passée : la vente du jour n'y est pas.
+      final yesterday = today.subtract(const Duration(days: 1));
+      expect(
+        await repository.watchSaleItemsByDateRange(yesterday, yesterday).first,
+        isEmpty,
+      );
+    });
+
     test(
       'une ancienne vente garde ses prix après changement du produit',
       () async {

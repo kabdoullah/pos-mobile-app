@@ -23,6 +23,12 @@ class _FakeProfile implements ProfileRepository {
   Future<AccountEmail> getAccountEmail() async => account;
 
   @override
+  Future<bool> firstStepsHidden() async => false;
+
+  @override
+  Future<void> hideFirstSteps() async {}
+
+  @override
   Future<AccountEmail> updateEmail({
     required String email,
     required String password,

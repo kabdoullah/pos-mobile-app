@@ -337,3 +337,65 @@ final class HomeLowStockProvider
 }
 
 String _$homeLowStockHash() => r'1db951c11e8a82bf9e60705f2cd256bc42f231d1';
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+
+@ProviderFor(FirstStepsHidden)
+final firstStepsHiddenProvider = FirstStepsHiddenProvider._();
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+final class FirstStepsHiddenProvider
+    extends $AsyncNotifierProvider<FirstStepsHidden, bool> {
+  /// « Premiers pas » masqués par le compte connecté (préférence liée au
+  /// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+  /// Écrit par la section qui le regarde : pas de risque de libération pendant
+  /// l'écriture.
+  FirstStepsHiddenProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'firstStepsHiddenProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$firstStepsHiddenHash();
+
+  @$internal
+  @override
+  FirstStepsHidden create() => FirstStepsHidden();
+}
+
+String _$firstStepsHiddenHash() => r'1b42d3c6b2c38c1d9b4404d0dbed02439993c213';
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+
+abstract class _$FirstStepsHidden extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}

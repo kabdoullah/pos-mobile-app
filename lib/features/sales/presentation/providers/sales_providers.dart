@@ -13,6 +13,7 @@ import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../providers/sales_di_providers.dart';
 import '../../domain/entities/cart_item.dart';
 import '../../domain/entities/sale.dart' as sale_entity;
+import '../../domain/entities/sale_item_brief.dart';
 import 'cart_provider.dart';
 import 'checkout_provider.dart';
 
@@ -100,6 +101,19 @@ Stream<List<sale_entity.Sale>> salesHistory(
       .watchSalesByDateRange(startDate, endDate);
 }
 
+/// Observe les articles des ventes d'une plage de dates (incluse), groupés
+/// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+@riverpod
+Stream<Map<String, List<SaleItemBrief>>> salesHistoryItems(
+  Ref ref, {
+  required DateTime startDate,
+  required DateTime endDate,
+}) {
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSaleItemsByDateRange(startDate, endDate);
+}
+
 /// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
 /// dès que la synchro l'attribue.
 @riverpod
@@ -137,20 +151,43 @@ List<({DateTime day, List<sale_entity.Sale> sales})> groupSalesByDay(
   return groups;
 }
 
-/// Recherche par numéro de reçu (préfixe « # » accepté) ou par montant
-/// (chiffres seuls, « 3 025 » comme « 3025 »). Une vente pas encore
-/// synchronisée n'a pas de numéro : elle ne se retrouve que par son montant.
-List<sale_entity.Sale> searchSales(List<sale_entity.Sale> sales, String query) {
+/// Recherche par nom de produit vendu ([items], par id de vente), par
+/// numéro de reçu (préfixe « # » accepté) ou par montant (chiffres seuls,
+/// « 3 025 » comme « 3025 »). Une vente pas encore synchronisée n'a pas de
+/// numéro : elle se retrouve par ses produits ou son montant.
+List<sale_entity.Sale> searchSales(
+  List<sale_entity.Sale> sales,
+  String query, {
+  Map<String, List<SaleItemBrief>> items = const {},
+}) {
+  final text = foldForSearch(query.trim());
   final digits = query.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.isEmpty) return sales;
-  return sales
-      .where(
-        (sale) =>
-            (sale.receiptNumber > 0 &&
-                sale.receiptNumber.toString().contains(digits)) ||
-            sale.totalAmount.toBigInt().toString().contains(digits),
-      )
-      .toList();
+  final hasLetters = RegExp(r'[a-z]').hasMatch(text);
+  if (digits.isEmpty && !hasLetters) return sales;
+  return sales.where((sale) {
+    if (hasLetters) {
+      return (items[sale.id] ?? const []).any(
+        (i) => foldForSearch(i.productName).contains(text),
+      );
+    }
+    return (sale.receiptNumber > 0 &&
+            sale.receiptNumber.toString().contains(digits)) ||
+        sale.totalAmount.toBigInt().toString().contains(digits);
+  }).toList();
+}
+
+/// Minuscules sans accents, pour comparer « Crème » et « creme ».
+String foldForSearch(String value) {
+  const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüýÿœæ';
+  const to = 'aaaaaaceeeeiiiinooooouuuuyyoa';
+  final lower = value.toLowerCase();
+  final out = StringBuffer();
+  for (final rune in lower.runes) {
+    final ch = String.fromCharCode(rune);
+    final i = from.indexOf(ch);
+    out.write(i < 0 ? ch : to[i]);
+  }
+  return out.toString();
 }
 
 /// Télécharge le reçu PDF d'une vente.

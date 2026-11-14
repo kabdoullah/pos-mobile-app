@@ -26,9 +26,12 @@ FirstSteps? watchFirstSteps(WidgetRef ref) {
   final hasSale = ref.watch(hasAnySaleProvider).value;
   if (products == null || !active.hasValue || history == null) return null;
   if (hasSale == null) return null;
+  // Une vente suppose un produit et une caisse ouverte : après une
+  // reconnexion, les sessions passées ne sont pas rechargées sur le
+  // téléphone, mais les ventes le sont.
   return (
-    product: products.isNotEmpty,
-    register: active.value != null || history.isNotEmpty,
+    product: products.isNotEmpty || hasSale,
+    register: active.value != null || history.isNotEmpty || hasSale,
     sale: hasSale,
   );
 }
@@ -43,7 +46,11 @@ class FirstStepsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final steps = watchFirstSteps(ref);
-    if (steps == null || (steps.product && steps.register && steps.sale)) {
+    // Masquée par l'utilisateur, ou pas encore lue (pas d'apparition fugace).
+    final hidden = ref.watch(firstStepsHiddenProvider).value ?? true;
+    if (hidden ||
+        steps == null ||
+        (steps.product && steps.register && steps.sale)) {
       return const SizedBox.shrink();
     }
     final colors = AppColors.of(context);
@@ -106,6 +113,34 @@ class FirstStepsSection extends ConsumerWidget {
               ),
           ],
         ),
+        // Masquable dès qu'une étape est faite ; le tutoriel reste dans les
+        // Paramètres.
+        if (doneCount > 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            // Bouton puis indice : passent à la ligne sur petit écran.
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () =>
+                      ref.read(firstStepsHiddenProvider.notifier).hide(),
+                  child: const Text('Masquer les premiers pas'),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm + 2,
+                  ),
+                  child: Text(
+                    'Revoir le tutoriel depuis Paramètres',
+                    style: AppTypography.meta.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

@@ -7,7 +7,8 @@ abstract class AuthRepository {
   /// de réinitialisation du mot de passe.
   ///
   /// Marque aussi la configuration de la boutique comme en attente pour ce
-  /// compte (voir [isStoreSetupPending]).
+  /// compte (voir [isStoreSetupPending]), ainsi que l'accueil qui suit le PIN
+  /// (voir [isWelcomePending]).
   Future<User> register({
     required String phoneNumber,
     required String password,
@@ -73,6 +74,13 @@ abstract class AuthRepository {
 
   /// Marque la configuration de la boutique comme terminée.
   Future<void> completeStoreSetup();
+
+  /// True si le compte connecté vient de s'inscrire sur cet appareil et n'a
+  /// pas encore vu l'accueil « boutique prête » (puis le tutoriel).
+  Future<bool> isWelcomePending();
+
+  /// Marque l'accueil « boutique prête » comme vu.
+  Future<void> completeWelcome();
 
   /// Rafraîchit l'access token via le refresh token stocké.
   /// Nécessaire après création de boutique pour obtenir un token avec store_id.

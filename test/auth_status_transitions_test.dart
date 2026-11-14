@@ -197,6 +197,32 @@ void main() {
     expect(_status(first), isA<AuthPinSetupRequired>());
   });
 
+  test(
+    'inscription : accueil « boutique prête » à montrer, une fois',
+    () async {
+      final app = await _Device().launch();
+      final auth = app.read(authProvider.notifier);
+      await auth.register(phone, 'secret123', email: 'awa@example.com');
+      await auth.proceedToPinSetup();
+      await auth.setupPin('2580');
+
+      final repo = app.read(authRepositoryProvider);
+      expect(await repo.isWelcomePending(), isTrue);
+      await repo.completeWelcome();
+      expect(await repo.isWelcomePending(), isFalse);
+    },
+  );
+
+  test('connexion d\'un autre compte : pas d\'accueil hérité', () async {
+    final device = _Device();
+    final app = await device.launch();
+    await app
+        .read(authProvider.notifier)
+        .register(phone, 'secret123', email: 'awa@example.com');
+    await app.read(authProvider.notifier).login('+2250700000002', 'secret123');
+    expect(await app.read(authRepositoryProvider).isWelcomePending(), isFalse);
+  });
+
   test('boutique enregistrée puis app fermée → création du PIN', () async {
     final device = _Device();
     final first = await device.launch();

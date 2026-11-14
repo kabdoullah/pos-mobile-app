@@ -18,6 +18,7 @@ import '../../../auth/providers/store_provider.dart';
 import '../../../cash_register/domain/entities/cash_session.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import '../../../onboarding/presentation/providers/welcome_provider.dart';
 import '../providers/home_providers.dart';
 import '../widgets/account_email_banner.dart';
 import '../widgets/first_steps_section.dart';
@@ -35,6 +36,13 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Juste après l'inscription : « boutique prête » puis tutoriel, une fois
+    // (WelcomePage efface le drapeau avant de se fermer).
+    ref.listen(welcomePendingProvider, (previous, next) {
+      if (next.value == true && previous?.value != true) {
+        unawaited(context.push(Routes.welcome));
+      }
+    });
     final colors = AppColors.of(context);
     final storeName = ref.watch(storeConfigProvider).value?.name;
     final dateLabel = DateFormat(

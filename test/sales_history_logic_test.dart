@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mobile/features/sales/domain/entities/sale.dart';
+import 'package:mobile/features/sales/domain/entities/sale_item_brief.dart';
 import 'package:mobile/features/sales/presentation/pages/date_range_filter_sheet.dart';
 import 'package:mobile/features/sales/presentation/providers/sales_providers.dart';
 
@@ -44,11 +45,46 @@ void main() {
       expect(searchSales(sales, '8 000').map((s) => s.id), ['s10451']);
     });
 
+    test('nom de produit : casse et accents ignorés', () {
+      const items = {
+        's10452': [SaleItemBrief(productName: 'Crème visage', quantity: 1)],
+        's0': [SaleItemBrief(productName: 'Riz local 1kg', quantity: 21)],
+      };
+      expect(searchSales(sales, 'creme', items: items).map((s) => s.id), [
+        's10452',
+      ]);
+      expect(searchSales(sales, 'RIZ', items: items).map((s) => s.id), ['s0']);
+      expect(searchSales(sales, 'savon', items: items), isEmpty);
+    });
+
     test('vente sans numéro : retrouvée par son montant seulement', () {
       // 10 500 et 500 contiennent « 500 » ; le n° 0 n'est jamais cherché.
       expect(searchSales(sales, '500').map((s) => s.id), ['s10452', 's0']);
       expect(searchSales(sales, '9'), isEmpty);
     });
+  });
+
+  test('summarizeSaleItems : 3 articles puis « + N autres », pas de ×1', () {
+    SaleItemBrief i(String n, int q) =>
+        SaleItemBrief(productName: n, quantity: q);
+    expect(
+      summarizeSaleItems([i('Riz', 21), i('Lotus', 2)]),
+      'Riz ×21, Lotus ×2',
+    );
+    expect(
+      summarizeSaleItems([i('A', 1), i('B', 1), i('C', 3), i('D', 1)]),
+      'A, B, C ×3 + 1 autre',
+    );
+    expect(
+      summarizeSaleItems([
+        i('A', 1),
+        i('B', 1),
+        i('C', 1),
+        i('D', 1),
+        i('E', 1),
+      ]),
+      'A, B, C + 2 autres',
+    );
   });
 
   test('groupSalesByDay : un groupe par jour, ordre conservé', () {

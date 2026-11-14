@@ -13,6 +13,7 @@ import '../../features/auth/presentation/pages/reset_password_page.dart';
 import '../../features/auth/presentation/pages/store_setup_page.dart';
 import '../../features/auth/presentation/pages/store_suspended_page.dart';
 import '../../features/onboarding/presentation/pages/tutorial_page.dart';
+import '../../features/onboarding/presentation/pages/welcome_page.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/cash_register/presentation/pages/cash_register_page.dart';
 import '../../features/cash_register/presentation/pages/cash_session_detail_page.dart';
@@ -70,6 +71,9 @@ abstract class Routes {
 
   /// Tutoriel d'onboarding.
   static const String tutorial = '/tutorial';
+
+  /// « Votre boutique est prête » : après le PIN d'une inscription.
+  static const String welcome = '/welcome';
 
   /// Boutique suspendue par la plateforme : l'app y reste bloquée.
   static const String storeSuspended = '/store-suspended';
@@ -262,6 +266,11 @@ GoRouter appRouter(Ref ref) {
         path: Routes.tutorial,
         pageBuilder: (context, state) =>
             PageTransitions.fade(context, state, const TutorialPage()),
+      ),
+      GoRoute(
+        path: Routes.welcome,
+        pageBuilder: (context, state) =>
+            PageTransitions.fade(context, state, const WelcomePage()),
       ),
 
       // ==========================================

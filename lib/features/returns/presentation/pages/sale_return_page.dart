@@ -17,8 +17,9 @@ import '../widgets/return_confirmation_sheet.dart';
 import '../widgets/return_success_view.dart';
 import '../../../../app/theme/app_colors.dart';
 
-/// Retour d'articles d'une vente : quantités et état par article, motif,
-/// moyen de remboursement, puis récapitulatif et confirmation.
+/// Retour d'articles d'une vente, en 2 étapes : ce que rapporte le client
+/// (quantités), puis l'état de chaque article, le motif et le remboursement ;
+/// enfin récapitulatif et confirmation.
 class SaleReturnPage extends ConsumerWidget {
   /// Crée une [SaleReturnPage].
   const SaleReturnPage({required this.sale, super.key});
@@ -108,6 +109,10 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   // Verrou d'envoi : empêche un second enregistrement pendant le premier.
   bool _saving = false;
 
+  /// Étape affichée : 1 = quantités, 2 = état, motif et remboursement. La
+  /// saisie vit dans le brouillon : revenir à l'étape 1 ne perd rien.
+  int _step = 1;
+
   ReturnDraft get _draft => ref.read(returnDraftProvider(widget.sale).notifier);
 
   Future<void> _continue() async {
@@ -139,7 +144,6 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Retour non enregistré : ${errorToFrench(e)}'),
-            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -153,7 +157,13 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   /// saisie est conservée. Le commerçant ouvre la caisse puis valide de
   /// nouveau lui-même.
   Future<void> _openCashSession() async {
-    final opened = await showOpenCashSessionSheet(context);
+    final opened = await showOpenCashSessionSheet(
+      context,
+      title: 'Ouvrez la caisse pour rembourser',
+      message:
+          'Un remboursement en espèces sort du tiroir : la caisse doit être '
+          'ouverte. Le retour n’est pas encore enregistré.',
+    );
     if (opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -168,181 +178,210 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
     final colors = AppColors.of(context);
     final draft = widget.draft;
     final total = draft.refundTotal(widget.lines);
-    final hasItems = draft.selections(widget.lines).isNotEmpty;
+    final selections = draft.selections(widget.lines);
+    final hasItems = selections.isNotEmpty;
     final missing = !hasItems
         ? 'Choisissez au moins un article'
+        : _step == 1
+        ? null
         : draft.reason == null
         ? 'Choisissez le motif'
         : draft.needsNote
         ? 'Précisez le motif'
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            children: [
-              const OverlineHeader('Que rapporte le client ?'),
-              FlatList(
-                children: [
-                  for (final line in widget.lines)
-                    _LineCard(
-                      line: line,
-                      quantity: draft.quantityOf(line.saleItemId),
-                      condition: draft.conditionOf(line.saleItemId),
-                      onQuantity: (q) => _draft.setQuantity(line.saleItemId, q),
-                      onCondition: (c) =>
-                          _draft.setCondition(line.saleItemId, c),
-                    ),
-                ],
+    final step1 = [
+      const OverlineHeader(
+        'Que rapporte le client ?',
+        trailing: 'Étape 1 sur 2',
+      ),
+      FlatList(
+        children: [
+          for (final line in widget.lines)
+            _QuantityCard(
+              line: line,
+              quantity: draft.quantityOf(line.saleItemId),
+              onQuantity: (q) => _draft.setQuantity(line.saleItemId, q),
+            ),
+        ],
+      ),
+    ];
+
+    final step2 = [
+      const OverlineHeader('État et remboursement', trailing: 'Étape 2 sur 2'),
+      const OverlineHeader('Que faire de l’article ?'),
+      FlatList(
+        children: [
+          for (final s in selections)
+            _ConditionCard(
+              line: s.line,
+              quantity: s.quantity,
+              condition: draft.conditionOf(s.line.saleItemId),
+              onCondition: (c) => _draft.setCondition(s.line.saleItemId, c),
+            ),
+        ],
+      ),
+      const OverlineHeader('Motif'),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final reason in ReturnReason.values)
+                  QuickChoiceButton(
+                    label: reason.label,
+                    isSelected: draft.reason == reason,
+                    onTap: () => _draft.setReason(reason),
+                  ),
+              ],
+            ),
+            if (draft.reason == ReturnReason.other) ...[
+              const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+              AppTextField(
+                label: 'Précisez le motif (obligatoire)',
+                hint: 'Ex. : flacon ouvert',
+                errorText: draft.needsNote ? 'Commentaire obligatoire' : null,
+                onChanged: _draft.setNote,
+                maxLength: 500,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              const OverlineHeader('Motif'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
-                      children: [
-                        for (final reason in ReturnReason.values)
-                          QuickChoiceButton(
-                            label: reason.label,
-                            isSelected: draft.reason == reason,
-                            onTap: () => _draft.setReason(reason),
-                          ),
-                      ],
-                    ),
-                    if (draft.reason == ReturnReason.other) ...[
-                      const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-                      AppTextField(
-                        label: 'Précisez le motif (obligatoire)',
-                        hint: 'Ex. : flacon ouvert',
-                        errorText: draft.needsNote
-                            ? 'Commentaire obligatoire'
-                            : null,
-                        onChanged: _draft.setNote,
-                        maxLength: 500,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
-                    ],
-                  ],
+            ],
+          ],
+        ),
+      ),
+      const OverlineHeader('Remboursement'),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final method in RefundMethod.values)
+                  QuickChoiceButton(
+                    label: method.label,
+                    isSelected: draft.refundMethod == method,
+                    onTap: () => _draft.setRefundMethod(method),
+                  ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs + 2),
+              child: Text(
+                widget.sale.paymentMethod == PaymentMethod.mixed
+                    ? 'Vente payée en mixte : choisissez comment vous '
+                          'remboursez le client.'
+                    : draft.refundMethod == RefundMethod.cash
+                    ? 'Un remboursement en espèces sort du tiroir de '
+                          'caisse.'
+                    : 'Remboursez le client depuis votre téléphone.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: colors.textSecondary,
                 ),
               ),
-              const OverlineHeader('Remboursement'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            ),
+          ],
+        ),
+      ),
+    ];
+
+    return PopScope(
+      // Retour à l'étape 2 : on revient aux quantités, saisie gardée.
+      canPop: _step == 1,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _step = 1);
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: ListView(
+              key: ValueKey(_step),
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+              children: _step == 1 ? step1 : step2,
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.border)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm + AppSpacing.xs,
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.sm,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
                       children: [
-                        for (final method in RefundMethod.values)
-                          QuickChoiceButton(
-                            label: method.label,
-                            isSelected: draft.refundMethod == method,
-                            onTap: () => _draft.setRefundMethod(method),
+                        Expanded(
+                          child: Text(
+                            'À rembourser',
+                            style: AppTypography.body.copyWith(
+                              color: colors.textSecondary,
+                            ),
                           ),
+                        ),
+                        Text(
+                          formatFcfa(total),
+                          style: AppTypography.figureLarge,
+                        ),
                       ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.xs + 2),
-                      child: Text(
-                        widget.sale.paymentMethod == PaymentMethod.mixed
-                            ? 'Vente payée en mixte : choisissez comment vous '
-                                  'remboursez le client.'
-                            : draft.refundMethod == RefundMethod.cash
-                            ? 'Un remboursement en espèces sort du tiroir de '
-                                  'caisse.'
-                            : 'Remboursez le client depuis votre téléphone.',
+                    if (missing != null)
+                      Text(
+                        missing,
                         style: AppTypography.bodySmall.copyWith(
                           color: colors.textSecondary,
                         ),
                       ),
+                    const SizedBox(height: AppSpacing.sm),
+                    PrimaryButton(
+                      label: 'Continuer',
+                      isLoading: _saving,
+                      loadingLabel: 'Enregistrement…',
+                      onPressed: missing != null || _saving
+                          ? null
+                          : _step == 1
+                          ? () => setState(() => _step = 2)
+                          : _continue,
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surface,
-            border: Border(top: BorderSide(color: colors.border)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm + AppSpacing.xs,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'À rembourser',
-                          style: AppTypography.body.copyWith(
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      Text(formatFcfa(total), style: AppTypography.figureLarge),
-                    ],
-                  ),
-                  if (missing != null)
-                    Text(
-                      missing,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  const SizedBox(height: AppSpacing.sm),
-                  PrimaryButton(
-                    label: 'Continuer',
-                    isLoading: _saving,
-                    loadingLabel: 'Enregistrement…',
-                    onPressed: missing == null && !_saving ? _continue : null,
-                  ),
-                ],
-              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-/// Article de la vente (ligne à plat) : vendu / déjà rendu / retournable,
-/// quantité à rendre, montant, puis l'état de l'article et son effet sur le
-/// stock.
-class _LineCard extends StatelessWidget {
-  const _LineCard({
+/// Étape 1 : article de la vente (ligne à plat) — vendu / déjà rendu /
+/// retournable, quantité à rendre et montant.
+class _QuantityCard extends StatelessWidget {
+  const _QuantityCard({
     required this.line,
     required this.quantity,
-    required this.condition,
     required this.onQuantity,
-    required this.onCondition,
   });
 
   final ReturnableLine line;
   final int quantity;
-  final ItemCondition condition;
   final ValueChanged<int> onQuantity;
-  final ValueChanged<ItemCondition> onCondition;
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +391,6 @@ class _LineCard extends StatelessWidget {
       fontFeatures: AppTypography.tabularFigures,
     );
     final returnable = line.returnableQuantity;
-
     return Stack(
       children: [
         Padding(
@@ -402,30 +440,6 @@ class _LineCard extends StatelessWidget {
                       ),
                   ],
                 ),
-              if (quantity > 0) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: [
-                    for (final c in ItemCondition.values)
-                      QuickChoiceButton(
-                        label: c.label,
-                        isSelected: condition == c,
-                        onTap: () => onCondition(c),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                StatusIndicator(
-                  label: condition.restocks
-                      ? 'Sera remis en stock'
-                      : 'Ne sera pas remis en stock',
-                  tone: condition.restocks
-                      ? StatusTone.success
-                      : StatusTone.neutral,
-                ),
-              ],
             ],
           ),
         ),
@@ -438,6 +452,64 @@ class _LineCard extends StatelessWidget {
             child: SizedBox(width: 3, child: ColoredBox(color: colors.action)),
           ),
       ],
+    );
+  }
+}
+
+/// Étape 2 : article rendu — « Nom × q · montant », son état et l'effet sur
+/// le stock.
+class _ConditionCard extends StatelessWidget {
+  const _ConditionCard({
+    required this.line,
+    required this.quantity,
+    required this.condition,
+    required this.onCondition,
+  });
+
+  final ReturnableLine line;
+  final int quantity;
+  final ItemCondition condition;
+  final ValueChanged<ItemCondition> onCondition;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm + AppSpacing.xs,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '${line.productName} × $quantity · '
+            '${formatFcfa(line.refundFor(quantity))}',
+            style: AppTypography.bodyStrong.copyWith(
+              fontFeatures: AppTypography.tabularFigures,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final c in ItemCondition.values)
+                QuickChoiceButton(
+                  label: c.label,
+                  isSelected: condition == c,
+                  onTap: () => onCondition(c),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          StatusIndicator(
+            label: condition.restocks
+                ? 'Sera remis en stock'
+                : 'Ne sera pas remis en stock',
+            tone: condition.restocks ? StatusTone.success : StatusTone.neutral,
+          ),
+        ],
+      ),
     );
   }
 }

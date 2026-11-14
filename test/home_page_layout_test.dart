@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
@@ -11,6 +12,8 @@ import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
+import 'package:mobile/features/auth/domain/repositories/profile_repository.dart';
+import 'package:mobile/features/auth/providers/auth_di_providers.dart';
 import 'package:mobile/features/auth/providers/store_provider.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_session.dart';
 import 'package:mobile/features/cash_register/domain/entities/cash_summary.dart';
@@ -20,11 +23,14 @@ import 'package:mobile/features/home/presentation/pages/home_page.dart';
 import 'package:mobile/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:mobile/features/home/presentation/providers/home_providers.dart';
 import 'package:mobile/features/home/presentation/widgets/today_summary.dart';
+import 'package:mobile/features/onboarding/presentation/providers/welcome_provider.dart';
 import 'package:mobile/features/sales/domain/entities/margin_summary.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
 
 /// Évite que l'orchestrateur de synchro (écouté par la pastille réseau)
 /// initialise la vraie authentification.
+class _MockProfile extends Mock implements ProfileRepository {}
+
 class _NoAuth extends Auth {
   @override
   Future<AuthStatus> build() async => const AuthUnauthenticated();
@@ -99,6 +105,7 @@ Future<void> pumpHome(
   List<Product>? catalog,
   bool hasSale = true,
   bool withClosedSession = true,
+  ProfileRepository? profile,
 }) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
@@ -108,6 +115,8 @@ Future<void> pumpHome(
     ProviderScope(
       overrides: [
         authProvider.overrideWith(_NoAuth.new),
+        welcomePendingProvider.overrideWith((ref) async => false),
+        profileRepositoryProvider.overrideWithValue(profile ?? _visibleSteps()),
         storeConfigProvider.overrideWith(_Store.new),
         isOnlineProvider.overrideWith((ref) => Stream.value(true)),
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(pending)),
@@ -193,6 +202,14 @@ Future<void> pumpHome(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+/// Profil où les « Premiers pas » ne sont pas masqués.
+_MockProfile _visibleSteps() {
+  final profile = _MockProfile();
+  when(profile.firstStepsHidden).thenAnswer((_) async => false);
+  when(profile.hideFirstSteps).thenAnswer((_) async {});
+  return profile;
 }
 
 void main() {
@@ -342,8 +359,60 @@ void main() {
     );
   });
 
+  testWidgets('premiers pas : « Masquer » les cache et le retient', (
+    tester,
+  ) async {
+    final profile = _visibleSteps();
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      hasSale: false,
+      profile: profile,
+    );
+    final hide = find.text('Masquer les premiers pas');
+    // Centré dans la zone défilante : hors de portée de l'action du bas.
+    await tester.ensureVisible(hide);
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await tester.pumpAndSettle();
+    await tester.tap(hide);
+    await tester.pumpAndSettle();
+    expect(find.text('PREMIERS PAS'), findsNothing);
+    verify(profile.hideFirstSteps).called(1);
+  });
+
+  testWidgets('premiers pas déjà masqués : section absente', (tester) async {
+    final profile = _MockProfile();
+    when(profile.firstStepsHidden).thenAnswer((_) async => true);
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      hasSale: false,
+      profile: profile,
+    );
+    expect(find.text('PREMIERS PAS'), findsNothing);
+  });
+
   testWidgets('premiers pas masqués après la première vente', (tester) async {
     await pumpHome(tester, theme: AppTheme.light(), withData: true);
     expect(find.text('PREMIERS PAS'), findsNothing);
   });
+
+  testWidgets(
+    'reconnexion : sessions passées absentes, ventes présentes → pas de '
+    'premiers pas',
+    (tester) async {
+      // Après une reconnexion, l'historique des caisses n'est pas rechargé ;
+      // une vente prouve pourtant que la caisse a déjà été ouverte.
+      await pumpHome(
+        tester,
+        theme: AppTheme.light(),
+        withData: true,
+        registerOpen: false,
+        withClosedSession: false,
+      );
+      expect(find.text('PREMIERS PAS'), findsNothing);
+    },
+  );
 }

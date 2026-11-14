@@ -251,6 +251,11 @@ void main() {
 
         await tester.tap(find.byTooltip('Augmenter'));
         await tester.pumpAndSettle();
+        // Étape 1 → 2 : l'état, le motif et le remboursement viennent après.
+        expect(find.text('Sera remis en stock'), findsNothing);
+        await tester.tap(find.text('Continuer'));
+        await tester.pumpAndSettle();
+        expect(find.text('Étape 2 sur 2'), findsOneWidget);
         expect(find.text('Sera remis en stock'), findsOneWidget);
         expect(find.text('Choisissez le motif'), findsOneWidget);
 
@@ -309,6 +314,8 @@ void main() {
       );
       await tester.tap(find.byTooltip('Augmenter'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('Produit défectueux'), 100);
       // Entièrement visible : sinon le panneau du bas peut couvrir le motif.
       await tester.ensureVisible(find.text('Produit défectueux'));
@@ -360,6 +367,8 @@ void main() {
       );
       await tester.tap(find.byTooltip('Augmenter'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Autre'));
       await tester.pumpAndSettle();
 
@@ -378,6 +387,10 @@ void main() {
         SaleReturnPage(sale: sale()),
         _FakeReturns(lines: [coca()]),
       );
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.textContaining('Vente payée en mixte'),
         100,
@@ -387,6 +400,31 @@ void main() {
         find.widgetWithText(QuickChoiceButton, 'Espèces'),
       );
       expect(cash.isSelected, isTrue);
+    });
+
+    testWidgets('étape 2 : retour aux quantités, saisie gardée', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        SaleReturnPage(sale: sale()),
+        _FakeReturns(lines: [coca()]),
+      );
+      expect(find.text('Étape 1 sur 2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Augmenter'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continuer'));
+      await tester.pumpAndSettle();
+      expect(find.text('Étape 2 sur 2'), findsOneWidget);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('Étape 1 sur 2'), findsOneWidget);
+      expect(find.byType(SaleReturnPage), findsOneWidget);
+      final stepper = tester.widget<QuantityStepper>(
+        find.byType(QuantityStepper),
+      );
+      expect(stepper.quantity, 1);
     });
 
     testWidgets('plus rien à retourner : écran explicite', (tester) async {

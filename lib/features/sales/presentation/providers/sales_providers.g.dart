@@ -190,6 +190,110 @@ final class SalesHistoryFamily extends $Family
   String toString() => r'salesHistoryProvider';
 }
 
+/// Observe les articles des ventes d'une plage de dates (incluse), groupés
+/// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+
+@ProviderFor(salesHistoryItems)
+final salesHistoryItemsProvider = SalesHistoryItemsFamily._();
+
+/// Observe les articles des ventes d'une plage de dates (incluse), groupés
+/// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+
+final class SalesHistoryItemsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, List<SaleItemBrief>>>,
+          Map<String, List<SaleItemBrief>>,
+          Stream<Map<String, List<SaleItemBrief>>>
+        >
+    with
+        $FutureModifier<Map<String, List<SaleItemBrief>>>,
+        $StreamProvider<Map<String, List<SaleItemBrief>>> {
+  /// Observe les articles des ventes d'une plage de dates (incluse), groupés
+  /// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+  SalesHistoryItemsProvider._({
+    required SalesHistoryItemsFamily super.from,
+    required ({DateTime startDate, DateTime endDate}) super.argument,
+  }) : super(
+         retry: null,
+         name: r'salesHistoryItemsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$salesHistoryItemsHash();
+
+  @override
+  String toString() {
+    return r'salesHistoryItemsProvider'
+        ''
+        '$argument';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, List<SaleItemBrief>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, List<SaleItemBrief>>> create(Ref ref) {
+    final argument = this.argument as ({DateTime startDate, DateTime endDate});
+    return salesHistoryItems(
+      ref,
+      startDate: argument.startDate,
+      endDate: argument.endDate,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SalesHistoryItemsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$salesHistoryItemsHash() => r'b2678ea06970fad78759e17ac00f66a092d1e5f0';
+
+/// Observe les articles des ventes d'une plage de dates (incluse), groupés
+/// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+
+final class SalesHistoryItemsFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          Stream<Map<String, List<SaleItemBrief>>>,
+          ({DateTime startDate, DateTime endDate})
+        > {
+  SalesHistoryItemsFamily._()
+    : super(
+        retry: null,
+        name: r'salesHistoryItemsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Observe les articles des ventes d'une plage de dates (incluse), groupés
+  /// par vente : résumé « Riz ×21, Lotus ×2 » et recherche par produit.
+
+  SalesHistoryItemsProvider call({
+    required DateTime startDate,
+    required DateTime endDate,
+  }) => SalesHistoryItemsProvider._(
+    argument: (startDate: startDate, endDate: endDate),
+    from: this,
+  );
+
+  @override
+  String toString() => r'salesHistoryItemsProvider';
+}
+
 /// Observe une vente — permet aux écrans ouverts d'afficher le numéro de reçu
 /// dès que la synchro l'attribue.
 

@@ -9,6 +9,7 @@ import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/margin_summary.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
+import '../../../auth/providers/auth_di_providers.dart';
 import '../../../sales/providers/sales_di_providers.dart';
 
 part 'home_providers.g.dart';
@@ -108,4 +109,22 @@ int? cashSharePercent(DailyStats stats) {
   final collected = stats.cashTotal + stats.mobileMoneyTotal;
   if (collected == Decimal.zero) return null;
   return (stats.cashTotal * Decimal.fromInt(100) / collected).round().toInt();
+}
+
+/// « Premiers pas » masqués par le compte connecté (préférence liée au
+/// compte : gardée à la reconnexion, jamais héritée par un autre compte).
+/// Écrit par la section qui le regarde : pas de risque de libération pendant
+/// l'écriture.
+@riverpod
+class FirstStepsHidden extends _$FirstStepsHidden {
+  @override
+  Future<bool> build() =>
+      ref.read(profileRepositoryProvider).firstStepsHidden();
+
+  /// Masque la section, tout de suite à l'écran puis sur l'appareil.
+  Future<void> hide() async {
+    final repository = ref.read(profileRepositoryProvider);
+    state = const AsyncData(true);
+    await repository.hideFirstSteps();
+  }
 }

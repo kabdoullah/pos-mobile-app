@@ -10,6 +10,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../domain/entities/payment_method_label.dart';
 import '../../domain/entities/sale.dart';
+import '../../domain/entities/sale_item_brief.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
 
@@ -90,6 +91,18 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
       endDate: _range.end,
     );
     final salesAsync = ref.watch(provider);
+    // Articles par vente : résumé de chaque ligne et recherche par produit.
+    // Absents (chargement, erreur) : la liste s'affiche quand même.
+    final items =
+        ref
+            .watch(
+              salesHistoryItemsProvider(
+                startDate: _range.start,
+                endDate: _range.end,
+              ),
+            )
+            .value ??
+        const <String, List<SaleItemBrief>>{};
     final isSingleDay = DateUtils.isSameDay(_range.start, _range.end);
 
     return Scaffold(
@@ -116,8 +129,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
             child: AppSearchBar(
               controller: _searchController,
               onChanged: (value) => setState(() => _query = value),
-              hintText: 'Montant ou n° de reçu',
-              keyboardType: TextInputType.number,
+              hintText: 'Produit, montant ou n° de reçu',
             ),
           ),
           UnderlineTabs<_Period>(
@@ -163,7 +175,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                     onPickDates: () => _select(_Period.custom),
                   );
                 }
-                final visible = searchSales(sales, _query);
+                final visible = searchSales(sales, _query, items: items);
                 final totals = salesTotals(visible);
                 return CustomScrollView(
                   keyboardDismissBehavior:
@@ -210,7 +222,10 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                           ),
                           child: ColoredBox(
                             color: colors.surface,
-                            child: _SaleTile(sale: group.sales[index]),
+                            child: _SaleTile(
+                              sale: group.sales[index],
+                              items: items[group.sales[index].id] ?? const [],
+                            ),
                           ),
                         ),
                       ),
@@ -297,9 +312,12 @@ class _DayHeader extends StatelessWidget {
 /// Une vente : n° et heure, montant, moyen de paiement ; statut de synchro
 /// tant que le reçu n'a pas de numéro.
 class _SaleTile extends StatelessWidget {
-  const _SaleTile({required this.sale});
+  const _SaleTile({required this.sale, required this.items});
 
   final Sale sale;
+
+  /// Articles de la vente (vide si pas encore sur le téléphone).
+  final List<SaleItemBrief> items;
 
   @override
   Widget build(BuildContext context) {
@@ -341,7 +359,12 @@ class _SaleTile extends StatelessWidget {
                 ],
               ),
               Text(
-                sale.paymentMethod.label,
+                items.isEmpty
+                    ? sale.paymentMethod.label
+                    : '${summarizeSaleItems(items)} · '
+                          '${sale.paymentMethod.label}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.bodySmall.copyWith(
                   color: colors.textSecondary,
                 ),
