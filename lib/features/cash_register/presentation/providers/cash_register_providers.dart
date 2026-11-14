@@ -40,12 +40,28 @@ Stream<CashCount?> localCashCount(
 ) => ref.watch(cashRegisterRepositoryProvider).watchCount(sessionId, operation);
 
 /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie.
+/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// chaque ouverture de l'écran d'ouverture.
 @riverpod
-Future<CashCount?> lastClosingCount(Ref ref) {
-  // Relu quand l'historique local change (nouvelle clôture, restauration).
-  ref.watch(localCashSessionHistoryProvider);
-  return ref.read(cashRegisterRepositoryProvider).lastClosingCount();
+Future<CashCount?> lastClosingCount(Ref ref) =>
+    ref.watch(cashRegisterRepositoryProvider).lastClosingCount();
+
+/// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+/// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+/// ouverture ou clôture.
+@Riverpod(keepAlive: true)
+class CashCountByDenomination extends _$CashCountByDenomination {
+  @override
+  Future<bool> build() =>
+      ref.read(cashCountModeStorageProvider).readByDenomination();
+
+  /// Applique [byDenomination] tout de suite, puis l'enregistre.
+  Future<void> set(bool byDenomination) async {
+    state = AsyncData(byDenomination);
+    await ref
+        .read(cashCountModeStorageProvider)
+        .writeByDenomination(byDenomination);
+  }
 }
 
 /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.

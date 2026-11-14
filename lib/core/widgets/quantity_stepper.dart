@@ -19,6 +19,7 @@ class QuantityStepper extends StatelessWidget {
     this.field,
     this.removeTooltip,
     this.onValueTap,
+    this.valueWidth,
     super.key,
   });
 
@@ -45,10 +46,14 @@ class QuantityStepper extends StatelessWidget {
   /// Toucher la valeur (saisie détaillée) ; `null` = valeur non interactive.
   final VoidCallback? onValueTap;
 
+  /// Largeur de la valeur ; par défaut 32 (96 en [large]). Plus large pour
+  /// un [field] qui accepte plusieurs chiffres (billetterie).
+  final double? valueWidth;
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final valueWidth = large ? 96.0 : 32.0;
+    final valueWidth = this.valueWidth ?? (large ? 96.0 : 32.0);
     final removes = removeTooltip != null && quantity <= 1;
     return DecoratedBox(
       decoration: BoxDecoration(

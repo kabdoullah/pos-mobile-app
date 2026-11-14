@@ -11,7 +11,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
-import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
@@ -215,7 +215,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
   }
 
   Future<void> _openCashSession() async {
-    final opened = await showOpenCashSessionSheet(context);
+    final opened = await showOpenCashSession(context);
     if (opened && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Caisse ouverte. Vous pouvez encaisser.')),

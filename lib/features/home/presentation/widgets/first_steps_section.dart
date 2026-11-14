@@ -9,7 +9,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/router/main_shell.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
-import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../providers/home_providers.dart';
 
@@ -68,7 +68,7 @@ class FirstStepsSection extends ConsumerWidget {
       (
         title: 'Ouvrir la caisse',
         detail: 'Avec votre fond de caisse',
-        action: () => showOpenCashSessionSheet(context),
+        action: () => showOpenCashSession(context),
       ),
       (
         title: 'Faire une première vente',

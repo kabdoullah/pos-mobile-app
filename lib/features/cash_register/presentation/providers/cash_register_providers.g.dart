@@ -320,13 +320,15 @@ final class LocalCashCountFamily extends $Family
 }
 
 /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie.
+/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// chaque ouverture de l'écran d'ouverture.
 
 @ProviderFor(lastClosingCount)
 final lastClosingCountProvider = LastClosingCountProvider._();
 
 /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-/// d'hier soir »), null si elle n'a pas de billetterie.
+/// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+/// chaque ouverture de l'écran d'ouverture.
 
 final class LastClosingCountProvider
     extends
@@ -337,7 +339,8 @@ final class LastClosingCountProvider
         >
     with $FutureModifier<CashCount?>, $FutureProvider<CashCount?> {
   /// Comptage de la dernière clôture de l'appareil (« Reprendre le comptage
-  /// d'hier soir »), null si elle n'a pas de billetterie.
+  /// d'hier soir »), null si elle n'a pas de billetterie. Auto-dispose : relu à
+  /// chaque ouverture de l'écran d'ouverture.
   LastClosingCountProvider._()
     : super(
         from: null,
@@ -363,7 +366,66 @@ final class LastClosingCountProvider
   }
 }
 
-String _$lastClosingCountHash() => r'2005d4c297f164de18e5b9874e832d085a4104e7';
+String _$lastClosingCountHash() => r'eab40a216e08a50f08a94b20d54da2eda6697b63';
+
+/// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+/// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+/// ouverture ou clôture.
+
+@ProviderFor(CashCountByDenomination)
+final cashCountByDenominationProvider = CashCountByDenominationProvider._();
+
+/// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+/// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+/// ouverture ou clôture.
+final class CashCountByDenominationProvider
+    extends $AsyncNotifierProvider<CashCountByDenomination, bool> {
+  /// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+  /// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+  /// ouverture ou clôture.
+  CashCountByDenominationProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'cashCountByDenominationProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$cashCountByDenominationHash();
+
+  @$internal
+  @override
+  CashCountByDenomination create() => CashCountByDenomination();
+}
+
+String _$cashCountByDenominationHash() =>
+    r'6217c6c1d6298ccf835887fd9160af557a339926';
+
+/// Mode de comptage choisi sur l'appareil : vrai pour billets et pièces,
+/// faux pour « Total seulement ». Le choix est gardé pour la prochaine
+/// ouverture ou clôture.
+
+abstract class _$CashCountByDenomination extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
 
 /// Observe les sessions de l'appareil, de la plus récente à la plus ancienne.
 

@@ -17,7 +17,7 @@ import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../cash_register/domain/entities/cash_session.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
-import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
 import '../../../onboarding/presentation/providers/welcome_provider.dart';
 import '../providers/home_providers.dart';
 import '../widgets/account_email_banner.dart';
@@ -157,7 +157,7 @@ class HomePage extends ConsumerWidget {
                   ? PrimaryButton(
                       label: 'Ouvrir la caisse',
                       height: AppSpacing.buttonHeight,
-                      onPressed: () => showOpenCashSessionSheet(context),
+                      onPressed: () => showOpenCashSession(context),
                     )
                   : PrimaryButton(
                       label: 'Nouvelle vente',

@@ -7,7 +7,7 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../cash_register/domain/repositories/cash_register_repository.dart';
-import '../../../cash_register/presentation/widgets/open_cash_session_sheet.dart';
+import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/return_labels.dart';
 import '../../domain/entities/returnable_line.dart';
@@ -157,7 +157,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
   /// saisie est conservée. Le commerçant ouvre la caisse puis valide de
   /// nouveau lui-même.
   Future<void> _openCashSession() async {
-    final opened = await showOpenCashSessionSheet(
+    final opened = await showOpenCashSession(
       context,
       title: 'Ouvrez la caisse pour rembourser',
       message:

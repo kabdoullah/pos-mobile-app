@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../core/storage/cash_count_mode_storage.dart';
 import '../../../core/storage/device_id_storage.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../database/database_provider.dart';
@@ -14,6 +15,10 @@ part 'cash_register_di_providers.g.dart';
 /// Fournit l'identifiant stable de l'appareil (stockage sécurisé).
 @Riverpod(keepAlive: true)
 DeviceIdStorage deviceIdStorage(Ref ref) => DeviceIdStorage();
+
+/// Fournit le stockage du mode de comptage (billets et pièces / total).
+@Riverpod(keepAlive: true)
+CashCountModeStorage cashCountModeStorage(Ref ref) => CashCountModeStorage();
 
 /// Fournit le repository des sessions de caisse (local d'abord, via drift).
 @riverpod

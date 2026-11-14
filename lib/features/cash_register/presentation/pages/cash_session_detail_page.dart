@@ -7,6 +7,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_movement.dart';
 import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_session_detail.dart';
@@ -15,6 +16,7 @@ import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 import '../widgets/cash_movement_tile.dart';
+import '../widgets/cash_count_details.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/cash_summary_card.dart';
 import '../widgets/discrepancy_badge.dart';
@@ -91,6 +93,8 @@ class CashSessionDetailPage extends ConsumerWidget {
                 ),
                 notices: _serverNotices(detail),
                 movements: detail.movements,
+                openingCount: detail.openingCount,
+                closingCount: detail.closingCount,
               ),
       );
     }
@@ -160,6 +164,22 @@ class _LocalSessionBody extends ConsumerWidget {
     final localSummary = ref.watch(cashSummaryProvider(session.id));
     final localMovements = ref.watch(cashMovementsProvider(session.id));
     final serverDetail = this.serverDetail;
+    // Comptages : ceux de l'appareil, sinon ceux du serveur (session
+    // restaurée).
+    final openingCount =
+        ref
+            .watch(
+              localCashCountProvider(session.id, CashCountOperation.opening),
+            )
+            .value ??
+        serverDetail?.openingCount;
+    final closingCount =
+        ref
+            .watch(
+              localCashCountProvider(session.id, CashCountOperation.closing),
+            )
+            .value ??
+        serverDetail?.closingCount;
     final frozenExpected = session.expectedAmount;
     final rejectedRefunds = localSummary.value?.rejectedCashRefunds;
     final rejectionCode = session.rejectionCode;
@@ -234,12 +254,14 @@ class _LocalSessionBody extends ConsumerWidget {
       notices: notices,
       movements: serverDetail?.movements ?? localMovements.value,
       movementsError: serverDetail == null && localMovements.hasError,
+      openingCount: openingCount,
+      closingCount: closingCount,
     );
   }
 }
 
-/// Mise en page commune : avertissements en tête, statut, chiffres, clôture,
-/// mouvements.
+/// Mise en page commune : avertissements en tête, statut, chiffres,
+/// comptage d'ouverture, clôture et son comptage, mouvements.
 class _SessionBody extends StatelessWidget {
   const _SessionBody({
     required this.session,
@@ -247,11 +269,17 @@ class _SessionBody extends StatelessWidget {
     required this.notices,
     required this.movements,
     this.movementsError = false,
+    this.openingCount,
+    this.closingCount,
   });
 
   final CashSession session;
   final Widget summary;
   final List<Widget> notices;
+
+  /// Billetterie d'ouverture et de clôture ; null en « Total seulement ».
+  final CashCount? openingCount;
+  final CashCount? closingCount;
 
   /// Mouvements ; null pendant le chargement.
   final List<CashMovement>? movements;
@@ -294,7 +322,16 @@ class _SessionBody extends StatelessWidget {
           ),
         ),
         summary,
+        if (openingCount case final count?)
+          CashCountDetails(
+            title:
+                "Comptage d'ouverture · "
+                '${DateFormat.Hm('fr_FR').format(session.openedAt.toLocal())}',
+            count: count,
+          ),
         if (isClosed) _Closing(session: session),
+        if (closingCount case final count?)
+          CashCountDetails(title: 'Comptage de clôture', count: count),
         const OverlineHeader('Mouvements'),
         if (movementsError)
           const CashNoticeBanner(

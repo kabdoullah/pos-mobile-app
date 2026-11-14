@@ -439,7 +439,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Fond de caisse'), findsOneWidget);
       expect(container.read(cartProvider).unitCount, 2);
-      expect(find.byType(SaleCheckoutPage), findsOneWidget);
+      // Sous l'écran d'ouverture, l'encaissement reste en place.
+      expect(
+        find.byType(SaleCheckoutPage, skipOffstage: false),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     });
 

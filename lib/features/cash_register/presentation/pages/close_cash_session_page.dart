@@ -11,16 +11,19 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../sales/presentation/widgets/amount_input.dart';
+import '../../domain/entities/cash_count.dart';
 import '../../domain/entities/cash_session.dart';
 import '../../domain/entities/cash_summary.dart';
 import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
+import '../widgets/cash_count_form.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/discrepancy_badge.dart';
 
-/// Clôture de la caisse : récapitulatif, montant compté, état (équilibrée,
-/// excédent, déficit), commentaire obligatoire en cas d'écart, puis
+/// Clôture de la caisse en deux étapes : comptage (billets et pièces, ou
+/// total seulement) sans le solde attendu, puis récapitulatif avec l'écart
+/// (équilibrée, excédent, déficit), commentaire obligatoire en cas d'écart et
 /// confirmation.
 class CloseCashSessionPage extends ConsumerWidget {
   /// Crée l'écran de clôture.
@@ -81,15 +84,28 @@ class _CloseForm extends ConsumerStatefulWidget {
   ConsumerState<_CloseForm> createState() => _CloseFormState();
 }
 
+/// Deux étapes : 1. compter le tiroir « à l'aveugle » (le solde théorique
+/// n'est pas affiché, pour ne pas ajuster le comptage) ; 2. récapitulatif,
+/// écart et commentaire. Le solde théorique n'est jamais modifié.
 class _CloseFormState extends ConsumerState<_CloseForm> {
   final _noteController = TextEditingController();
-  Decimal? _counted;
+  CashCount _count = CashCount.empty();
+
+  /// Montant saisi en mode « Total seulement ».
+  Decimal? _typedAmount;
+
+  /// Mode de comptage figé en passant au récapitulatif.
+  bool _countedByDenomination = true;
+  bool _showSummary = false;
   String? _countedError;
   String? _noteError;
   String? _formError;
   bool _isLoading = false;
 
-  /// Écart en cours de saisie, null tant que rien n'est compté.
+  /// Montant compté retenu au récapitulatif, null tant que rien n'est saisi.
+  Decimal? get _counted => _countedByDenomination ? _count.total : _typedAmount;
+
+  /// Écart en cours, null tant que rien n'est compté.
   Decimal? get _discrepancy {
     final counted = _counted;
     return counted == null ? null : counted - widget.summary.expectedAmount;
@@ -106,11 +122,24 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     super.dispose();
   }
 
+  void _continue(bool byDenomination) {
+    if (!byDenomination && _typedAmount == null) {
+      setState(() => _countedError = 'Saisissez le montant compté.');
+      return;
+    }
+    setState(() {
+      _countedByDenomination = byDenomination;
+      _countedError = null;
+      _formError = null;
+      if (!_noteRequired) _noteError = null;
+      _showSummary = true;
+    });
+  }
+
   Future<void> _submit() async {
     final counted = _counted;
     final discrepancy = _discrepancy;
     setState(() {
-      _countedError = counted == null ? 'Saisissez le montant compté.' : null;
       _noteError = _noteRequired && _noteController.text.trim().isEmpty
           ? "Expliquez l'écart avant de clôturer."
           : null;
@@ -136,7 +165,11 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     try {
       final closed = await ref
           .read(cashRegisterControllerProvider.notifier)
-          .close(countedAmount: counted, note: _noteController.text);
+          .close(
+            countedAmount: counted,
+            count: _countedByDenomination ? _count : null,
+            note: _noteController.text,
+          );
       messenger.showSnackBar(const SnackBar(content: Text('Caisse clôturée')));
       unawaited(
         router.pushReplacement(
@@ -149,8 +182,6 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
       final code = e is CashRegisterException ? e.code : null;
       setState(() {
         switch (code) {
-          case CashRegisterException.invalidAmount:
-            _countedError = message;
           case CashRegisterException.noteRequired ||
               CashRegisterException.noteTooLong:
             _noteError = code == CashRegisterException.noteRequired
@@ -167,6 +198,117 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
 
   @override
   Widget build(BuildContext context) {
+    // Retour système au récapitulatif : revenir au comptage, pas quitter.
+    return PopScope(
+      canPop: !_showSummary,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) setState(() => _showSummary = false);
+      },
+      child: _showSummary ? _buildSummary(context) : _buildCount(context),
+    );
+  }
+
+  Widget _stepLabel(BuildContext context, String text) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.md,
+      AppSpacing.xs,
+      AppSpacing.md,
+      0,
+    ),
+    child: Text(
+      text,
+      style: AppTypography.meta.copyWith(
+        color: AppColors.of(context).textSecondary,
+      ),
+    ),
+  );
+
+  /// Étape 1 : comptage, sans le solde attendu.
+  Widget _buildCount(BuildContext context) {
+    final colors = AppColors.of(context);
+    final byDenomination =
+        ref.watch(cashCountByDenominationProvider).value ?? true;
+    final amount = byDenomination ? _count.total : _typedAmount;
+    final breakdown = countBreakdown(_count);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            children: [
+              _stepLabel(context, 'Étape 1 sur 2'),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: Text(
+                  byDenomination
+                      ? 'Comptez le tiroir coupure par coupure. Le solde '
+                            "attendu s'affiche ensuite."
+                      : 'Comptez les espèces du tiroir et saisissez le '
+                            "total. Le solde attendu s'affiche ensuite.",
+                  style: AppTypography.body.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: CashCountModeSelector(
+                  byDenomination: byDenomination,
+                  onChanged: (value) => ref
+                      .read(cashCountByDenominationProvider.notifier)
+                      .set(value),
+                ),
+              ),
+              if (byDenomination)
+                CashCountForm(
+                  count: _count,
+                  onChanged: (count) => setState(() => _count = count),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: AmountInput(
+                    label: 'Espèces comptées dans le tiroir',
+                    hint: '0',
+                    value: _typedAmount,
+                    errorText: _countedError,
+                    large: true,
+                    onChanged: (value) => setState(() {
+                      _typedAmount = value;
+                      _countedError = null;
+                    }),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        CashCountTotalBar(
+          label: byDenomination && breakdown.isNotEmpty
+              ? 'Total compté · $breakdown'
+              : 'Total compté',
+          amount: amount,
+          action: PrimaryButton(
+            label: 'Continuer',
+            onPressed: () => _continue(byDenomination),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Étape 2 : récapitulatif, écart révélé, commentaire, clôture.
+  Widget _buildSummary(BuildContext context) {
     final colors = AppColors.of(context);
     final summary = widget.summary;
     final discrepancy = _discrepancy;
@@ -174,20 +316,19 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
     final formError = _formError;
     final movementsNet = summary.cashIn - summary.cashOut - summary.cashRefunds;
     final mobile = summary.mobileMoneySales;
+    final breakdown = _countedByDenomination ? countBreakdown(_count) : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.sm,
-              bottom: AppSpacing.lg,
-            ),
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             children: [
+              _stepLabel(context, 'Étape 2 sur 2'),
               if (summary.rejectedCashRefunds > Decimal.zero)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
                   child: CashNoticeBanner(
                     level: CashNoticeLevel.warning,
                     title: 'Retour refusé',
@@ -196,19 +337,41 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                         'non comptés dans le solde.',
                   ),
                 ),
+              // Rappel du comptage, modifiable.
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: AmountInput(
-                  label: 'Espèces comptées dans le tiroir',
-                  hint: '0',
-                  value: counted,
-                  errorText: _countedError,
-                  large: true,
-                  onChanged: (value) => setState(() {
-                    _counted = value;
-                    _countedError = null;
-                    if (!_noteRequired) _noteError = null;
-                  }),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.sm,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Comptage · ${formatFcfa(counted ?? Decimal.zero)}',
+                            style: AppTypography.bodyStrong.copyWith(
+                              fontFeatures: AppTypography.tabularFigures,
+                            ),
+                          ),
+                          if (breakdown.isNotEmpty)
+                            Text(
+                              breakdown,
+                              style: AppTypography.meta.copyWith(
+                                color: colors.textSecondary,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _showSummary = false),
+                      child: const Text('Modifier'),
+                    ),
+                  ],
                 ),
               ),
               const OverlineHeader('Récapitulatif'),
@@ -250,32 +413,28 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                         label: discrepancyRowLabel(discrepancy),
                         value: signedDiscrepancy(discrepancy),
                         color: discrepancyTone(discrepancy).colorIn(context),
+                        semanticsLabel: discrepancyLabel(discrepancy),
                         showDivider: false,
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              // L'état se met à jour pendant la saisie et s'annonce aux
-              // lecteurs d'écran.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: discrepancy == null
-                        ? Text(
-                            "Saisissez le montant pour voir l'écart.",
-                            style: AppTypography.body.copyWith(
-                              color: colors.textSecondary,
-                            ),
-                          )
-                        : DiscrepancyBadge(discrepancy: discrepancy),
+              if (discrepancy != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: DiscrepancyBadge(discrepancy: discrepancy),
+                    ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(height: AppSpacing.md),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),

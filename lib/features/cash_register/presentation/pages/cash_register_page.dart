@@ -17,7 +17,7 @@ import '../widgets/cash_movement_sheet.dart';
 import '../widgets/cash_movement_tile.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/cash_summary_card.dart';
-import '../widgets/open_cash_session_sheet.dart';
+import 'open_cash_session_page.dart';
 
 /// Nombre de mouvements affichés sur l'écran de la caisse active.
 const _recentMovementCount = 10;
@@ -67,7 +67,7 @@ class CashRegisterPage extends ConsumerWidget {
                           'Comptez les espèces du tiroir puis ouvrez la caisse '
                           'pour suivre le solde de la journée.',
                       actionLabel: 'Ouvrir la caisse',
-                      onAction: () => showOpenCashSessionSheet(context),
+                      onAction: () => showOpenCashSession(context),
                     )
                   : _ActiveCash(session: session),
             ),

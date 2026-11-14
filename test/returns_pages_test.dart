@@ -331,7 +331,10 @@ void main() {
 
       expect(find.text('Fond de caisse'), findsOneWidget);
       expect(
-        find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+        find.widgetWithText(
+          PrimaryButton,
+          'Ouvrir avec ${formatFcfa(Decimal.zero)}',
+        ),
         findsOneWidget,
       );
       expect(repository.created, isEmpty);
