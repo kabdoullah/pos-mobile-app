@@ -66,6 +66,7 @@ class SaleCartBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: PrimaryButton(
+              height: AppSpacing.buttonHeight,
               label: isRegisterClosed
                   ? 'Ouvrir la caisse'
                   : 'Encaisser · ${formatFcfa(total)}',

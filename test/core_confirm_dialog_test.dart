@@ -6,11 +6,9 @@ import 'package:mobile/core/widgets/index.dart';
 
 void main() {
   testWidgets(
-    'écran étroit et libellé long : Annuler et l\'action sur la même ligne',
+    'écran étroit et libellé long : action pleine largeur, Annuler dessous',
     (tester) async {
-      // Largeur d'iPhone : avec un OverflowBar, ce libellé long empilait les
-      // boutons.
-      tester.view.physicalSize = const Size(375, 812);
+      tester.view.physicalSize = const Size(320, 640);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
@@ -34,16 +32,47 @@ void main() {
       await tester.tap(find.text('ouvrir'));
       await tester.pumpAndSettle();
 
-      final confirm = tester.getRect(find.byType(ElevatedButton));
-      final cancel = tester.getRect(
-        find.ancestor(
-          of: find.text('Annuler'),
-          matching: find.byType(TextButton),
-        ),
-      );
-      expect(cancel.top, confirm.top);
-      expect(cancel.right, lessThan(confirm.left));
+      final confirm = tester.getRect(find.byType(PrimaryButton));
+      final cancel = tester.getRect(find.byType(AppDialogTextAction));
+      expect(cancel.top, greaterThanOrEqualTo(confirm.bottom));
+      expect(cancel.width, confirm.width);
+      // Boutons de dialogue en 48 dp (maquette v2), 56 sur les écrans.
+      expect(confirm.height, 48);
+      expect(cancel.height, 48);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('confirmer retourne true, annuler retourne false', (
+    tester,
+  ) async {
+    bool? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async => result = await showConfirmDialog(
+              context,
+              title: 'Vider le panier ?',
+              message: 'Le stock n’est pas modifié.',
+              confirmLabel: 'Vider le panier',
+            ),
+            child: const Text('ouvrir'),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('ouvrir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vider le panier'));
+    await tester.pumpAndSettle();
+    expect(result, isTrue);
+
+    await tester.tap(find.text('ouvrir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(result, isFalse);
+  });
 }

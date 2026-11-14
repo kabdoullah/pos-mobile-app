@@ -219,6 +219,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
         const SizedBox(height: AppSpacing.md),
         PrimaryButton(
           label: _isPrinted ? 'Imprimer de nouveau' : 'Imprimer le reçu',
+          height: AppSpacing.buttonHeight,
           isLoading: _isPrinting,
           loadingLabel: 'Impression…',
           onPressed: _isPrinting ? null : () => _print(sale),
@@ -315,11 +316,13 @@ class _PrintFailureView extends StatelessWidget {
         if (noPrinter)
           PrimaryButton(
             label: 'Configurer l’imprimante',
+            height: AppSpacing.buttonHeight,
             onPressed: onConfigure,
           )
         else
           PrimaryButton(
             label: 'Réessayer',
+            height: AppSpacing.buttonHeight,
             isLoading: isPrinting,
             onPressed: isPrinting ? null : onRetry,
           ),

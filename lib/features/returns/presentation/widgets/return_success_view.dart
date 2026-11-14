@@ -159,7 +159,7 @@ class ReturnSuccessView extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  SecondaryButton(label: 'Terminer', onPressed: onDone),
+                  SecondaryButton(label: 'Terminé', onPressed: onDone),
                 ],
               ),
             ),

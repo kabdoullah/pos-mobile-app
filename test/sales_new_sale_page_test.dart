@@ -454,7 +454,10 @@ void main() {
         findsOneWidget,
       );
       await tester.tap(
-        find.descendant(of: find.byType(Dialog), matching: find.text('Vider')),
+        find.descendant(
+          of: find.byType(Dialog),
+          matching: find.text('Vider le panier'),
+        ),
       );
       await tester.pumpAndSettle();
       expect(container.read(cartProvider).isEmpty, isTrue);

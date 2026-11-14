@@ -23,7 +23,8 @@ Future<void> showForgotPasswordDialog(BuildContext context) {
 ///
 /// Reste ouverte pendant l'envoi (le serveur peut mettre près d'une minute à
 /// sortir de veille) et affiche les erreurs sur place, pour corriger l'adresse
-/// sans tout ressaisir. Ne se ferme qu'une fois la demande acceptée.
+/// sans tout ressaisir. Une fois la demande acceptée, affiche « Vérifiez vos
+/// e-mails » (réponse neutre) avec le recours au support.
 class ForgotPasswordDialog extends ConsumerStatefulWidget {
   /// Crée la boîte de dialogue.
   const ForgotPasswordDialog({super.key});
@@ -37,6 +38,7 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
   final _emailController = TextEditingController();
   bool _submitted = false;
   bool _sending = false;
+  bool _sent = false;
 
   /// Refus du serveur portant sur l'adresse (affiché sous le champ).
   String? _serverEmailError;
@@ -72,20 +74,13 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
 
     FocusScope.of(context).unfocus();
     setState(() => _sending = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
       await ref.read(authRepositoryProvider).sendPasswordReset(_email);
       if (!mounted) return;
-      Navigator.of(context).pop();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Vérifiez vos e-mails : si cette adresse est confirmée, un e-mail '
-            'vous a été envoyé. Le lien est valable 1 heure.',
-          ),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      setState(() {
+        _sending = false;
+        _sent = true;
+      });
     } on Object catch (e) {
       if (!mounted) return;
       setState(() {
@@ -104,46 +99,69 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
     final cs = Theme.of(context).colorScheme;
     final error = _error;
     final support = ref.watch(supportContactProvider).value;
+    final hasSupport = support?.contact != null || support?.whatsApp != null;
+
+    if (_sent) {
+      return AppDialog(
+        title: 'Vérifiez vos e-mails',
+        message:
+            'Si cette adresse est confirmée, un e-mail vous a été envoyé. '
+            'Le lien est valable 1 heure.',
+        body: [
+          if (hasSupport) ...[
+            Text(
+              'Pas d’e-mail confirmé sur votre compte ?',
+              style: AppTypography.body.copyWith(color: cs.onSurface),
+            ),
+            SupportContactButtons(
+              contact: support?.contact,
+              whatsApp: support?.whatsApp,
+            ),
+          ],
+        ],
+        actions: [
+          AppDialogTextAction(
+            label: 'Fermer',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    }
+
     return PopScope(
       // Pas de fermeture pendant l'envoi : le résultat serait perdu.
       canPop: !_sending,
-      child: AlertDialog(
-        title: const Text('Mot de passe oublié'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Saisissez l’e-mail de récupération de votre compte. Nous y '
-              'enverrons un lien pour choisir un nouveau mot de passe.',
+      child: AppDialog(
+        title: 'Mot de passe oublié',
+        message:
+            'Saisissez l’e-mail de récupération de votre compte. Nous y '
+            'enverrons un lien pour choisir un nouveau mot de passe.',
+        body: [
+          AppTextField(
+            label: 'E-mail',
+            hint: 'votre@email.com',
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            errorText: _emailError,
+            textInputAction: TextInputAction.send,
+            autofillHints: const [AutofillHints.email],
+            autofocus: true,
+            onChanged: (_) => _onEdited(),
+            onSubmitted: (_) => _send(),
+          ),
+          if (error != null)
+            Text(
+              error,
+              style: AppTypography.bodySmall.copyWith(color: cs.error),
             ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'E-mail',
-              hint: 'votre@email.com',
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              errorText: _emailError,
-              textInputAction: TextInputAction.send,
-              autofillHints: const [AutofillHints.email],
-              autofocus: true,
-              onChanged: (_) => _onEdited(),
-              onSubmitted: (_) => _send(),
-            ),
-            if (error != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                error,
-                style: AppTypography.bodySmall.copyWith(color: cs.error),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
+          // Sans e-mail, l'envoi est impossible : le support reste joignable
+          // dès cette étape.
+          if (hasSupport)
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    'Pas d\'email, ou email jamais confirmé ? Contactez le '
-                    'support.',
+                    'Pas d’e-mail sur votre compte ? Contactez le support.',
                     style: AppTypography.bodySmall.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
@@ -157,28 +175,17 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
                 ),
               ],
             ),
-          ],
-        ),
+        ],
         actions: [
-          TextButton(
-            onPressed: _sending ? null : () => Navigator.of(context).pop(),
-            child: const Text('Annuler'),
+          PrimaryButton(
+            label: 'Envoyer le lien',
+            loadingLabel: 'Envoi…',
+            isLoading: _sending,
+            onPressed: _send,
           ),
-          TextButton(
-            onPressed: _sending ? null : _send,
-            child: _sending
-                ? const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      SizedBox(width: AppSpacing.sm),
-                      Text('Envoi…'),
-                    ],
-                  )
-                : const Text('Envoyer le lien'),
+          AppDialogTextAction(
+            label: 'Annuler',
+            onPressed: _sending ? null : () => Navigator.of(context).pop(),
           ),
         ],
       ),

@@ -276,6 +276,7 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
                   vertical: AppSpacing.sm + AppSpacing.xs,
                 ),
                 child: PrimaryButton(
+                  height: AppSpacing.buttonHeight,
                   label: cart.isEmpty
                       ? 'Encaisser'
                       : 'Encaisser · ${formatFcfa(cart.total)}',

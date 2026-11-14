@@ -82,8 +82,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Supprimer mon compte',
-                style: AppTypography.titleLarge,
+                'Confirmez avec votre mot de passe',
+                style: AppTypography.sectionTitle,
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(

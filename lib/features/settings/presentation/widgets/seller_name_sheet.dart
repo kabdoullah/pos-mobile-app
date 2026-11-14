@@ -4,25 +4,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/seller_profile_provider.dart';
 
 /// Longueur maximale du nom du vendeur (colonne serveur : 80).
 const sellerNameMaxLength = 80;
 
-/// Ouvre la feuille de saisie du nom du vendeur imprimé sur les reçus.
-Future<void> showSellerNameSheet(BuildContext context, String? current) {
+/// Ouvre la feuille « Mon compte » : téléphone (lecture seule) et nom du
+/// vendeur imprimé sur les reçus.
+Future<void> showSellerNameSheet(
+  BuildContext context,
+  String? current, {
+  required String phone,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => SellerNameSheet(initialName: current),
+    builder: (_) => SellerNameSheet(initialName: current, phone: phone),
   );
 }
 
 /// Nom affiché « Vendeur : … » sur les reçus (vide = ligne retirée).
 class SellerNameSheet extends ConsumerStatefulWidget {
   /// Crée la feuille avec le nom actuel.
-  const SellerNameSheet({required this.initialName, super.key});
+  const SellerNameSheet({
+    required this.initialName,
+    required this.phone,
+    super.key,
+  });
+
+  /// Téléphone du compte (E.164), affiché sans être modifiable.
+  final String phone;
 
   /// Nom actuellement enregistré.
   final String? initialName;
@@ -81,23 +94,28 @@ class _SellerNameSheetState extends ConsumerState<SellerNameSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Nom du vendeur', style: AppTypography.titleLarge),
-              const SizedBox(height: AppSpacing.xs),
+              const Text('Mon compte', style: AppTypography.sectionTitle),
+              const SizedBox(height: AppSpacing.sm),
+              DefinitionRow(
+                label: 'Téléphone',
+                value: formatPhoneCiDisplay(widget.phone),
+                showDivider: false,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                label: 'Nom du vendeur',
+                hint: 'Ex. : Awa',
+                controller: _controller,
+                autofocus: true,
+                maxLength: sellerNameMaxLength,
+                textCapitalization: TextCapitalization.words,
+              ),
               Text(
                 'Imprimé « Vendeur : … » sur les reçus. Laissez vide pour ne '
                 'pas l’afficher.',
                 style: AppTypography.bodySmall.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Nom',
-                hint: 'Ex. : Awa',
-                controller: _controller,
-                autofocus: true,
-                maxLength: sellerNameMaxLength,
-                textCapitalization: TextCapitalization.words,
               ),
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.sm),

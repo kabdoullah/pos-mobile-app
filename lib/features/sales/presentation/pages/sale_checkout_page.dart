@@ -135,7 +135,7 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
       message:
           '${units == 1 ? 'L’article sera retiré' : 'Les $units articles '
                     'seront retirés'}. Le stock n’est pas modifié.',
-      confirmLabel: 'Vider',
+      confirmLabel: 'Vider le panier',
       isDangerous: true,
     );
     if (!confirmed || !mounted) return;
@@ -574,6 +574,7 @@ class _ValidateBar extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm + 2),
               PrimaryButton(
                 label: 'Valider la vente',
+                height: AppSpacing.buttonHeight,
                 isLoading: isSubmitting,
                 onPressed: onValidate,
               ),

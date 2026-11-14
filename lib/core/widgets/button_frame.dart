@@ -7,7 +7,7 @@ import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
 /// Structure commune de `PrimaryButton` et `SecondaryButton` : pleine
-/// largeur, 56 dp de haut, retour haptique, états désactivé et chargement.
+/// largeur, [height] dp de haut (48 par défaut), retour haptique, états désactivé et chargement.
 ///
 /// Plat (v2) : aucune ombre ; la pression se lit par un fond plus soutenu
 /// ([pressedColor]), sans ondulation. Seul le style (fond, bordure, couleurs)
@@ -27,8 +27,12 @@ class ButtonFrame extends StatelessWidget {
     this.loadingLabel,
     this.icon,
     this.trailingIcon,
+    this.height = AppSpacing.buttonHeightSm,
     super.key,
   });
+
+  /// Hauteur : 48 dp, 56 dp pour les actions du parcours de vente.
+  final double height;
 
   /// Texte du bouton.
   final String label;
@@ -73,7 +77,7 @@ class ButtonFrame extends StatelessWidget {
     );
 
     return SizedBox(
-      height: 56,
+      height: height,
       width: double.infinity,
       child: Container(
         decoration: BoxDecoration(

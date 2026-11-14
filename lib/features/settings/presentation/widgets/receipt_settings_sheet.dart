@@ -99,7 +99,7 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Reçus', style: AppTypography.titleLarge),
+              const Text('Reçus', style: AppTypography.sectionTitle),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Nom, adresse, téléphone et NCC viennent de « Mon magasin » ; '

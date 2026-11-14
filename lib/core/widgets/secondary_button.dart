@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'button_frame.dart';
 import '../../app/theme/app_colors.dart';
+import '../../app/theme/app_spacing.dart';
 
 /// Bouton d'action secondaire pleine largeur : fond `surface`, filet
 /// `borderStrong`, texte `textPrimary` ; pressé = `surfaceSunken`.
@@ -14,8 +15,13 @@ class SecondaryButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.height = AppSpacing.buttonHeightSm,
     super.key,
   });
+
+  /// Hauteur : 48 dp (v2) ; `AppSpacing.buttonHeight` (56 dp) pour les
+  /// actions du parcours de vente (Nouvelle vente, Encaisser, Valider, reçu).
+  final double height;
 
   /// Texte du bouton.
   final String label;
@@ -35,6 +41,7 @@ class SecondaryButton extends StatelessWidget {
     final isDisabled = onPressed == null;
 
     return ButtonFrame(
+      height: height,
       label: label,
       onPressed: onPressed,
       isLoading: isLoading,

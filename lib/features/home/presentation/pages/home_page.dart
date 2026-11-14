@@ -150,15 +150,18 @@ class HomePage extends ConsumerWidget {
               child: steps != null && !steps.product
                   ? PrimaryButton(
                       label: 'Ajouter mon premier produit',
+                      height: AppSpacing.buttonHeight,
                       onPressed: () => context.push(Routes.productNew),
                     )
                   : isClosed
                   ? PrimaryButton(
                       label: 'Ouvrir la caisse',
+                      height: AppSpacing.buttonHeight,
                       onPressed: () => showOpenCashSessionSheet(context),
                     )
                   : PrimaryButton(
                       label: 'Nouvelle vente',
+                      height: AppSpacing.buttonHeight,
                       onPressed: isLoading
                           ? null
                           : () => goTo(ShellBranch.sale),

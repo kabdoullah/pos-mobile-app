@@ -99,8 +99,8 @@ class AppTheme {
         space: AppSpacing.md,
       ),
       snackBarTheme: _buildSnackBarTheme(c),
-      dialogTheme: _buildDialogTheme(c),
-      bottomSheetTheme: _buildBottomSheetTheme(c),
+      dialogTheme: _buildDialogTheme(c, brightness),
+      bottomSheetTheme: _buildBottomSheetTheme(c, brightness),
       popupMenuTheme: _buildPopupMenuTheme(c),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: c.action,
@@ -427,8 +427,15 @@ class AppTheme {
     );
   }
 
+  /// Filet des surfaces flottantes : seulement en sombre, où l'ombre ne se
+  /// voit pas ; en clair, l'ombre seule suffit.
+  static BorderSide _floatingSide(AppColors c, Brightness brightness) =>
+      brightness == Brightness.dark
+      ? BorderSide(color: c.border)
+      : BorderSide.none;
+
   /// Dialogue : surface, rayon 12, ombre niveau 1 (filet en sombre).
-  static DialogThemeData _buildDialogTheme(AppColors c) {
+  static DialogThemeData _buildDialogTheme(AppColors c, Brightness brightness) {
     return DialogThemeData(
       backgroundColor: c.surface,
       surfaceTintColor: Colors.transparent,
@@ -436,7 +443,7 @@ class AppTheme {
       shadowColor: c.elevationShadow.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-        side: BorderSide(color: c.border),
+        side: _floatingSide(c, brightness),
       ),
       titleTextStyle: AppTypography.sectionTitle.copyWith(color: c.textPrimary),
       contentTextStyle: AppTypography.body.copyWith(color: c.textPrimary),
@@ -444,7 +451,10 @@ class AppTheme {
   }
 
   /// Feuille : surface, rayon 12 en haut, sans poignée, ombre niveau 1.
-  static BottomSheetThemeData _buildBottomSheetTheme(AppColors c) {
+  static BottomSheetThemeData _buildBottomSheetTheme(
+    AppColors c,
+    Brightness brightness,
+  ) {
     return BottomSheetThemeData(
       backgroundColor: c.surface,
       modalBackgroundColor: c.surface,
@@ -457,7 +467,7 @@ class AppTheme {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AppSpacing.radiusLg),
         ),
-        side: BorderSide(color: c.border),
+        side: _floatingSide(c, brightness),
       ),
     );
   }

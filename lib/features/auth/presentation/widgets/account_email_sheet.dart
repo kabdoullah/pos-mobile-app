@@ -147,7 +147,7 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
               children: [
                 Text(
                   isCorrection ? 'Corriger mon email' : 'Ajouter un email',
-                  style: AppTypography.titleLarge,
+                  style: AppTypography.sectionTitle,
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(

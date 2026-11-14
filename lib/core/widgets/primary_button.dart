@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'button_frame.dart';
 import '../../app/theme/app_colors.dart';
+import '../../app/theme/app_spacing.dart';
 
 /// Bouton d'action principal pleine largeur, couleur `action` (cacao), plat.
 ///
-/// 56 dp de haut : geste répété au comptoir. Un seul par écran. Gère les
-/// états de chargement et désactivé.
+/// 48 dp de haut, 56 dp dans le parcours de vente ([height]). Un seul par
+/// écran. Gère les états de chargement et désactivé.
 class PrimaryButton extends StatelessWidget {
   /// Crée un bouton principal.
   const PrimaryButton({
@@ -16,8 +17,17 @@ class PrimaryButton extends StatelessWidget {
     this.loadingLabel,
     this.icon,
     this.trailingIcon,
+    this.isDangerous = false,
+    this.height = AppSpacing.buttonHeightSm,
     super.key,
   });
+
+  /// Hauteur : 48 dp (v2) ; `AppSpacing.buttonHeight` (56 dp) pour les
+  /// actions du parcours de vente (Nouvelle vente, Encaisser, Valider, reçu).
+  final double height;
+
+  /// Action destructive (supprimer, vider) : fond `error` au lieu de `action`.
+  final bool isDangerous;
 
   /// Texte du bouton.
   final String label;
@@ -44,16 +54,27 @@ class PrimaryButton extends StatelessWidget {
     final isDisabled = onPressed == null;
 
     return ButtonFrame(
+      height: height,
       label: label,
       onPressed: onPressed,
       isLoading: isLoading,
       loadingLabel: loadingLabel,
       icon: icon,
       trailingIcon: trailingIcon,
-      backgroundColor: isDisabled ? colors.surfaceSunken : colors.action,
-      foregroundColor: isDisabled ? colors.textDisabled : colors.onAction,
-      progressColor: colors.onAction,
-      pressedColor: colors.actionPressed,
+      backgroundColor: isDisabled
+          ? colors.surfaceSunken
+          : isDangerous
+          ? colors.error
+          : colors.action,
+      foregroundColor: isDisabled
+          ? colors.textDisabled
+          : isDangerous
+          ? colors.surface
+          : colors.onAction,
+      progressColor: isDangerous ? colors.surface : colors.onAction,
+      pressedColor: isDangerous
+          ? colors.textPrimary.withValues(alpha: 0.12)
+          : colors.actionPressed,
     );
   }
 }

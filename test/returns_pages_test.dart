@@ -288,7 +288,7 @@ void main() {
         expect(find.text('Retour enregistré'), findsWidgets);
         // Actions fixées en bas, toujours visibles.
         expect(find.text('Imprimer le reçu de retour'), findsOneWidget);
-        expect(find.text('Terminer'), findsOneWidget);
+        expect(find.text('Terminé'), findsOneWidget);
         await tester.drag(find.byType(ListView), const Offset(0, -300));
         await tester.pumpAndSettle();
         expect(find.text('Enregistré · en attente de synchro'), findsOneWidget);

@@ -9,6 +9,7 @@ import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/network/api_exception.dart';
 import 'package:mobile/core/network/error_mapper.dart';
 import 'package:mobile/core/utils/email_validator.dart';
+import 'package:mobile/core/widgets/app_dialog.dart';
 import 'package:mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/presentation/widgets/forgot_password_dialog.dart';
 import 'package:mobile/features/auth/providers/auth_di_providers.dart';
@@ -82,7 +83,7 @@ void main() {
       await _send(tester, '');
 
       expect(find.text('Saisissez votre adresse email.'), findsOneWidget);
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(AppDialog), findsOneWidget);
       verifyNever(() => repo.sendPasswordReset(any()));
     });
 
@@ -107,7 +108,7 @@ void main() {
       await _send(tester, _email);
 
       expect(find.text('Envoi…'), findsOneWidget);
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(AppDialog), findsOneWidget);
       final cancel = tester.widget<TextButton>(
         find.widgetWithText(TextButton, 'Annuler'),
       );
@@ -115,10 +116,12 @@ void main() {
 
       pending.complete();
       await tester.pumpAndSettle();
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Vérifiez vos e-mails'), findsOneWidget);
     });
 
-    testWidgets('succès : se ferme et confirme l\'envoi', (tester) async {
+    testWidgets('succès : « Vérifiez vos e-mails », puis Fermer', (
+      tester,
+    ) async {
       final repo = await _open(tester);
       when(() => repo.sendPasswordReset(any())).thenAnswer((_) async {});
 
@@ -126,11 +129,15 @@ void main() {
       await tester.pumpAndSettle();
 
       verify(() => repo.sendPasswordReset(_email)).called(1);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text('Vérifiez vos e-mails'), findsOneWidget);
       expect(
         find.textContaining('Le lien est valable 1 heure'),
         findsOneWidget,
       );
+
+      await tester.tap(find.text('Fermer'));
+      await tester.pumpAndSettle();
+      expect(find.byType(AppDialog), findsNothing);
     });
 
     testWidgets('adresse refusée par le serveur : message traduit sous le '
@@ -143,7 +150,7 @@ void main() {
 
       expect(find.text('Adresse email invalide.'), findsOneWidget);
       expect(find.text('Une erreur est survenue.'), findsNothing);
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(AppDialog), findsOneWidget);
 
       // Corriger l'adresse efface le refus.
       await tester.enterText(find.byType(TextField), 'x@y.zz');
@@ -161,7 +168,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(ConnectionException.offlineMessage), findsOneWidget);
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(AppDialog), findsOneWidget);
     });
   });
 }
