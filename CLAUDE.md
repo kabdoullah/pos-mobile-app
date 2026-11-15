@@ -32,6 +32,8 @@ Two entry points, two flavors:
 
 Both currently point at `https://pos-mobile-vkuh.onrender.com` (`docs/flavors.md` lists `https://api.pos-mobile-ci.com` for prod — check before a release).
 
+iOS has no flavors: build with `-t lib/main_prod.dart`. Published on the App Store (bundle `ci.pos.macaisse`, team `3NRR8L4663`) — release steps in `docs/release-ios.md`.
+
 Both call `AppConfig.setup(flavor:, apiUrl:)` before `runApp`. `AppConfig.isDev` gates debug features. Constants (timeout, PIN lockout, etc.) live in `AppConfig` — see `core/config.dart`.
 
 ## Architecture

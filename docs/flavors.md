@@ -95,7 +95,7 @@ productFlavors {
 
 ### iOS
 
-Les flavors iOS (Schemes Xcode) ne sont pas encore configurés — l'app cible Android uniquement au MVP.
+Les flavors iOS (Schemes Xcode) ne sont pas encore configurés : iOS se lance sans `--flavor`, en choisissant l'entrée avec `-t` (`lib/main_prod.dart` pour l'App Store). L'app est publiée sur l'App Store depuis la 1.7.0 — voir `docs/release-ios.md`.
 
 Pour configurer iOS plus tard :
 1. Xcode → Product → Scheme → Manage Schemes → Dupliquer "Runner" × 2 (`dev`, `prod`)
