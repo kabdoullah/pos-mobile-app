@@ -196,7 +196,7 @@ class _CategoryRow extends StatelessWidget {
                     Text(name, style: AppTypography.bodyStrong),
                     Text(
                       count <= 1 ? '$count produit' : '$count produits',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                       ),
                     ),

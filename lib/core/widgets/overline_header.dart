@@ -81,9 +81,7 @@ class OverlineHeader extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.xs,
                           ),
-                          textStyle: AppTypography.labelLarge.copyWith(
-                            fontSize: 15,
-                          ),
+                          textStyle: AppTypography.label,
                         ),
                         child: Text(actionLabel),
                       )
@@ -92,7 +90,7 @@ class OverlineHeader extends StatelessWidget {
                         trailing,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodySmall.copyWith(
+                        style: AppTypography.metaRegular.copyWith(
                           color: colors.textSecondary,
                         ),
                       )

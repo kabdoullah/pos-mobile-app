@@ -123,7 +123,7 @@ class ProductBrowser extends StatelessWidget {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm,
         ),
-        child: SkeletonBox(height: 48, radius: AppSpacing.radiusSm),
+        child: SkeletonBox(height: 48, radius: AppSpacing.radiusControl),
       ),
     );
   }
@@ -142,7 +142,7 @@ class _Message extends StatelessWidget {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: AppTypography.bodyMedium.copyWith(
+          style: AppTypography.body.copyWith(
             color: AppColors.of(context).textSecondary,
           ),
         ),
@@ -193,10 +193,10 @@ class _ProductList extends StatelessWidget {
               position: DecorationPosition.foreground,
               decoration: BoxDecoration(
                 border: Border.fromBorderSide(divider),
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
                 child: Center(child: itemBuilder(context, index)),
               ),
             ),

@@ -104,7 +104,7 @@ class _RejectedCloseAlert extends ConsumerWidget {
         child: TextButton(
           style: TextButton.styleFrom(
             foregroundColor: AppColors.of(context).onErrorSubtle,
-            textStyle: AppTypography.labelLarge.copyWith(
+            textStyle: AppTypography.label.copyWith(
               decoration: TextDecoration.underline,
             ),
           ),

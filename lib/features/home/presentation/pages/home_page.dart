@@ -90,7 +90,6 @@ class HomePage extends ConsumerWidget {
                   child: Text(
                     toBeginningOfSentenceCase(dateLabel, 'fr_FR'),
                     style: AppTypography.body.copyWith(
-                      fontSize: 15,
                       color: colors.textSecondary,
                     ),
                   ),
@@ -182,7 +181,7 @@ class _CashBox extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -214,7 +213,7 @@ class _CashBox extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border.all(color: colors.border),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -381,7 +380,6 @@ class _SyncFailedAlert extends ConsumerWidget {
     }
     final colors = AppColors.of(context);
     final style = AppTypography.body.copyWith(
-      fontSize: 15,
       height: 1.4,
       color: colors.onErrorSubtle,
     );
@@ -418,7 +416,7 @@ class _SyncFailedAlert extends ConsumerWidget {
               ),
               style: TextButton.styleFrom(
                 foregroundColor: colors.onErrorSubtle,
-                textStyle: AppTypography.labelLarge.copyWith(
+                textStyle: AppTypography.label.copyWith(
                   decoration: TextDecoration.underline,
                 ),
               ),

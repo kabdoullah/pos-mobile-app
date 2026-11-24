@@ -113,7 +113,7 @@ class _ToastBody extends StatelessWidget {
         child: Material(
           color: background,
           elevation: 3,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               AppSpacing.md,
@@ -128,7 +128,7 @@ class _ToastBody extends StatelessWidget {
                 Expanded(
                   child: Text(
                     data.message,
-                    style: AppTypography.bodyMedium.copyWith(color: foreground),
+                    style: AppTypography.body.copyWith(color: foreground),
                   ),
                 ),
                 if (onAction != null) ...[

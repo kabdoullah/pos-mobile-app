@@ -82,10 +82,7 @@ class SettingsTile extends StatelessWidget {
     final trailing = busy
         ? const Padding(
             padding: EdgeInsets.all(AppSpacing.sm + 2),
-            child: SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
+            child: AppLoadingIndicator.small(),
           )
         : this.trailing ??
               (showChevron
@@ -121,7 +118,7 @@ class SettingsTile extends StatelessWidget {
                         ),
                         if (subtitle != null)
                           DefaultTextStyle.merge(
-                            style: AppTypography.bodySmall.copyWith(
+                            style: AppTypography.metaRegular.copyWith(
                               color: colors.textSecondary,
                             ),
                             child: subtitle,

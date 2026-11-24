@@ -110,7 +110,7 @@ class AppTheme {
         hoverElevation: 0,
         highlightElevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         ),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(
@@ -133,19 +133,19 @@ class AppTheme {
     final primary = c.textPrimary;
     final secondary = c.textSecondary;
     return TextTheme(
-      displayLarge: AppTypography.displayLarge.copyWith(color: primary),
-      displayMedium: AppTypography.displayMedium.copyWith(color: primary),
+      displayLarge: AppTypography.figureHero.copyWith(color: primary),
+      displayMedium: AppTypography.figureInput.copyWith(color: primary),
       headlineLarge: AppTypography.screenTitle.copyWith(color: primary),
       headlineMedium: AppTypography.sectionTitle.copyWith(color: primary),
       titleLarge: AppTypography.screenTitle.copyWith(color: primary),
       titleMedium: AppTypography.sectionTitle.copyWith(color: primary),
       titleSmall: AppTypography.bodyStrong.copyWith(color: primary),
-      bodyLarge: AppTypography.bodyLarge.copyWith(color: primary),
+      bodyLarge: AppTypography.bodyStrong.copyWith(color: primary),
       bodyMedium: AppTypography.body.copyWith(color: primary),
-      bodySmall: AppTypography.bodySmall.copyWith(color: secondary),
-      labelLarge: AppTypography.labelLarge.copyWith(color: primary),
+      bodySmall: AppTypography.metaRegular.copyWith(color: secondary),
+      labelLarge: AppTypography.label.copyWith(color: primary),
       labelMedium: AppTypography.meta.copyWith(color: primary),
-      labelSmall: AppTypography.labelSmall.copyWith(color: secondary),
+      labelSmall: AppTypography.navLabel.copyWith(color: secondary),
     );
   }
 
@@ -176,7 +176,7 @@ class AppTheme {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
         side: BorderSide(color: c.border),
       ),
     );
@@ -198,7 +198,7 @@ class AppTheme {
   static InputDecorationTheme _buildInputDecorationTheme(AppColors c) {
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           borderSide: BorderSide(color: color, width: width),
         );
     return InputDecorationTheme(
@@ -213,9 +213,9 @@ class AppTheme {
       disabledBorder: border(c.border),
       labelStyle: AppTypography.bodyStrong.copyWith(color: c.textSecondary),
       floatingLabelStyle: AppTypography.meta.copyWith(color: c.textPrimary),
-      hintStyle: AppTypography.hintText.copyWith(color: c.textSecondary),
+      hintStyle: AppTypography.body.copyWith(color: c.textSecondary),
       helperStyle: AppTypography.meta.copyWith(color: c.textSecondary),
-      errorStyle: AppTypography.errorText.copyWith(color: c.error),
+      errorStyle: AppTypography.meta.copyWith(color: c.error),
       prefixIconColor: c.textSecondary,
       suffixIconColor: c.textSecondary,
       suffixStyle: AppTypography.bodyStrong.copyWith(color: c.textSecondary),
@@ -246,10 +246,10 @@ class AppTheme {
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         ),
       ),
-      textStyle: const WidgetStatePropertyAll(AppTypography.labelLarge),
+      textStyle: const WidgetStatePropertyAll(AppTypography.label),
     );
   }
 
@@ -284,7 +284,7 @@ class AppTheme {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
         ),
         textStyle: const WidgetStatePropertyAll(AppTypography.bodyStrong),
@@ -314,10 +314,10 @@ class AppTheme {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
         ),
-        textStyle: const WidgetStatePropertyAll(AppTypography.labelLarge),
+        textStyle: const WidgetStatePropertyAll(AppTypography.label),
       ),
     );
   }
@@ -332,7 +332,7 @@ class AppTheme {
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
         ),
       ),
@@ -361,16 +361,13 @@ class AppTheme {
         minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
         ),
         textStyle: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
-              ? AppTypography.meta.copyWith(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                )
-              : AppTypography.meta.copyWith(fontSize: 15),
+              ? AppTypography.bodyStrong.copyWith(fontWeight: FontWeight.w600)
+              : AppTypography.bodyStrong,
         ),
       ),
     );
@@ -387,11 +384,10 @@ class AppTheme {
       dividerHeight: 1,
       labelColor: c.textPrimary,
       unselectedLabelColor: c.textSecondary,
-      labelStyle: AppTypography.meta.copyWith(
-        fontSize: 15,
+      labelStyle: AppTypography.bodyStrong.copyWith(
         fontWeight: FontWeight.w600,
       ),
-      unselectedLabelStyle: AppTypography.meta.copyWith(fontSize: 15),
+      unselectedLabelStyle: AppTypography.bodyStrong,
       overlayColor: const WidgetStatePropertyAll(Colors.transparent),
       splashFactory: NoSplash.splashFactory,
     );
@@ -404,12 +400,8 @@ class AppTheme {
       disabledColor: c.surfaceSunken,
       deleteIconColor: c.textSecondary,
       checkmarkColor: c.onActionSubtle,
-      labelStyle: AppTypography.meta.copyWith(
-        fontSize: 15,
-        color: c.textPrimary,
-      ),
-      secondaryLabelStyle: AppTypography.meta.copyWith(
-        fontSize: 15,
+      labelStyle: AppTypography.bodyStrong.copyWith(color: c.textPrimary),
+      secondaryLabelStyle: AppTypography.bodyStrong.copyWith(
         color: c.onActionSubtle,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -417,7 +409,7 @@ class AppTheme {
       pressElevation: 0,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
       side: WidgetStateBorderSide.resolveWith(
         (states) => BorderSide(
@@ -442,7 +434,7 @@ class AppTheme {
       elevation: 8,
       shadowColor: c.elevationShadow.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
         side: _floatingSide(c, brightness),
       ),
       titleTextStyle: AppTypography.sectionTitle.copyWith(color: c.textPrimary),
@@ -465,7 +457,7 @@ class AppTheme {
       showDragHandle: false,
       shape: RoundedRectangleBorder(
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppSpacing.radiusLg),
+          top: Radius.circular(AppSpacing.radiusSurface),
         ),
         side: _floatingSide(c, brightness),
       ),
@@ -480,7 +472,7 @@ class AppTheme {
       shadowColor: c.elevationShadow.withValues(alpha: 0.12),
       textStyle: AppTypography.body.copyWith(color: c.textPrimary),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         side: BorderSide(color: c.border),
       ),
     );
@@ -490,15 +482,12 @@ class AppTheme {
   static SnackBarThemeData _buildSnackBarTheme(AppColors c) {
     return SnackBarThemeData(
       backgroundColor: c.textPrimary,
-      contentTextStyle: AppTypography.bodyStrong.copyWith(
-        fontSize: 15,
-        color: c.canvas,
-      ),
+      contentTextStyle: AppTypography.bodyStrong.copyWith(color: c.canvas),
       actionTextColor: c.canvas,
       behavior: SnackBarBehavior.floating,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
     );
   }

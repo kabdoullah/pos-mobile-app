@@ -181,9 +181,7 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
             const Spacer(),
             Text(
               _greeting(),
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+              style: AppTypography.body.copyWith(color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpacing.xs),
             Semantics(
@@ -193,13 +191,13 @@ class _PinLoginPageState extends ConsumerState<PinLoginPage>
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+                style: AppTypography.screenTitle.copyWith(color: cs.onSurface),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
               'Entrez votre PIN',
-              style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+              style: AppTypography.meta.copyWith(color: cs.onSurface),
             ),
             const SizedBox(height: AppSpacing.md),
             SlideTransition(

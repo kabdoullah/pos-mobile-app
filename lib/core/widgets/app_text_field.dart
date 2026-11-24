@@ -152,7 +152,7 @@ class _AppTextFieldState extends State<AppTextField> {
       children: [
         Text(
           widget.label,
-          style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+          style: AppTypography.meta.copyWith(color: cs.onSurface),
         ),
         const SizedBox(height: AppSpacing.xs),
         SizedBox(
@@ -179,15 +179,15 @@ class _AppTextFieldState extends State<AppTextField> {
             onSubmitted: widget.onSubmitted,
             autofillHints: widget.autofillHints,
             style: widget.large
-                ? AppTypography.displayMedium.copyWith(
+                ? AppTypography.figureInput.copyWith(
                     color: cs.onSurface,
                     fontFeatures: AppTypography.tabularFigures,
                   )
-                : AppTypography.bodyMedium.copyWith(color: cs.onSurface),
+                : AppTypography.body.copyWith(color: cs.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,
               suffixText: widget.suffixText,
-              hintStyle: AppTypography.hintText.copyWith(
+              hintStyle: AppTypography.body.copyWith(
                 color: cs.onSurfaceVariant,
               ),
               prefixIcon: widget.prefixIcon != null
@@ -213,24 +213,24 @@ class _AppTextFieldState extends State<AppTextField> {
               filled: true,
               fillColor: widget.readOnly ? cs.surfaceContainerHigh : cs.surface,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 borderSide: BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 borderSide: BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 // Focus v2 : 2 dp action (ou erreur).
                 borderSide: BorderSide(color: activeBorderColor, width: 2),
               ),
               errorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 borderSide: BorderSide(color: cs.error),
               ),
               focusedErrorBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 borderSide: BorderSide(color: cs.error, width: 2),
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -255,7 +255,7 @@ class _AppTextFieldState extends State<AppTextField> {
                 Expanded(
                   child: Text(
                     widget.errorText!,
-                    style: AppTypography.errorText.copyWith(color: cs.error),
+                    style: AppTypography.meta.copyWith(color: cs.error),
                   ),
                 ),
               ],

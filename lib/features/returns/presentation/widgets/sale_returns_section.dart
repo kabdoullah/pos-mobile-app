@@ -66,7 +66,9 @@ class _ReturnTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
+    final meta = AppTypography.metaRegular.copyWith(
+      color: colors.textSecondary,
+    );
     final r = saleReturn;
     final (String status, StatusTone tone) = switch (r.syncStatus) {
       ReturnSyncStatus.synced => ('Synchronisé', StatusTone.success),

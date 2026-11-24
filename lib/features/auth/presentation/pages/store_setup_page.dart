@@ -290,7 +290,7 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
         Text(
           'Facultatif. Utile si votre boutique a un numéro de contribuable '
           'ou facture la TVA.',
-          style: AppTypography.bodySmall.copyWith(color: cs.onSurfaceVariant),
+          style: AppTypography.metaRegular.copyWith(color: cs.onSurfaceVariant),
         ),
         Align(
           alignment: Alignment.centerLeft,
@@ -321,20 +321,18 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
         const SizedBox(height: AppSpacing.md),
         Material(
           color: cs.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           clipBehavior: Clip.antiAlias,
           child: SwitchListTile(
             value: _isSubjectToVat,
             onChanged: (value) => setState(() => _isSubjectToVat = value),
             title: Text(
               'Assujetti à la TVA',
-              style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+              style: AppTypography.meta.copyWith(color: cs.onSurface),
             ),
             subtitle: Text(
               'Votre boutique facture avec TVA.',
-              style: AppTypography.captionText.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+              style: AppTypography.caption.copyWith(color: cs.onSurfaceVariant),
             ),
           ),
         ),
@@ -354,7 +352,7 @@ class _SectionTitle extends StatelessWidget {
       header: true,
       child: Text(
         title,
-        style: AppTypography.titleMedium.copyWith(
+        style: AppTypography.sectionTitle.copyWith(
           color: Theme.of(context).colorScheme.onSurface,
         ),
       ),
@@ -371,7 +369,7 @@ class _FieldHelp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: AppTypography.captionText.copyWith(
+      style: AppTypography.caption.copyWith(
         color: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );

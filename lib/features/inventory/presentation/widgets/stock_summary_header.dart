@@ -29,7 +29,7 @@ class StockSummaryHeader extends StatelessWidget {
           Expanded(
             child: Text(
               '$count ${count <= 1 ? 'produit' : 'produits'} · valeur du stock',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: colors.textSecondary,
               ),
             ),

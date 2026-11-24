@@ -248,9 +248,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               Text(
                 'J’ai déjà un compte',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+                style: AppTypography.body.copyWith(color: cs.onSurfaceVariant),
               ),
               Center(
                 child: TextButton(

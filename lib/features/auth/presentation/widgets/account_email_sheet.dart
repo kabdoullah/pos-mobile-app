@@ -153,7 +153,7 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
                 Text(
                   'En cas d’oubli, le lien pour choisir un nouveau mot de '
                   'passe est envoyé à cette adresse, une fois confirmée.',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
                 ),
@@ -186,7 +186,7 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     error,
-                    style: AppTypography.bodySmall.copyWith(color: cs.error),
+                    style: AppTypography.metaRegular.copyWith(color: cs.error),
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),

@@ -36,7 +36,7 @@ class StockProductTile extends StatelessWidget {
     final stock = product.currentStock;
     final onAdjust = this.onAdjust;
     final purchase = product.purchasePrice;
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -79,10 +79,7 @@ class StockProductTile extends StatelessWidget {
                 children: [
                   Text(
                     stock == null ? '—' : '$stock',
-                    style: AppTypography.bodyStrong.copyWith(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: AppTypography.tabularFigures,
+                    style: AppTypography.figureSmall.copyWith(
                       color: stock != null && stock < 0 ? colors.error : null,
                     ),
                   ),

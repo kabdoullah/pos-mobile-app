@@ -87,7 +87,6 @@ class _Tab extends StatelessWidget {
           child: Text(
             label,
             style: AppTypography.bodyStrong.copyWith(
-              fontSize: 15,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected ? colors.textPrimary : colors.textSecondary,
               fontFeatures: AppTypography.tabularFigures,

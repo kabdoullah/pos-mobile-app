@@ -389,13 +389,13 @@ void main() {
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
     await tester.pumpAndSettle();
     expect(find.text("Expliquez l'écart avant de clôturer."), findsOneWidget);
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(AppDialog), findsNothing);
 
     await tester.enterText(find.byType(TextField).last, 'Pièce perdue');
     await tester.tap(find.widgetWithText(PrimaryButton, 'Clôturer la caisse'));
     await tester.pumpAndSettle();
     // Le dialogue récapitule le solde théorique, le compté et l'écart.
-    final dialog = find.byType(AlertDialog);
+    final dialog = find.byType(AppDialog);
     expect(
       find.descendant(
         of: dialog,
@@ -458,7 +458,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
-        of: find.byType(AlertDialog),
+        of: find.byType(AppDialog),
         matching: find.text('Clôturer la caisse'),
       ),
     );
@@ -515,7 +515,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
-        of: find.byType(AlertDialog),
+        of: find.byType(AppDialog),
         matching: find.text('Clôturer la caisse'),
       ),
     );

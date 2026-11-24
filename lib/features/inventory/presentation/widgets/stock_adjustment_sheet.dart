@@ -157,7 +157,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                   stock == null
                       ? product.name
                       : '${product.name} · $stock en stock',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: colors.textSecondary,
                   ),
                 ),
@@ -222,7 +222,7 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   _quantityError!,
-                  style: AppTypography.errorText.copyWith(color: colors.error),
+                  style: AppTypography.meta.copyWith(color: colors.error),
                 ),
               ],
               if (stock != null)

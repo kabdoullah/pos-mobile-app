@@ -211,7 +211,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 _step == 0 ? 'Créez un PIN à 4 chiffres' : 'Confirmez le PIN',
-                style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+                style: AppTypography.meta.copyWith(color: cs.onSurface),
               ),
               const SizedBox(height: AppSpacing.md),
               PinDots(
@@ -243,7 +243,7 @@ class _PinSetupPageState extends ConsumerState<PinSetupPage> {
                       'Le PIN est enregistré de manière sécurisée sur cet '
                       'appareil.',
                       textAlign: TextAlign.center,
-                      style: AppTypography.captionText.copyWith(
+                      style: AppTypography.caption.copyWith(
                         color: cs.onSurfaceVariant,
                       ),
                     ),

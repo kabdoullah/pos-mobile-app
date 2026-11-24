@@ -36,16 +36,10 @@ class AppSpacing {
 
   // Jetons de rayon de bordure (v2 : deux rayons utiles, 8 et 12)
   /// Rayon des contrôles. 8 pt — boutons, champs, chips, stepper.
-  static const double radiusSm = 8;
-
-  /// Rayon des contrôles. 8 pt — alias de [radiusSm] (boutons, champs).
-  static const double radiusMd = 8;
+  static const double radiusControl = 8;
 
   /// Rayon des surfaces. 12 pt — feuilles, dialogues, vignettes, encadrés.
-  static const double radiusLg = 12;
-
-  /// Rayon des surfaces. 12 pt — alias de [radiusLg].
-  static const double radiusXl = 12;
+  static const double radiusSurface = 12;
 
   /// Entièrement arrondi. 999 pt — points de statut uniquement.
   static const double radiusFull = 999;

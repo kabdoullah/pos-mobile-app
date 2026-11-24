@@ -55,7 +55,7 @@ class StatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = tone.colorIn(context);
-    final style = emphasized ? AppTypography.labelLarge : AppTypography.meta;
+    final style = emphasized ? AppTypography.label : AppTypography.meta;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

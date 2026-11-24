@@ -266,7 +266,7 @@ class _TotalsLine extends StatelessWidget {
           Expanded(
             child: Text(
               count <= 1 ? '$count vente' : '$count ventes',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: colors.textSecondary,
               ),
             ),
@@ -365,7 +365,7 @@ class _SaleTile extends StatelessWidget {
                           '${sale.paymentMethod.label}',
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
@@ -411,10 +411,7 @@ class _EmptyPeriod extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTypography.bodyStrong.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTypography.heading,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(

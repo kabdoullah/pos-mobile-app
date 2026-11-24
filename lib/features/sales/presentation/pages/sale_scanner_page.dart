@@ -220,7 +220,7 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
                 ),
                 Text(
                   units == 1 ? '1 article' : '$units articles',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: colors.textSecondary,
                   ),
                 ),
@@ -335,7 +335,7 @@ class _ScannedRow extends StatelessWidget {
                     ),
                     Text(
                       price,
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                         fontFeatures: AppTypography.tabularFigures,
                       ),

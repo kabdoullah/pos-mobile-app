@@ -169,7 +169,7 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                   '${formatFcfa(widget.unitPrice)} l’unité',
                   if (stock != null) '$stock en stock',
                 ].join(' · '),
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                   fontFeatures: AppTypography.tabularFigures,
                 ),
@@ -296,14 +296,7 @@ class _LineTotal extends StatelessWidget {
                 ),
               ),
             ),
-            Text(
-              formatFcfa(total),
-              style: AppTypography.bodyStrong.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFeatures: AppTypography.tabularFigures,
-              ),
-            ),
+            Text(formatFcfa(total), style: AppTypography.figureSmall),
           ],
         ),
       ),

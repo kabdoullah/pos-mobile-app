@@ -7,15 +7,33 @@ import 'package:flutter/material.dart';
 /// tabulaires natifs et espace fine insécable U+202F (séparateur de milliers
 /// de `intl` en `fr_FR`). Trois graisses seulement : 400, 500, 600.
 ///
-/// Échelle v2 : [figureHero] 32/600, [figureLarge] 24/600, [screenTitle]
-/// 22/600, [sectionTitle] 20/600, [bodyStrong] 16/500, [body] 16/400
-/// (minimum du texte courant), [meta] 14/500, [overline] 13/600. Les anciens
-/// noms (titleLarge, amountDisplay…) restent des alias vers cette échelle.
+/// Échelle v2 — un nom par rôle, pas d'alias :
+///
+/// | Style            | Taille/graisse | Rôle                                  |
+/// |------------------|----------------|---------------------------------------|
+/// | [figureHero]     | 32/600 tab.    | le chiffre décisif de l'écran         |
+/// | [figureInput]    | 28/600 tab.    | saisie d'un montant en grand          |
+/// | [figureLarge]    | 24/600 tab.    | montant secondaire                    |
+/// | [screenTitle]    | 22/600         | titre d'écran                         |
+/// | [sectionTitle]   | 20/600         | titre de section, feuille, dialogue   |
+/// | [figureSmall]    | 18/600 tab.    | chiffre dans une tuile ou une ligne   |
+/// | [heading]        | 18/600         | titre d'un état vide ou d'un bloc     |
+/// | [label]          | 16/600         | libellé de bouton                     |
+/// | [bodyStrong]     | 16/500         | texte appuyé, onglets, segments       |
+/// | [body]           | 16/400         | texte courant — **taille minimale**   |
+/// | [meta]           | 14/500         | métadonnées, messages sous un champ   |
+/// | [metaRegular]    | 14/400         | métadonnées secondaires               |
+/// | [overline]       | 13/600         | sur-titre en majuscules               |
+/// | [caption]        | 13/400         | légende sous un indicateur            |
+/// | [navLabel]       | 12/500         | barre de navigation uniquement        |
+///
+/// Pas de `fontSize` à la main : une taille absente de l'échelle est un jeton
+/// manquant, à ajouter ici.
 ///
 /// Les couleurs sont volontairement absentes — appliquées via
 /// [ThemeData.textTheme] pour que le passage clair/sombre fonctionne
 /// automatiquement. Les widgets qui ont besoin d'une couleur explicite
-/// utilisent `.copyWith(color: Theme.of(context).colorScheme.xxx)`.
+/// utilisent `.copyWith(color: AppColors.of(context).xxx)`.
 class AppTypography {
   /// Empêche l'instanciation.
   AppTypography._();
@@ -30,7 +48,7 @@ class AppTypography {
     FontFeature.tabularFigures(),
   ];
 
-  // Échelle v2
+  // Chiffres
 
   /// Le chiffre décisif de l'écran (à rendre, solde, total). 32/600, un seul
   /// par écran.
@@ -43,6 +61,16 @@ class AppTypography {
     letterSpacing: -0.5,
   );
 
+  /// Saisie d'un montant en grand (champ `large`). 28/600.
+  static const TextStyle figureInput = TextStyle(
+    fontFamily: fontFamily,
+    fontFeatures: tabularFigures,
+    fontSize: 28,
+    fontWeight: FontWeight.w600,
+    height: 1.25,
+    letterSpacing: -0.4,
+  );
+
   /// Montant mis en avant, secondaire au héros. 24/600.
   static const TextStyle figureLarge = TextStyle(
     fontFamily: fontFamily,
@@ -52,6 +80,18 @@ class AppTypography {
     height: 1.25,
     letterSpacing: -0.25,
   );
+
+  /// Chiffre dans une tuile ou une ligne (stock, total d'une ligne). 18/600.
+  static const TextStyle figureSmall = TextStyle(
+    fontFamily: fontFamily,
+    fontFeatures: tabularFigures,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 1.45,
+    letterSpacing: 0,
+  );
+
+  // Titres
 
   /// Titre d'écran (AppBar). 22/600.
   static const TextStyle screenTitle = TextStyle(
@@ -71,7 +111,27 @@ class AppTypography {
     letterSpacing: -0.1,
   );
 
-  /// Texte appuyé : nom de produit, valeur d'une ligne. 16/500.
+  /// Titre d'un état vide ou d'un bloc dans la page. 18/600.
+  static const TextStyle heading = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 1.45,
+    letterSpacing: 0,
+  );
+
+  // Texte
+
+  /// Libellé de bouton et d'action. 16/600.
+  static const TextStyle label = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    height: 1.4,
+    letterSpacing: 0,
+  );
+
+  /// Texte appuyé : nom de produit, valeur d'une ligne, onglet. 16/500.
   static const TextStyle bodyStrong = TextStyle(
     fontFamily: fontFamily,
     fontSize: 16,
@@ -89,12 +149,21 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Métadonnées : horodatage, numéro, stock. 14/500.
+  /// Métadonnées : horodatage, numéro, stock, message sous un champ. 14/500.
   static const TextStyle meta = TextStyle(
     fontFamily: fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w500,
     height: 1.4,
+    letterSpacing: 0,
+  );
+
+  /// Métadonnées secondaires, moins appuyées que [meta]. 14/400.
+  static const TextStyle metaRegular = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w400,
+    height: 1.45,
     letterSpacing: 0,
   );
 
@@ -107,74 +176,8 @@ class AppTypography {
     letterSpacing: 0.8,
   );
 
-  // Alias de l'échelle précédente, rattachés à l'échelle v2.
-
-  /// Grand texte display. Alias de [figureHero].
-  static const TextStyle displayLarge = figureHero;
-
-  /// Texte display moyen. 28/600.
-  static const TextStyle displayMedium = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 28,
-    fontWeight: FontWeight.w600,
-    height: 1.25,
-    letterSpacing: -0.4,
-  );
-
-  /// Grand titre. Alias de [screenTitle].
-  static const TextStyle titleLarge = screenTitle;
-
-  /// Titre d'AppBar. Alias de [screenTitle].
-  static const TextStyle appBarTitle = screenTitle;
-
-  /// Titre moyen. Alias de [sectionTitle].
-  static const TextStyle titleMedium = sectionTitle;
-
-  /// Grand texte courant. Alias de [bodyStrong] (la v2 n'a pas de corps
-  /// 18 sp : l'emphase passe par la graisse).
-  static const TextStyle bodyLarge = bodyStrong;
-
-  /// Texte courant standard. Alias de [body].
-  static const TextStyle bodyMedium = body;
-
-  /// Petit texte courant. 14/400. Infos complémentaires / secondaires.
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.45,
-    letterSpacing: 0,
-  );
-
-  /// Grand libellé. 16/600. Texte de bouton, libellés d'action.
-  static const TextStyle labelLarge = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    height: 1.4,
-    letterSpacing: 0,
-  );
-
-  /// Libellé moyen. Alias de [meta].
-  static const TextStyle labelMedium = meta;
-
-  /// Petit libellé. 12/500. Libellés de la barre de navigation uniquement.
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: fontFamily,
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
-    height: 1.3,
-    letterSpacing: 0,
-  );
-
-  /// Affichage de montant. Alias de [figureHero].
-  static const TextStyle amountDisplay = figureHero;
-
-  /// Grand montant. Alias de [figureLarge].
-  static const TextStyle amountLarge = figureLarge;
-
-  /// Texte de légende. 13/400. Métadonnées secondaires.
-  static const TextStyle captionText = TextStyle(
+  /// Légende sous un indicateur (force du PIN, étape). 13/400.
+  static const TextStyle caption = TextStyle(
     fontFamily: fontFamily,
     fontSize: 13,
     fontWeight: FontWeight.w400,
@@ -182,15 +185,12 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Forme du message d'erreur sous un champ (14/500). Appliquer
-  /// `colorScheme.error` à l'appel.
-  static const TextStyle errorText = meta;
-
-  /// Forme du message de succès (14/500). Appliquer le jeton `success` de
-  /// `AppColors` à l'appel.
-  static const TextStyle successText = meta;
-
-  /// Forme du texte d'indice / placeholder (16/400, comme la saisie).
-  /// Appliquer `colorScheme.onSurfaceVariant` à l'appel.
-  static const TextStyle hintText = body;
+  /// Libellés de la barre de navigation uniquement. 12/500.
+  static const TextStyle navLabel = TextStyle(
+    fontFamily: fontFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    height: 1.3,
+    letterSpacing: 0,
+  );
 }

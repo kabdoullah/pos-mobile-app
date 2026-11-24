@@ -66,7 +66,7 @@ class QuantityStepper extends StatelessWidget {
         border: highlightColor == null
             ? Border.all(color: cs.outline)
             : Border.all(color: highlightColor!, width: 2),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -92,8 +92,8 @@ class QuantityStepper extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style:
                         (large
-                                ? AppTypography.titleLarge
-                                : AppTypography.labelLarge)
+                                ? AppTypography.screenTitle
+                                : AppTypography.label)
                             .copyWith(
                               fontFeatures: AppTypography.tabularFigures,
                             ),

@@ -33,7 +33,7 @@ class SegmentedControl<T> extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
       child: Padding(
         padding: const EdgeInsets.all(3),
@@ -94,7 +94,6 @@ class _SegmentButton extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyStrong.copyWith(
-                    fontSize: 15,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                     color: isSelected
                         ? colors.textPrimary

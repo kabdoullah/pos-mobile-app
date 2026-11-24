@@ -324,7 +324,7 @@ class _BluetoothSetupPageState extends ConsumerState<BluetoothSetupPage> {
         mac == savedMac
             ? 'Enregistrée · non connectée'
             : 'Appairée · non connectée',
-        style: AppTypography.bodySmall.copyWith(color: colors.textSecondary),
+        style: AppTypography.metaRegular.copyWith(color: colors.textSecondary),
       );
     }
 
@@ -392,7 +392,7 @@ class _PrinterRow extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               hint,
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: colors.textSecondary,
               ),
             ),
@@ -445,13 +445,7 @@ class _Message extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: AppTypography.bodyStrong.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text(title, style: AppTypography.heading),
           const SizedBox(height: AppSpacing.sm),
           Text(
             message,

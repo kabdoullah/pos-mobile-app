@@ -61,10 +61,7 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               Text(
                 title,
-                style: AppTypography.bodyStrong.copyWith(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTypography.heading,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),

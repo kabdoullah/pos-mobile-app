@@ -36,7 +36,7 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final borderRadius = BorderRadius.circular(
-      elevated ? AppSpacing.radiusLg : AppSpacing.radiusMd,
+      elevated ? AppSpacing.radiusSurface : AppSpacing.radiusControl,
     );
     return Container(
       decoration: BoxDecoration(

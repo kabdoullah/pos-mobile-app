@@ -53,7 +53,6 @@ class MixedPaymentPanel extends StatelessWidget {
             ],
           ),
           style: AppTypography.bodyStrong.copyWith(
-            fontSize: 15,
             color: colors.textPrimary,
             fontFeatures: AppTypography.tabularFigures,
           ),
@@ -83,7 +82,6 @@ class MobileMoneyCheckNote extends StatelessWidget {
       'Vérifiez sur votre téléphone le SMS de réception de '
       '${formatFcfa(amount)} avant de valider.',
       style: AppTypography.body.copyWith(
-        fontSize: 15,
         height: 1.4,
         color: colors.textSecondary,
       ),

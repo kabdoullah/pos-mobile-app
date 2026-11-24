@@ -40,7 +40,7 @@ class StockMovementTile extends StatelessWidget {
         : isPositive
         ? '+ $delta'
         : '− ${delta.abs()}';
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );

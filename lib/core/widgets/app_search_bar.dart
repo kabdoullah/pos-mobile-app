@@ -51,7 +51,7 @@ class AppSearchBar extends StatelessWidget {
       // v2 : champ en creux r8, sans bordure ni pilule.
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         ),
       ),
       side: const WidgetStatePropertyAll(BorderSide.none),
