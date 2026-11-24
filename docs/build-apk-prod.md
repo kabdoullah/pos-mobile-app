@@ -19,7 +19,7 @@
 
 | Outil | Version minimale | Vérification |
 |---|---|---|
-| Flutter (channel stable) | 3.44.x | `flutter --version` |
+| Flutter (channel stable) | 3.44.x (pas encore 3.50, voir § 7) | `flutter --version` |
 | Dart | 3.12.x (inclus avec Flutter) | `dart --version` |
 | Android SDK | Installé via Android Studio | `echo $ANDROID_HOME` |
 | Java (JDK) | 17 | `java -version` |
@@ -294,6 +294,16 @@ flutter clean && make install && make build-apk
 ```
 
 Si persistant, vérifier la version Gradle dans `android/gradle/wrapper/gradle-wrapper.properties`.
+
+### `Your project's Gradle version (8.14.0) is lower than Flutter's minimum supported version of 9.3.1`
+
+Flutter 3.50 exige Gradle ≥ 9.3.1 et un Android Gradle Plugin plus récent que celui du projet (Gradle 8.14, AGP 8.11.1). L'option `--android-skip-build-dependency-validation` ne suffit pas : le build échoue ensuite dans le plugin Gradle de Flutter. Tant que la migration Gradle/AGP/Kotlin n'est pas faite, builder avec Flutter 3.44 (version de la CI), par exemple via fvm :
+
+```bash
+~/fvm/versions/3.44.0/bin/flutter build apk --flavor prod -t lib/main_prod.dart --release
+```
+
+Ce build peut réécrire `pubspec.lock` (résolution 3.44) : le restaurer s'il ne doit pas changer.
 
 ### `build_runner: Conflict` lors de `make gen`
 
