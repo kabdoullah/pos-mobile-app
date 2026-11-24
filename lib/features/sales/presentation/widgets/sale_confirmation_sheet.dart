@@ -240,7 +240,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
         ],
         const SizedBox(height: AppSpacing.md),
         // Sans imprimante mémorisée, le reçu WhatsApp devient l'action
-        // principale ; il marche hors ligne et avant la synchro.
+        // principale ; il marche avant la synchro, contrairement au PDF.
         if (noPrinter) ...[
           PrimaryButton(
             label: 'Envoyer par WhatsApp',

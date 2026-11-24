@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/utils/phone_formatter.dart';
 import '../../../../core/utils/whatsapp_link.dart';
 import '../../../../core/widgets/index.dart';
@@ -38,12 +39,16 @@ Future<void> showWhatsAppReceiptSheet(
   );
 }
 
-/// Envoi du reçu en texte par WhatsApp. Fonctionne hors ligne et avant la
-/// synchronisation (reçu provisoire) : WhatsApp garde le message en attente.
+/// Envoi du reçu en texte par WhatsApp, possible avant la synchronisation
+/// (reçu provisoire).
 ///
 /// Numéro du client facultatif : rempli, WhatsApp s'ouvre sur ce numéro (le
 /// client n'a pas besoin d'être dans les contacts) ; vide, WhatsApp propose
 /// de choisir le contact.
+///
+/// Hors connexion, WhatsApp ne peut pas ouvrir un numéro (il le vérifie en
+/// ligne) : seul le choix d'un contact déjà enregistré marche, le message
+/// partant au retour du réseau. La feuille le signale.
 class WhatsAppReceiptSheet extends ConsumerStatefulWidget {
   /// Crée la feuille ; [launcher] est remplaçable en test.
   const WhatsAppReceiptSheet({
@@ -141,6 +146,7 @@ class _WhatsAppReceiptSheetState extends ConsumerState<WhatsAppReceiptSheet> {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final error = _error;
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
 
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -179,6 +185,16 @@ class _WhatsAppReceiptSheetState extends ConsumerState<WhatsAppReceiptSheet> {
                 autofocus: true,
                 onSubmitted: (_) => _send(),
               ),
+              if (!isOnline) ...[
+                const SizedBox(height: AppSpacing.sm),
+                const StatusIndicator(
+                  label:
+                      'Sans connexion, WhatsApp ne peut pas ouvrir un numéro : '
+                      'laissez vide et choisissez le contact, le message '
+                      'partira au retour du réseau.',
+                  tone: StatusTone.warning,
+                ),
+              ],
               if (error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(

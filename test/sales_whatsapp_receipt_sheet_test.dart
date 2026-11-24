@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
+import 'package:mobile/core/providers/connectivity_provider.dart';
 import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/auth/domain/entities/store.dart';
 import 'package:mobile/features/auth/providers/seller_profile_provider.dart';
@@ -40,6 +41,7 @@ void main() {
   Future<List<Uri>> pumpSheet(
     WidgetTester tester, {
     bool launchSucceeds = true,
+    bool online = true,
   }) async {
     final opened = <Uri>[];
     await tester.pumpWidget(
@@ -47,6 +49,7 @@ void main() {
         overrides: [
           storeConfigProvider.overrideWith(_Store.new),
           sellerProfileProvider.overrideWith(_Seller.new),
+          isOnlineProvider.overrideWith((ref) => Stream.value(online)),
         ],
         child: MaterialApp(
           theme: AppTheme.light(),
@@ -124,5 +127,17 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Ouvrir WhatsApp'), findsOneWidget);
+  });
+
+  testWidgets('hors ligne : conseille de choisir le contact dans WhatsApp', (
+    tester,
+  ) async {
+    await pumpSheet(tester, online: false);
+    expect(find.textContaining('Sans connexion'), findsOneWidget);
+  });
+
+  testWidgets('en ligne : pas de message de connexion', (tester) async {
+    await pumpSheet(tester);
+    expect(find.textContaining('Sans connexion'), findsNothing);
   });
 }

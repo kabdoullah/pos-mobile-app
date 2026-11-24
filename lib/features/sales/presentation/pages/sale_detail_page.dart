@@ -156,7 +156,7 @@ class SaleDetailPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Sans imprimante mémorisée, le reçu WhatsApp devient
-                    // l'action principale (hors ligne et avant la synchro).
+                    // l'action principale (possible avant la synchro).
                     if (noPrinter)
                       PrimaryButton(
                         label: 'Envoyer par WhatsApp',
