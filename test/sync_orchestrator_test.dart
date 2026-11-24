@@ -274,6 +274,28 @@ void main() {
     });
 
     test(
+      'un échec après un succès garde la dernière synchro réussie',
+      () async {
+        final container = await makeContainer();
+        final orchestrator = container.read(syncOrchestratorProvider.notifier);
+
+        await orchestrator.syncNow();
+        final success = container.read(syncOrchestratorProvider);
+        expect(success, isA<SyncStatusIdle>());
+        final lastSyncAt = (success as SyncStatusIdle).lastSyncAt;
+        expect(lastSyncAt, isNotNull);
+
+        when(mockPushService.pushPendingSales).thenThrow(Exception('réseau'));
+        await orchestrator.syncNow();
+
+        final error = container.read(syncOrchestratorProvider);
+        expect(error, isA<SyncStatusError>());
+        expect((error as SyncStatusError).lastSyncAt, lastSyncAt);
+        expect(error.failedAt, isNotNull);
+      },
+    );
+
+    test(
       'syncNow purges synced entries older than 7 days after success',
       () async {
         final container = await makeContainer();

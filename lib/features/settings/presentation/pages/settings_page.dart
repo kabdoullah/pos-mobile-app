@@ -139,7 +139,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 title: 'Synchronisation',
                 subtitle: Text(_syncLabel()),
                 busy: _syncing,
-                onTap: _syncNow,
+                // Le détail (en attente, échec, dernier envoi) ; « Relancer »
+                // reste l'action rapide.
+                onTap: () => context.push(Routes.syncStatus),
                 trailing: TextButton(
                   onPressed: _syncNow,
                   child: const Text('Relancer'),
