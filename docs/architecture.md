@@ -38,7 +38,7 @@ flowchart TD
     System -->|Imprime via Bluetooth| Printer
 ```
 
-Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de récupération de mot de passe (comptes ayant renseigné un email), et l'imprimante Bluetooth pour les reçus.
+Le système a un seul acteur principal (le commerçant) et deux dépendances externes : Brevo pour les emails de récupération de mot de passe (comptes ayant renseigné un email), et l'imprimante Bluetooth pour les reçus. Le reçu peut aussi être envoyé au client par WhatsApp : l'app ouvre l'application WhatsApp du téléphone avec le texte pré-rempli (lien `whatsapp://send`, `wa.me` en secours), sans aucun appel serveur.
 
 ## Diagramme de conteneurs
 
