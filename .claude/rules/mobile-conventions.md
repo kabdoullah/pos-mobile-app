@@ -105,6 +105,15 @@ Voir `docs/adr/0003-sync-hybride.md`. Règles :
 - L'imprimante cible MVP est la Goojprt PT-210 (thermique 58mm ESC/POS, 32 caractères par ligne en monospace)
 - Toujours gérer les 3 cas d'échec : imprimante non appairée, connexion perdue, échec d'envoi → proposer à l'utilisateur Réessayer / Plus tard / Pas de reçu
 
+## Reçus : impression, PDF, WhatsApp
+
+- **Action principale selon l'imprimante** : imprimante mémorisée (`PrinterDisconnected(savedMac != null)` ou connectée) → « Imprimer le reçu » ; aucune → « Envoyer par WhatsApp ». Même règle sur la confirmation de vente et le détail d'une vente.
+- **PDF** : généré par le serveur → réseau + vente synchronisée (`receiptNumber > 0`).
+- **WhatsApp** : reçu en texte (`sales/presentation/receipt_text.dart`), une info par ligne (pas de colonnes : police proportionnelle), `*…*` = gras. Même contenu que le ticket imprimé (`ReceiptFormatter`) : modifier les deux ensemble.
+- Ouverture : `whatsapp://send` d'abord (sinon Android demande « Ouvrir avec » navigateur ou WhatsApp), `wa.me` en secours (`core/utils/whatsapp_link.dart`). Encoder le texte avec `Uri.encodeComponent` (espaces en `%20`, pas `+`).
+- Numéro du client facultatif ; seuls les mobiles CI (01, 05, 07) sont acceptés. **Hors connexion, WhatsApp ne peut pas ouvrir un numéro** (il le vérifie en ligne) : seul le choix d'un contact enregistré marche, la feuille le signale.
+- Vente non synchronisée : reçu « provisoire », sans numéro.
+
 
 ## Génération de code (build_runner)
 
