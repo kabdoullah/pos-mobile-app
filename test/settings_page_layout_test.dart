@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mocktail/mocktail.dart';
 
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/providers/connectivity_provider.dart';
+import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/sync/sync_orchestrator.dart';
 import 'package:mobile/core/sync/sync_providers.dart';
 import 'package:mobile/features/auth/domain/entities/account_email.dart';
@@ -63,7 +65,12 @@ class _Store extends StoreConfig {
 
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
-Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
+Future<void> pump(
+  WidgetTester tester,
+  Widget home,
+  ThemeData theme, {
+  GoRouter? router,
+}) async {
   // Caisse fermée : la déconnexion reste possible
   // (`cash_register_guards_test.dart` couvre le refus).
   final cash = _MockCashRegister();
@@ -90,7 +97,9 @@ Future<void> pump(WidgetTester tester, Widget home, ThemeData theme) async {
         pendingSyncCountProvider.overrideWith((ref) => Stream.value(3)),
         cashRegisterRepositoryProvider.overrideWithValue(cash),
       ],
-      child: MaterialApp(theme: theme, home: home),
+      child: router == null
+          ? MaterialApp(theme: theme, home: home)
+          : MaterialApp.router(theme: theme, routerConfig: router),
     ),
   );
   await tester.pumpAndSettle();
@@ -123,6 +132,24 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('elles seront effacées'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('« Synchronisation » ouvre l’écran détaillé, thème $name', (
+      tester,
+    ) async {
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const SettingsPage()),
+          GoRoute(
+            path: Routes.syncStatus,
+            builder: (_, _) => const Text('écran synchro'),
+          ),
+        ],
+      );
+      await pump(tester, const SizedBox(), theme, router: router);
+      await tester.tap(find.text('Synchronisation'));
+      await tester.pumpAndSettle();
+      expect(find.text('écran synchro'), findsOneWidget);
     });
 
     testWidgets('feuille Reçus avec aperçu, thème $name', (tester) async {
