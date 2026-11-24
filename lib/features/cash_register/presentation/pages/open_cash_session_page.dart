@@ -179,8 +179,7 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
                   child: Text(
                     widget.message ?? _countMoment(DateTime.now()),
                     style: widget.message == null
-                        ? AppTypography.meta.copyWith(
-                            fontSize: 15,
+                        ? AppTypography.bodyStrong.copyWith(
                             color: colors.textSecondary,
                           )
                         : AppTypography.body.copyWith(
@@ -316,9 +315,7 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
                     ),
                     child: Text(
                       formError,
-                      style: AppTypography.errorText.copyWith(
-                        color: colors.error,
-                      ),
+                      style: AppTypography.meta.copyWith(color: colors.error),
                     ),
                   ),
               ],

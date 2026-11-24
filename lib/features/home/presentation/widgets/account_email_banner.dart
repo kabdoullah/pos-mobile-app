@@ -50,7 +50,7 @@ class _AccountEmailBannerState extends ConsumerState<AccountEmailBanner> {
 
     final colors = AppColors.of(context);
     final email = account.email;
-    final bodyStyle = AppTypography.body.copyWith(fontSize: 15, height: 1.4);
+    final bodyStyle = AppTypography.body.copyWith(height: 1.4);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -108,10 +108,7 @@ class _AccountEmailBannerState extends ConsumerState<AccountEmailBanner> {
                       if (_sending)
                         const Padding(
                           padding: EdgeInsets.all(AppSpacing.md),
-                          child: SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          child: AppLoadingIndicator.small(),
                         )
                       else
                         TextButton(

@@ -143,7 +143,6 @@ class _CountGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final figures = AppTypography.body.copyWith(
-      fontSize: 15,
       fontFeatures: AppTypography.tabularFigures,
     );
     final counted = [

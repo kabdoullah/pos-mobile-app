@@ -75,7 +75,7 @@ class _SaleRow extends StatelessWidget {
                     Text(
                       '${DateFormat.Hm('fr_FR').format(sale.createdAt)}'
                       ' · ${sale.paymentMethod.label}',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                       ),
                     ),

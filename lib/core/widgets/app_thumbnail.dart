@@ -27,7 +27,7 @@ class AppThumbnail extends StatelessWidget {
       child: Center(child: PackageIcon(size: size * 0.5)),
     );
     return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       child: SizedBox.square(
         dimension: size,
         child: image == null

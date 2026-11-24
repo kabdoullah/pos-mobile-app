@@ -548,7 +548,6 @@ class _ValidateBar extends StatelessWidget {
                     child: Text(
                       summary.label,
                       style: AppTypography.body.copyWith(
-                        fontSize: 15,
                         color: colors.textSecondary,
                         fontFeatures: AppTypography.tabularFigures,
                       ),

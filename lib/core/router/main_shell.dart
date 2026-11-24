@@ -144,7 +144,7 @@ class _NavItem extends StatelessWidget {
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.labelSmall.copyWith(
+                  style: AppTypography.navLabel.copyWith(
                     color: color,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   ),

@@ -198,7 +198,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
           Text(
             'Reçu n° ${sale.receiptNumber} · ${sale.paymentMethod.label} · '
             '${formatFcfa(sale.totalAmount)}',
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.metaRegular.copyWith(
               color: colors.textSecondary,
               fontFeatures: AppTypography.tabularFigures,
             ),
@@ -296,7 +296,7 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
           Text(
             _pdfError ?? hint!,
             textAlign: TextAlign.center,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.metaRegular.copyWith(
               color: _pdfError == null ? colors.textSecondary : colors.error,
             ),
           ),

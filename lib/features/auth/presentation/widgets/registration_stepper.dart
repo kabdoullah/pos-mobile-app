@@ -30,7 +30,7 @@ class RegistrationStepper extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Text(
               'Étape $currentStep sur $total',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: colors.textSecondary,
                 fontFeatures: AppTypography.tabularFigures,
               ),

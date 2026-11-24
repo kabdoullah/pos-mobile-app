@@ -84,6 +84,7 @@ class AppDialogTextAction extends StatelessWidget {
   const AppDialogTextAction({
     required this.label,
     required this.onPressed,
+    this.isDangerous = false,
     super.key,
   });
 
@@ -93,11 +94,20 @@ class AppDialogTextAction extends StatelessWidget {
   /// Callback ; null désactive le bouton.
   final VoidCallback? onPressed;
 
+  /// Action destructrice (suppression) : libellé en couleur d'erreur.
+  final bool isDangerous;
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: AppSpacing.buttonHeightSm,
-      child: TextButton(onPressed: onPressed, child: Text(label)),
+      child: TextButton(
+        onPressed: onPressed,
+        style: isDangerous
+            ? TextButton.styleFrom(foregroundColor: AppColors.of(context).error)
+            : null,
+        child: Text(label),
+      ),
     );
   }
 }

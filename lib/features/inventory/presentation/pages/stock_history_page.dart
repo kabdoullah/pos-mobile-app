@@ -152,14 +152,7 @@ class StockHistoryPage extends ConsumerWidget {
                         AppSpacing.xxl,
                       ),
                       child: notifier.hasMore
-                          ? const Center(
-                              child: SizedBox.square(
-                                dimension: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            )
+                          ? const Center(child: AppLoadingIndicator.small())
                           : const SizedBox.shrink(),
                     ),
                   ),

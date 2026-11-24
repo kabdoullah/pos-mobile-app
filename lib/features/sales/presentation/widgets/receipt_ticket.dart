@@ -80,11 +80,11 @@ class ReceiptTicket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final muted = AppTypography.bodySmall.copyWith(
+    final muted = AppTypography.metaRegular.copyWith(
       color: cs.onSurfaceVariant,
       fontFeatures: AppTypography.tabularFigures,
     );
-    final body = AppTypography.bodyMedium.copyWith(
+    final body = AppTypography.body.copyWith(
       color: cs.onSurface,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -113,14 +113,14 @@ class ReceiptTicket extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: AppTypography.titleMedium,
+                  style: AppTypography.sectionTitle,
                 ),
               if (subtitle != null)
                 // Date : chiffres proportionnels, sinon « 17 : 21 ».
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: cs.onSurfaceVariant,
                   ),
                 ),
@@ -189,7 +189,7 @@ class ReceiptTicket extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                const Text('Total', style: AppTypography.titleMedium),
+                const Text('Total', style: AppTypography.sectionTitle),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Align(

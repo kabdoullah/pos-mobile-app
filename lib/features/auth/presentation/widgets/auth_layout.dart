@@ -145,7 +145,7 @@ class AuthBrandBand extends StatelessWidget {
               DecoratedBox(
                 decoration: BoxDecoration(
                   color: colors.brand,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
                 ),
                 child: const SizedBox.square(dimension: 28),
               ),
@@ -209,7 +209,7 @@ class AuthHeader extends StatelessWidget {
         Text(
           subtitle,
           textAlign: align,
-          style: AppTypography.bodyMedium.copyWith(color: cs.onSurfaceVariant),
+          style: AppTypography.body.copyWith(color: cs.onSurfaceVariant),
         ),
       ],
     );
@@ -272,7 +272,7 @@ class AuthBanner extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           border: tone == AuthBannerTone.warning
               ? Border.all(color: colors.border)
               : null,
@@ -296,14 +296,14 @@ class AuthBanner extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: foreground,
-                    ),
+                    style: AppTypography.meta.copyWith(color: foreground),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     message,
-                    style: AppTypography.bodySmall.copyWith(color: foreground),
+                    style: AppTypography.metaRegular.copyWith(
+                      color: foreground,
+                    ),
                   ),
                 ],
               ),
@@ -346,7 +346,7 @@ class ValidationHint extends StatelessWidget {
           Flexible(
             child: Text(
               label,
-              style: AppTypography.captionText.copyWith(color: color),
+              style: AppTypography.caption.copyWith(color: color),
             ),
           ),
         ],

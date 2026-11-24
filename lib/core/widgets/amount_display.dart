@@ -50,10 +50,10 @@ class AmountDisplay extends StatelessWidget {
 
   TextStyle _getTextStyle() {
     return switch (size) {
-      AmountSize.small => AppTypography.bodySmall,
-      AmountSize.medium => AppTypography.bodyLarge,
-      AmountSize.large => AppTypography.amountLarge,
-      AmountSize.hero => AppTypography.amountDisplay,
+      AmountSize.small => AppTypography.metaRegular,
+      AmountSize.medium => AppTypography.bodyStrong,
+      AmountSize.large => AppTypography.figureLarge,
+      AmountSize.hero => AppTypography.figureHero,
     };
   }
 

@@ -113,7 +113,7 @@ class _SellerNameSheetState extends ConsumerState<SellerNameSheet> {
               Text(
                 'Imprimé « Vendeur : … » sur les reçus. Laissez vide pour ne '
                 'pas l’afficher.',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
               ),
@@ -121,7 +121,7 @@ class _SellerNameSheetState extends ConsumerState<SellerNameSheet> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   error,
-                  style: AppTypography.bodySmall.copyWith(color: cs.error),
+                  style: AppTypography.metaRegular.copyWith(color: cs.error),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),

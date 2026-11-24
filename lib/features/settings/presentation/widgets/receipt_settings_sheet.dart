@@ -104,7 +104,7 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               Text(
                 'Nom, adresse, téléphone et NCC viennent de « Mon magasin » ; '
                 'le vendeur, de « Mon compte ».',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
               ),
@@ -124,9 +124,7 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Aperçu',
-                style: AppTypography.labelMedium.copyWith(
-                  color: cs.onSurfaceVariant,
-                ),
+                style: AppTypography.meta.copyWith(color: cs.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.xs),
               _TicketPreview(
@@ -139,7 +137,7 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   error,
-                  style: AppTypography.bodySmall.copyWith(color: cs.error),
+                  style: AppTypography.metaRegular.copyWith(color: cs.error),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),
@@ -173,7 +171,7 @@ class _TicketPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final style = AppTypography.bodySmall.copyWith(
+    final style = AppTypography.metaRegular.copyWith(
       fontFamily: 'monospace',
       color: cs.onSurface,
     );
@@ -186,7 +184,7 @@ class _TicketPreview extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -282,7 +280,7 @@ class _LogoRowState extends ConsumerState<_LogoRow> {
     return Row(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           child: SizedBox.square(
             dimension: 56,
             child: bytes == null
@@ -300,14 +298,11 @@ class _LogoRowState extends ConsumerState<_LogoRow> {
         Expanded(
           child: Text(
             hasLogo ? 'Logo imprimé en tête des reçus' : 'Aucun logo',
-            style: AppTypography.bodyMedium,
+            style: AppTypography.body,
           ),
         ),
         if (_busy)
-          const SizedBox.square(
-            dimension: 24,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
+          const AppLoadingIndicator.small()
         else
           TextButton(
             onPressed: () => _edit(hasLogo: hasLogo),

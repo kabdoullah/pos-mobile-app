@@ -86,7 +86,7 @@ class _Figures extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -143,7 +143,7 @@ class _PaymentSplit extends StatelessWidget {
     final colors = AppColors.of(context);
     final share = cashSharePercent(stats);
     if (share == null) return const SizedBox.shrink();
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -248,7 +248,7 @@ class _Kpi extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.metaRegular.copyWith(
               color: colors.textSecondary,
             ),
           ),
@@ -259,11 +259,7 @@ class _Kpi extends StatelessWidget {
               value,
               maxLines: 1,
               softWrap: false,
-              style: AppTypography.bodyStrong.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFeatures: AppTypography.tabularFigures,
-              ),
+              style: AppTypography.figureSmall,
             ),
           ),
         ],

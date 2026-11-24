@@ -73,10 +73,7 @@ class SaleScannerPanel extends StatelessWidget {
                 child: Text(
                   'Placez le code-barres dans le cadre',
                   textAlign: TextAlign.center,
-                  style: AppTypography.body.copyWith(
-                    fontSize: 15,
-                    color: AppColors.onCamera,
-                  ),
+                  style: AppTypography.body.copyWith(color: AppColors.onCamera),
                 ),
               ),
             ],
@@ -162,7 +159,7 @@ class _ViewfinderPainter extends CustomPainter {
     );
     final hole = RRect.fromRectAndRadius(
       rect,
-      const Radius.circular(AppSpacing.radiusSm),
+      const Radius.circular(AppSpacing.radiusControl),
     );
 
     canvas

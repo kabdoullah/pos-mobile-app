@@ -387,7 +387,7 @@ class _RegisterClosedNote extends StatelessWidget {
                     ),
                   ],
                 ),
-                style: AppTypography.body.copyWith(fontSize: 15, height: 1.4),
+                style: AppTypography.body.copyWith(height: 1.4),
               ),
             ),
           ],

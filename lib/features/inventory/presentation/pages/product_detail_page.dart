@@ -42,7 +42,7 @@ class ProductDetailPage extends ConsumerWidget {
         title: 'Produit',
         body: Padding(
           padding: EdgeInsets.all(AppSpacing.md),
-          child: SkeletonBox(height: 200, radius: AppSpacing.radiusLg),
+          child: SkeletonBox(height: 200, radius: AppSpacing.radiusSurface),
         ),
       ),
       error: (_, _) => const AppScaffold(
@@ -75,7 +75,7 @@ class _ProductDetail extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -394,16 +394,12 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
           excludeSemantics: true,
           child: InkWell(
             onTap: _busy ? null : _edit,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
             child: Stack(
               alignment: Alignment.center,
               children: [
                 ProductThumbnail(product: widget.product, size: 72),
-                if (_busy)
-                  const SizedBox.square(
-                    dimension: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
+                if (_busy) const AppLoadingIndicator.small(),
               ],
             ),
           ),
@@ -418,7 +414,7 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
                 hasPhoto
                     ? 'Toucher la photo pour la changer'
                     : 'Toucher pour ajouter une photo',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),

@@ -222,7 +222,7 @@ class _StepRow extends StatelessWidget {
                           if (!isDone)
                             Text(
                               detail,
-                              style: AppTypography.bodySmall.copyWith(
+                              style: AppTypography.metaRegular.copyWith(
                                 color: colors.textSecondary,
                               ),
                             ),

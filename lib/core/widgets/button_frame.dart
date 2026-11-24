@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
+import 'loading_indicator.dart';
 
 /// Structure commune de `PrimaryButton` et `SecondaryButton` : pleine
 /// largeur, [height] dp de haut (48 par défaut), retour haptique, états désactivé et chargement.
@@ -71,10 +72,8 @@ class ButtonFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null;
-    final borderRadius = BorderRadius.circular(AppSpacing.radiusMd);
-    final labelStyle = AppTypography.labelLarge.copyWith(
-      color: foregroundColor,
-    );
+    final borderRadius = BorderRadius.circular(AppSpacing.radiusControl);
+    final labelStyle = AppTypography.label.copyWith(color: foregroundColor);
 
     return SizedBox(
       height: height,
@@ -103,15 +102,7 @@ class ButtonFrame extends StatelessWidget {
                   ? Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              progressColor,
-                            ),
-                          ),
-                        ),
+                        AppLoadingIndicator.small(color: progressColor),
                         const SizedBox(width: AppSpacing.sm),
                         Flexible(
                           child: Text(
@@ -124,15 +115,7 @@ class ButtonFrame extends StatelessWidget {
                       ],
                     )
                   : isLoading
-                  ? SizedBox.square(
-                      dimension: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 3,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          progressColor,
-                        ),
-                      ),
-                    )
+                  ? AppLoadingIndicator.small(color: progressColor)
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,

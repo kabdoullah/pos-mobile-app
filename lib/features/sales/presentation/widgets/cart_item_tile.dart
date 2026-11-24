@@ -51,7 +51,7 @@ class CartItemTile extends StatelessWidget {
     final colors = AppColors.of(context);
     final stock = item.availableStock;
     final atStockLimit = stock != null && item.quantity >= stock;
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
@@ -188,22 +188,22 @@ class _LineDiscount extends StatelessWidget {
     final discount = item.discount;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: AppSpacing.minTapTarget),
         child: Row(
           children: [
-            Expanded(
+            const Expanded(
               child: Text(
                 'Remise sur la ligne',
-                style: AppTypography.bodyStrong.copyWith(fontSize: 15),
+                style: AppTypography.bodyStrong,
               ),
             ),
             Text(
               discount == null
                   ? 'Ajouter'
                   : '−${formatFcfa(item.discountAmount)}',
-              style: AppTypography.labelLarge.copyWith(
+              style: AppTypography.label.copyWith(
                 color: colors.action,
                 fontFeatures: AppTypography.tabularFigures,
               ),

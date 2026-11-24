@@ -171,7 +171,7 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
             title: 'Remplissez une ligne par produit',
             child: Text(
               'Colonnes : nom, code-barres, prix unitaire, stock',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: colors.textSecondary,
               ),
             ),
@@ -188,7 +188,9 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
                     decoration: BoxDecoration(
                       color: colors.surface,
                       border: Border.all(color: colors.borderStrong),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                      borderRadius: BorderRadius.circular(
+                        AppSpacing.radiusControl,
+                      ),
                     ),
                     child: Padding(
                       padding: const EdgeInsets.only(left: AppSpacing.sm + 4),
@@ -374,7 +376,7 @@ class _ImportReport extends StatelessWidget {
                         ),
                         Text(
                           item.error ?? 'Erreur inconnue',
-                          style: AppTypography.bodySmall.copyWith(
+                          style: AppTypography.metaRegular.copyWith(
                             color: colors.error,
                           ),
                         ),

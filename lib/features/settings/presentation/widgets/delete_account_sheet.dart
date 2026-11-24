@@ -89,7 +89,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
               Text(
                 'Saisissez votre mot de passe pour confirmer. Cette action est '
                 'définitive.',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: cs.onSurfaceVariant,
                 ),
               ),
@@ -116,13 +116,7 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
                   ),
                   onPressed: value.text.isEmpty || _deleting ? null : _delete,
                   child: _deleting
-                      ? SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: cs.onError,
-                          ),
-                        )
+                      ? AppLoadingIndicator.small(color: cs.onError)
                       : const Text('Supprimer définitivement'),
                 ),
               ),

@@ -168,7 +168,7 @@ class _WhatsAppReceiptSheetState extends ConsumerState<WhatsAppReceiptSheet> {
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'Laissez vide pour choisir le contact dans WhatsApp.',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),

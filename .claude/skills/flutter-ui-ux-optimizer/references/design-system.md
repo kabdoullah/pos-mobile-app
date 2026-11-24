@@ -130,7 +130,7 @@ const colorScheme = ColorScheme(
 
 `AppTheme.light()` / `AppTheme.dark()` configure automatiquement :
 - `appBarTheme` — surface bg, elevation 0, scrolledUnderElevation 1
-- `cardTheme` — elevation 0, radius `AppSpacing.radiusLg`
+- `cardTheme` — elevation 0, radius `AppSpacing.radiusSurface`
 - `inputDecorationTheme` — filled, outline borders 4 états (enabled/focused/error/disabled)
 - `elevatedButtonTheme` — primary bg, height `AppSpacing.buttonHeight`, radius md
 - `outlinedButtonTheme` — primary stroke width 2, height `AppSpacing.buttonHeight`

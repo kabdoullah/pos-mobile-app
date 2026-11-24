@@ -59,7 +59,7 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
           const SizedBox(height: AppSpacing.md),
           Text(
             'Boutique suspendue',
-            style: AppTypography.titleLarge.copyWith(color: cs.onSurface),
+            style: AppTypography.screenTitle.copyWith(color: cs.onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -69,16 +69,14 @@ class _StoreSuspendedPageState extends ConsumerState<StoreSuspendedPage> {
                       'pour la réactiver.'
                 : 'Votre boutique a été suspendue. Contactez le support '
                       'de l’application pour la réactiver.',
-            style: AppTypography.bodyLarge.copyWith(color: cs.onSurface),
+            style: AppTypography.bodyStrong.copyWith(color: cs.onSurface),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Les ventes et données enregistrées sur ce téléphone sont '
             'conservées : elles seront envoyées dès la réactivation.',
-            style: AppTypography.bodyMedium.copyWith(
-              color: cs.onSurfaceVariant,
-            ),
+            style: AppTypography.body.copyWith(color: cs.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),

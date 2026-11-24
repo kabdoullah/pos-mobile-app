@@ -172,7 +172,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                 _isIn
                     ? 'Argent ajouté dans le tiroir, hors ventes.'
                     : 'Argent retiré du tiroir, hors remboursements.',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
@@ -211,7 +211,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   reasonError,
-                  style: AppTypography.errorText.copyWith(color: colors.error),
+                  style: AppTypography.meta.copyWith(color: colors.error),
                 ),
               ],
               const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
@@ -231,7 +231,7 @@ class _CashMovementSheetState extends ConsumerState<CashMovementSheet> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   formError,
-                  style: AppTypography.errorText.copyWith(color: colors.error),
+                  style: AppTypography.meta.copyWith(color: colors.error),
                 ),
               ],
               const SizedBox(height: AppSpacing.md),

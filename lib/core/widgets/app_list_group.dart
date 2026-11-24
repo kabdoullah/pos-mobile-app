@@ -28,7 +28,7 @@ class AppListGroup extends StatelessWidget {
       color: cs.surface,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         side: BorderSide(color: cs.outlineVariant),
       ),
       child: Column(
@@ -69,7 +69,7 @@ class SliverAppListGroup extends StatelessWidget {
     return DecoratedSliver(
       decoration: BoxDecoration(
         color: cs.surface,
-        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         border: Border.all(color: cs.outlineVariant),
       ),
       sliver: SliverList.separated(

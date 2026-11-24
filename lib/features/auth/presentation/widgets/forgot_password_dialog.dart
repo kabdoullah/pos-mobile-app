@@ -152,7 +152,7 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
           if (error != null)
             Text(
               error,
-              style: AppTypography.bodySmall.copyWith(color: cs.error),
+              style: AppTypography.metaRegular.copyWith(color: cs.error),
             ),
           // Sans e-mail, l'envoi est impossible : le support reste joignable
           // dès cette étape.
@@ -162,7 +162,7 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
                 Expanded(
                   child: Text(
                     'Pas d’e-mail sur votre compte ? Contactez le support.',
-                    style: AppTypography.bodySmall.copyWith(
+                    style: AppTypography.metaRegular.copyWith(
                       color: cs.onSurfaceVariant,
                     ),
                   ),

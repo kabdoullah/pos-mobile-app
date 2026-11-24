@@ -551,7 +551,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           helper: _stockTracked
                               ? Text(
                                   'Se modifie par « Ajuster ».',
-                                  style: AppTypography.bodySmall.copyWith(
+                                  style: AppTypography.metaRegular.copyWith(
                                     color: colors.textSecondary,
                                   ),
                                 )
@@ -694,7 +694,7 @@ class _SuggestedNameHint extends StatelessWidget {
           Expanded(
             child: Text(
               'Nom suggéré d\'après le code-barres. Vérifiez-le.',
-              style: AppTypography.bodySmall.copyWith(
+              style: AppTypography.metaRegular.copyWith(
                 color: cs.onSurfaceVariant,
               ),
             ),

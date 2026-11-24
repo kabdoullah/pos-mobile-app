@@ -124,7 +124,7 @@ class _TutorialPageState extends State<TutorialPage> {
                   Expanded(
                     child: Text(
                       '${_page + 1} sur $total',
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                         fontFeatures: AppTypography.tabularFigures,
                       ),
@@ -228,7 +228,7 @@ class _SlideView extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: colors.surfaceSunken,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -251,7 +251,7 @@ class _SlideView extends StatelessWidget {
             decoration: BoxDecoration(
               color: colors.surface,
               border: Border.all(color: colors.border),
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
             ),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.sm + 4),
@@ -265,7 +265,7 @@ class _SlideView extends StatelessWidget {
                     TextSpan(text: slide.tip),
                   ],
                 ),
-                style: AppTypography.body.copyWith(fontSize: 15, height: 1.4),
+                style: AppTypography.body.copyWith(height: 1.4),
               ),
             ),
           ),
@@ -290,7 +290,7 @@ class _MiniCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border.all(color: colors.border),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
       ),
       child: Column(
         children: [
@@ -331,7 +331,7 @@ class _MiniRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: AppTypography.bodySmall.copyWith(
+            style: AppTypography.metaRegular.copyWith(
               color: colors.textSecondary,
             ),
           ),
@@ -390,14 +390,14 @@ class _SaleIllustration extends StatelessWidget {
         DecoratedBox(
           decoration: BoxDecoration(
             color: colors.action,
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm + 2),
             child: Text(
               'Encaisser · ${_fcfa(2975)}',
               textAlign: TextAlign.center,
-              style: AppTypography.labelLarge.copyWith(
+              style: AppTypography.label.copyWith(
                 color: colors.onAction,
                 fontFeatures: AppTypography.tabularFigures,
               ),
@@ -420,7 +420,7 @@ class _ReceiptIllustration extends StatelessWidget {
         decoration: BoxDecoration(
           color: colors.surface,
           border: Border.all(color: colors.borderStrong),
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -469,7 +469,7 @@ class _FollowIllustration extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surface,
             border: Border.all(color: colors.border),
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.sm + 4),
@@ -478,7 +478,7 @@ class _FollowIllustration extends StatelessWidget {
               children: [
                 Text(
                   'Aujourd’hui · 2 ventes',
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: colors.textSecondary,
                   ),
                 ),

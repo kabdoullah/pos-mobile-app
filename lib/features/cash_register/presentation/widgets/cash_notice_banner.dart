@@ -56,7 +56,6 @@ class CashNoticeBanner extends StatelessWidget {
       CashNoticeLevel.error => colors.onErrorSubtle,
     };
     final style = AppTypography.body.copyWith(
-      fontSize: 15,
       height: 1.4,
       color: foreground,
       fontFeatures: AppTypography.tabularFigures,

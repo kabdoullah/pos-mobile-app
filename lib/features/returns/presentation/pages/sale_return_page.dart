@@ -281,7 +281,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
                     ? 'Un remboursement en espèces sort du tiroir de '
                           'caisse.'
                     : 'Remboursez le client depuis votre téléphone.',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
@@ -344,7 +344,7 @@ class _ReturnFormState extends ConsumerState<_ReturnForm> {
                     if (missing != null)
                       Text(
                         missing,
-                        style: AppTypography.bodySmall.copyWith(
+                        style: AppTypography.metaRegular.copyWith(
                           color: colors.textSecondary,
                         ),
                       ),
@@ -386,7 +386,7 @@ class _QuantityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );

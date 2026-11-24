@@ -287,7 +287,7 @@ class _DateField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final radius = BorderRadius.circular(AppSpacing.radiusSm);
+    final radius = BorderRadius.circular(AppSpacing.radiusControl);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

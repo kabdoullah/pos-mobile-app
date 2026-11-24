@@ -180,9 +180,7 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
             Text(
               'Pas encore de compte ?',
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium.copyWith(
-                color: cs.onSurfaceVariant,
-              ),
+              style: AppTypography.body.copyWith(color: cs.onSurfaceVariant),
             ),
             Center(
               child: TextButton(

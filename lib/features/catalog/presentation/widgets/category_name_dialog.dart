@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_typography.dart';
 
-import '../../../../app/theme/app_spacing.dart';
-
 import '../../../../app/theme/app_colors.dart';
 
 import '../../../../core/widgets/index.dart';
@@ -115,52 +113,44 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
     final colors = AppColors.of(context);
     final message = widget.message;
     final canSave = _controller.text.trim().isNotEmpty;
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AppTextField(
-              label: 'Nom',
-              hint: 'Ex. : Boissons',
-              controller: _controller,
-              autofocus: true,
-              maxLength: categoryNameMaxLength,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.done,
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => _submit(),
-            ),
-            if (message != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                message,
-                style: AppTypography.body.copyWith(color: colors.textSecondary),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.md),
-            PrimaryButton(
-              label: widget.confirmLabel,
-              onPressed: canSave ? _submit : null,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (widget.canDelete)
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pop(const CategoryDeleteRequested()),
-                style: TextButton.styleFrom(foregroundColor: colors.error),
-                child: const Text('Supprimer la catégorie'),
-              )
-            else
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Annuler'),
-              ),
-          ],
+    return AppDialog(
+      title: widget.title,
+      body: [
+        AppTextField(
+          label: 'Nom',
+          hint: 'Ex. : Boissons',
+          controller: _controller,
+          autofocus: true,
+          maxLength: categoryNameMaxLength,
+          textCapitalization: TextCapitalization.sentences,
+          textInputAction: TextInputAction.done,
+          onChanged: (_) => setState(() {}),
+          onSubmitted: (_) => _submit(),
         ),
-      ),
+        if (message != null)
+          Text(
+            message,
+            style: AppTypography.body.copyWith(color: colors.textSecondary),
+          ),
+      ],
+      actions: [
+        PrimaryButton(
+          label: widget.confirmLabel,
+          onPressed: canSave ? _submit : null,
+        ),
+        if (widget.canDelete)
+          AppDialogTextAction(
+            label: 'Supprimer la catégorie',
+            isDangerous: true,
+            onPressed: () =>
+                Navigator.of(context).pop(const CategoryDeleteRequested()),
+          )
+        else
+          AppDialogTextAction(
+            label: 'Annuler',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+      ],
     );
   }
 }

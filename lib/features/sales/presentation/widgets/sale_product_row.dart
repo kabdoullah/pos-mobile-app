@@ -159,7 +159,7 @@ class _Meta extends StatelessWidget {
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: AppTypography.bodySmall.copyWith(
+      style: AppTypography.metaRegular.copyWith(
         color: colors.textSecondary,
         fontFeatures: AppTypography.tabularFigures,
       ),
@@ -187,7 +187,7 @@ class _AddButton extends StatelessWidget {
         backgroundColor: colors.surface,
         fixedSize: const Size.square(AppSpacing.iconButtonSize),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
           side: BorderSide(color: colors.border),
         ),
       ),

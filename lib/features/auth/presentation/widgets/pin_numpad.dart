@@ -173,7 +173,7 @@ class PinNumpad extends StatelessWidget {
               ),
               Text(
                 'Effacer',
-                style: AppTypography.bodySmall.copyWith(
+                style: AppTypography.metaRegular.copyWith(
                   color: colors.textSecondary,
                 ),
               ),
@@ -216,7 +216,7 @@ class _NumpadKey extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final onTap = this.onTap;
-    final radius = BorderRadius.circular(AppSpacing.radiusSm);
+    final radius = BorderRadius.circular(AppSpacing.radiusControl);
     final handleTap = onTap == null
         ? null
         : () {
@@ -285,13 +285,13 @@ class PinMessage extends StatelessWidget {
                       Text(
                         title,
                         textAlign: TextAlign.center,
-                        style: AppTypography.labelMedium.copyWith(color: color),
+                        style: AppTypography.meta.copyWith(color: color),
                       ),
                     if (detail != null)
                       Text(
                         detail,
                         textAlign: TextAlign.center,
-                        style: AppTypography.bodySmall.copyWith(color: color),
+                        style: AppTypography.metaRegular.copyWith(color: color),
                       ),
                   ],
                 ),

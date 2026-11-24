@@ -114,7 +114,7 @@ class CashSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final meta = AppTypography.bodySmall.copyWith(
+    final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );

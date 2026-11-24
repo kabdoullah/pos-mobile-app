@@ -50,7 +50,9 @@ class SaleDetailPage extends ConsumerWidget {
       PrinterDisconnected(savedMac: null) => true,
       _ => false,
     };
-    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
+    final meta = AppTypography.metaRegular.copyWith(
+      color: colors.textSecondary,
+    );
     final pdfButton = SecondaryButton(
       label: 'Reçu PDF',
       // Le PDF est généré par le serveur : réseau + vente synchronisée.
@@ -350,7 +352,7 @@ class _InternalMargin extends StatelessWidget {
               if (summary.hasUnknownCost)
                 Text(
                   "Articles sans prix d'achat exclus de la marge.",
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: colors.textSecondary,
                   ),
                 ),

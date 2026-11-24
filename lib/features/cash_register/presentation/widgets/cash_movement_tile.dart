@@ -25,7 +25,9 @@ class CashMovementTile extends StatelessWidget {
     final colors = AppColors.of(context);
     final isIn = movement.type == CashMovementType.cashIn;
     final isRejected = movement.syncStatus == CashSyncStatus.rejected;
-    final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
+    final meta = AppTypography.metaRegular.copyWith(
+      color: colors.textSecondary,
+    );
     final reason = cashMovementReasonLabel(movement.reason);
     final note = movement.note;
     final details = [

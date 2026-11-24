@@ -344,10 +344,7 @@ class _EmptyFilter extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppTypography.bodyStrong.copyWith(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTypography.heading,
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(

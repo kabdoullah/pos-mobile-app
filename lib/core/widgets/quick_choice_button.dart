@@ -28,7 +28,7 @@ class QuickChoiceButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final radius = BorderRadius.circular(AppSpacing.radiusSm);
+    final radius = BorderRadius.circular(AppSpacing.radiusControl);
     return Semantics(
       button: true,
       selected: isSelected,
@@ -55,7 +55,6 @@ class QuickChoiceButton extends StatelessWidget {
                     label,
                     maxLines: 1,
                     style: AppTypography.bodyStrong.copyWith(
-                      fontSize: 15,
                       fontWeight: isSelected
                           ? FontWeight.w600
                           : FontWeight.w500,

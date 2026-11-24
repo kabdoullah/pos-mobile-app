@@ -9,7 +9,7 @@ class SkeletonBox extends StatefulWidget {
   const SkeletonBox({
     this.width = double.infinity,
     required this.height,
-    this.radius = AppSpacing.radiusMd,
+    this.radius = AppSpacing.radiusControl,
     super.key,
   });
 

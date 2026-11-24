@@ -68,7 +68,7 @@ class _CategoryPickerState extends ConsumerState<CategoryPicker> {
     // Catégorie supprimée entre-temps : on affiche « Sans catégorie ».
     final value = widget.value;
     final selected = categories.any((c) => c.id == value) ? value : null;
-    final itemStyle = AppTypography.bodyMedium.copyWith(color: cs.onSurface);
+    final itemStyle = AppTypography.body.copyWith(color: cs.onSurface);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -76,7 +76,7 @@ class _CategoryPickerState extends ConsumerState<CategoryPicker> {
       children: [
         Text(
           'Catégorie',
-          style: AppTypography.labelMedium.copyWith(color: cs.onSurface),
+          style: AppTypography.meta.copyWith(color: cs.onSurface),
         ),
         const SizedBox(height: AppSpacing.xs),
         // DropdownMenu (Material 3) : menu ancré à la largeur du champ, au
@@ -99,11 +99,11 @@ class _CategoryPickerState extends ConsumerState<CategoryPicker> {
               vertical: AppSpacing.sm,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
               borderSide: BorderSide(color: cs.outline),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
               borderSide: BorderSide(color: cs.primary),
             ),
           ),
@@ -111,7 +111,7 @@ class _CategoryPickerState extends ConsumerState<CategoryPicker> {
             backgroundColor: WidgetStatePropertyAll(cs.surface),
             shape: WidgetStatePropertyAll(
               RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusControl),
               ),
             ),
           ),

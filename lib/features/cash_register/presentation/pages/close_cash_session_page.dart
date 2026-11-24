@@ -492,7 +492,7 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                       'Mobile money hors tiroir : ${formatFcfa(mobile)}.',
                     'Les montants finaux sont confirmés par le serveur.',
                   ].join(' '),
-                  style: AppTypography.bodySmall.copyWith(
+                  style: AppTypography.metaRegular.copyWith(
                     color: colors.textSecondary,
                     fontFeatures: AppTypography.tabularFigures,
                   ),
@@ -508,9 +508,7 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                   ),
                   child: Text(
                     formError,
-                    style: AppTypography.errorText.copyWith(
-                      color: colors.error,
-                    ),
+                    style: AppTypography.meta.copyWith(color: colors.error),
                   ),
                 ),
             ],
@@ -556,11 +554,10 @@ class _ConfirmCloseDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return AlertDialog(
-      title: Text('Clôturer avec ${formatFcfa(counted)} ?'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return AppDialog(
+      title: 'Clôturer avec ${formatFcfa(counted)} ?',
+      body: [
+        Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DefinitionRow(
@@ -574,24 +571,23 @@ class _ConfirmCloseDialog extends StatelessWidget {
               color: discrepancyTone(discrepancy).colorIn(context),
               showDivider: false,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'La caisse sera fermée jusqu’à la prochaine ouverture.',
-              style: AppTypography.body.copyWith(color: colors.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            PrimaryButton(
-              label: 'Clôturer la caisse',
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Revenir'),
-            ),
           ],
         ),
-      ),
+        Text(
+          'La caisse sera fermée jusqu’à la prochaine ouverture.',
+          style: AppTypography.body.copyWith(color: colors.textSecondary),
+        ),
+      ],
+      actions: [
+        PrimaryButton(
+          label: 'Clôturer la caisse',
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+        AppDialogTextAction(
+          label: 'Revenir',
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+      ],
     );
   }
 }

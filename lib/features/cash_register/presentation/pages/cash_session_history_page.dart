@@ -210,7 +210,7 @@ class _SessionTile extends StatelessWidget {
                     Text(day, style: AppTypography.bodyStrong),
                     Text(
                       details,
-                      style: AppTypography.bodySmall.copyWith(
+                      style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                         fontFeatures: AppTypography.tabularFigures,
                       ),
