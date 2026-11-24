@@ -51,6 +51,10 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   bool _isLoading = false;
   bool _prefilled = false;
 
+  // Prix de vente en cours de saisie : « 15 » en route vers « 1500 » ne doit
+  // pas déjà annoncer une vente à perte.
+  bool _sellingPriceFocused = false;
+
   /// Stock déjà suivi à l'ouverture (modification) : il ne se change plus
   /// ici mais par « Ajuster » (mouvement tracé).
   bool _stockTracked = false;
@@ -465,16 +469,23 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                       ),
                       const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
                       Expanded(
-                        child: AppTextField(
-                          label: 'Prix de vente',
-                          hint: '0',
-                          suffixText: 'FCFA',
-                          controller: _priceController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
+                        // Suit le focus du champ sans en prendre un propre.
+                        child: Focus(
+                          canRequestFocus: false,
+                          skipTraversal: true,
+                          onFocusChange: (focused) =>
+                              setState(() => _sellingPriceFocused = focused),
+                          child: AppTextField(
+                            label: 'Prix de vente',
+                            hint: '0',
+                            suffixText: 'FCFA',
+                            controller: _priceController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            errorText: _priceError,
+                            onChanged: (_) => setState(() {}),
                           ),
-                          errorText: _priceError,
-                          onChanged: (_) => setState(() {}),
                         ),
                       ),
                     ],
@@ -482,6 +493,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                   _EstimatedMargin(
                     sellingText: _priceController.text,
                     purchaseText: _purchasePriceController.text,
+                    hideLoss: _sellingPriceFocused,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Row(
@@ -567,14 +579,20 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
 /// Marge estimée, recalculée à chaque frappe ; masquée tant que l'un des deux
 /// prix est vide ou invalide. Donnée interne au commerçant.
+///
+/// Une vente à perte reste permise (ADR-0009) : c'est un avertissement, pas
+/// une erreur. Elle n'est annoncée qu'une fois le prix de vente quitté
+/// ([hideLoss]), pour ne pas alerter sur une saisie inachevée.
 class _EstimatedMargin extends StatelessWidget {
   const _EstimatedMargin({
     required this.sellingText,
     required this.purchaseText,
+    required this.hideLoss,
   });
 
   final String sellingText;
   final String purchaseText;
+  final bool hideLoss;
 
   @override
   Widget build(BuildContext context) {
@@ -585,6 +603,7 @@ class _EstimatedMargin extends StatelessWidget {
     final margin = selling - purchase;
     final colors = AppColors.of(context);
     final isLoss = margin < Decimal.zero;
+    if (isLoss && hideLoss) return const SizedBox.shrink();
     final rate = selling == Decimal.zero
         ? null
         : (margin * Decimal.fromInt(100) / selling).round();
@@ -602,7 +621,7 @@ class _EstimatedMargin extends StatelessWidget {
             : 'Marge estimée : $amount par unité'
                   '${rate == null ? '' : ' ($rate %)'}',
         style: AppTypography.meta.copyWith(
-          color: isLoss ? colors.error : colors.success,
+          color: isLoss ? colors.warning : colors.success,
           fontFeatures: AppTypography.tabularFigures,
         ),
       ),
