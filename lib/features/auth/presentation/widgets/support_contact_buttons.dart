@@ -2,18 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/theme/app_spacing.dart';
+import '../../../../core/utils/whatsapp_link.dart';
 import '../../../../core/widgets/index.dart';
-
-/// Lien WhatsApp (`wa.me`) vers [contact] s'il s'agit d'un numéro de téléphone,
-/// null sinon (email, valeur sans chiffres). WhatsApp attend l'indicatif pays
-/// sans « + » ni « 00 » : `+225 07 00 00 00 00` → `wa.me/2250700000000`.
-Uri? whatsAppUri(String contact) {
-  if (contact.contains('@')) return null;
-  var digits = contact.replaceAll(RegExp(r'\D'), '');
-  if (digits.startsWith('00')) digits = digits.substring(2);
-  if (digits.length < 8) return null;
-  return Uri.https('wa.me', '/$digits');
-}
 
 /// Boutons de contact du support : email (ou appel si le contact est un
 /// numéro) et WhatsApp. Rien n'est affiché pour une coordonnée absente.

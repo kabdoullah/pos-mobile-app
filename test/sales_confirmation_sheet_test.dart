@@ -19,14 +19,19 @@ import 'package:mobile/features/sales/providers/sales_di_providers.dart';
 class _MockSales extends Mock implements SalesRepository {}
 
 /// Imprimante simulée : échoue avec [failures] dans l'ordre, puis réussit.
+/// Par défaut une imprimante est mémorisée ; [hasPrinter] = false simule
+/// l'absence d'imprimante.
 class FakePrinter extends Printer {
-  FakePrinter(this.failures);
+  FakePrinter(this.failures, {this.hasPrinter = true});
 
   final List<PrintFailureReason> failures;
+  final bool hasPrinter;
   int calls = 0;
 
   @override
-  PrinterState build() => const PrinterDisconnected();
+  PrinterState build() => hasPrinter
+      ? const PrinterDisconnected(savedMac: '00:11:22:33:44:55')
+      : const PrinterDisconnected();
 
   @override
   Future<void> print({required Sale sale, List<CartItem>? items}) async {
@@ -54,6 +59,7 @@ Future<FakePrinter> openSheet(
   int receiptNumber = 19,
   String change = '1975',
   List<PrintFailureReason> failures = const [],
+  bool hasPrinter = true,
 }) async {
   tester.view.physicalSize = const Size(360, 800);
   tester.view.devicePixelRatio = 1;
@@ -61,7 +67,7 @@ Future<FakePrinter> openSheet(
 
   final repo = _MockSales();
   when(() => repo.watchSale(any())).thenAnswer((_) => Stream.value(null));
-  final printer = FakePrinter([...failures]);
+  final printer = FakePrinter([...failures], hasPrinter: hasPrinter);
 
   await tester.pumpWidget(
     ProviderScope(
@@ -180,5 +186,30 @@ void main() {
     await tester.tap(find.text('Pas de reçu'));
     await tester.pumpAndSettle();
     expect(find.text('Reçu non imprimé'), findsNothing);
+  });
+
+  testWidgets('imprimante mémorisée : imprimer en principal, WhatsApp à côté', (
+    tester,
+  ) async {
+    await openSheet(tester);
+
+    expect(find.widgetWithText(PrimaryButton, 'Imprimer le reçu'), findsOne);
+    expect(find.widgetWithText(SecondaryButton, 'WhatsApp'), findsOne);
+    expect(find.text('Envoyer par WhatsApp'), findsNothing);
+  });
+
+  testWidgets('sans imprimante : WhatsApp en principal, ouvre la feuille', (
+    tester,
+  ) async {
+    // Vente non synchronisée : WhatsApp reste disponible (reçu provisoire).
+    await openSheet(tester, hasPrinter: false, receiptNumber: 0);
+
+    expect(find.text('Imprimer le reçu'), findsNothing);
+    final whatsApp = find.widgetWithText(PrimaryButton, 'Envoyer par WhatsApp');
+    expect(tester.widget<PrimaryButton>(whatsApp).onPressed, isNotNull);
+
+    await tester.tap(whatsApp);
+    await tester.pumpAndSettle();
+    expect(find.text('Envoyer le reçu par WhatsApp'), findsOneWidget);
   });
 }
