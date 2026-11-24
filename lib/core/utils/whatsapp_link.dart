@@ -19,6 +19,19 @@ Uri? whatsAppUri(String contact, {String? text}) {
 /// message pré-rempli avec [text].
 Uri whatsAppShareUri(String text) => _waMe('', text);
 
+/// Lien natif `whatsapp://send` : ouvre l'application directement, sans le
+/// choix « Ouvrir avec » (navigateur ou WhatsApp) qu'Android affiche pour
+/// `wa.me`. Sans [phone], WhatsApp propose de choisir le contact. Échoue si
+/// WhatsApp n'est pas installé : prévoir `wa.me` en secours.
+Uri whatsAppAppUri(String text, {String? phone}) {
+  final digits = phone?.replaceAll(RegExp(r'\D'), '') ?? '';
+  return Uri.parse(
+    'whatsapp://send?'
+    '${digits.isEmpty ? '' : 'phone=$digits&'}'
+    'text=${Uri.encodeComponent(text)}',
+  );
+}
+
 // Encodage explicite (%20) : `Uri.https` coderait les espaces en « + », que
 // WhatsApp peut afficher tels quels.
 Uri _waMe(String digits, String? text) => Uri.parse(

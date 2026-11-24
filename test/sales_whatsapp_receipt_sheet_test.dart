@@ -78,8 +78,10 @@ void main() {
     await tester.enterText(find.byType(AppTextField), '0700000000');
     await send(tester);
 
+    // L'application d'abord : pas de choix « Ouvrir avec » sur Android.
     expect(opened, hasLength(1));
-    expect(opened.single.path, '/2250700000000');
+    expect(opened.single.scheme, 'whatsapp');
+    expect(opened.single.queryParameters['phone'], '2250700000000');
     final text = opened.single.queryParameters['text']!;
     expect(text, startsWith('*Boutique Awa*'));
     expect(text, contains('Reçu provisoire'));
@@ -91,7 +93,8 @@ void main() {
     final opened = await pumpSheet(tester);
     await send(tester);
 
-    expect(opened.single.path, '/');
+    expect(opened.single.scheme, 'whatsapp');
+    expect(opened.single.queryParameters.containsKey('phone'), isFalse);
     expect(opened.single.queryParameters['text'], contains('Boutique Awa'));
   });
 
@@ -111,9 +114,11 @@ void main() {
   testWidgets('WhatsApp absent : message, la feuille reste ouverte', (
     tester,
   ) async {
-    await pumpSheet(tester, launchSucceeds: false);
+    final opened = await pumpSheet(tester, launchSucceeds: false);
     await send(tester);
 
+    // Application puis wa.me en secours, tous deux en échec.
+    expect(opened.map((u) => u.scheme), ['whatsapp', 'https']);
     expect(
       find.text('Impossible d’ouvrir WhatsApp sur ce téléphone.'),
       findsOneWidget,

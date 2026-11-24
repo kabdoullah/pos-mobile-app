@@ -113,11 +113,14 @@ class _WhatsAppReceiptSheetState extends ConsumerState<WhatsAppReceiptSheet> {
       sellerName: sellerName,
     );
     final e164 = phone.isEmpty ? null : toE164Ci(phone);
-    final uri = e164 == null
+    final webUri = e164 == null
         ? whatsAppShareUri(text)
         : whatsAppUri(e164, text: text)!;
 
-    final opened = await widget.launcher(uri);
+    // L'application d'abord (pas de choix « Ouvrir avec »), wa.me en secours.
+    final opened =
+        await widget.launcher(whatsAppAppUri(text, phone: e164)) ||
+        await widget.launcher(webUri);
     if (!mounted) return;
     if (opened) {
       Navigator.of(context).pop();

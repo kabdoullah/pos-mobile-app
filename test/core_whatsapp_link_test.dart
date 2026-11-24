@@ -31,6 +31,27 @@ void main() {
     });
   });
 
+  group('whatsAppAppUri', () {
+    test('lien natif vers le numéro, texte encodé', () {
+      final uri = whatsAppAppUri(
+        'Total : 1 500\nMerci',
+        phone: '+2250700000000',
+      );
+      expect(
+        uri.toString(),
+        startsWith('whatsapp://send?phone=2250700000000&'),
+      );
+      expect(uri.toString(), isNot(contains('+')));
+      expect(uri.queryParameters['text'], 'Total : 1 500\nMerci');
+    });
+
+    test('sans numéro : pas de paramètre « phone »', () {
+      final uri = whatsAppAppUri('Reçu');
+      expect(uri.queryParameters.containsKey('phone'), isFalse);
+      expect(uri.queryParameters['text'], 'Reçu');
+    });
+  });
+
   test('whatsAppShareUri : sans numéro, WhatsApp propose ses contacts', () {
     final uri = whatsAppShareUri('Reçu *Boutique*');
     expect(uri.host, 'wa.me');
