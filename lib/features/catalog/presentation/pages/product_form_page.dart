@@ -55,6 +55,15 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   // pas déjà annoncer une vente à perte.
   bool _sellingPriceFocused = false;
 
+  // Enchaînement « Suivant » : la catégorie (sélecteur) est sautée pour ne
+  // pas fermer le clavier.
+  final _barcodeFocus = FocusNode();
+  final _nameFocus = FocusNode();
+  final _purchasePriceFocus = FocusNode();
+  final _priceFocus = FocusNode();
+  final _stockFocus = FocusNode();
+  final _minStockFocus = FocusNode();
+
   /// Stock déjà suivi à l'ouverture (modification) : il ne se change plus
   /// ici mais par « Ajuster » (mouvement tracé).
   bool _stockTracked = false;
@@ -79,6 +88,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     );
     _stockController = TextEditingController();
     _minStockController = TextEditingController();
+    _priceFocus.addListener(_onPriceFocusChanged);
     final initialBarcode = widget.initialBarcode;
     if (widget.productId == null && initialBarcode != null) {
       unawaited(_suggestName(initialBarcode));
@@ -93,8 +103,25 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     _barcodeController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
+    for (final node in [
+      _barcodeFocus,
+      _nameFocus,
+      _purchasePriceFocus,
+      _priceFocus,
+      _stockFocus,
+      _minStockFocus,
+    ]) {
+      node.dispose();
+    }
     super.dispose();
   }
+
+  void _onPriceFocusChanged() =>
+      setState(() => _sellingPriceFocused = _priceFocus.hasFocus);
+
+  /// Passe au champ [next] (« Suivant » du clavier) ; la vue défile jusqu'à
+  /// lui, le clavier reste ouvert.
+  void _focus(FocusNode next) => next.requestFocus();
 
   Future<void> _openScanner() async {
     final code = await context.push<String>(Routes.barcodeScanner);
@@ -414,6 +441,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           controller: _barcodeController,
                           errorText: _barcodeError,
                           onChanged: _onBarcodeEdited,
+                          focusNode: _barcodeFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_nameFocus),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -438,6 +468,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     hint: 'ex. : Riz blanc',
                     controller: _nameController,
                     errorText: _nameError,
+                    focusNode: _nameFocus,
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => _focus(_purchasePriceFocus),
                     onChanged: (_) {
                       if (_nameSuggested) {
                         setState(() => _nameSuggestedFor = null);
@@ -465,26 +498,29 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           ),
                           errorText: _purchasePriceError,
                           onChanged: (_) => setState(() {}),
+                          focusNode: _purchasePriceFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_priceFocus),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
                       Expanded(
                         // Suit le focus du champ sans en prendre un propre.
-                        child: Focus(
-                          canRequestFocus: false,
-                          skipTraversal: true,
-                          onFocusChange: (focused) =>
-                              setState(() => _sellingPriceFocused = focused),
-                          child: AppTextField(
-                            label: 'Prix de vente',
-                            hint: '0',
-                            suffixText: 'FCFA',
-                            controller: _priceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            errorText: _priceError,
-                            onChanged: (_) => setState(() {}),
+                        child: AppTextField(
+                          label: 'Prix de vente',
+                          hint: '0',
+                          suffixText: 'FCFA',
+                          controller: _priceController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          errorText: _priceError,
+                          onChanged: (_) => setState(() {}),
+                          focusNode: _priceFocus,
+                          textInputAction: TextInputAction.next,
+                          // Stock déjà suivi : champ en lecture seule, sauté.
+                          onSubmitted: (_) => _focus(
+                            _stockTracked ? _minStockFocus : _stockFocus,
                           ),
                         ),
                       ),
@@ -509,6 +545,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           keyboardType: TextInputType.number,
                           errorText: _stockError,
                           readOnly: _stockTracked,
+                          focusNode: _stockFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_minStockFocus),
                           helper: _stockTracked
                               ? Text(
                                   'Se modifie par « Ajuster ».',
@@ -527,6 +566,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           controller: _minStockController,
                           keyboardType: TextInputType.number,
                           errorText: _minStockError,
+                          focusNode: _minStockFocus,
+                          textInputAction: TextInputAction.done,
                         ),
                       ),
                     ],

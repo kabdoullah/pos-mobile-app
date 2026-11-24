@@ -34,8 +34,13 @@ class AppTextField extends StatefulWidget {
     this.suffixText,
     this.large = false,
     this.readOnly = false,
+    this.focusNode,
     super.key,
   });
+
+  /// Nœud de focus fourni par l'appelant (enchaîner les champs avec
+  /// « Suivant ») ; sinon le champ crée et libère le sien.
+  final FocusNode? focusNode;
 
   /// Libellé affiché au-dessus du champ (toujours visible).
   final String label;
@@ -117,16 +122,18 @@ class _AppTextFieldState extends State<AppTextField> {
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(() {
-      setState(() {});
-    });
+    _focusNode = widget.focusNode ?? FocusNode();
+    _focusNode.addListener(_onFocusChanged);
     _isObscured = widget.obscureText;
   }
 
+  void _onFocusChanged() => setState(() {});
+
   @override
   void dispose() {
-    _focusNode.dispose();
+    _focusNode.removeListener(_onFocusChanged);
+    // Un nœud fourni appartient à l'appelant, qui le libère.
+    if (widget.focusNode == null) _focusNode.dispose();
     super.dispose();
   }
 
