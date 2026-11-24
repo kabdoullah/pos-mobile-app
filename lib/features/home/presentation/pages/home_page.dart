@@ -26,10 +26,10 @@ import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
 
-/// Accueil : un seul bloc mis en avant, l'état de la caisse et les espèces du
-/// tiroir ; puis les chiffres du jour, les alertes de stock et les dernières
-/// ventes, en listes plates. L'action du bas suit l'état de la caisse :
-/// « Nouvelle vente » ou « Ouvrir la caisse ».
+/// Accueil : un seul bloc mis en avant, l'état de la caisse et son action
+/// (ouvrir, ou entrée / sortie) ; puis les chiffres du jour, les alertes de
+/// stock et les dernières ventes, en listes plates. La vente se fait depuis
+/// l'onglet « Vendre » : pas de bouton en double ici.
 class HomePage extends ConsumerWidget {
   /// Crée l'accueil.
   const HomePage({super.key});
@@ -49,10 +49,6 @@ class HomePage extends ConsumerWidget {
       'EEEE d MMMM',
       'fr_FR',
     ).format(ref.watch(todayProvider));
-    final session = ref.watch(activeCashSessionProvider);
-    final isLoading = !session.hasValue && !session.hasError;
-    final isClosed = session.hasValue && session.value == null;
-    final steps = watchFirstSteps(ref);
 
     void goTo(ShellBranch branch) =>
         StatefulNavigationShell.of(context).goBranch(branch.index);
@@ -98,32 +94,6 @@ class HomePage extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
                   child: _CashBox(),
                 ),
-                if (session.value != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      AppSpacing.sm + AppSpacing.xs,
-                      AppSpacing.md,
-                      0,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: SecondaryButton(
-                            label: 'Nouveau produit',
-                            onPressed: () => context.push(Routes.productNew),
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: SecondaryButton(
-                            label: 'Voir le stock',
-                            onPressed: () => goTo(ShellBranch.inventory),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 const FirstStepsSection(),
                 const TodaySummary(),
                 const AccountEmailBanner(),
@@ -132,39 +102,6 @@ class HomePage extends ConsumerWidget {
                   onSeeAll: () => goTo(ShellBranch.salesHistory),
                 ),
               ],
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: colors.surface,
-              border: Border(top: BorderSide(color: colors.border)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm + AppSpacing.xs,
-              ),
-              // L'action du bas suit la prochaine étape : premier produit,
-              // ouverture de la caisse, puis la vente.
-              child: steps != null && !steps.product
-                  ? PrimaryButton(
-                      label: 'Ajouter mon premier produit',
-                      height: AppSpacing.buttonHeight,
-                      onPressed: () => context.push(Routes.productNew),
-                    )
-                  : isClosed
-                  ? PrimaryButton(
-                      label: 'Ouvrir la caisse',
-                      height: AppSpacing.buttonHeight,
-                      onPressed: () => showOpenCashSession(context),
-                    )
-                  : PrimaryButton(
-                      label: 'Nouvelle vente',
-                      height: AppSpacing.buttonHeight,
-                      onPressed: isLoading
-                          ? null
-                          : () => goTo(ShellBranch.sale),
-                    ),
             ),
           ),
         ],
@@ -278,8 +215,10 @@ class _OpenContent extends ConsumerWidget {
         if (mobile > Decimal.zero)
           Text('Mobile money, hors tiroir · ${formatFcfa(mobile)}', style: meta)
         else if (noActivity)
-          Text('Fond de caisse du matin', style: meta),
+          Text('Fond de caisse', style: meta),
         const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+        // Action courante en bouton ; la clôture, une fois par jour, en lien
+        // pour ne pas lui donner le même poids.
         Row(
           children: [
             Expanded(
@@ -289,11 +228,12 @@ class _OpenContent extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: SecondaryButton(
-                label: 'Clôturer',
-                onPressed: () => context.push(Routes.cashClose),
+            TextButton(
+              onPressed: () => context.push(Routes.cashClose),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, AppSpacing.buttonHeightSm),
               ),
+              child: const Text('Clôturer'),
             ),
           ],
         ),
@@ -312,14 +252,19 @@ class _ClosedContent extends ConsumerWidget {
     final history = ref.watch(localCashSessionHistoryProvider).value;
     final last = lastClosedSession(history);
     final counted = last?.countedAmount;
+    // Sans produit, ouvrir la caisse ne sert à rien : l'action du bloc est
+    // d'en ajouter un.
+    final steps = watchFirstSteps(ref);
+    final needsProduct = steps != null && !steps.product;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const StatusIndicator(label: 'Caisse fermée', tone: StatusTone.warning),
         const SizedBox(height: AppSpacing.sm),
-        const Text(
-          'Comptez les espèces du tiroir, puis ouvrez la caisse pour '
-          'commencer à vendre.',
+        Text(
+          needsProduct
+              ? 'Ajoutez un premier produit, puis ouvrez la caisse.'
+              : 'Ouvrez la caisse pour commencer à vendre.',
           style: AppTypography.body,
         ),
         if (last != null) ...[
@@ -329,20 +274,33 @@ class _ClosedContent extends ConsumerWidget {
             '${counted == null ? '' : ' · ${formatFcfa(counted)}'}',
             style: meta,
           ),
-          // Caisse fermée : seul accès à l'historique des sessions (détail,
-          // comptages, écarts).
+        ],
+        const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+        if (needsProduct)
+          PrimaryButton(
+            label: 'Ajouter un produit',
+            onPressed: () => context.push(Routes.productNew),
+          )
+        else
+          PrimaryButton(
+            label: 'Ouvrir la caisse',
+            onPressed: () => showOpenCashSession(context),
+          ),
+        // Caisse fermée : seul accès à l'historique des sessions (détail,
+        // comptages, écarts). Lien secondaire, en gris.
+        if (last != null)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
               onPressed: () => context.push(Routes.cashHistory),
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
-                minimumSize: const Size(0, AppSpacing.minTapTarget),
+                minimumSize: const Size(0, AppSpacing.buttonHeightSm),
+                foregroundColor: AppColors.of(context).textSecondary,
               ),
               child: const Text('Voir les sessions de caisse'),
             ),
           ),
-        ],
       ],
     );
   }

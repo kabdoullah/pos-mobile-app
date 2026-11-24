@@ -232,7 +232,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('À jour'), findsOneWidget);
-      expect(find.text('Nouvelle vente'), findsOneWidget);
+      // La vente passe par l'onglet « Vendre » : pas de bouton en double.
+      expect(find.text('Nouvelle vente'), findsNothing);
+      expect(find.text('Nouveau produit'), findsNothing);
+      expect(find.widgetWithText(TextButton, 'Clôturer'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('Marge moyenne'), 200);
       expect(find.text('Pic : 19 h – 20 h'), findsOneWidget);
@@ -258,11 +261,11 @@ void main() {
       );
       expect(find.text('Caisse fermée'), findsOneWidget);
       expect(find.textContaining('Dernière clôture : hier à'), findsOneWidget);
+      expect(find.text('Ouvrez la caisse pour commencer à vendre.'), findsOne);
       expect(
         find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
         findsOneWidget,
       );
-      expect(find.text('Nouveau produit'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('Aucun produit en rupture'),
         200,
@@ -319,7 +322,7 @@ void main() {
     expect(peakHour(hourly), 15);
   });
 
-  testWidgets('premiers pas : 0 sur 3, l’action du bas suit l’étape', (
+  testWidgets('premiers pas : 0 sur 3, le bloc caisse demande un produit', (
     tester,
   ) async {
     await pumpHome(
@@ -335,8 +338,12 @@ void main() {
     expect(find.text('0 sur 3'), findsOneWidget);
     expect(find.text('Ajouter un premier produit'), findsOneWidget);
     expect(
-      find.widgetWithText(PrimaryButton, 'Ajouter mon premier produit'),
+      find.widgetWithText(PrimaryButton, 'Ajouter un produit'),
       findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });
@@ -353,10 +360,7 @@ void main() {
     expect(find.text('2 sur 3'), findsOneWidget);
     expect(find.text('Fait'), findsNWidgets(2));
     expect(find.text('Faire une première vente'), findsOneWidget);
-    expect(
-      find.widgetWithText(PrimaryButton, 'Nouvelle vente'),
-      findsOneWidget,
-    );
+    expect(find.byType(PrimaryButton), findsNothing);
   });
 
   testWidgets('premiers pas : « Masquer » les cache et le retient', (
@@ -371,7 +375,6 @@ void main() {
       profile: profile,
     );
     final hide = find.text('Masquer les premiers pas');
-    // Centré dans la zone défilante : hors de portée de l'action du bas.
     await tester.ensureVisible(hide);
     await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
     await tester.pumpAndSettle();

@@ -224,8 +224,8 @@ class _LocalSessionBody extends ConsumerWidget {
           session.syncStatus == CashSyncStatus.pending)
         const CashNoticeBanner(
           message:
-              'Clôture en attente de synchronisation : les chiffres du '
-              'serveur arriveront au retour de la connexion.',
+              'Clôture pas encore envoyée au serveur : ses chiffres '
+              's’afficheront dès l’envoi.',
         ),
       if (serverDetail != null)
         ..._serverNotices(serverDetail)

@@ -147,6 +147,16 @@ class _PaymentSplit extends StatelessWidget {
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
+    // Un seul moyen de paiement : une barre pleine n'apprend rien.
+    if (share == 0 || share == 100) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.xs),
+        child: Text(
+          share == 100 ? 'Tout en espèces' : 'Tout en mobile money',
+          style: meta,
+        ),
+      );
+    }
     return Semantics(
       label: 'Espèces $share %, mobile money ${100 - share} %',
       child: Padding(
