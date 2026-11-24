@@ -55,8 +55,12 @@ class CashSessionRestorer {
       deviceId: deviceId,
     );
 
+    // Copie finale : une variable locale modifiable capturée par la closure
+    // n'est pas promue en non-nulle après un `await` (Dart 3.12+).
+    final restored = active;
     await _db.transaction(() async {
-      if (active != null && !await _hasLocalOpenSession()) {
+      if (restored != null && !await _hasLocalOpenSession()) {
+        final active = restored;
         await _insertSession(
           active.session,
           serverRecalculated: active.summary.serverRecalculated,

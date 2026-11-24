@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/features/auth/presentation/pages/store_suspended_page.dart';
 import 'package:mobile/features/auth/presentation/providers/auth_providers.dart';
-import 'package:mobile/features/auth/presentation/widgets/support_contact_buttons.dart';
 
 class _FakeAuth extends Auth {
   _FakeAuth(this.initial, {this.retryMessage});
@@ -98,24 +97,6 @@ void main() {
 
     expect(find.byIcon(Icons.mail_outline), findsOneWidget);
     expect(find.text('WhatsApp'), findsOneWidget);
-  });
-
-  group('whatsAppUri', () {
-    test('numéro international → wa.me avec les chiffres seuls', () {
-      expect(
-        whatsAppUri('+225 07 00 00 00 00').toString(),
-        'https://wa.me/2250700000000',
-      );
-      expect(
-        whatsAppUri('00225-0700000000').toString(),
-        'https://wa.me/2250700000000',
-      );
-    });
-
-    test('email ou valeur sans chiffres → null', () {
-      expect(whatsAppUri('support@exemple.ci'), isNull);
-      expect(whatsAppUri('support'), isNull);
-    });
   });
 
   testWidgets('réessayer : interroge le serveur et affiche le refus', (

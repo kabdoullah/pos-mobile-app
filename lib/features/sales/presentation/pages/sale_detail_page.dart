@@ -21,10 +21,12 @@ import '../../domain/entities/payment_method_label.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
 import '../widgets/receipt_ticket.dart';
+import '../widgets/whatsapp_receipt_sheet.dart';
 import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 
 /// Détail d'une vente, présenté comme un ticket : lignes, total, paiement,
-/// statut de synchro, puis impression et reçu PDF.
+/// statut de synchro, puis reçu : impression (ou WhatsApp en principal sans
+/// imprimante mémorisée), WhatsApp et PDF.
 ///
 /// Reçoit la [Sale] via le extra de GoRouter ; le numéro de reçu et les lignes
 /// sont suivis en direct dans drift.
@@ -49,6 +51,13 @@ class SaleDetailPage extends ConsumerWidget {
       _ => false,
     };
     final meta = AppTypography.bodySmall.copyWith(color: colors.textSecondary);
+    final pdfButton = SecondaryButton(
+      label: 'Reçu PDF',
+      // Le PDF est généré par le serveur : réseau + vente synchronisée.
+      onPressed: isSynced && isOnline
+          ? () => _handleDownloadPdf(context, ref, sale)
+          : null,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -146,10 +155,16 @@ class SaleDetailPage extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Sans imprimante mémorisée, le reçu WhatsApp devient
+                    // l'action principale (possible avant la synchro).
                     if (noPrinter)
                       PrimaryButton(
-                        label: 'Configurer l’imprimante',
-                        onPressed: () => context.push(Routes.bluetoothSetup),
+                        label: 'Envoyer par WhatsApp',
+                        onPressed: () => showWhatsAppReceiptSheet(
+                          context,
+                          sale: sale,
+                          items: items,
+                        ),
                       )
                     else
                       PrimaryButton(
@@ -158,13 +173,31 @@ class SaleDetailPage extends ConsumerWidget {
                             _handlePrint(context, ref, sale, items),
                       ),
                     const SizedBox(height: AppSpacing.sm),
-                    SecondaryButton(
-                      label: 'Reçu PDF',
-                      // Le PDF est généré par le serveur : réseau + vente
-                      // synchronisée.
-                      onPressed: isSynced && isOnline
-                          ? () => _handleDownloadPdf(context, ref, sale)
-                          : null,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: noPrinter
+                              ? pdfButton
+                              : SecondaryButton(
+                                  label: 'WhatsApp',
+                                  onPressed: () => showWhatsAppReceiptSheet(
+                                    context,
+                                    sale: sale,
+                                    items: items,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: noPrinter
+                              ? SecondaryButton(
+                                  label: 'Imprimante',
+                                  onPressed: () =>
+                                      context.push(Routes.bluetoothSetup),
+                                )
+                              : pdfButton,
+                        ),
+                      ],
                     ),
                     if (!isSynced || !isOnline) ...[
                       const SizedBox(height: AppSpacing.xs),

@@ -19,6 +19,7 @@ import '../../domain/entities/payment_method_label.dart';
 import '../../domain/entities/sale.dart';
 import '../providers/sales_providers.dart';
 import '../receipt_pdf.dart';
+import 'whatsapp_receipt_sheet.dart';
 
 /// Affiche la confirmation d'une vente enregistrée par-dessus l'écran Vendre.
 ///
@@ -39,8 +40,10 @@ Future<void> showSaleConfirmationSheet(
 }
 
 /// Feuille « Vente enregistrée » : reçu (numéro, paiement, total) ou attente
-/// de synchro, monnaie à rendre, puis « Imprimer le reçu », « Reçu PDF » et
-/// « Nouvelle vente ».
+/// de synchro, monnaie à rendre, puis les actions de reçu. Imprimante
+/// mémorisée : « Imprimer le reçu » en principal, « WhatsApp », « Reçu PDF »,
+/// « Nouvelle vente ». Sans imprimante : « Envoyer par WhatsApp » en
+/// principal, « Reçu PDF », « Nouvelle vente ».
 ///
 /// Si l'impression échoue, la feuille passe en « Reçu non imprimé » : la
 /// vente reste enregistrée, avec 3 choix (Réessayer, Imprimer plus tard,
@@ -113,6 +116,10 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
     }
   }
 
+  void _sendWhatsApp(Sale sale) => unawaited(
+    showWhatsAppReceiptSheet(context, sale: sale, items: widget.items),
+  );
+
   void _close() => Navigator.of(context).pop();
 
   @override
@@ -164,6 +171,21 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
         : !isSynced
         ? 'Le reçu PDF sera disponible une fois la vente synchronisée.'
         : null;
+    // Aucune imprimante mémorisée : même règle que le détail d'une vente.
+    final noPrinter = switch (ref.watch(printerProvider)) {
+      PrinterDisconnected(savedMac: null) => true,
+      _ => false,
+    };
+    final pdfButton = SecondaryButton(
+      // Le PDF est généré par le serveur : il faut le réseau et une vente
+      // déjà synchronisée.
+      label: 'Reçu PDF',
+      onPressed: canSharePdf ? () => _sharePdf(sale) : null,
+    );
+    final newSaleButton = SecondaryButton(
+      label: 'Nouvelle vente',
+      onPressed: _close,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -217,45 +239,58 @@ class _SaleConfirmationSheetState extends ConsumerState<SaleConfirmationSheet> {
           ),
         ],
         const SizedBox(height: AppSpacing.md),
-        PrimaryButton(
-          label: _isPrinted ? 'Imprimer de nouveau' : 'Imprimer le reçu',
-          height: AppSpacing.buttonHeight,
-          isLoading: _isPrinting,
-          loadingLabel: 'Impression…',
-          onPressed: _isPrinting ? null : () => _print(sale),
-        ),
-        if (_isPrinted || _printError != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          _isPrinted
-              ? const StatusIndicator(
-                  label: 'Reçu imprimé',
-                  tone: StatusTone.success,
-                )
-              : Text(
-                  _printError!,
-                  style: AppTypography.meta.copyWith(color: colors.error),
-                ),
-        ],
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          children: [
-            Expanded(
-              child: SecondaryButton(
-                // Le PDF est généré par le serveur : il faut le réseau et
-                // une vente déjà synchronisée.
-                label: 'Reçu PDF',
-                onPressed: canSharePdf ? () => _sharePdf(sale) : null,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: SecondaryButton(
-                label: 'Nouvelle vente',
-                onPressed: _close,
-              ),
-            ),
+        // Sans imprimante mémorisée, le reçu WhatsApp devient l'action
+        // principale ; il marche avant la synchro, contrairement au PDF.
+        if (noPrinter) ...[
+          PrimaryButton(
+            label: 'Envoyer par WhatsApp',
+            height: AppSpacing.buttonHeight,
+            onPressed: () => _sendWhatsApp(sale),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(child: pdfButton),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: newSaleButton),
+            ],
+          ),
+        ] else ...[
+          PrimaryButton(
+            label: _isPrinted ? 'Imprimer de nouveau' : 'Imprimer le reçu',
+            height: AppSpacing.buttonHeight,
+            isLoading: _isPrinting,
+            loadingLabel: 'Impression…',
+            onPressed: _isPrinting ? null : () => _print(sale),
+          ),
+          if (_isPrinted || _printError != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _isPrinted
+                ? const StatusIndicator(
+                    label: 'Reçu imprimé',
+                    tone: StatusTone.success,
+                  )
+                : Text(
+                    _printError!,
+                    style: AppTypography.meta.copyWith(color: colors.error),
+                  ),
           ],
-        ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: SecondaryButton(
+                  label: 'WhatsApp',
+                  onPressed: () => _sendWhatsApp(sale),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: pdfButton),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          newSaleButton,
+        ],
         if (_pdfError != null || hint != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(

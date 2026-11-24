@@ -51,6 +51,19 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
   bool _isLoading = false;
   bool _prefilled = false;
 
+  // Prix de vente en cours de saisie : « 15 » en route vers « 1500 » ne doit
+  // pas déjà annoncer une vente à perte.
+  bool _sellingPriceFocused = false;
+
+  // Enchaînement « Suivant » : la catégorie (sélecteur) est sautée pour ne
+  // pas fermer le clavier.
+  final _barcodeFocus = FocusNode();
+  final _nameFocus = FocusNode();
+  final _purchasePriceFocus = FocusNode();
+  final _priceFocus = FocusNode();
+  final _stockFocus = FocusNode();
+  final _minStockFocus = FocusNode();
+
   /// Stock déjà suivi à l'ouverture (modification) : il ne se change plus
   /// ici mais par « Ajuster » (mouvement tracé).
   bool _stockTracked = false;
@@ -75,6 +88,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     );
     _stockController = TextEditingController();
     _minStockController = TextEditingController();
+    _priceFocus.addListener(_onPriceFocusChanged);
     final initialBarcode = widget.initialBarcode;
     if (widget.productId == null && initialBarcode != null) {
       unawaited(_suggestName(initialBarcode));
@@ -89,8 +103,25 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
     _barcodeController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
+    for (final node in [
+      _barcodeFocus,
+      _nameFocus,
+      _purchasePriceFocus,
+      _priceFocus,
+      _stockFocus,
+      _minStockFocus,
+    ]) {
+      node.dispose();
+    }
     super.dispose();
   }
+
+  void _onPriceFocusChanged() =>
+      setState(() => _sellingPriceFocused = _priceFocus.hasFocus);
+
+  /// Passe au champ [next] (« Suivant » du clavier) ; la vue défile jusqu'à
+  /// lui, le clavier reste ouvert.
+  void _focus(FocusNode next) => next.requestFocus();
 
   Future<void> _openScanner() async {
     final code = await context.push<String>(Routes.barcodeScanner);
@@ -410,6 +441,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           controller: _barcodeController,
                           errorText: _barcodeError,
                           onChanged: _onBarcodeEdited,
+                          focusNode: _barcodeFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_nameFocus),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -434,6 +468,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                     hint: 'ex. : Riz blanc',
                     controller: _nameController,
                     errorText: _nameError,
+                    focusNode: _nameFocus,
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => _focus(_purchasePriceFocus),
                     onChanged: (_) {
                       if (_nameSuggested) {
                         setState(() => _nameSuggestedFor = null);
@@ -461,10 +498,14 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           ),
                           errorText: _purchasePriceError,
                           onChanged: (_) => setState(() {}),
+                          focusNode: _purchasePriceFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_priceFocus),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
                       Expanded(
+                        // Suit le focus du champ sans en prendre un propre.
                         child: AppTextField(
                           label: 'Prix de vente',
                           hint: '0',
@@ -475,6 +516,12 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           ),
                           errorText: _priceError,
                           onChanged: (_) => setState(() {}),
+                          focusNode: _priceFocus,
+                          textInputAction: TextInputAction.next,
+                          // Stock déjà suivi : champ en lecture seule, sauté.
+                          onSubmitted: (_) => _focus(
+                            _stockTracked ? _minStockFocus : _stockFocus,
+                          ),
                         ),
                       ),
                     ],
@@ -482,6 +529,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                   _EstimatedMargin(
                     sellingText: _priceController.text,
                     purchaseText: _purchasePriceController.text,
+                    hideLoss: _sellingPriceFocused,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Row(
@@ -497,6 +545,9 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           keyboardType: TextInputType.number,
                           errorText: _stockError,
                           readOnly: _stockTracked,
+                          focusNode: _stockFocus,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => _focus(_minStockFocus),
                           helper: _stockTracked
                               ? Text(
                                   'Se modifie par « Ajuster ».',
@@ -515,6 +566,8 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
                           controller: _minStockController,
                           keyboardType: TextInputType.number,
                           errorText: _minStockError,
+                          focusNode: _minStockFocus,
+                          textInputAction: TextInputAction.done,
                         ),
                       ),
                     ],
@@ -567,14 +620,20 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
 /// Marge estimée, recalculée à chaque frappe ; masquée tant que l'un des deux
 /// prix est vide ou invalide. Donnée interne au commerçant.
+///
+/// Une vente à perte reste permise (ADR-0009) : c'est un avertissement, pas
+/// une erreur. Elle n'est annoncée qu'une fois le prix de vente quitté
+/// ([hideLoss]), pour ne pas alerter sur une saisie inachevée.
 class _EstimatedMargin extends StatelessWidget {
   const _EstimatedMargin({
     required this.sellingText,
     required this.purchaseText,
+    required this.hideLoss,
   });
 
   final String sellingText;
   final String purchaseText;
+  final bool hideLoss;
 
   @override
   Widget build(BuildContext context) {
@@ -585,6 +644,7 @@ class _EstimatedMargin extends StatelessWidget {
     final margin = selling - purchase;
     final colors = AppColors.of(context);
     final isLoss = margin < Decimal.zero;
+    if (isLoss && hideLoss) return const SizedBox.shrink();
     final rate = selling == Decimal.zero
         ? null
         : (margin * Decimal.fromInt(100) / selling).round();
@@ -602,7 +662,7 @@ class _EstimatedMargin extends StatelessWidget {
             : 'Marge estimée : $amount par unité'
                   '${rate == null ? '' : ' ($rate %)'}',
         style: AppTypography.meta.copyWith(
-          color: isLoss ? colors.error : colors.success,
+          color: isLoss ? colors.warning : colors.success,
           fontFeatures: AppTypography.tabularFigures,
         ),
       ),

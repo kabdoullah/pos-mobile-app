@@ -1,6 +1,6 @@
 # Ma Caisse — application mobile
 
-Application de caisse (POS) Flutter pour les PME en Côte d'Ivoire : ventes hors ligne, catalogue, stock, retours clients et reçus imprimés en Bluetooth. Android et iOS.
+Application de caisse (POS) Flutter pour les PME en Côte d'Ivoire : ventes hors ligne, catalogue, stock, retours clients et reçus (imprimés en Bluetooth ou envoyés par WhatsApp). Android et iOS.
 
 Backend : dépôt `pos-mobile` (FastAPI + PostgreSQL), déployé sur `https://pos-mobile-vkuh.onrender.com`.
 
@@ -10,7 +10,7 @@ Backend : dépôt `pos-mobile` (FastAPI + PostgreSQL), déployé sur `https://po
 |---|---|
 | `auth` | Inscription et connexion par téléphone + mot de passe, PIN local, configuration de la boutique, suppression du compte (ADR-0011) |
 | `catalog` | Produits, catégories, photos, import, scan de codes-barres |
-| `sales` | Panier, paiement (espèces / mobile money / mixte), réductions, reçu, historique |
+| `sales` | Panier, paiement (espèces / mobile money / mixte), réductions, reçu (imprimé, PDF ou WhatsApp), historique |
 | `inventory` | Onglet Stock, ajustements manuels, historique des mouvements (en ligne uniquement) |
 | `returns` | Retours clients d'une vente synchronisée, remboursement, reçu de retour (ADR-0010) |
 | `printing` | Imprimante thermique Bluetooth ESC/POS 58 mm |
@@ -20,7 +20,7 @@ La synchronisation hors ligne vit dans `lib/core/sync/` : file d'événements po
 
 ## Stack
 
-- **Flutter 3.44+** / Dart 3.11+
+- **Flutter 3.44.x** / Dart 3.11+ (version de la CI). Flutter 3.50 ne compile pas encore Android (Gradle ≥ 9.3.1 exigé) : voir `docs/build-apk-prod.md`.
 - **Riverpod 3** (`riverpod_generator`) pour l'état
 - **drift** pour la base SQLite locale
 - **dio + retrofit** pour l'API, **freezed / json_serializable** pour les modèles
