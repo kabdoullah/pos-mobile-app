@@ -872,6 +872,17 @@ void main() {
           todayHourlySalesProvider.overrideWith(
             (ref) => Stream.value(salesByHour(const <Sale>[])),
           ),
+          yesterdayAtSameTimeProvider.overrideWith(
+            (ref) => Stream.value((
+              amount: Decimal.zero,
+              count: 0,
+              at: DateTime(2026),
+            )),
+          ),
+          yesterdayRecapProvider.overrideWith(
+            (ref) => Stream.value((count: 0, gross: Decimal.zero)),
+          ),
+          todaySaleItemsProvider.overrideWith((ref) => Stream.value(const {})),
           recentSalesProvider.overrideWith((ref) => Stream.value(const [])),
         ],
         retry: (_, _) => null,

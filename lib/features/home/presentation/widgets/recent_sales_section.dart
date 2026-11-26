@@ -10,6 +10,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../sales/domain/entities/payment_method_label.dart';
 import '../../../sales/domain/entities/sale.dart';
+import '../../../sales/domain/entities/sale_item_brief.dart';
 import '../providers/home_providers.dart';
 
 /// « Dernières ventes » du jour, avec accès à l'historique. Masquée tant
@@ -25,6 +26,7 @@ class RecentSalesSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sales = ref.watch(recentSalesProvider).value;
     if (sales == null || sales.isEmpty) return const SizedBox.shrink();
+    final items = ref.watch(todaySaleItemsProvider).value ?? const {};
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -33,22 +35,31 @@ class RecentSalesSection extends ConsumerWidget {
           actionLabel: 'Voir l’historique',
           onAction: onSeeAll,
         ),
-        FlatList(children: [for (final sale in sales) _SaleRow(sale: sale)]),
+        FlatList(
+          children: [
+            for (final sale in sales)
+              _SaleRow(sale: sale, items: items[sale.id] ?? const []),
+          ],
+        ),
       ],
     );
   }
 }
 
+/// « Vente n° 52 · 17:00 », puis les articles et le moyen de paiement (même
+/// présentation que l'historique).
 class _SaleRow extends StatelessWidget {
-  const _SaleRow({required this.sale});
+  const _SaleRow({required this.sale, required this.items});
 
   final Sale sale;
+  final List<SaleItemBrief> items;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     // Numéro 0 = pas encore attribué par le serveur : jamais affiché comme tel.
     final isSynced = sale.receiptNumber > 0;
+    final time = DateFormat.Hm('fr_FR').format(sale.createdAt.toLocal());
     return InkWell(
       onTap: () => context.push(Routes.saleDetail, extra: sale),
       child: ConstrainedBox(
@@ -66,19 +77,28 @@ class _SaleRow extends StatelessWidget {
                   children: [
                     Text(
                       isSynced
-                          ? 'Vente n° ${sale.receiptNumber}'
-                          : 'En attente de synchro',
-                      style: AppTypography.bodyStrong.copyWith(
-                        color: isSynced ? null : colors.textSecondary,
-                      ),
+                          ? 'Vente n° ${sale.receiptNumber} · $time'
+                          : 'Vente · $time',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodyStrong,
                     ),
                     Text(
-                      '${DateFormat.Hm('fr_FR').format(sale.createdAt)}'
-                      ' · ${sale.paymentMethod.label}',
+                      items.isEmpty
+                          ? sale.paymentMethod.label
+                          : '${summarizeSaleItems(items)} · '
+                                '${sale.paymentMethod.label}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTypography.metaRegular.copyWith(
                         color: colors.textSecondary,
                       ),
                     ),
+                    if (!isSynced)
+                      const StatusIndicator(
+                        label: 'En attente de synchro',
+                        tone: StatusTone.warning,
+                      ),
                   ],
                 ),
               ),

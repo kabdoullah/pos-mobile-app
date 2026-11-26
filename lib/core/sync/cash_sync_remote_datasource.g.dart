@@ -8,6 +8,7 @@ part of 'cash_sync_remote_datasource.dart';
 // RetrofitGenerator
 // **************************************************************************
 
+// ignore_for_file: type=lint
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers,unused_element,unnecessary_string_interpolations,unused_element_parameter,avoid_unused_constructor_parameters,unreachable_from_main,avoid_redundant_argument_values
 
 class _CashRegisterRemoteDataSource implements CashRegisterRemoteDataSource {
@@ -24,7 +25,8 @@ class _CashRegisterRemoteDataSource implements CashRegisterRemoteDataSource {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = body;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<CashSessionDto>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -144,7 +146,8 @@ class _CashRegisterRemoteDataSource implements CashRegisterRemoteDataSource {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = body;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<CashMovementDto>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
@@ -174,7 +177,8 @@ class _CashRegisterRemoteDataSource implements CashRegisterRemoteDataSource {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = body;
+    final _data = <String, dynamic>{};
+    _data.addAll(body.toJson());
     final _options = _setStreamType<CashSessionDetailDto>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(

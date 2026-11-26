@@ -26,6 +26,7 @@ import 'package:mobile/features/home/presentation/widgets/today_summary.dart';
 import 'package:mobile/features/onboarding/presentation/providers/welcome_provider.dart';
 import 'package:mobile/features/sales/domain/entities/margin_summary.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
+import 'package:mobile/features/sales/domain/entities/sale_item_brief.dart';
 
 /// Évite que l'orchestrateur de synchro (écouté par la pastille réseau)
 /// initialise la vraie authentification.
@@ -106,6 +107,7 @@ Future<void> pumpHome(
   bool hasSale = true,
   bool withClosedSession = true,
   ProfileRepository? profile,
+  int yesterdaySales = 0,
 }) async {
   tester.view.physicalSize = const Size(360, 640);
   tester.view.devicePixelRatio = 1;
@@ -192,6 +194,34 @@ Future<void> pumpHome(
             ),
           ),
         ),
+        yesterdayAtSameTimeProvider.overrideWith(
+          (ref) => Stream.value((
+            amount: d(withData ? '11000000' : '4200'),
+            count: withData ? 40 : 2,
+            at: DateTime(2026, 9, 27, 19, 42),
+          )),
+        ),
+        todaySaleItemsProvider.overrideWith(
+          (ref) => Stream.value({
+            'sale-10452': const [
+              SaleItemBrief(productName: 'Riz', quantity: 2),
+              SaleItemBrief(productName: 'Pain', quantity: 1),
+            ],
+          }),
+        ),
+        yesterdayRecapProvider.overrideWith(
+          (ref) => Stream.value((count: yesterdaySales, gross: d('36800'))),
+        ),
+        yesterdayMarginSummaryProvider.overrideWith(
+          (ref) => Stream.value(
+            MarginSummary(
+              revenue: d('36800'),
+              coveredRevenue: d('36800'),
+              cost: d('28700'),
+              hasUnknownCost: false,
+            ),
+          ),
+        ),
         recentSalesProvider.overrideWith(
           (ref) => Stream.value(
             withData
@@ -226,31 +256,43 @@ void main() {
     ) async {
       await pumpHome(tester, theme: theme, withData: true);
       expect(tester.takeException(), isNull);
+      // Tout envoyé : pas d'indicateur de synchro.
+      expect(find.text('À jour'), findsNothing);
+      // Caisse ouverte avec des ventes : le chiffre d'affaires mène, la
+      // date passe sous le nom de la boutique.
+      expect(find.text('Chiffre d’affaires'), findsOneWidget);
+      expect(find.textContaining('novembre'), findsOneWidget);
+      // Brut du jour 12 260 000 contre 11 000 000 hier à la même heure.
+      expect(find.text('+11 % par rapport à hier à 19:42'), findsOneWidget);
+      expect(find.text('Pic 19 h'), findsOneWidget);
+      // La vente passe par l'onglet « Vendre » : pas de bouton en double.
+      expect(find.text('Nouvelle vente'), findsNothing);
+      expect(find.text('Nouveau produit'), findsNothing);
+
+      await tester.scrollUntilVisible(find.text('Marge'), 200);
+      expect(find.text(formatFcfa(d('2300000'))), findsOneWidget);
+      expect(find.text('23 %'), findsOneWidget);
+      // Une seule comparaison avec hier, sous le chiffre d'affaires.
+      expect(find.textContaining('hier :'), findsNothing);
+
+      // La caisse, compacte, sous les chiffres du jour.
+      await tester.scrollUntilVisible(find.text('Espèces dans le tiroir'), 200);
       expect(find.text('Caisse ouverte'), findsOneWidget);
-      expect(find.text('Espèces dans le tiroir'), findsOneWidget);
       expect(find.text(formatFcfa(d('50175'))), findsOneWidget);
       expect(
         find.text('Mobile money, hors tiroir · ${formatFcfa(d('1025'))}'),
         findsOneWidget,
       );
-      // Tout envoyé : pas d'indicateur de synchro.
-      expect(find.text('À jour'), findsNothing);
-      // La vente passe par l'onglet « Vendre » : pas de bouton en double.
-      expect(find.text('Nouvelle vente'), findsNothing);
-      expect(find.text('Nouveau produit'), findsNothing);
       expect(find.widgetWithText(TextButton, 'Clôturer'), findsOneWidget);
-
-      await tester.scrollUntilVisible(find.text('Marge moyenne'), 200);
-      expect(find.text('Pic : 19 h – 20 h'), findsOneWidget);
-      expect(find.text('Chiffre d’affaires'), findsOneWidget);
-      expect(find.text(formatFcfa(d('2300000'))), findsOneWidget);
-      expect(find.text('23 %'), findsOneWidget);
 
       await tester.scrollUntilVisible(find.text('Rupture'), 200);
       expect(find.text('3 restants'), findsOneWidget);
       // Aperçu limité à 3 produits.
       expect(find.text('Sucre'), findsNothing);
-      await tester.scrollUntilVisible(find.text('Vente n° 10452'), 200);
+      await tester.scrollUntilVisible(find.text('Vente n° 10452 · 19:42'), 200);
+      // Les articles arrivent après la construction de la section.
+      await tester.pumpAndSettle();
+      expect(find.text('Riz ×2, Pain · Espèces'), findsOneWidget);
       expect(find.text('En attente de synchro'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -263,21 +305,60 @@ void main() {
         registerOpen: false,
       );
       expect(find.text('Caisse fermée'), findsOneWidget);
-      expect(find.textContaining('Dernière clôture : hier à'), findsOneWidget);
-      expect(find.text('Ouvrez la caisse pour commencer à vendre.'), findsOne);
+      expect(find.textContaining('clôturée hier à'), findsOneWidget);
+      expect(find.text('Dernier comptage'), findsOneWidget);
+      expect(find.text(formatFcfa(d('47000'))), findsOneWidget);
+      expect(
+        find.text('Ouvrez la caisse avec votre fond pour commencer à vendre.'),
+        findsOne,
+      );
       expect(
         find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
         findsOneWidget,
       );
       await tester.scrollUntilVisible(
-        find.text('Aucun produit en rupture'),
+        find.text('Hier à la même heure : ${formatFcfa(d('4200'))}'),
         200,
       );
-      expect(find.text('Aucune vente pour l’instant.'), findsOneWidget);
+      // Aucune vente hier non plus : la journée du jour, à zéro, sans
+      // emplacement vide pour le graphique.
+      expect(find.text('Aujourd’hui'), findsOneWidget);
+      expect(
+        find.text('L’activité par heure s’affiche dès la première vente'),
+        findsNothing,
+      );
+      // Aucune alerte de stock : pas de section.
+      expect(find.text('Alertes de stock'), findsNothing);
+      expect(
+        find.text('Hier à la même heure : ${formatFcfa(d('4200'))}'),
+        findsOneWidget,
+      );
       expect(find.text('Dernières ventes'.toUpperCase()), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('caisse fermée, journée vide : récapitulatif d’hier', (
+    tester,
+  ) async {
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      registerOpen: false,
+      yesterdaySales: 19,
+    );
+    await tester.scrollUntilVisible(find.text('Bénéfice estimé'), 200);
+    expect(find.text('Hier'), findsOneWidget);
+    expect(find.text('Aujourd’hui'), findsNothing);
+    expect(find.text(formatFcfa(d('36800'))), findsOneWidget);
+    expect(
+      find.text('19 ventes · panier moyen ${formatFcfa(d('1937'))}'),
+      findsOneWidget,
+    );
+    expect(find.text(formatFcfa(d('8100'))), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('envoi en échec : alerte et réessai', (tester) async {
     await pumpHome(
@@ -348,7 +429,33 @@ void main() {
       find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
       findsNothing,
     );
+    // Un seul bouton plein : celui de l'étape en cours, dans les premiers
+    // pas ; le bloc caisse n'affiche que son état.
+    expect(find.byType(PrimaryButton), findsOneWidget);
+    expect(
+      find.text('Ajoutez un premier produit, puis ouvrez la caisse.'),
+      findsNothing,
+    );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('premiers pas : 1 sur 3, l’étape en cours ouvre la caisse', (
+    tester,
+  ) async {
+    await pumpHome(
+      tester,
+      theme: AppTheme.light(),
+      withData: false,
+      registerOpen: false,
+      hasSale: false,
+      withClosedSession: false,
+    );
+    expect(find.text('1 sur 3'), findsOneWidget);
+    expect(
+      find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
+      findsOneWidget,
+    );
+    expect(find.byType(PrimaryButton), findsOneWidget);
   });
 
   testWidgets('premiers pas : 2 sur 3, étape suivante la vente', (

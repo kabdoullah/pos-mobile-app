@@ -27,9 +27,10 @@ import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
 
-/// Accueil : un seul bloc mis en avant, l'état de la caisse et son action
-/// (ouvrir, ou entrée / sortie) ; puis les chiffres du jour, les alertes de
-/// stock et les dernières ventes, en listes plates. La vente se fait depuis
+/// Accueil. Caisse fermée ou journée sans vente : l'état de la caisse et son
+/// action en tête, puis les chiffres. Caisse ouverte avec des ventes : le
+/// chiffre d'affaires en tête et la caisse en bloc compact dessous. Puis les
+/// alertes de stock et les dernières ventes, en listes plates. La vente se fait depuis
 /// l'onglet « Vendre » : pas de bouton en double ici.
 class HomePage extends ConsumerWidget {
   /// Crée l'accueil.
@@ -54,13 +55,42 @@ class HomePage extends ConsumerWidget {
     void goTo(ShellBranch branch) =>
         StatefulNavigationShell.of(context).goBranch(branch.index);
 
+    // Caisse ouverte et premières ventes faites : le chiffre d'affaires
+    // passe en tête, la caisse devient un bloc compact sous les chiffres.
+    final salesLead =
+        ref.watch(activeCashSessionProvider).value != null &&
+        (ref.watch(dailySummaryProvider).value?.saleCount ?? 0) > 0;
+    final cashBox = Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        salesLead ? AppSpacing.lg : AppSpacing.sm,
+        AppSpacing.md,
+        0,
+      ),
+      child: _CashBox(compact: salesLead),
+    );
+
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
-        title: Text(
-          storeName == null || storeName.isEmpty ? 'Accueil' : storeName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              storeName == null || storeName.isEmpty ? 'Accueil' : storeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              toBeginningOfSentenceCase(dateLabel, 'fr_FR'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.metaRegular.copyWith(
+                color: colors.textSecondary,
+              ),
+            ),
+          ],
         ),
         actions: const [
           Padding(
@@ -77,26 +107,10 @@ class HomePage extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.only(bottom: AppSpacing.lg),
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.xs,
-                    AppSpacing.md,
-                    AppSpacing.sm + AppSpacing.xs,
-                  ),
-                  child: Text(
-                    toBeginningOfSentenceCase(dateLabel, 'fr_FR'),
-                    style: AppTypography.body.copyWith(
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  child: _CashBox(),
-                ),
+                if (!salesLead) cashBox,
                 const FirstStepsSection(),
-                const TodaySummary(),
+                TodaySummary(leading: salesLead),
+                if (salesLead) cashBox,
                 const AccountEmailBanner(),
                 LowStockSection(onSeeStock: () => goTo(ShellBranch.inventory)),
                 RecentSalesSection(
@@ -111,10 +125,13 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// Bloc mis en avant : caisse ouverte (espèces dans le tiroir, entrée /
-/// sortie, clôture) ou fermée (consigne et dernière clôture).
+/// Bloc caisse : ouverte (espèces dans le tiroir, entrée / sortie, clôture)
+/// ou fermée (consigne et dernière clôture). [compact] : montant sur la
+/// ligne du libellé, quand le chiffre d'affaires mène l'écran.
 class _CashBox extends ConsumerWidget {
-  const _CashBox();
+  const _CashBox({this.compact = false});
+
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -144,7 +161,7 @@ class _CashBox extends ConsumerWidget {
     } else if (open == null) {
       content = _ClosedContent(meta: meta);
     } else {
-      content = _OpenContent(session: open, meta: meta);
+      content = _OpenContent(session: open, meta: meta, compact: compact);
     }
 
     return DecoratedBox(
@@ -162,10 +179,15 @@ class _CashBox extends ConsumerWidget {
 }
 
 class _OpenContent extends ConsumerWidget {
-  const _OpenContent({required this.session, required this.meta});
+  const _OpenContent({
+    required this.session,
+    required this.meta,
+    required this.compact,
+  });
 
   final CashSession session;
   final TextStyle meta;
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -183,6 +205,22 @@ class _OpenContent extends ConsumerWidget {
     final since = sessionOpenedSinceLabel(session.openedAt, today);
     // Caisse oubliée la veille : on le dit, et la clôture passe devant.
     final stale = isOpenedBeforeToday(session.openedAt, today);
+
+    Widget amount(TextStyle style) {
+      if (expected != null) {
+        return Text(
+          formatFcfa(expected),
+          style: style.copyWith(
+            color: expected < Decimal.zero ? AppColors.of(context).error : null,
+          ),
+        );
+      }
+      if (summary.hasError) return Text('Solde indisponible', style: meta);
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: SkeletonBox(width: 120, height: 20),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -203,27 +241,24 @@ class _OpenContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text('Espèces dans le tiroir', style: meta),
-        if (expected != null)
-          Text(
-            formatFcfa(expected),
-            style: AppTypography.figureHero.copyWith(
-              color: expected < Decimal.zero
-                  ? AppColors.of(context).error
-                  : null,
-            ),
+        if (compact)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Expanded(child: Text('Espèces dans le tiroir', style: meta)),
+              amount(AppTypography.figureSmall),
+            ],
           )
-        else if (summary.hasError)
-          Text('Solde indisponible', style: meta)
-        else
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: SkeletonBox(width: 180, height: 32),
-          ),
+        else ...[
+          Text('Espèces dans le tiroir', style: meta),
+          // 24 pt : le chiffre d'affaires (32 pt) reste le chiffre fort.
+          amount(AppTypography.figureLarge),
+        ],
         if (mobile > Decimal.zero)
           Text('Mobile money, hors tiroir · ${formatFcfa(mobile)}', style: meta)
         else if (noActivity)
-          Text('Fond de caisse', style: meta),
+          Text('Fond de caisse, aucune vente pour l’instant', style: meta),
         const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
         // Action courante en bouton, l'autre en lien pour ne pas leur donner
         // le même poids : entrée / sortie dans la journée, la clôture quand la
@@ -264,40 +299,50 @@ class _ClosedContent extends ConsumerWidget {
     final history = ref.watch(localCashSessionHistoryProvider).value;
     final last = lastClosedSession(history);
     final counted = last?.countedAmount;
-    // Sans produit, ouvrir la caisse ne sert à rien : l'action du bloc est
-    // d'en ajouter un.
-    final steps = watchFirstSteps(ref);
-    final needsProduct = steps != null && !steps.product;
+    // Premiers pas affichés : ils portent l'action (produit, puis caisse) ;
+    // le bloc ne montre que l'état, pour ne pas la doubler.
+    final guided = watchFirstStepsVisible(ref);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const StatusIndicator(label: 'Caisse fermée', tone: StatusTone.warning),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          needsProduct
-              ? 'Ajoutez un premier produit, puis ouvrez la caisse.'
-              : 'Ouvrez la caisse pour commencer à vendre.',
-          style: AppTypography.body,
+        Row(
+          children: [
+            const StatusIndicator(
+              label: 'Caisse fermée',
+              tone: StatusTone.neutral,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            if (last != null)
+              Expanded(
+                child: Text(
+                  'clôturée ${closureLabel(last.closedAt!)}',
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: meta,
+                ),
+              ),
+          ],
         ),
-        if (last != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Dernière clôture : ${closureLabel(last.closedAt!)}'
-            '${counted == null ? '' : ' · ${formatFcfa(counted)}'}',
-            style: meta,
-          ),
+        if (counted != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text('Dernier comptage', style: meta),
+          Text(formatFcfa(counted), style: AppTypography.figureLarge),
         ],
-        const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-        if (needsProduct)
-          PrimaryButton(
-            label: 'Ajouter un produit',
-            onPressed: () => context.push(Routes.productNew),
-          )
-        else
+        if (!guided) ...[
+          const SizedBox(height: AppSpacing.xs + 2),
+          Text(
+            'Ouvrez la caisse avec votre fond pour commencer à vendre.',
+            style: AppTypography.body.copyWith(
+              color: AppColors.of(context).textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
           PrimaryButton(
             label: 'Ouvrir la caisse',
             onPressed: () => showOpenCashSession(context),
           ),
+        ],
         // Caisse fermée : seul accès à l'historique des sessions (détail,
         // comptages, écarts). Lien secondaire, en gris.
         if (last != null)
@@ -310,7 +355,7 @@ class _ClosedContent extends ConsumerWidget {
                 minimumSize: const Size(0, AppSpacing.buttonHeightSm),
                 foregroundColor: AppColors.of(context).textSecondary,
               ),
-              child: const Text('Voir les sessions de caisse'),
+              child: const Text('Historique de la caisse'),
             ),
           ),
       ],

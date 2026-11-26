@@ -3,7 +3,7 @@ import 'app_colors.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
 
-/// Fabrique du thème (refonte v2 « Cacao & Sauge »).
+/// Fabrique du thème (v3 « Cacao, Teal & Indigo »).
 ///
 /// Material 3 reste le socle technique ; c'est le thème qui efface
 /// l'esthétique Material : pas d'ondulation (le retour de pression est un
@@ -21,11 +21,11 @@ class AppTheme {
   /// Construit le thème sombre.
   static ThemeData dark() => _build(AppColors.dark, Brightness.dark);
 
-  /// Correspondance jetons v2 → [ColorScheme].
+  /// Correspondance jetons v3 → [ColorScheme].
   ///
-  /// Les conteneurs secondaire et tertiaire sont la surface elle-même, avec
-  /// le texte dans la couleur de statut : la v2 n'a pas de pastilles tonales,
-  /// un statut se dit par un mot coloré (et passe l'AA sur la surface).
+  /// Les conteneurs secondaire et tertiaire sont les teintes de succès et
+  /// d'alerte (fond d'un message), le texte gardant la couleur du statut. Dans
+  /// une liste, un statut reste un point et un mot, sans fond.
   static ColorScheme _colorScheme(AppColors c, Brightness brightness) {
     return ColorScheme(
       brightness: brightness,
@@ -35,11 +35,11 @@ class AppTheme {
       onPrimaryContainer: c.onActionSubtle,
       secondary: c.success,
       onSecondary: c.surface,
-      secondaryContainer: c.surface,
+      secondaryContainer: c.successSubtle,
       onSecondaryContainer: c.success,
       tertiary: c.warning,
       onTertiary: c.surface,
-      tertiaryContainer: c.surface,
+      tertiaryContainer: c.warningSubtle,
       onTertiaryContainer: c.warning,
       error: c.error,
       onError: c.surface,
@@ -292,13 +292,15 @@ class AppTheme {
     );
   }
 
-  /// Action tertiaire (Voir tout, Vider) : texte `action` 16/600, 48 dp.
+  /// Action tertiaire (Voir tout, Vider) : texte `actionText` 16/600, 48 dp
+  /// (cacao 700 : le cacao 600 ne passe pas l'AA sur le fond).
   static TextButtonThemeData _buildTextButtonTheme(AppColors c) {
     return TextButtonThemeData(
       style: ButtonStyle(
         foregroundColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.disabled) ? c.textDisabled : c.action,
+          (states) => states.contains(WidgetState.disabled)
+              ? c.textDisabled
+              : c.actionText,
         ),
         backgroundColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.pressed)

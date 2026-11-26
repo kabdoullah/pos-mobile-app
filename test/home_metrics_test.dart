@@ -85,4 +85,43 @@ void main() {
       expect(cashSharePercent(stats(cash: '500', mobile: '0')), 100);
     });
   });
+
+  group('salesUpTo', () {
+    Sale at(int hour, int minute, String total) => Sale(
+      discountAmount: Decimal.zero,
+      id: 'sale-$hour-$minute',
+      receiptNumber: 0,
+      totalAmount: Decimal.parse(total),
+      vatAmount: Decimal.zero,
+      paymentMethod: PaymentMethod.cash,
+      createdAt: DateTime(2026, 11, 23, hour, minute),
+    );
+
+    test('ne garde que les ventes passées avant l’heure donnée', () {
+      final sales = [at(8, 5, '1000'), at(10, 30, '2500'), at(16, 0, '9000')];
+      expect(
+        grossTotal(salesUpTo(sales, const Duration(hours: 10, minutes: 30))),
+        Decimal.parse('3500'),
+      );
+    });
+
+    test('aucune vente avant la première', () {
+      expect(salesUpTo([at(8, 5, '1000')], const Duration(hours: 7)), isEmpty);
+    });
+  });
+
+  group('percentChange', () {
+    test('hausse et baisse arrondies à l’entier', () {
+      expect(percentChange(Decimal.parse('41200'), Decimal.parse('36800')), 12);
+      expect(percentChange(Decimal.parse('3000'), Decimal.parse('4000')), -25);
+    });
+
+    test('égalité', () {
+      expect(percentChange(Decimal.parse('500'), Decimal.parse('500')), 0);
+    });
+
+    test('pas de base : null', () {
+      expect(percentChange(Decimal.parse('500'), Decimal.zero), isNull);
+    });
+  });
 }
