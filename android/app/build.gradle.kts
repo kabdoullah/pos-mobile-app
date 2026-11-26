@@ -64,8 +64,21 @@ android {
         }
     }
 
+    // Une release prod signée avec la clé de debug serait refusée par le Play
+    // Store, ou installée à côté de la vraie app : on refuse de la construire.
+    val buildsProdRelease = gradle.startParameter.taskNames.any {
+        it.contains("ProdRelease", ignoreCase = true)
+    }
+    if (buildsProdRelease && !keyPropertiesFile.exists()) {
+        throw GradleException(
+            "android/key.properties introuvable : impossible de signer la " +
+                "release prod. Voir docs/build-apk-prod.md.",
+        )
+    }
+
     buildTypes {
         release {
+            // Sans clé, seule une release dev (jamais publiée) reste possible.
             signingConfig = if (keyPropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
