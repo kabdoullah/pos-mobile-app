@@ -5,11 +5,13 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../providers/cart_provider.dart';
+import '../providers/sale_catalog_layout_provider.dart';
 import '../providers/sales_providers.dart';
+import 'sale_product_grid.dart';
 import 'sale_product_row.dart';
 
 /// Résultats de recherche de l'écran Vendre, affichés à la place du catalogue
-/// pendant la saisie. Mêmes lignes que le catalogue.
+/// pendant la saisie. Mêmes lignes, ou mêmes tuiles, que le catalogue.
 class ProductSearchResults extends ConsumerWidget {
   /// Crée la liste de résultats pour [query].
   const ProductSearchResults({
@@ -18,8 +20,12 @@ class ProductSearchResults extends ConsumerWidget {
     required this.onDecrease,
     required this.onEditQuantity,
     this.onScan,
+    this.layout = SaleCatalogLayout.list,
     super.key,
   });
+
+  /// Affichage choisi : lignes ou tuiles.
+  final SaleCatalogLayout layout;
 
   /// Texte recherché (nom ou code-barres).
   final String query;
@@ -60,6 +66,19 @@ class ProductSearchResults extends ConsumerWidget {
             message: 'Essayez un autre nom ou un autre code-barres.',
             actionLabel: onScan == null ? null : 'Scanner un code-barres',
             onAction: onScan,
+          );
+        }
+        if (layout == SaleCatalogLayout.grid) {
+          return CustomScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            slivers: [
+              SaleProductGrid(
+                products: products,
+                cartQuantities: inCart,
+                onAdd: onAdd,
+                onEditQuantity: onEditQuantity,
+              ),
+            ],
           );
         }
         final divider = BorderSide(color: colors.border);

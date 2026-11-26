@@ -1,6 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/network/network_providers.dart';
+import '../../../core/storage/sale_catalog_layout_storage.dart';
 import '../data/repositories/sales_repository_impl.dart';
 import '../domain/repositories/sales_repository.dart';
 import '../domain/usecases/create_sale_usecase.dart';
@@ -19,6 +20,11 @@ SalesRepository salesRepository(Ref ref) {
     dio: ref.read(dioProvider),
   );
 }
+
+/// Fournit le stockage de l'affichage du catalogue (liste ou grille).
+@Riverpod(keepAlive: true)
+SaleCatalogLayoutStorage saleCatalogLayoutStorage(Ref ref) =>
+    SaleCatalogLayoutStorage();
 
 /// Fournit le cas d'usage de création de vente (logique métier).
 @riverpod

@@ -31,6 +31,7 @@ import 'package:mobile/features/sales/presentation/providers/cart_provider.dart'
 import 'package:mobile/features/sales/presentation/providers/checkout_provider.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_search_results.dart';
+import 'package:mobile/features/sales/presentation/widgets/sale_product_grid.dart';
 
 /// Évite que l'orchestrateur de synchro (pastille réseau) initialise la vraie
 /// authentification.
@@ -270,6 +271,36 @@ void main() {
       await tester.tap(find.byTooltip('Ajouter Fanta'));
       await tester.pump();
       expect(container.read(cartProvider).isEmpty, isTrue);
+    });
+
+    testWidgets('grille : ajout, pastille, retrait annulable', (tester) async {
+      final container = await pumpPage(tester);
+      await tester.tap(find.byTooltip('Afficher en grille'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SaleProductTile), findsWidgets);
+      expect(find.byTooltip('Afficher en liste'), findsOneWidget);
+
+      await tester.tap(find.text('Coca-Cola 33cl'));
+      await tester.tap(find.text('Coca-Cola 33cl'));
+      await tester.pump();
+      final cart = container.read(cartProvider.notifier);
+      expect(cart.quantityOf('Coca-Cola 33cl'), 2);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SaleProductTile),
+          matching: find.text('2'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Retirer du panier'));
+      await tester.pumpAndSettle();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 0);
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pump();
+      expect(cart.quantityOf('Coca-Cola 33cl'), 2);
+      await settleToast(tester);
     });
 
     testWidgets('appui long : choix de quantité', (tester) async {

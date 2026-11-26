@@ -17,6 +17,7 @@ import '../../../catalog/presentation/providers/category_providers.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
 import '../providers/cart_provider.dart';
 import '../providers/checkout_provider.dart';
+import '../providers/sale_catalog_layout_provider.dart';
 import '../providers/sales_providers.dart';
 import '../widgets/product_browser.dart';
 import '../widgets/product_search_results.dart';
@@ -155,7 +156,10 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     );
   }
 
-  /// Saisie détaillée de la quantité (appui long, chiffre du stepper).
+  /// Saisie détaillée de la quantité (appui long, chiffre du stepper,
+  /// pastille d'une tuile). Pour un produit déjà au panier, la feuille
+  /// propose aussi de retirer la ligne : en grille, c'est le seul moyen de
+  /// corriger.
   Future<void> _editQuantity(Product product) async {
     final stock = product.currentStock;
     final inCart = ref.read(cartProvider.notifier).quantityOf(product.id);
@@ -173,14 +177,18 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
       confirmLabel: inCart == 0
           ? 'Ajouter au panier'
           : 'Mettre à jour le panier',
+      removeLabel: inCart == 0 ? null : 'Retirer du panier',
     );
     if (!mounted) return;
-    if (result case QuantityChosen(:final quantity)) {
-      if (inCart == 0) {
+    switch (result) {
+      case QuantityChosen(:final quantity) when inCart == 0:
         _addProduct(product, quantity: quantity);
-      } else {
+      case QuantityChosen(:final quantity):
         ref.read(cartProvider.notifier).updateQuantity(product.id, quantity);
-      }
+      case QuantityRemoved():
+        _removeCartItem(product.id);
+      case null:
+        break;
     }
   }
 
@@ -243,6 +251,11 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
     final cartQuantities = {
       for (final item in cart.items) item.productId: item.quantity,
     };
+    // Liste tant que la préférence n'est pas lue.
+    final layout =
+        ref.watch(saleCatalogLayoutPreferenceProvider).value ??
+        SaleCatalogLayout.list;
+    final isGrid = layout == SaleCatalogLayout.grid;
 
     return Scaffold(
       appBar: AppBar(
@@ -250,6 +263,15 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
         title: const Text('Vendre'),
         actions: [
           const OfflineStatusIndicator(),
+          IconButton(
+            tooltip: isGrid ? 'Afficher en liste' : 'Afficher en grille',
+            icon: Icon(
+              isGrid ? Icons.view_list_outlined : Icons.grid_view_outlined,
+            ),
+            onPressed: () => ref
+                .read(saleCatalogLayoutPreferenceProvider.notifier)
+                .set(isGrid ? SaleCatalogLayout.list : SaleCatalogLayout.grid),
+          ),
           IconButton(
             tooltip: 'Imprimante',
             icon: const Icon(Icons.print_outlined),
@@ -297,6 +319,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                           onDecrease: _decrease,
                           onEditQuantity: _editQuantity,
                           onScan: _openScanner,
+                          layout: layout,
                         )
                       : CustomScrollView(
                           keyboardDismissBehavior:
@@ -306,6 +329,7 @@ class _NewSalePageState extends ConsumerState<NewSalePage> {
                               products: ref.watch(stockProductsProvider),
                               categoryId: categoryId,
                               cartQuantities: cartQuantities,
+                              layout: layout,
                               onAdd: _addProduct,
                               onDecrease: _decrease,
                               onEditQuantity: _editQuantity,

@@ -58,6 +58,59 @@ final class SalesRepositoryProvider
 
 String _$salesRepositoryHash() => r'dd95c0d3baeee77cdc2bc036cc08dd2d53dea5a2';
 
+/// Fournit le stockage de l'affichage du catalogue (liste ou grille).
+
+@ProviderFor(saleCatalogLayoutStorage)
+final saleCatalogLayoutStorageProvider = SaleCatalogLayoutStorageProvider._();
+
+/// Fournit le stockage de l'affichage du catalogue (liste ou grille).
+
+final class SaleCatalogLayoutStorageProvider
+    extends
+        $FunctionalProvider<
+          SaleCatalogLayoutStorage,
+          SaleCatalogLayoutStorage,
+          SaleCatalogLayoutStorage
+        >
+    with $Provider<SaleCatalogLayoutStorage> {
+  /// Fournit le stockage de l'affichage du catalogue (liste ou grille).
+  SaleCatalogLayoutStorageProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'saleCatalogLayoutStorageProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$saleCatalogLayoutStorageHash();
+
+  @$internal
+  @override
+  $ProviderElement<SaleCatalogLayoutStorage> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SaleCatalogLayoutStorage create(Ref ref) {
+    return saleCatalogLayoutStorage(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SaleCatalogLayoutStorage value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SaleCatalogLayoutStorage>(value),
+    );
+  }
+}
+
+String _$saleCatalogLayoutStorageHash() =>
+    r'667e55b167aeaf12d95e5a44a2ada5856028f7e6';
+
 /// Fournit le cas d'usage de création de vente (logique métier).
 
 @ProviderFor(createSaleUseCase)

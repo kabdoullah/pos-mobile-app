@@ -22,6 +22,9 @@ enum DesignIcon {
 
   /// Produit sans photo : colis.
   package,
+
+  /// Emplacement de photo vide : cadre, soleil et montagne.
+  image,
 }
 
 /// Pictogramme dessiné [icon] de [size] points, en [color] (texte secondaire
@@ -159,6 +162,23 @@ class _StrokeIconPainter extends CustomPainter {
           ..lineTo(12, 12)
           ..lineTo(20, 7.5);
         line(path, 12, 12, 12, 21);
+      case DesignIcon.image:
+        // Cadre arrondi, soleil r1,5, montagne jusqu'au coin bas droit.
+        path
+          ..addRRect(
+            RRect.fromRectAndRadius(
+              const Rect.fromLTWH(3, 5, 18, 14),
+              const Radius.circular(2),
+            ),
+          )
+          ..addOval(
+            Rect.fromCircle(center: const Offset(8.5, 9.5), radius: 1.5),
+          )
+          ..moveTo(3, 17)
+          ..lineTo(9, 12)
+          ..lineTo(13, 15.5)
+          ..lineTo(15.5, 13.5)
+          ..lineTo(21, 18);
     }
     return path;
   }
