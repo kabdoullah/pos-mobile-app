@@ -396,7 +396,7 @@ void main() {
       final container = await pumpPage(tester);
       await openCheckoutWithCoca(tester);
 
-      await tester.tap(find.text('Mixte'));
+      await tester.tap(find.text('Les deux'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '1000');
       await tester.pumpAndSettle();

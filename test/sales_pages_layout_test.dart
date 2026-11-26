@@ -131,7 +131,7 @@ void main() {
       await pump(tester, const SalesHistoryPage(), theme: theme);
       expect(tester.takeException(), isNull);
       expect(find.text('Aucune vente aujourd’hui'), findsOneWidget);
-      expect(find.text('Choisir des dates'), findsOneWidget);
+      expect(find.text('Voir les 7 derniers jours'), findsOneWidget);
     });
 
     testWidgets('ticket avec lignes, thème $name', (tester) async {

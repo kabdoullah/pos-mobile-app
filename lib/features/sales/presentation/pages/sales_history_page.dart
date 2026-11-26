@@ -170,10 +170,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
               ),
               data: (sales) {
                 if (sales.isEmpty) {
-                  return _EmptyPeriod(
-                    period: _period,
-                    onPickDates: () => _select(_Period.custom),
-                  );
+                  return _EmptyPeriod(period: _period, onSelect: _select);
                 }
                 final visible = searchSales(sales, _query, items: items);
                 final totals = salesTotals(visible);
@@ -382,12 +379,13 @@ class _SaleTile extends StatelessWidget {
   }
 }
 
-/// Période sans vente : proposer une autre période.
+/// Période sans vente : proposer la période plus large suivante (le
+/// calendrier seulement en dernier recours, il double l'onglet « Dates »).
 class _EmptyPeriod extends StatelessWidget {
-  const _EmptyPeriod({required this.period, required this.onPickDates});
+  const _EmptyPeriod({required this.period, required this.onSelect});
 
   final _Period period;
-  final VoidCallback onPickDates;
+  final ValueChanged<_Period> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -398,6 +396,11 @@ class _EmptyPeriod extends StatelessWidget {
       _Period.week => 'Aucune vente ces 7 derniers jours',
       _Period.month => 'Aucune vente ce mois-ci',
       _Period.custom => 'Aucune vente sur cette période',
+    };
+    final next = switch (period) {
+      _Period.today || _Period.yesterday => _Period.week,
+      _Period.week => _Period.month,
+      _Period.month || _Period.custom => _Period.custom,
     };
     final message = period == _Period.today
         ? 'Vos ventes du jour apparaîtront ici.'
@@ -422,8 +425,12 @@ class _EmptyPeriod extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Center(
             child: SecondaryButton(
-              label: 'Choisir des dates',
-              onPressed: onPickDates,
+              label: switch (next) {
+                _Period.week => 'Voir les 7 derniers jours',
+                _Period.month => 'Voir ce mois-ci',
+                _ => 'Choisir des dates',
+              },
+              onPressed: () => onSelect(next),
             ),
           ),
         ],

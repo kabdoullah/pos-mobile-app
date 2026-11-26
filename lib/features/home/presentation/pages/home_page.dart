@@ -16,6 +16,7 @@ import '../../../../core/sync/sync_providers.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/providers/store_provider.dart';
 import '../../../cash_register/domain/entities/cash_session.dart';
+import '../../../cash_register/presentation/cash_session_labels.dart';
 import '../../../cash_register/presentation/providers/cash_register_providers.dart';
 import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
 import '../../../onboarding/presentation/providers/welcome_provider.dart';
@@ -178,20 +179,27 @@ class _OpenContent extends ConsumerWidget {
         mobile == Decimal.zero &&
         values.cashIn == Decimal.zero &&
         values.cashOut == Decimal.zero;
-    final since = DateFormat.Hm('fr_FR').format(session.openedAt.toLocal());
+    final today = ref.watch(todayProvider);
+    final since = sessionOpenedSinceLabel(session.openedAt, today);
+    // Caisse oubliée la veille : on le dit, et la clôture passe devant.
+    final stale = isOpenedBeforeToday(session.openedAt, today);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: StatusIndicator(
-                label: 'Caisse ouverte',
-                tone: StatusTone.success,
+                label: stale ? 'Caisse non clôturée' : 'Caisse ouverte',
+                tone: stale ? StatusTone.warning : StatusTone.success,
               ),
             ),
-            Text('depuis $since', style: meta),
+            const SizedBox(width: AppSpacing.sm),
+            // « depuis le 23 nov. 14:29 » : passe à la ligne sur petit écran.
+            Flexible(
+              child: Text(since, style: meta, textAlign: TextAlign.end),
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -217,23 +225,27 @@ class _OpenContent extends ConsumerWidget {
         else if (noActivity)
           Text('Fond de caisse', style: meta),
         const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-        // Action courante en bouton ; la clôture, une fois par jour, en lien
-        // pour ne pas lui donner le même poids.
+        // Action courante en bouton, l'autre en lien pour ne pas leur donner
+        // le même poids : entrée / sortie dans la journée, la clôture quand la
+        // caisse est restée ouverte depuis la veille.
         Row(
           children: [
             Expanded(
               child: SecondaryButton(
-                label: 'Entrée / sortie',
-                onPressed: () => context.push(Routes.cashRegister),
+                label: stale ? 'Clôturer la caisse' : 'Entrée / sortie',
+                onPressed: () => context.push(
+                  stale ? Routes.cashClose : Routes.cashRegister,
+                ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             TextButton(
-              onPressed: () => context.push(Routes.cashClose),
+              onPressed: () =>
+                  context.push(stale ? Routes.cashRegister : Routes.cashClose),
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, AppSpacing.buttonHeightSm),
               ),
-              child: const Text('Clôturer'),
+              child: Text(stale ? 'Entrée / sortie' : 'Clôturer'),
             ),
           ],
         ),

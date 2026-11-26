@@ -115,6 +115,8 @@ Future<void> pumpHome(
     ProviderScope(
       overrides: [
         authProvider.overrideWith(_NoAuth.new),
+        // Jour d'ouverture de `openSession` : la caisse du jour.
+        todayProvider.overrideWithValue(DateTime(2026, 11, 11)),
         welcomePendingProvider.overrideWith((ref) async => false),
         profileRepositoryProvider.overrideWithValue(profile ?? _visibleSteps()),
         storeConfigProvider.overrideWith(_Store.new),

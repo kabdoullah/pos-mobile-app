@@ -833,7 +833,9 @@ void main() {
     expect(find.text('Voir les sessions plus anciennes'), findsNothing);
   });
 
-  Future<void> pumpHome(WidgetTester tester) async {
+  /// [today] : jour d'ouverture de `openSession()` par défaut (caisse du
+  /// jour) ; un jour plus tard, la caisse est restée ouverte depuis la veille.
+  Future<void> pumpHome(WidgetTester tester, {DateTime? today}) async {
     tester.view.physicalSize = const Size(400, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -845,6 +847,10 @@ void main() {
           path: Routes.cashRegister,
           builder: (_, _) => const Text('page caisse'),
         ),
+        GoRoute(
+          path: Routes.cashClose,
+          builder: (_, _) => const Text('page clôture'),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -852,6 +858,7 @@ void main() {
       ProviderScope(
         overrides: [
           ...overrides(),
+          todayProvider.overrideWithValue(today ?? DateTime(2026, 11, 10)),
           dailySummaryProvider.overrideWith(
             (ref) => Stream.value((
               saleCount: 0,
@@ -901,6 +908,21 @@ void main() {
     await tester.tap(find.text('Entrée / sortie'));
     await tester.pumpAndSettle();
     expect(find.text('page caisse'), findsOneWidget);
+  });
+
+  testWidgets('home cash box left open since yesterday puts closing first', (
+    tester,
+  ) async {
+    stubActive(openSession(), summary());
+    await pumpHome(tester, today: DateTime(2026, 11, 11));
+
+    expect(find.text('Caisse non clôturée'), findsOneWidget);
+    expect(find.textContaining('depuis hier'), findsOneWidget);
+    await tester.tap(
+      find.widgetWithText(SecondaryButton, 'Clôturer la caisse'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('page clôture'), findsOneWidget);
   });
 
   group('dark mode renders without hard-coded colors', () {

@@ -49,7 +49,7 @@ class CheckoutState {
   String? cashErrorFor(Decimal total) {
     final cash = cashReceived;
     if (method == PaymentMethod.cash && cash != null && cash < total) {
-      return 'Inférieur au total. Ajoutez des espèces ou choisissez Mixte.';
+      return 'Inférieur au total. Ajoutez des espèces ou choisissez « Les deux ».';
     }
     return null;
   }
