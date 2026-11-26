@@ -79,6 +79,10 @@ class _StockAdjustmentSheetState extends ConsumerState<StockAdjustmentSheet> {
       );
       return;
     }
+    if (!await ensureOnline(context, ref, action: 'L’ajustement du stock') ||
+        !mounted) {
+      return;
+    }
     setState(() {
       _quantityError = null;
       _isLoading = true;

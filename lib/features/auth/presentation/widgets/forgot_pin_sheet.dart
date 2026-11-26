@@ -45,6 +45,14 @@ class _ForgotPinSheetState extends ConsumerState<ForgotPinSheet> {
       setState(() => _error = 'Saisissez votre mot de passe.');
       return;
     }
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'La récupération du code PIN',
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() {
       _error = null;
       _isLoading = true;

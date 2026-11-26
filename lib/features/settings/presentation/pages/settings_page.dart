@@ -307,8 +307,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _confirmDeleteAccount() async {
-    if (!(ref.read(isOnlineProvider).value ?? false)) {
-      _showMessage('Connexion requise pour supprimer votre compte.');
+    if (!await ensureOnline(context, ref, action: 'La suppression du compte') ||
+        !mounted) {
       return;
     }
     final pending = ref.read(pendingSyncCountProvider).value ?? 0;

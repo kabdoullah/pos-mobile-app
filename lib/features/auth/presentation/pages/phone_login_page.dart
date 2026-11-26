@@ -80,6 +80,9 @@ class _PhoneLoginPageState extends ConsumerState<PhoneLoginPage> {
 
   Future<void> _login() async {
     if (ref.read(authProvider).isLoading || !_validateForm()) return;
+    if (!await ensureOnline(context, ref, action: 'La connexion') || !mounted) {
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     final e164 = toE164Ci(_phoneController.text.trim())!;

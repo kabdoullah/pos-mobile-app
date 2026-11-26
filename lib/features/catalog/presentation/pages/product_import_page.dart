@@ -32,6 +32,14 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
   ProductImportResult? _result;
 
   Future<void> _downloadTemplate(String format) async {
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'Le téléchargement du modèle',
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() => _downloadingFormat = format);
     try {
       final bytes = await ref.read(
@@ -86,6 +94,10 @@ class _ProductImportPageState extends ConsumerState<ProductImportPage> {
   Future<void> _import() async {
     final file = _selectedFile;
     if (file == null) return;
+    if (!await ensureOnline(context, ref, action: 'L’import de produits') ||
+        !mounted) {
+      return;
+    }
 
     setState(() => _isImporting = true);
     try {

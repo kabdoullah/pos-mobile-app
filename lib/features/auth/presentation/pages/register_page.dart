@@ -121,6 +121,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!_phoneValid || !_emailValid || !_passwordValid || !_passwordsMatch) {
       return;
     }
+    if (!await ensureOnline(context, ref, action: 'L’inscription') ||
+        !mounted) {
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     await ref
