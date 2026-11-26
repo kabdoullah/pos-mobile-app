@@ -68,35 +68,39 @@ class OverlineHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: actionLabel != null
-                    ? TextButton(
-                        onPressed: onAction,
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(0, 32),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xs,
+            // Sans lien ni indication, le titre prend toute la largeur
+            // (sinon il passait à la ligne pour rien).
+            if (actionLabel != null || trailing != null) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: actionLabel != null
+                      ? TextButton(
+                          onPressed: onAction,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 32),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                            ),
+                            textStyle: AppTypography.label,
                           ),
-                          textStyle: AppTypography.label,
-                        ),
-                        child: Text(actionLabel),
-                      )
-                    : trailing != null
-                    ? Text(
-                        trailing,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.metaRegular.copyWith(
-                          color: colors.textSecondary,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                          child: Text(actionLabel),
+                        )
+                      : trailing != null
+                      ? Text(
+                          trailing,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.metaRegular.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

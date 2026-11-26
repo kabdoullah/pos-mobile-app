@@ -34,6 +34,9 @@ import '../widgets/delete_account_sheet.dart';
 import '../widgets/receipt_settings_sheet.dart';
 import '../widgets/seller_name_sheet.dart';
 import '../widgets/settings_section.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/pages/subscription_page.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
 
 /// Paramètres, par sections : commerce, caisse, application, compte.
 class SettingsPage extends ConsumerStatefulWidget {
@@ -67,6 +70,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final sellerName = ref.watch(sellerProfileProvider).value;
     final storeAddress = store?.address;
     final footer = store?.receiptFooterText;
+    final subscription =
+        ref.watch(currentSubscriptionProvider).value ?? MySubscription.free;
 
     return Scaffold(
       appBar: AppBar(
@@ -121,6 +126,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   showChevron: true,
                   onTap: () => showReceiptSettingsSheet(context, store),
                 ),
+            ],
+          ),
+          SettingsSection(
+            title: 'Abonnement',
+            children: [
+              SettingsTile(
+                title: 'Mon abonnement',
+                subtitle: Text(
+                  '${subscription.plan.label} · '
+                  '${subscriptionStatusLabel(subscription.status).$1}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                showChevron: true,
+                onTap: () => context.push(Routes.subscription),
+              ),
             ],
           ),
           SettingsSection(

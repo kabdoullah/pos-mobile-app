@@ -12,6 +12,8 @@ import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/return_labels.dart';
 import '../../domain/entities/sale_return.dart';
 import '../providers/returns_providers.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Section « Retours » du détail d'une vente : retours déjà enregistrés et
 /// action « Retourner des articles » quand il reste une quantité retournable.
@@ -44,7 +46,12 @@ class SaleReturnsSection extends ConsumerWidget {
         if (canReturn)
           SecondaryButton(
             label: 'Retourner des articles',
-            onPressed: () => context.push(Routes.saleReturn, extra: sale),
+            onPressed: () async {
+              if (await requireFeature(context, ref, PlanFeature.returns) &&
+                  context.mounted) {
+                await context.push(Routes.saleReturn, extra: sale);
+              }
+            },
           )
         else if (!isSynced)
           const StatusIndicator(

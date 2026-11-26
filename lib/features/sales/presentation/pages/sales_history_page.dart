@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import '../../domain/entities/sale.dart';
 import '../../domain/entities/sale_item_brief.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
 
 /// Période de l'historique, choisie par onglet.
 enum _Period { today, yesterday, week, month, custom }
@@ -86,8 +88,13 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    // Formule gratuite : 30 derniers jours seulement (ADR-0017). Les ventes
+    // plus anciennes restent sur l'appareil, elles ne sont pas affichées.
+    final floor = ref.watch(entitlementsProvider).historyStart(clock.now());
+    final limited = floor != null && _range.start.isBefore(floor);
+    final start = limited ? floor : _range.start;
     final provider = salesHistoryProvider(
-      startDate: _range.start,
+      startDate: start,
       endDate: _range.end,
     );
     final salesAsync = ref.watch(provider);
@@ -96,10 +103,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     final items =
         ref
             .watch(
-              salesHistoryItemsProvider(
-                startDate: _range.start,
-                endDate: _range.end,
-              ),
+              salesHistoryItemsProvider(startDate: start, endDate: _range.end),
             )
             .value ??
         const <String, List<SaleItemBrief>>{};
@@ -148,6 +152,31 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
             selected: _period,
             onSelected: _select,
           ),
+          if (limited)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Historique limité aux 30 derniers jours.',
+                      style: AppTypography.meta.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(Routes.subscription),
+                    child: const Text('Tout voir'),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: salesAsync.when(
               loading: () => ListView(

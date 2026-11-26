@@ -38,6 +38,8 @@ import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mobile/core/storage/cash_count_mode_storage.dart';
 
+import 'subscription_fixtures.dart';
+
 /// Mode de comptage en mémoire (le stockage sécurisé n'existe pas en test).
 class _MemoryCountMode extends Fake implements CashCountModeStorage {
   _MemoryCountMode({required this.byDenomination});
@@ -156,6 +158,7 @@ void main() {
 
   List<Override> overrides({bool online = true, bool byDenomination = false}) =>
       [
+        allFeaturesOverride,
         cashRegisterRepositoryProvider.overrideWithValue(repo),
         cashCountModeStorageProvider.overrideWithValue(
           _MemoryCountMode(byDenomination: byDenomination),

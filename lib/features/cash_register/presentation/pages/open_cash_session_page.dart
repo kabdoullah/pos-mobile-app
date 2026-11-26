@@ -14,6 +14,9 @@ import '../../domain/repositories/cash_register_repository.dart';
 import '../cash_register_messages.dart';
 import '../providers/cash_register_providers.dart';
 import '../widgets/cash_count_form.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
+import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Ouvre l'écran « Ouvrir la caisse » par-dessus la navigation. Renvoie
 /// `true` si une session a été ouverte.
@@ -141,8 +144,10 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    // Billetterie : formule Starter (ADR-0017) ; sinon « Total seulement ».
+    final canCount = ref.watch(entitlementsProvider).can(PlanFeature.cashCount);
     final byDenomination =
-        ref.watch(cashCountByDenominationProvider).value ?? true;
+        canCount && (ref.watch(cashCountByDenominationProvider).value ?? true);
     final formError = _formError;
     final amount = byDenomination ? _count.total : _amount;
     final lastCount = ref.watch(lastClosingCountProvider).value;
@@ -193,9 +198,20 @@ class _OpenCashSessionPageState extends ConsumerState<OpenCashSessionPage> {
                   ),
                   child: CashCountModeSelector(
                     byDenomination: byDenomination,
-                    onChanged: (value) => ref
-                        .read(cashCountByDenominationProvider.notifier)
-                        .set(value),
+                    onChanged: (value) async {
+                      if (value &&
+                          !await requireFeature(
+                            context,
+                            ref,
+                            PlanFeature.cashCount,
+                          )) {
+                        return;
+                      }
+
+                      await ref
+                          .read(cashCountByDenominationProvider.notifier)
+                          .set(value);
+                    },
                   ),
                 ),
                 if (byDenomination) ...[

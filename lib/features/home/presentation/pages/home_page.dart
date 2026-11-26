@@ -26,6 +26,8 @@ import '../widgets/first_steps_section.dart';
 import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Accueil. Caisse fermée ou journée sans vente : l'état de la caisse et son
 /// action en tête, puis les chiffres. Caisse ouverte avec des ventes : le
@@ -349,7 +351,16 @@ class _ClosedContent extends ConsumerWidget {
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
-              onPressed: () => context.push(Routes.cashHistory),
+              onPressed: () async {
+                if (await requireFeature(
+                      context,
+                      ref,
+                      PlanFeature.cashMovements,
+                    ) &&
+                    context.mounted) {
+                  await context.push(Routes.cashHistory);
+                }
+              },
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 minimumSize: const Size(0, AppSpacing.buttonHeightSm),

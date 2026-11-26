@@ -19,6 +19,8 @@ import 'package:mobile/features/returns/providers/returns_di_providers.dart';
 import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'subscription_fixtures.dart';
+
 /// Évite l'initialisation de la vraie authentification.
 class _NoAuth extends Auth {
   @override
@@ -161,6 +163,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          allFeaturesOverride,
           authProvider.overrideWith(_NoAuth.new),
           returnsRepositoryProvider.overrideWithValue(repository),
           cashRegisterRepositoryProvider.overrideWithValue(cash),
