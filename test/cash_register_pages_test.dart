@@ -498,8 +498,8 @@ void main() {
     // Étape 1 : coupures listées, solde attendu caché.
     expect(find.text('Étape 1 sur 2'), findsOneWidget);
     expect(find.text('Solde théorique'), findsNothing);
-    expect(find.text('BILLETS'), findsOneWidget);
-    expect(find.text('PIÈCES'), findsOneWidget);
+    expect(find.text('Billets'), findsOneWidget);
+    expect(find.text('Pièces'), findsOneWidget);
 
     // Un billet de 10 000 (première ligne) au bouton +.
     await tester.tap(find.byTooltip('Augmenter').first);
@@ -606,7 +606,7 @@ void main() {
       expect(find.text('× 1'), findsOneWidget);
 
       // Clôture dépliée : grille coupure · quantité · sous-total.
-      expect(find.textContaining('COMPTAGE DE CLÔTURE'), findsOneWidget);
+      expect(find.textContaining('Comptage de clôture'), findsOneWidget);
       expect(find.text('× 4'), findsOneWidget);
       expect(find.text('Pièce ${formatAmount(d('500'))}'), findsOneWidget);
       expect(find.text('× 18'), findsOneWidget);

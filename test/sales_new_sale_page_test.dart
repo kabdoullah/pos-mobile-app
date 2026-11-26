@@ -354,7 +354,7 @@ void main() {
       final container = await pumpPage(tester);
       await openCheckoutWithCoca(tester);
 
-      expect(find.text('ARTICLES · 2'), findsOneWidget);
+      expect(find.text('Articles · 2'), findsOneWidget);
       expect(find.text('2 × ${formatFcfa(d('2000'))}'), findsOneWidget);
       expect(find.text('À rendre au client'), findsOneWidget);
 

@@ -212,8 +212,8 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
               children: [
                 Expanded(
                   child: Text(
-                    'SCANNÉS',
-                    style: AppTypography.overline.copyWith(
+                    'Scannés',
+                    style: AppTypography.groupTitle.copyWith(
                       color: colors.textSecondary,
                     ),
                   ),

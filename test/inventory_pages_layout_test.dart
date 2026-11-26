@@ -188,7 +188,7 @@ void main() {
       // La section des mouvements est sous le bloc prix : elle ne se
       // construit (et ne charge) qu'une fois atteinte.
       await tester.scrollUntilVisible(
-        find.text('DERNIERS MOUVEMENTS'),
+        find.text('Derniers mouvements'),
         200,
         scrollable: _list,
       );

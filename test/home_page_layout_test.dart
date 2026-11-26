@@ -233,7 +233,8 @@ void main() {
         find.text('Mobile money, hors tiroir · ${formatFcfa(d('1025'))}'),
         findsOneWidget,
       );
-      expect(find.text('À jour'), findsOneWidget);
+      // Tout envoyé : pas d'indicateur de synchro.
+      expect(find.text('À jour'), findsNothing);
       // La vente passe par l'onglet « Vendre » : pas de bouton en double.
       expect(find.text('Nouvelle vente'), findsNothing);
       expect(find.text('Nouveau produit'), findsNothing);
@@ -336,7 +337,7 @@ void main() {
       hasSale: false,
       withClosedSession: false,
     );
-    expect(find.text('PREMIERS PAS'), findsOneWidget);
+    expect(find.text('Premiers pas'), findsOneWidget);
     expect(find.text('0 sur 3'), findsOneWidget);
     expect(find.text('Ajouter un premier produit'), findsOneWidget);
     expect(
@@ -382,7 +383,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(hide);
     await tester.pumpAndSettle();
-    expect(find.text('PREMIERS PAS'), findsNothing);
+    expect(find.text('Premiers pas'), findsNothing);
     verify(profile.hideFirstSteps).called(1);
   });
 
@@ -396,12 +397,12 @@ void main() {
       hasSale: false,
       profile: profile,
     );
-    expect(find.text('PREMIERS PAS'), findsNothing);
+    expect(find.text('Premiers pas'), findsNothing);
   });
 
   testWidgets('premiers pas masqués après la première vente', (tester) async {
     await pumpHome(tester, theme: AppTheme.light(), withData: true);
-    expect(find.text('PREMIERS PAS'), findsNothing);
+    expect(find.text('Premiers pas'), findsNothing);
   });
 
   testWidgets(
@@ -417,7 +418,7 @@ void main() {
         registerOpen: false,
         withClosedSession: false,
       );
-      expect(find.text('PREMIERS PAS'), findsNothing);
+      expect(find.text('Premiers pas'), findsNothing);
     },
   );
 }
