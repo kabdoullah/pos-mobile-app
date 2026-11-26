@@ -8,6 +8,7 @@ import '../../../../core/network/error_mapper.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../cash_register/domain/repositories/cash_register_repository.dart';
 import '../../../cash_register/presentation/pages/open_cash_session_page.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../sales/domain/entities/sale.dart';
 import '../../domain/entities/return_labels.dart';
 import '../../domain/entities/returnable_line.dart';
@@ -401,16 +402,31 @@ class _QuantityCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(line.productName, style: AppTypography.bodyStrong),
-              Text(
-                '${line.soldQuantity} × ${formatFcfa(line.unitPrice)}'
-                '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
-                style: meta,
-              ),
-              Text(
-                'Vendu ${line.soldQuantity} · déjà rendu '
-                '${line.returnedQuantity} · retournable $returnable',
-                style: meta,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ProductThumbnailById(productId: line.productId, size: 40),
+                  const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(line.productName, style: AppTypography.bodyStrong),
+                        Text(
+                          '${line.soldQuantity} × '
+                          '${formatFcfa(line.unitPrice)}'
+                          '${line.discountAmount > Decimal.zero ? ' · réduction −${formatAmount(line.discountAmount)}' : ''}',
+                          style: meta,
+                        ),
+                        Text(
+                          'Vendu ${line.soldQuantity} · déjà rendu '
+                          '${line.returnedQuantity} · retournable $returnable',
+                          style: meta,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.sm),
               if (returnable == 0)
