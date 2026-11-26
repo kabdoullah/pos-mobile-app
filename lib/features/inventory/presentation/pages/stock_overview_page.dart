@@ -230,7 +230,9 @@ class _StockList extends ConsumerWidget {
               child: AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
-                hintText: 'Rechercher un produit',
+                // Même indication que Vendre : la recherche porte aussi sur le
+                // code-barres.
+                hintText: 'Nom ou code-barres',
                 actions: [
                   TextButton.icon(
                     onPressed: onScan,

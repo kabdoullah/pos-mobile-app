@@ -112,7 +112,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   subtitle: Text(
                     footer == null || footer.isEmpty
                         ? 'Personnaliser le pied de page'
-                        : footer,
+                        // Seul, le texte du pied de page (souvent un
+                        // numéro) ne disait pas ce qu'il était.
+                        : 'Pied de page : $footer',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -66,3 +66,26 @@ sealed class Product with _$Product {
     return StockLevel.normal;
   }
 }
+
+/// Produit de [products] (non supprimé, autre que [excludeId]) portant le
+/// même nom que [name], sans tenir compte de la casse ni des espaces en trop ;
+/// `null` s'il n'y en a pas. Deux « Lotus » à des prix différents se
+/// confondent en caisse : le formulaire le signale avant d'enregistrer.
+Product? findProductWithSameName(
+  Iterable<Product> products,
+  String name, {
+  String? excludeId,
+}) {
+  String normalize(String value) =>
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  final target = normalize(name);
+  if (target.isEmpty) return null;
+  for (final product in products) {
+    if (product.id != excludeId &&
+        product.deletedAt == null &&
+        normalize(product.name) == target) {
+      return product;
+    }
+  }
+  return null;
+}

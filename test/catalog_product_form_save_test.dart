@@ -23,6 +23,17 @@ void main() {
     (tester) async {
       final catalog = _MockCatalog();
       when(catalog.watchCategories).thenAnswer((_) => Stream.value(const []));
+      // Un autre produit, d'un autre nom : pas de demande de confirmation.
+      when(catalog.watchProducts).thenAnswer(
+        (_) => Stream.value([
+          Product(
+            id: 'p0',
+            name: 'Fanta',
+            sellingPrice: Decimal.fromInt(500),
+            updatedAt: DateTime(2026),
+          ),
+        ]),
+      );
       when(
         () => catalog.createProduct(
           name: any(named: 'name'),
@@ -116,6 +127,10 @@ void main() {
       when(
         () => catalog.getProduct('p1'),
       ).thenAnswer((_) async => withStock(reads++ == 0 ? 10 : 7));
+      // Le produit modifié porte « son » nom : ce n'est pas un doublon.
+      when(
+        catalog.watchProducts,
+      ).thenAnswer((_) => Stream.value([withStock(10)]));
       when(
         () => catalog.updateProduct(
           id: any(named: 'id'),
@@ -172,4 +187,68 @@ void main() {
       expect(find.text('stock'), findsOneWidget);
     },
   );
+
+  testWidgets('nom déjà pris : confirmation, « Modifier le nom » n’enregistre '
+      'pas', (tester) async {
+    final catalog = _MockCatalog();
+    when(catalog.watchCategories).thenAnswer((_) => Stream.value(const []));
+    when(catalog.watchProducts).thenAnswer(
+      (_) => Stream.value([
+        Product(
+          id: 'p0',
+          name: 'Coca',
+          sellingPrice: Decimal.fromInt(500),
+          updatedAt: DateTime(2026),
+        ),
+      ]),
+    );
+    final router = GoRouter(
+      initialLocation: '/form',
+      routes: [
+        GoRoute(path: '/form', builder: (_, _) => const ProductFormPage()),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [catalogRepositoryProvider.overrideWithValue(catalog)],
+        child: MaterialApp.router(
+          theme: AppTheme.light(),
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(AppTextField, 'Nom du produit'),
+      ' coca',
+    );
+    await tester.enterText(
+      find.widgetWithText(AppTextField, 'Prix de vente'),
+      '600',
+    );
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    final save = find.text('Enregistrer le produit');
+    await tester.ensureVisible(save);
+    await tester.pumpAndSettle();
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+
+    expect(find.text('« Coca » existe déjà'), findsOneWidget);
+    await tester.tap(find.text('Modifier le nom'));
+    await tester.pumpAndSettle();
+    verifyNever(
+      () => catalog.createProduct(
+        name: any(named: 'name'),
+        sellingPrice: any(named: 'sellingPrice'),
+        purchasePrice: any(named: 'purchasePrice'),
+        barcode: any(named: 'barcode'),
+        currentStock: any(named: 'currentStock'),
+        minStock: any(named: 'minStock'),
+        categoryId: any(named: 'categoryId'),
+      ),
+    );
+    expect(find.text('Enregistrer le produit'), findsOneWidget);
+  });
 }
