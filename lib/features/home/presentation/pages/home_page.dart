@@ -26,8 +26,6 @@ import '../widgets/first_steps_section.dart';
 import '../widgets/low_stock_section.dart';
 import '../widgets/recent_sales_section.dart';
 import '../widgets/today_summary.dart';
-import '../../../subscription/domain/entities/subscription.dart';
-import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Accueil. Caisse fermée ou journée sans vente : l'état de la caisse et son
 /// action en tête, puis les chiffres. Caisse ouverte avec des ventes : le
@@ -57,20 +55,7 @@ class HomePage extends ConsumerWidget {
     void goTo(ShellBranch branch) =>
         StatefulNavigationShell.of(context).goBranch(branch.index);
 
-    // Caisse ouverte et premières ventes faites : le chiffre d'affaires
-    // passe en tête, la caisse devient un bloc compact sous les chiffres.
-    final salesLead =
-        ref.watch(activeCashSessionProvider).value != null &&
-        (ref.watch(dailySummaryProvider).value?.saleCount ?? 0) > 0;
-    final cashBox = Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        salesLead ? AppSpacing.lg : AppSpacing.sm,
-        AppSpacing.md,
-        0,
-      ),
-      child: _CashBox(compact: salesLead),
-    );
+    final guided = watchFirstStepsVisible(ref);
 
     return Scaffold(
       appBar: AppBar(
@@ -109,10 +94,19 @@ class HomePage extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.only(bottom: AppSpacing.lg),
               children: [
-                if (!salesLead) cashBox,
                 const FirstStepsSection(),
-                TodaySummary(leading: salesLead),
-                if (salesLead) cashBox,
+                // Le chiffre d'affaires mène toujours l'écran ; la caisse suit,
+                // en bandeau compact.
+                TodaySummary(leading: !guided),
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: _CashBox(),
+                ),
                 const AccountEmailBanner(),
                 LowStockSection(onSeeStock: () => goTo(ShellBranch.inventory)),
                 RecentSalesSection(
@@ -127,13 +121,11 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-/// Bloc caisse : ouverte (espèces dans le tiroir, entrée / sortie, clôture)
-/// ou fermée (consigne et dernière clôture). [compact] : montant sur la
-/// ligne du libellé, quand le chiffre d'affaires mène l'écran.
+/// Bandeau caisse sous le chiffre d'affaires : ouverte (statut et espèces
+/// sur une ligne, entrée / sortie et clôture en liens) ou fermée (dernier
+/// comptage, bouton d'ouverture).
 class _CashBox extends ConsumerWidget {
-  const _CashBox({this.compact = false});
-
-  final bool compact;
+  const _CashBox();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -147,12 +139,11 @@ class _CashBox extends ConsumerWidget {
 
     final Widget content;
     if (!session.hasValue && !session.hasError) {
-      content = const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      content = const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SkeletonBox(width: 120, height: 16),
-          SizedBox(height: AppSpacing.sm),
-          SkeletonBox(width: 200, height: 32),
+          SkeletonBox(width: 96, height: 20),
         ],
       );
     } else if (session.hasError) {
@@ -163,17 +154,21 @@ class _CashBox extends ConsumerWidget {
     } else if (open == null) {
       content = _ClosedContent(meta: meta);
     } else {
-      content = _OpenContent(session: open, meta: meta, compact: compact);
+      content = _OpenContent(session: open, meta: meta);
     }
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border.all(color: colors.border),
-        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
-      ),
+    // Tout le bandeau ouvre « Ma caisse » (solde détaillé, historique des
+    // sessions) ; les liens d'action gardent leur propre cible.
+    return AppCard(
+      onTap: () => context.push(Routes.cashRegister),
+      padding: 0,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm + AppSpacing.xs,
+          AppSpacing.xs,
+          AppSpacing.xs,
+        ),
         child: content,
       ),
     );
@@ -181,15 +176,10 @@ class _CashBox extends ConsumerWidget {
 }
 
 class _OpenContent extends ConsumerWidget {
-  const _OpenContent({
-    required this.session,
-    required this.meta,
-    required this.compact,
-  });
+  const _OpenContent({required this.session, required this.meta});
 
   final CashSession session;
   final TextStyle meta;
-  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -224,64 +214,63 @@ class _OpenContent extends ConsumerWidget {
       );
     }
 
+    final link = TextButton.styleFrom(
+      minimumSize: const Size(0, AppSpacing.buttonHeightSm),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    );
+    final detail = mobile > Decimal.zero
+        ? 'Mobile money hors tiroir : ${formatFcfa(mobile)}'
+        : noActivity
+        ? 'Fond de caisse, aucune vente'
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: StatusIndicator(
-                label: stale ? 'Caisse non clôturée' : 'Caisse ouverte',
-                tone: stale ? StatusTone.warning : StatusTone.success,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            // « depuis le 23 nov. 14:29 » : passe à la ligne sur petit écran.
-            Flexible(
-              child: Text(since, style: meta, textAlign: TextAlign.end),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        if (compact)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: Text('Espèces dans le tiroir', style: meta)),
-              amount(AppTypography.figureSmall),
-            ],
-          )
-        else ...[
-          Text('Espèces dans le tiroir', style: meta),
-          // 24 pt : le chiffre d'affaires (32 pt) reste le chiffre fort.
-          amount(AppTypography.figureLarge),
-        ],
-        if (mobile > Decimal.zero)
-          Text('Mobile money, hors tiroir · ${formatFcfa(mobile)}', style: meta)
-        else if (noActivity)
-          Text('Fond de caisse, aucune vente pour l’instant', style: meta),
-        const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-        // Action courante en bouton, l'autre en lien pour ne pas leur donner
-        // le même poids : entrée / sortie dans la journée, la clôture quand la
-        // caisse est restée ouverte depuis la veille.
-        Row(
-          children: [
-            Expanded(
-              child: SecondaryButton(
-                label: stale ? 'Clôturer la caisse' : 'Entrée / sortie',
-                onPressed: () => context.push(
-                  stale ? Routes.cashClose : Routes.cashRegister,
+              Expanded(
+                child: StatusIndicator(
+                  label: stale ? 'Caisse non clôturée' : 'Caisse ouverte',
+                  tone: stale ? StatusTone.warning : StatusTone.success,
                 ),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              Semantics(
+                label: 'Espèces dans le tiroir',
+                child: amount(AppTypography.figureSmall),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.sm),
+          child: Text(
+            detail == null
+                ? 'Espèces dans le tiroir, $since'
+                : 'Espèces dans le tiroir, $since. $detail',
+            style: meta,
+          ),
+        ),
+        // Liens et non boutons : le bandeau reste discret sous le chiffre
+        // d'affaires. La clôture passe devant quand la caisse date de la veille.
+        Wrap(
+          alignment: WrapAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () =>
+                  context.push(stale ? Routes.cashClose : Routes.cashRegister),
+              style: link,
+              child: Text(stale ? 'Clôturer la caisse' : 'Entrée / sortie'),
             ),
-            const SizedBox(width: AppSpacing.sm),
             TextButton(
               onPressed: () =>
                   context.push(stale ? Routes.cashRegister : Routes.cashClose),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(0, AppSpacing.buttonHeightSm),
-              ),
+              style: link,
               child: Text(stale ? 'Entrée / sortie' : 'Clôturer'),
             ),
           ],
@@ -304,72 +293,51 @@ class _ClosedContent extends ConsumerWidget {
     // Premiers pas affichés : ils portent l'action (produit, puis caisse) ;
     // le bloc ne montre que l'état, pour ne pas la doubler.
     final guided = watchFirstStepsVisible(ref);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const StatusIndicator(
-              label: 'Caisse fermée',
-              tone: StatusTone.neutral,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            if (last != null)
-              Expanded(
-                child: Text(
-                  'clôturée ${closureLabel(last.closedAt!)}',
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: meta,
+    // Marge droite et basse : le bandeau laisse sa place aux liens.
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm, bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const StatusIndicator(
+                label: 'Caisse fermée',
+                tone: StatusTone.neutral,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              if (last != null)
+                Expanded(
+                  child: Text(
+                    'clôturée ${closureLabel(last.closedAt!)}',
+                    textAlign: TextAlign.end,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: meta,
+                  ),
                 ),
-              ),
+            ],
+          ),
+          if (counted != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Expanded(child: Text('Dernier comptage', style: meta)),
+                Text(formatFcfa(counted), style: AppTypography.figureSmall),
+              ],
+            ),
           ],
-        ),
-        if (counted != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Text('Dernier comptage', style: meta),
-          Text(formatFcfa(counted), style: AppTypography.figureLarge),
-        ],
-        if (!guided) ...[
-          const SizedBox(height: AppSpacing.xs + 2),
-          Text(
-            'Ouvrez la caisse avec votre fond pour commencer à vendre.',
-            style: AppTypography.body.copyWith(
-              color: AppColors.of(context).textSecondary,
+          if (!guided) ...[
+            const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
+            PrimaryButton(
+              label: 'Ouvrir la caisse',
+              onPressed: () => showOpenCashSession(context),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm + AppSpacing.xs),
-          PrimaryButton(
-            label: 'Ouvrir la caisse',
-            onPressed: () => showOpenCashSession(context),
-          ),
+          ],
         ],
-        // Caisse fermée : seul accès à l'historique des sessions (détail,
-        // comptages, écarts). Lien secondaire, en gris.
-        if (last != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () async {
-                if (await requireFeature(
-                      context,
-                      ref,
-                      PlanFeature.cashMovements,
-                    ) &&
-                    context.mounted) {
-                  await context.push(Routes.cashHistory);
-                }
-              },
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(0, AppSpacing.buttonHeightSm),
-                foregroundColor: AppColors.of(context).textSecondary,
-              ),
-              child: const Text('Historique de la caisse'),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }

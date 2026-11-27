@@ -51,7 +51,7 @@ class CashRegisterPage extends ConsumerWidget {
                 await context.push(Routes.cashHistory);
               }
             },
-            child: const Text('Sessions'),
+            child: const Text('Historique'),
           ),
           const SizedBox(width: AppSpacing.xs),
         ],

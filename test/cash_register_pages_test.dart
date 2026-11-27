@@ -917,7 +917,7 @@ void main() {
     stubActive(openSession(), summary());
     await pumpHome(tester);
 
-    expect(find.text('Espèces dans le tiroir'), findsOneWidget);
+    expect(find.textContaining('Espèces dans le tiroir'), findsOneWidget);
     expect(find.text(formatFcfa(d('47500'))), findsOneWidget);
     await tester.tap(find.text('Entrée / sortie'));
     await tester.pumpAndSettle();
@@ -932,9 +932,7 @@ void main() {
 
     expect(find.text('Caisse non clôturée'), findsOneWidget);
     expect(find.textContaining('depuis hier'), findsOneWidget);
-    await tester.tap(
-      find.widgetWithText(SecondaryButton, 'Clôturer la caisse'),
-    );
+    await tester.tap(find.widgetWithText(TextButton, 'Clôturer la caisse'));
     await tester.pumpAndSettle();
     expect(find.text('page clôture'), findsOneWidget);
   });

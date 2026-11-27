@@ -276,11 +276,16 @@ void main() {
       expect(find.textContaining('hier :'), findsNothing);
 
       // La caisse, compacte, sous les chiffres du jour.
-      await tester.scrollUntilVisible(find.text('Espèces dans le tiroir'), 200);
+      await tester.scrollUntilVisible(
+        find.textContaining('Espèces dans le tiroir'),
+        200,
+      );
       expect(find.text('Caisse ouverte'), findsOneWidget);
       expect(find.text(formatFcfa(d('50175'))), findsOneWidget);
       expect(
-        find.text('Mobile money, hors tiroir · ${formatFcfa(d('1025'))}'),
+        find.textContaining(
+          'Mobile money hors tiroir : ${formatFcfa(d('1025'))}',
+        ),
         findsOneWidget,
       );
       expect(find.widgetWithText(TextButton, 'Clôturer'), findsOneWidget);
@@ -308,10 +313,6 @@ void main() {
       expect(find.textContaining('clôturée hier à'), findsOneWidget);
       expect(find.text('Dernier comptage'), findsOneWidget);
       expect(find.text(formatFcfa(d('47000'))), findsOneWidget);
-      expect(
-        find.text('Ouvrez la caisse avec votre fond pour commencer à vendre.'),
-        findsOne,
-      );
       expect(
         find.widgetWithText(PrimaryButton, 'Ouvrir la caisse'),
         findsOneWidget,
