@@ -14,6 +14,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/scanner_torch_button.dart';
 import '../providers/cart_provider.dart';
 import '../providers/scan_provider.dart';
@@ -230,6 +231,7 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
                           itemBuilder: (context, index) {
                             final item = items[index];
                             return _ScannedRow(
+                              productId: item.productId,
                               name: item.productName,
                               price: formatFcfa(item.unitPrice),
                               quantity: item.quantity,
@@ -276,14 +278,16 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
   }
 }
 
-/// Article scanné : nom, prix unitaire et quantité.
+/// Article scanné : vignette, nom, prix unitaire et quantité.
 class _ScannedRow extends StatelessWidget {
   const _ScannedRow({
+    required this.productId,
     required this.name,
     required this.price,
     required this.quantity,
   });
 
+  final String productId;
   final String name;
   final String price;
   final int quantity;
@@ -305,6 +309,8 @@ class _ScannedRow extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 40),
           child: Row(
             children: [
+              ProductThumbnailById(productId: productId),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
