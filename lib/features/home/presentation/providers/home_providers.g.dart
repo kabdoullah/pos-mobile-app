@@ -250,6 +250,193 @@ final class TodayHourlySalesProvider
 
 String _$todayHourlySalesHash() => r'f21d5e305c74dba9e5ba56e2f01ae8c602487e12';
 
+/// Diffuse les articles des ventes du jour, groupés par id de vente — résumé
+/// « Riz ×2, Pain » des dernières ventes de l'accueil.
+
+@ProviderFor(todaySaleItems)
+final todaySaleItemsProvider = TodaySaleItemsProvider._();
+
+/// Diffuse les articles des ventes du jour, groupés par id de vente — résumé
+/// « Riz ×2, Pain » des dernières ventes de l'accueil.
+
+final class TodaySaleItemsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<Map<String, List<SaleItemBrief>>>,
+          Map<String, List<SaleItemBrief>>,
+          Stream<Map<String, List<SaleItemBrief>>>
+        >
+    with
+        $FutureModifier<Map<String, List<SaleItemBrief>>>,
+        $StreamProvider<Map<String, List<SaleItemBrief>>> {
+  /// Diffuse les articles des ventes du jour, groupés par id de vente — résumé
+  /// « Riz ×2, Pain » des dernières ventes de l'accueil.
+  TodaySaleItemsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'todaySaleItemsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$todaySaleItemsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<Map<String, List<SaleItemBrief>>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<Map<String, List<SaleItemBrief>>> create(Ref ref) {
+    return todaySaleItems(ref);
+  }
+}
+
+String _$todaySaleItemsHash() => r'b295d97a4187cd6c7d3ae9bb267a15457aaa7e25';
+
+/// Diffuse le montant brut des ventes d'hier jusqu'à l'heure qu'il est —
+/// comparer une demi-journée à une journée entière tromperait (« − 70 % » à
+/// 10 h). Se recalcule toutes les 5 minutes et au changement de jour.
+
+@ProviderFor(yesterdayAtSameTime)
+final yesterdayAtSameTimeProvider = YesterdayAtSameTimeProvider._();
+
+/// Diffuse le montant brut des ventes d'hier jusqu'à l'heure qu'il est —
+/// comparer une demi-journée à une journée entière tromperait (« − 70 % » à
+/// 10 h). Se recalcule toutes les 5 minutes et au changement de jour.
+
+final class YesterdayAtSameTimeProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<SameTimeTotal>,
+          SameTimeTotal,
+          Stream<SameTimeTotal>
+        >
+    with $FutureModifier<SameTimeTotal>, $StreamProvider<SameTimeTotal> {
+  /// Diffuse le montant brut des ventes d'hier jusqu'à l'heure qu'il est —
+  /// comparer une demi-journée à une journée entière tromperait (« − 70 % » à
+  /// 10 h). Se recalcule toutes les 5 minutes et au changement de jour.
+  YesterdayAtSameTimeProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'yesterdayAtSameTimeProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$yesterdayAtSameTimeHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<SameTimeTotal> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<SameTimeTotal> create(Ref ref) {
+    return yesterdayAtSameTime(ref);
+  }
+}
+
+String _$yesterdayAtSameTimeHash() =>
+    r'9c3d4d8bac11c45bb6c143df6c99e089aa03f1b3';
+
+/// Diffuse le récapitulatif d'hier (journée entière) — bloc « Hier » de
+/// l'accueil tant que la caisse est fermée et qu'aucune vente n'est faite.
+
+@ProviderFor(yesterdayRecap)
+final yesterdayRecapProvider = YesterdayRecapProvider._();
+
+/// Diffuse le récapitulatif d'hier (journée entière) — bloc « Hier » de
+/// l'accueil tant que la caisse est fermée et qu'aucune vente n'est faite.
+
+final class YesterdayRecapProvider
+    extends
+        $FunctionalProvider<AsyncValue<DayRecap>, DayRecap, Stream<DayRecap>>
+    with $FutureModifier<DayRecap>, $StreamProvider<DayRecap> {
+  /// Diffuse le récapitulatif d'hier (journée entière) — bloc « Hier » de
+  /// l'accueil tant que la caisse est fermée et qu'aucune vente n'est faite.
+  YesterdayRecapProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'yesterdayRecapProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$yesterdayRecapHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<DayRecap> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<DayRecap> create(Ref ref) {
+    return yesterdayRecap(ref);
+  }
+}
+
+String _$yesterdayRecapHash() => r'533cd10883a3b9419203475aaff892356a976400';
+
+/// Diffuse chiffre d'affaires et marge d'hier (bloc « Hier » de l'accueil).
+
+@ProviderFor(yesterdayMarginSummary)
+final yesterdayMarginSummaryProvider = YesterdayMarginSummaryProvider._();
+
+/// Diffuse chiffre d'affaires et marge d'hier (bloc « Hier » de l'accueil).
+
+final class YesterdayMarginSummaryProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<MarginSummary>,
+          MarginSummary,
+          Stream<MarginSummary>
+        >
+    with $FutureModifier<MarginSummary>, $StreamProvider<MarginSummary> {
+  /// Diffuse chiffre d'affaires et marge d'hier (bloc « Hier » de l'accueil).
+  YesterdayMarginSummaryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'yesterdayMarginSummaryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$yesterdayMarginSummaryHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<MarginSummary> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<MarginSummary> create(Ref ref) {
+    return yesterdayMarginSummary(ref);
+  }
+}
+
+String _$yesterdayMarginSummaryHash() =>
+    r'f74ef6ff3a7995a48f8a2d9538c331a4da87fbc1';
+
 /// Diffuse s'il existe au moins une vente sur l'appareil — dernière étape
 /// des « Premiers pas » de l'accueil.
 

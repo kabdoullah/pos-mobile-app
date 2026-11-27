@@ -8,6 +8,7 @@ import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/providers/catalog_di_providers.dart';
 import '../../../sales/domain/entities/margin_summary.dart';
 import '../../../sales/domain/entities/sale.dart';
+import '../../../sales/domain/entities/sale_item_brief.dart';
 import '../../../sales/domain/repositories/sales_repository.dart';
 import '../../../auth/providers/auth_di_providers.dart';
 import '../../../sales/providers/sales_di_providers.dart';
@@ -71,6 +72,97 @@ Stream<List<Decimal>> todayHourlySales(Ref ref) {
       .map(salesByHour);
 }
 
+/// Diffuse les articles des ventes du jour, groupés par id de vente — résumé
+/// « Riz ×2, Pain » des dernières ventes de l'accueil.
+@riverpod
+Stream<Map<String, List<SaleItemBrief>>> todaySaleItems(Ref ref) {
+  final today = ref.watch(todayProvider);
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSaleItemsByDateRange(today, today);
+}
+
+/// Ventes brutes d'hier jusqu'à l'heure de [at] (comparaison « à la même
+/// heure ») : montant et nombre de ventes.
+typedef SameTimeTotal = ({Decimal amount, int count, DateTime at});
+
+/// Intervalle de rafraîchissement de la comparaison avec hier : sans nouvelle
+/// vente, l'heure de référence avance quand même.
+const _sameTimeRefresh = Duration(minutes: 5);
+
+/// Diffuse le montant brut des ventes d'hier jusqu'à l'heure qu'il est —
+/// comparer une demi-journée à une journée entière tromperait (« − 70 % » à
+/// 10 h). Se recalcule toutes les 5 minutes et au changement de jour.
+@riverpod
+Stream<SameTimeTotal> yesterdayAtSameTime(Ref ref) {
+  final today = ref.watch(todayProvider);
+  final timer = Timer(_sameTimeRefresh, ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  final now = clock.now();
+  final yesterday = DateTime(today.year, today.month, today.day - 1);
+  final cutoff = now.difference(today);
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSalesByDateRange(yesterday, yesterday)
+      .map((sales) {
+        final before = salesUpTo(sales, cutoff);
+        return (amount: grossTotal(before), count: before.length, at: now);
+      });
+}
+
+/// Récapitulatif d'une journée passée : nombre de ventes et montant brut.
+typedef DayRecap = ({int count, Decimal gross});
+
+/// Diffuse le récapitulatif d'hier (journée entière) — bloc « Hier » de
+/// l'accueil tant que la caisse est fermée et qu'aucune vente n'est faite.
+@riverpod
+Stream<DayRecap> yesterdayRecap(Ref ref) {
+  final yesterday = _yesterday(ref.watch(todayProvider));
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchSalesByDateRange(yesterday, yesterday)
+      .map((sales) => (count: sales.length, gross: grossTotal(sales)));
+}
+
+/// Diffuse chiffre d'affaires et marge d'hier (bloc « Hier » de l'accueil).
+@riverpod
+Stream<MarginSummary> yesterdayMarginSummary(Ref ref) {
+  final yesterday = _yesterday(ref.watch(todayProvider));
+  return ref
+      .watch(salesRepositoryProvider)
+      .watchMarginSummary(yesterday, yesterday);
+}
+
+DateTime _yesterday(DateTime today) =>
+    DateTime(today.year, today.month, today.day - 1);
+
+/// Les [sales] passées avant [timeOfDay] (heure locale depuis minuit, bornes
+/// incluses).
+List<Sale> salesUpTo(Iterable<Sale> sales, Duration timeOfDay) => [
+  for (final sale in sales)
+    if (_timeOfDay(sale.createdAt.toLocal()) <= timeOfDay) sale,
+];
+
+Duration _timeOfDay(DateTime at) =>
+    Duration(hours: at.hour, minutes: at.minute, seconds: at.second);
+
+/// Somme brute des [sales] (les retours n'y figurent pas).
+Decimal grossTotal(Iterable<Sale> sales) =>
+    sales.fold(Decimal.zero, (sum, sale) => sum + sale.totalAmount);
+
+/// Montant moyen d'une vente, arrondi au franc ; `null` sans vente.
+Decimal? averageOf(Decimal gross, int count) => count == 0
+    ? null
+    : Decimal.fromBigInt((gross / Decimal.fromInt(count)).round());
+
+/// Écart de [current] par rapport à [reference], en pourcentage arrondi à
+/// l'entier ; `null` si [reference] est nul (pas de base de comparaison).
+int? percentChange(Decimal current, Decimal reference) {
+  if (reference == Decimal.zero) return null;
+  final ratio = (current - reference) * Decimal.fromInt(100) / reference;
+  return ratio.round().toInt();
+}
+
 /// Totaux des [sales] par heure locale de création : liste de 24 montants
 /// (montant brut des ventes ; les retours n'y figurent pas).
 List<Decimal> salesByHour(Iterable<Sale> sales) {
@@ -97,11 +189,8 @@ Stream<List<Product>> homeLowStock(Ref ref) {
 
 /// Panier moyen du jour, arrondi au franc ; `null` sans vente. Calculé sur
 /// les ventes brutes : un retour ne change pas le montant des paniers vendus.
-Decimal? averageBasket(DailyStats stats) {
-  if (stats.saleCount == 0) return null;
-  final sold = stats.totalAmount + stats.refundTotal;
-  return Decimal.fromBigInt((sold / Decimal.fromInt(stats.saleCount)).round());
-}
+Decimal? averageBasket(DailyStats stats) =>
+    averageOf(stats.totalAmount + stats.refundTotal, stats.saleCount);
 
 /// Part des espèces dans l'encaissé du jour, en pourcentage entier (0–100) ;
 /// `null` si rien n'a été encaissé.

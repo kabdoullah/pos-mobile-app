@@ -124,7 +124,8 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    final color = selected ? colors.textPrimary : colors.textSecondary;
+    // Onglet actif en cacao (v3) : sur la surface, le cacao 600 passe l'AA.
+    final color = selected ? colors.action : colors.textSecondary;
     return Semantics(
       button: true,
       selected: selected,

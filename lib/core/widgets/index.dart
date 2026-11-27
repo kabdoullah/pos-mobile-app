@@ -7,6 +7,7 @@ export 'app_search_bar.dart';
 export 'app_thumbnail.dart';
 export 'app_text_field.dart';
 export 'confirm_dialog.dart';
+export 'connection_required.dart';
 export 'definition_row.dart';
 export 'empty_state.dart';
 export 'fill_or_scroll.dart';

@@ -96,6 +96,14 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     if (_isLoading) return;
     setState(() => _submitted = true);
     if (!_passwordValid || !_passwordsMatch) return;
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'Le changement de mot de passe',
+        ) ||
+        !mounted) {
+      return;
+    }
     FocusScope.of(context).unfocus();
 
     setState(() => _isLoading = true);

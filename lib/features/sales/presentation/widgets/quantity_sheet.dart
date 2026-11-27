@@ -23,6 +23,12 @@ final class QuantityChosen extends QuantitySheetResult {
   final int quantity;
 }
 
+/// Ligne retirée du panier (bouton proposé seulement avec `removeLabel`).
+final class QuantityRemoved extends QuantitySheetResult {
+  /// Crée le résultat « retirer ».
+  const QuantityRemoved();
+}
+
 /// Quantités proposées en un appui (celles au-delà du stock sont masquées).
 const _quantityPresets = [1, 5, 10, 25];
 
@@ -31,6 +37,7 @@ const _quantityPresets = [1, 5, 10, 25];
 ///
 /// [maxQuantity] `null` = pas de limite de stock. [discount] est la réduction
 /// actuelle de la ligne, prise en compte dans le total affiché.
+/// [removeLabel] ajoute un bouton qui retire la ligne ([QuantityRemoved]).
 Future<QuantitySheetResult?> showQuantitySheet(
   BuildContext context, {
   required String productName,
@@ -40,6 +47,7 @@ Future<QuantitySheetResult?> showQuantitySheet(
   int? maxQuantity,
   int? stock,
   Discount? discount,
+  String? removeLabel,
 }) {
   return showModalBottomSheet<QuantitySheetResult>(
     context: context,
@@ -52,6 +60,7 @@ Future<QuantitySheetResult?> showQuantitySheet(
       maxQuantity: maxQuantity,
       stock: stock,
       discount: discount,
+      removeLabel: removeLabel,
     ),
   );
 }
@@ -65,8 +74,10 @@ class _QuantitySheet extends StatefulWidget {
     required this.maxQuantity,
     required this.stock,
     required this.discount,
+    required this.removeLabel,
   });
 
+  final String? removeLabel;
   final String productName;
   final Decimal unitPrice;
   final String confirmLabel;
@@ -256,6 +267,14 @@ class _QuantitySheetState extends State<_QuantitySheet> {
                 label: widget.confirmLabel,
                 onPressed: error == null ? _confirm : null,
               ),
+              if (widget.removeLabel case final removeLabel?) ...[
+                const SizedBox(height: AppSpacing.sm),
+                SecondaryButton(
+                  label: removeLabel,
+                  onPressed: () =>
+                      Navigator.of(context).pop(const QuantityRemoved()),
+                ),
+              ],
             ],
           ),
         ),

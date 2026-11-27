@@ -7,6 +7,8 @@ analyzer:
     - "**/*.config.dart"
     - "build/**"
     - ".dart_tool/**"
+    - android/**
+    - ios/**
 
   language:
     strict-casts: true

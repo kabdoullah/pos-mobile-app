@@ -36,6 +36,16 @@ FirstSteps? watchFirstSteps(WidgetRef ref) {
   );
 }
 
+/// Vrai quand la section « Premiers pas » est affichée : ni masquée, ni
+/// terminée. Faux tant que les données ne sont pas lues.
+bool watchFirstStepsVisible(WidgetRef ref) {
+  final steps = watchFirstSteps(ref);
+  final hidden = ref.watch(firstStepsHiddenProvider).value ?? true;
+  return !hidden &&
+      steps != null &&
+      !(steps.product && steps.register && steps.sale);
+}
+
 /// « Premiers pas » de l'accueil : produit, caisse, première vente. Chaque
 /// étape à faire mène à son action ; la section disparaît après la première
 /// vente (toutes les étapes faites).
@@ -45,12 +55,9 @@ class FirstStepsSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final steps = watchFirstSteps(ref);
     // Masquée par l'utilisateur, ou pas encore lue (pas d'apparition fugace).
-    final hidden = ref.watch(firstStepsHiddenProvider).value ?? true;
-    if (hidden ||
-        steps == null ||
-        (steps.product && steps.register && steps.sale)) {
+    final steps = watchFirstSteps(ref);
+    if (steps == null || !watchFirstStepsVisible(ref)) {
       return const SizedBox.shrink();
     }
     final colors = AppColors.of(context);
@@ -113,6 +120,21 @@ class FirstStepsSection extends ConsumerWidget {
               ),
           ],
         ),
+        // Seul bouton plein de l'accueil pendant les premiers pas : l'étape
+        // en cours (produit, puis caisse). La vente passe par l'onglet.
+        if (current == 0 || current == 1)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            child: PrimaryButton(
+              label: current == 0 ? 'Ajouter un produit' : 'Ouvrir la caisse',
+              onPressed: rows[current].action,
+            ),
+          ),
         // Masquable dès qu'une étape est faite ; le tutoriel reste dans les
         // Paramètres.
         if (doneCount > 0)

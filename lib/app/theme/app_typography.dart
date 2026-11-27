@@ -19,11 +19,11 @@ import 'package:flutter/material.dart';
 /// | [figureSmall]    | 18/600 tab.    | chiffre dans une tuile ou une ligne   |
 /// | [heading]        | 18/600         | titre d'un état vide ou d'un bloc     |
 /// | [label]          | 16/600         | libellé de bouton                     |
+/// | [groupTitle]     | 16/600         | titre de groupe dans une liste        |
 /// | [bodyStrong]     | 16/500         | texte appuyé, onglets, segments       |
 /// | [body]           | 16/400         | texte courant — **taille minimale**   |
 /// | [meta]           | 14/500         | métadonnées, messages sous un champ   |
 /// | [metaRegular]    | 14/400         | métadonnées secondaires               |
-/// | [overline]       | 13/600         | sur-titre en majuscules               |
 /// | [caption]        | 13/400         | légende sous un indicateur            |
 /// | [navLabel]       | 12/500         | barre de navigation uniquement        |
 ///
@@ -167,13 +167,15 @@ class AppTypography {
     letterSpacing: 0,
   );
 
-  /// Sur-titre de groupe (« AUJOURD'HUI »). 13/600, à écrire en majuscules.
-  static const TextStyle overline = TextStyle(
+  /// Titre de groupe dans une liste (« Aujourd'hui », « Paiement »). 16/600,
+  /// en casse normale : les petites majuscules espacées se lisaient mal en
+  /// plein soleil et pour les yeux fatigués.
+  static const TextStyle groupTitle = TextStyle(
     fontFamily: fontFamily,
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: FontWeight.w600,
     height: 1.4,
-    letterSpacing: 0.8,
+    letterSpacing: 0,
   );
 
   /// Légende sous un indicateur (force du PIN, étape). 13/400.

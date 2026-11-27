@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,7 @@ import '../../domain/entities/sale.dart';
 import '../../domain/entities/sale_item_brief.dart';
 import '../providers/sales_providers.dart';
 import 'date_range_filter_sheet.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
 
 /// Période de l'historique, choisie par onglet.
 enum _Period { today, yesterday, week, month, custom }
@@ -86,8 +88,13 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    // Formule gratuite : 30 derniers jours seulement (ADR-0017). Les ventes
+    // plus anciennes restent sur l'appareil, elles ne sont pas affichées.
+    final floor = ref.watch(entitlementsProvider).historyStart(clock.now());
+    final limited = floor != null && _range.start.isBefore(floor);
+    final start = limited ? floor : _range.start;
     final provider = salesHistoryProvider(
-      startDate: _range.start,
+      startDate: start,
       endDate: _range.end,
     );
     final salesAsync = ref.watch(provider);
@@ -96,10 +103,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     final items =
         ref
             .watch(
-              salesHistoryItemsProvider(
-                startDate: _range.start,
-                endDate: _range.end,
-              ),
+              salesHistoryItemsProvider(startDate: start, endDate: _range.end),
             )
             .value ??
         const <String, List<SaleItemBrief>>{};
@@ -148,6 +152,31 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
             selected: _period,
             onSelected: _select,
           ),
+          if (limited)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Historique limité aux 30 derniers jours.',
+                      style: AppTypography.meta.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(Routes.subscription),
+                    child: const Text('Tout voir'),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
             child: salesAsync.when(
               loading: () => ListView(
@@ -170,10 +199,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
               ),
               data: (sales) {
                 if (sales.isEmpty) {
-                  return _EmptyPeriod(
-                    period: _period,
-                    onPickDates: () => _select(_Period.custom),
-                  );
+                  return _EmptyPeriod(period: _period, onSelect: _select);
                 }
                 final visible = searchSales(sales, _query, items: items);
                 final totals = salesTotals(visible);
@@ -382,12 +408,13 @@ class _SaleTile extends StatelessWidget {
   }
 }
 
-/// Période sans vente : proposer une autre période.
+/// Période sans vente : proposer la période plus large suivante (le
+/// calendrier seulement en dernier recours, il double l'onglet « Dates »).
 class _EmptyPeriod extends StatelessWidget {
-  const _EmptyPeriod({required this.period, required this.onPickDates});
+  const _EmptyPeriod({required this.period, required this.onSelect});
 
   final _Period period;
-  final VoidCallback onPickDates;
+  final ValueChanged<_Period> onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -398,6 +425,11 @@ class _EmptyPeriod extends StatelessWidget {
       _Period.week => 'Aucune vente ces 7 derniers jours',
       _Period.month => 'Aucune vente ce mois-ci',
       _Period.custom => 'Aucune vente sur cette période',
+    };
+    final next = switch (period) {
+      _Period.today || _Period.yesterday => _Period.week,
+      _Period.week => _Period.month,
+      _Period.month || _Period.custom => _Period.custom,
     };
     final message = period == _Period.today
         ? 'Vos ventes du jour apparaîtront ici.'
@@ -422,8 +454,12 @@ class _EmptyPeriod extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Center(
             child: SecondaryButton(
-              label: 'Choisir des dates',
-              onPressed: onPickDates,
+              label: switch (next) {
+                _Period.week => 'Voir les 7 derniers jours',
+                _Period.month => 'Voir ce mois-ci',
+                _ => 'Choisir des dates',
+              },
+              onPressed: () => onSelect(next),
             ),
           ),
         ],

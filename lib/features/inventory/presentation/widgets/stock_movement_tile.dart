@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../domain/entities/stock_movement.dart';
 
 /// Ligne d'un mouvement de stock (liste à plat) : motif ou produit, date,
@@ -63,6 +64,12 @@ class StockMovementTile extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Vue « tous les produits » : la vignette dit de quel produit il
+            // s'agit ; inutile dans l'historique d'un seul produit.
+            if (productName != null) ...[
+              ProductThumbnailById(productId: movement.productId, size: 40),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+            ],
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

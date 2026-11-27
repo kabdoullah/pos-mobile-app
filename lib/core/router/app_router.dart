@@ -36,6 +36,9 @@ import '../../features/sales/presentation/pages/sale_detail_page.dart';
 import '../../features/sales/domain/entities/sale.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/settings/presentation/pages/sync_status_page.dart';
+import '../../features/subscription/domain/entities/subscription.dart';
+import '../../features/subscription/presentation/pages/subscription_page.dart';
+import '../../features/subscription/presentation/pages/subscription_payment_page.dart';
 import '../../features/printing/presentation/pages/bluetooth_setup_page.dart';
 import 'main_shell.dart';
 
@@ -141,6 +144,12 @@ abstract class Routes {
 
   /// État de la synchronisation : ce qui attend, l'éventuel échec.
   static const String syncStatus = '/settings/sync';
+
+  /// « Mon abonnement » : formule, statut, formules disponibles (ADR-0017).
+  static const String subscription = '/settings/subscription';
+
+  /// Paiement Wave d'une formule (extra : `PlanId`).
+  static const String subscriptionPayment = '/settings/subscription/pay';
 
   /// Caisse : session ouverte (solde, mouvements) ou invitation à ouvrir.
   static const String cashRegister = '/cash';
@@ -375,6 +384,16 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: Routes.syncStatus,
         builder: (context, state) => const SyncStatusPage(),
+      ),
+      GoRoute(
+        path: Routes.subscription,
+        builder: (context, state) => const SubscriptionPage(),
+      ),
+      GoRoute(
+        path: Routes.subscriptionPayment,
+        builder: (context, state) => SubscriptionPaymentPage(
+          plan: state.extra is PlanId ? state.extra! as PlanId : PlanId.starter,
+        ),
       ),
       GoRoute(
         path: Routes.categories,

@@ -14,6 +14,7 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/barcode_utils.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
+import '../../domain/entities/product.dart';
 import '../../providers/catalog_di_providers.dart';
 import '../providers/catalog_providers.dart';
 import '../providers/category_providers.dart';
@@ -251,6 +252,7 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
 
   Future<void> _submit() async {
     if (!_validate()) return;
+    if (!await _confirmDuplicateName()) return;
 
     setState(() => _isLoading = true);
 
@@ -322,6 +324,31 @@ class _ProductFormPageState extends ConsumerState<ProductFormPage> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// Un autre produit porte déjà ce nom : demande confirmation (deux
+  /// variantes peuvent être voulues, mais se confondent en caisse).
+  Future<bool> _confirmDuplicateName() async {
+    final products = await ref
+        .read(catalogRepositoryProvider)
+        .watchProducts()
+        .first;
+    final same = findProductWithSameName(
+      products,
+      _nameController.text,
+      excludeId: widget.productId,
+    );
+    if (same == null || !mounted) return true;
+    return showConfirmDialog(
+      context,
+      title: '« ${same.name} » existe déjà',
+      message:
+          'Un produit du même nom est vendu ${formatFcfa(same.sellingPrice)}. '
+          'En caisse, les deux se confondront. Ajoutez un détail au nom '
+          '(taille, marque) pour les distinguer.',
+      confirmLabel: 'Enregistrer quand même',
+      cancelLabel: 'Modifier le nom',
+    );
   }
 
   Future<void> _delete() async {

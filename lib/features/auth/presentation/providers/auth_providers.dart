@@ -12,6 +12,8 @@ import '../../../auth/providers/auth_di_providers.dart';
 import '../../../sales/presentation/providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/seller_profile_provider.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
+import '../../../subscription/providers/subscription_di_providers.dart';
 
 part 'auth_providers.g.dart';
 
@@ -562,6 +564,9 @@ class Auth extends _$Auth {
     // Le nom du vendeur appartient au compte : même traitement.
     await ref.read(profileRepositoryProvider).clearLocal();
     ref.invalidate(sellerProfileProvider);
+    // L'abonnement (et ses droits) appartient à la boutique (ADR-0017).
+    await ref.read(subscriptionRepositoryProvider).clearLocal();
+    ref.invalidate(currentSubscriptionProvider);
   }
 
   /// Efface tout état d'erreur en revenant à Unauthenticated.

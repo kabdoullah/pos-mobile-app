@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Aucune sauvegarde ni transfert d'appareil (Android 12+) : la base locale
+  (ventes, prix d'achat) ne quitte pas le téléphone, et le stockage sécurisé
+  (jetons, PIN), illisible une fois restauré ailleurs, n'est jamais copié.
+  Les données se retrouvent par la synchronisation après connexion.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

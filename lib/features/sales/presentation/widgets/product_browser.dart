@@ -7,6 +7,8 @@ import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../inventory/presentation/providers/inventory_providers.dart';
+import '../providers/sale_catalog_layout_provider.dart';
+import 'sale_product_grid.dart';
 import 'sale_product_row.dart';
 
 // Largeur minimale d'une cellule en grille : une colonne (liste) sur
@@ -18,7 +20,8 @@ const int _maxColumns = 3;
 const double _cellHeight = 88;
 
 /// Catalogue de l'écran Vendre, sous forme de sliver : une liste à plat de
-/// lignes produit (grille sur tablette).
+/// lignes produit (grille de lignes sur tablette), ou des tuiles avec photo
+/// quand [layout] vaut [SaleCatalogLayout.grid].
 ///
 /// Ne connaît ni le panier ni les règles de stock : les contrôles d'ajout
 /// (stock restant, message « Stock insuffisant ») restent dans la page.
@@ -34,8 +37,12 @@ class ProductBrowser extends StatelessWidget {
     required this.onAddProduct,
     this.categoryId,
     this.cartQuantities = const {},
+    this.layout = SaleCatalogLayout.list,
     super.key,
   });
+
+  /// Affichage choisi : lignes ou tuiles.
+  final SaleCatalogLayout layout;
 
   /// Produits du catalogue local (flux drift).
   final AsyncValue<List<Product>> products;
@@ -88,6 +95,14 @@ class ProductBrowser extends StatelessWidget {
       );
       if (list.isEmpty) {
         return const _Message('Aucun produit dans cette catégorie.');
+      }
+      if (layout == SaleCatalogLayout.grid) {
+        return SaleProductGrid(
+          products: list,
+          cartQuantities: cartQuantities,
+          onAdd: onAdd,
+          onEditQuantity: onEditQuantity,
+        );
       }
       return _ProductList(
         itemCount: list.length,

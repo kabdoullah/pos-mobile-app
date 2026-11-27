@@ -38,6 +38,8 @@ import 'package:mobile/features/sales/domain/entities/sale.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mobile/core/storage/cash_count_mode_storage.dart';
 
+import 'subscription_fixtures.dart';
+
 /// Mode de comptage en mémoire (le stockage sécurisé n'existe pas en test).
 class _MemoryCountMode extends Fake implements CashCountModeStorage {
   _MemoryCountMode({required this.byDenomination});
@@ -156,6 +158,7 @@ void main() {
 
   List<Override> overrides({bool online = true, bool byDenomination = false}) =>
       [
+        allFeaturesOverride,
         cashRegisterRepositoryProvider.overrideWithValue(repo),
         cashCountModeStorageProvider.overrideWithValue(
           _MemoryCountMode(byDenomination: byDenomination),
@@ -498,8 +501,8 @@ void main() {
     // Étape 1 : coupures listées, solde attendu caché.
     expect(find.text('Étape 1 sur 2'), findsOneWidget);
     expect(find.text('Solde théorique'), findsNothing);
-    expect(find.text('BILLETS'), findsOneWidget);
-    expect(find.text('PIÈCES'), findsOneWidget);
+    expect(find.text('Billets'), findsOneWidget);
+    expect(find.text('Pièces'), findsOneWidget);
 
     // Un billet de 10 000 (première ligne) au bouton +.
     await tester.tap(find.byTooltip('Augmenter').first);
@@ -606,7 +609,7 @@ void main() {
       expect(find.text('× 1'), findsOneWidget);
 
       // Clôture dépliée : grille coupure · quantité · sous-total.
-      expect(find.textContaining('COMPTAGE DE CLÔTURE'), findsOneWidget);
+      expect(find.textContaining('Comptage de clôture'), findsOneWidget);
       expect(find.text('× 4'), findsOneWidget);
       expect(find.text('Pièce ${formatAmount(d('500'))}'), findsOneWidget);
       expect(find.text('× 18'), findsOneWidget);
@@ -833,7 +836,9 @@ void main() {
     expect(find.text('Voir les sessions plus anciennes'), findsNothing);
   });
 
-  Future<void> pumpHome(WidgetTester tester) async {
+  /// [today] : jour d'ouverture de `openSession()` par défaut (caisse du
+  /// jour) ; un jour plus tard, la caisse est restée ouverte depuis la veille.
+  Future<void> pumpHome(WidgetTester tester, {DateTime? today}) async {
     tester.view.physicalSize = const Size(400, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -845,6 +850,10 @@ void main() {
           path: Routes.cashRegister,
           builder: (_, _) => const Text('page caisse'),
         ),
+        GoRoute(
+          path: Routes.cashClose,
+          builder: (_, _) => const Text('page clôture'),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -852,6 +861,7 @@ void main() {
       ProviderScope(
         overrides: [
           ...overrides(),
+          todayProvider.overrideWithValue(today ?? DateTime(2026, 11, 10)),
           dailySummaryProvider.overrideWith(
             (ref) => Stream.value((
               saleCount: 0,
@@ -865,6 +875,17 @@ void main() {
           todayHourlySalesProvider.overrideWith(
             (ref) => Stream.value(salesByHour(const <Sale>[])),
           ),
+          yesterdayAtSameTimeProvider.overrideWith(
+            (ref) => Stream.value((
+              amount: Decimal.zero,
+              count: 0,
+              at: DateTime(2026),
+            )),
+          ),
+          yesterdayRecapProvider.overrideWith(
+            (ref) => Stream.value((count: 0, gross: Decimal.zero)),
+          ),
+          todaySaleItemsProvider.overrideWith((ref) => Stream.value(const {})),
           recentSalesProvider.overrideWith((ref) => Stream.value(const [])),
         ],
         retry: (_, _) => null,
@@ -896,11 +917,24 @@ void main() {
     stubActive(openSession(), summary());
     await pumpHome(tester);
 
-    expect(find.text('Espèces dans le tiroir'), findsOneWidget);
+    expect(find.textContaining('Espèces dans le tiroir'), findsOneWidget);
     expect(find.text(formatFcfa(d('47500'))), findsOneWidget);
     await tester.tap(find.text('Entrée / sortie'));
     await tester.pumpAndSettle();
     expect(find.text('page caisse'), findsOneWidget);
+  });
+
+  testWidgets('home cash box left open since yesterday puts closing first', (
+    tester,
+  ) async {
+    stubActive(openSession(), summary());
+    await pumpHome(tester, today: DateTime(2026, 11, 11));
+
+    expect(find.text('Caisse non clôturée'), findsOneWidget);
+    expect(find.textContaining('depuis hier'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Clôturer la caisse'));
+    await tester.pumpAndSettle();
+    expect(find.text('page clôture'), findsOneWidget);
   });
 
   group('dark mode renders without hard-coded colors', () {

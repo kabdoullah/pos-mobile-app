@@ -28,6 +28,14 @@ Future<void> resendEmailVerification(
   WidgetRef ref,
   String email,
 ) async {
+  if (!await ensureOnline(
+    context,
+    ref,
+    action: 'L’envoi du lien de confirmation',
+  )) {
+    return;
+  }
+  if (!context.mounted) return;
   final messenger = ScaffoldMessenger.of(context);
   String message;
   try {
@@ -101,6 +109,14 @@ class _AccountEmailSheetState extends ConsumerState<AccountEmailSheet> {
       _error = null;
     });
     if (_emailError != null || _passwordError != null) return;
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'Le changement d’adresse email',
+        ) ||
+        !mounted) {
+      return;
+    }
     setState(() => _saving = true);
     final messenger = ScaffoldMessenger.of(context);
     final email = _email;

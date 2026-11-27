@@ -13,6 +13,7 @@ Future<QuantitySheetResult? Function()> openSheet(
   WidgetTester tester, {
   int? maxQuantity,
   int initialQuantity = 1,
+  String? removeLabel,
 }) async {
   QuantitySheetResult? result;
   await tester.pumpWidget(
@@ -29,6 +30,7 @@ Future<QuantitySheetResult? Function()> openSheet(
               initialQuantity: initialQuantity,
               maxQuantity: maxQuantity,
               stock: maxQuantity,
+              removeLabel: removeLabel,
             ),
             child: const Text('ouvrir'),
           ),
@@ -47,6 +49,24 @@ String fieldText(WidgetTester tester) =>
 
 void main() {
   setUpAll(() => initializeDateFormatting('fr_FR'));
+
+  testWidgets('sans removeLabel : pas de bouton Retirer', (tester) async {
+    await openSheet(tester);
+    expect(find.text('Retirer du panier'), findsNothing);
+  });
+
+  testWidgets('avec removeLabel : Retirer renvoie QuantityRemoved', (
+    tester,
+  ) async {
+    final result = await openSheet(
+      tester,
+      initialQuantity: 2,
+      removeLabel: 'Retirer du panier',
+    );
+    await tester.tap(find.text('Retirer du panier'));
+    await tester.pumpAndSettle();
+    expect(result(), isA<QuantityRemoved>());
+  });
 
   testWidgets('la quantité se tape au clavier', (tester) async {
     final result = await openSheet(tester);

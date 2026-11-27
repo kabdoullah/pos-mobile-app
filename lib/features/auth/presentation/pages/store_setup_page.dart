@@ -118,6 +118,14 @@ class _StoreSetupPageState extends ConsumerState<StoreSetupPage> {
 
   Future<void> _saveStore() async {
     if (_isLoading || !_validateForm()) return;
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'L’enregistrement de la boutique',
+        ) ||
+        !mounted) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() {
       _isLoading = true;

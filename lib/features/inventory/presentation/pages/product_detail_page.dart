@@ -349,12 +349,8 @@ class _PhotoSectionState extends ConsumerState<_PhotoSection> {
 
   Future<void> _edit() async {
     final messenger = ScaffoldMessenger.of(context);
-    if (!(ref.read(isOnlineProvider).value ?? false)) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Ajout de photo disponible avec une connexion.'),
-        ),
-      );
+    if (!await ensureOnline(context, ref, action: 'L’ajout de photo') ||
+        !mounted) {
       return;
     }
     final hasPhoto = widget.product.imageVersion != null;

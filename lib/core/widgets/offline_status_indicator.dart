@@ -10,6 +10,11 @@ import '../sync/sync_providers.dart';
 /// Pastille compacte d'état réseau/synchro pour les en-têtes (caisse,
 /// accueil).
 ///
+/// N'apparaît que s'il y a quelque chose à signaler : hors ligne, ventes en
+/// attente ou en échec. Tout envoyé, rien ne s'affiche (l'heure de la
+/// dernière synchro reste dans Paramètres) : un « À jour » répété en haut de
+/// chaque onglet n'apprenait rien et chargeait l'en-tête.
+///
 /// Purement informative : la vente reste possible dans tous les états.
 class OfflineStatusIndicator extends ConsumerWidget {
   /// Crée l'état de synchro.
@@ -23,27 +28,25 @@ class OfflineStatusIndicator extends ConsumerWidget {
     final syncStatus = ref.watch(syncOrchestratorProvider);
     final pendingCount = ref.watch(pendingSyncCountProvider).value ?? 0;
 
-    final (label, tone) = switch ((isOnline, syncStatus)) {
+    final state = switch ((isOnline, syncStatus)) {
       (false, _) => ('Hors ligne', StatusTone.warning),
+      _ when pendingCount == 0 => null,
       (true, SyncStatusSyncing()) => ('Synchro…', StatusTone.neutral),
-      (true, SyncStatusError()) when pendingCount > 0 => (
-        'Non envoyé',
-        StatusTone.error,
-      ),
-      _ when pendingCount > 0 => (
-        '$pendingCount en attente',
-        StatusTone.neutral,
-      ),
-      _ => ('À jour', StatusTone.success),
+      (true, SyncStatusError()) => ('Non envoyé', StatusTone.error),
+      _ => ('$pendingCount en attente', StatusTone.neutral),
     };
 
-    return Semantics(
-      label: 'Synchronisation : $label',
-      excludeSemantics: true,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 150),
-        child: StatusIndicator(key: ValueKey(label), label: label, tone: tone),
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 150),
+      child: switch (state) {
+        null => const SizedBox.shrink(),
+        (final label, final tone) => Semantics(
+          key: ValueKey(label),
+          label: 'Synchronisation : $label',
+          excludeSemantics: true,
+          child: StatusIndicator(label: label, tone: tone),
+        ),
+      },
     );
   }
 }

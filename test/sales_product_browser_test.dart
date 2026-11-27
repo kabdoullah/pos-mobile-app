@@ -9,7 +9,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/app/theme/app_theme.dart';
 import 'package:mobile/core/widgets/index.dart';
 import 'package:mobile/features/catalog/domain/entities/product.dart';
+import 'package:mobile/features/sales/presentation/providers/sale_catalog_layout_provider.dart';
 import 'package:mobile/features/sales/presentation/widgets/product_browser.dart';
+import 'package:mobile/features/sales/presentation/widgets/sale_product_grid.dart';
 
 Product product(
   String name, {
@@ -50,6 +52,7 @@ Future<Calls> pump(
   Size size = const Size(360, 640),
   String? categoryId,
   Map<String, int> cartQuantities = const {},
+  SaleCatalogLayout layout = SaleCatalogLayout.list,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -67,6 +70,7 @@ Future<Calls> pump(
                 products: products,
                 categoryId: categoryId,
                 cartQuantities: cartQuantities,
+                layout: layout,
                 onAdd: (p) => calls.adds.add(p.id),
                 onDecrease: (_) {},
                 onEditQuantity: (p) => calls.edits.add(p.id),
@@ -243,5 +247,104 @@ void main() {
     expect(tester.takeException(), isNull);
     await pump(tester, AsyncData(catalog), size: const Size(1024, 768));
     expect(tester.takeException(), isNull);
+  });
+
+  group('grille', () {
+    const grid = SaleCatalogLayout.grid;
+
+    testWidgets('3 colonnes sur téléphone, plus sur tablette', (tester) async {
+      await pump(tester, AsyncData(catalog), layout: grid);
+      expect(columnCount(tester), 3);
+      expect(find.byType(SaleProductTile), findsNWidgets(4));
+
+      await pump(
+        tester,
+        AsyncData(catalog),
+        layout: grid,
+        size: const Size(1024, 768),
+      );
+      expect(columnCount(tester), greaterThan(3));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('prix sans FCFA ; rupture à la place du prix', (tester) async {
+      await pump(tester, AsyncData(catalog), layout: grid);
+      expect(find.text(formatAmount(Decimal.parse('2000'))), findsOneWidget);
+      expect(find.textContaining('FCFA'), findsNothing);
+      expect(find.text('Rupture'), findsOneWidget);
+      expect(find.text(formatAmount(Decimal.parse('1500'))), findsNothing);
+      // Le prix d'achat n'apparaît jamais en caisse.
+      expect(find.textContaining('1 234'), findsNothing);
+    });
+
+    testWidgets('toucher ajoute, appui long et pastille ouvrent la quantité', (
+      tester,
+    ) async {
+      final calls = await pump(
+        tester,
+        AsyncData(catalog),
+        layout: grid,
+        cartQuantities: const {'Pain': 3},
+      );
+      await tester.tap(find.text('Coca-Cola 33cl'));
+      await tester.longPress(find.text('Savon'));
+      await tester.tap(find.text('3'));
+      expect(calls.adds, ['Coca-Cola 33cl']);
+      expect(calls.edits, ['Savon', 'Pain']);
+      // Pas de « − » sur la tuile : la correction passe par la quantité.
+      expect(find.byType(QuantityStepper), findsNothing);
+    });
+
+    testWidgets('sans photo : pictogramme image de 40 dp sur chaque tuile', (
+      tester,
+    ) async {
+      await pump(tester, AsyncData(catalog), layout: grid);
+      final icons = find.descendant(
+        of: find.byType(SaleProductTile),
+        matching: find.byType(StrokeIcon),
+      );
+      expect(icons, findsNWidgets(catalog.length));
+      expect(tester.widget<StrokeIcon>(icons.first).size, 40);
+      expect(tester.widget<StrokeIcon>(icons.first).icon, DesignIcon.image);
+    });
+
+    testWidgets('rupture : tuile inactive', (tester) async {
+      final calls = await pump(tester, AsyncData(catalog), layout: grid);
+      await tester.tap(find.text('Fanta'));
+      await tester.longPress(find.text('Fanta'));
+      expect(calls.adds, isEmpty);
+      expect(calls.edits, isEmpty);
+    });
+
+    testWidgets('pastille : zone tactile d’au moins 44 dp', (tester) async {
+      await pump(
+        tester,
+        AsyncData(catalog),
+        layout: grid,
+        cartQuantities: const {'Pain': 3},
+      );
+      final badge = find.ancestor(
+        of: find.text('3'),
+        matching: find.byType(GestureDetector),
+      );
+      final size = tester.getSize(badge.first);
+      expect(size.width, greaterThanOrEqualTo(44));
+      expect(size.height, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('grande police : pas de débordement, thème sombre', (
+      tester,
+    ) async {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pump(
+        tester,
+        AsyncData(catalog),
+        layout: grid,
+        theme: AppTheme.dark(),
+        cartQuantities: const {'Coca-Cola 33cl': 12},
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 }

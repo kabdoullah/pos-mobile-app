@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../core/widgets/index.dart';
+import '../widgets/scanner_torch_button.dart';
 
 /// Crée le contrôleur caméra commun à tous les scanners de l'app (fiche
 /// produit et caisse).
@@ -97,7 +98,13 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage>
   Widget build(BuildContext context) {
     // ✨ un seul Scaffold — AppBar M3 standard sans backgroundColor ni elevation hardcodés
     return Scaffold(
-      appBar: AppBar(title: const Text('Scanner code-barres')),
+      appBar: AppBar(
+        title: const Text('Scanner code-barres'),
+        actions: [
+          if (_isPermissionGranted) ScannerTorchButton(controller: _controller),
+          const SizedBox(width: AppSpacing.xs),
+        ],
+      ),
       body: _buildBody(context),
     );
   }

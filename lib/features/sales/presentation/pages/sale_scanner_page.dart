@@ -14,6 +14,8 @@ import '../../../../core/router/app_router.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
 import '../../../catalog/presentation/pages/barcode_scanner_page.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
+import '../../../catalog/presentation/widgets/scanner_torch_button.dart';
 import '../providers/cart_provider.dart';
 import '../providers/scan_provider.dart';
 import '../widgets/sale_scanner_panel.dart';
@@ -44,7 +46,6 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
   bool _isPermissionGranted = false;
   bool _isCheckingPermission = true;
   bool _isCameraPaused = false;
-  bool _isTorchOn = false;
 
   SaleToastData? _toast;
   Timer? _toastTimer;
@@ -72,19 +73,10 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
     });
   }
 
-  Future<void> _toggleTorch() async {
-    await _scanner.toggleTorch();
-    if (!mounted) return;
-    setState(() => _isTorchOn = !_isTorchOn);
-  }
-
   /// Démonte la caméra pendant [action] (page empilée) : pas de scan en
   /// arrière-plan, caméra libérée.
   Future<T?> _withCameraPaused<T>(Future<T?> Function() action) async {
-    setState(() {
-      _isCameraPaused = true;
-      _isTorchOn = false;
-    });
+    setState(() => _isCameraPaused = true);
     try {
       return await action();
     } finally {
@@ -175,15 +167,7 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
         leading: const BackButton(),
         title: const Text('Scanner'),
         actions: [
-          if (_isPermissionGranted)
-            TextButton.icon(
-              onPressed: _toggleTorch,
-              icon: Icon(
-                _isTorchOn ? Icons.flashlight_off : Icons.flashlight_on,
-                size: 20,
-              ),
-              label: Text(_isTorchOn ? 'Éteindre' : 'Lampe'),
-            ),
+          if (_isPermissionGranted) ScannerTorchButton(controller: _scanner),
           const SizedBox(width: AppSpacing.xs),
         ],
       ),
@@ -212,8 +196,8 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
               children: [
                 Expanded(
                   child: Text(
-                    'SCANNÉS',
-                    style: AppTypography.overline.copyWith(
+                    'Scannés',
+                    style: AppTypography.groupTitle.copyWith(
                       color: colors.textSecondary,
                     ),
                   ),
@@ -247,6 +231,7 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
                           itemBuilder: (context, index) {
                             final item = items[index];
                             return _ScannedRow(
+                              productId: item.productId,
                               name: item.productName,
                               price: formatFcfa(item.unitPrice),
                               quantity: item.quantity,
@@ -293,14 +278,16 @@ class _SaleScannerPageState extends ConsumerState<SaleScannerPage> {
   }
 }
 
-/// Article scanné : nom, prix unitaire et quantité.
+/// Article scanné : vignette, nom, prix unitaire et quantité.
 class _ScannedRow extends StatelessWidget {
   const _ScannedRow({
+    required this.productId,
     required this.name,
     required this.price,
     required this.quantity,
   });
 
+  final String productId;
   final String name;
   final String price;
   final int quantity;
@@ -322,6 +309,8 @@ class _ScannedRow extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 40),
           child: Row(
             children: [
+              ProductThumbnailById(productId: productId),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

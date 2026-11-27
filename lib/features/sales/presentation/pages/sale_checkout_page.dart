@@ -264,7 +264,8 @@ class _SaleCheckoutPageState extends ConsumerState<SaleCheckoutPage> {
                     children: [
                       OverlineHeader(
                         'Articles · ${cart.unitCount}',
-                        trailing: 'Touchez une ligne pour la modifier',
+                        // Court : l'indication tient sur une ligne à côté du titre.
+                        trailing: 'Touchez pour modifier',
                         padding: _overlinePadding,
                       ),
                       FlatList(

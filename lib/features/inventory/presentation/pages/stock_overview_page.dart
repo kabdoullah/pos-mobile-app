@@ -100,17 +100,18 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(stockProductsProvider);
+    // Bouton plein unique de l'écran, à portée de pouce. Absent quand la
+    // liste est vide (l'état vide porte déjà l'action) et pendant la saisie
+    // (il masquerait les résultats au-dessus du clavier).
+    final showAddButton =
+        (productsAsync.value?.isNotEmpty ?? false) &&
+        MediaQuery.viewInsetsOf(context).bottom == 0;
 
     return Scaffold(
       appBar: AppBar(
         titleSpacing: AppSpacing.md,
         title: const Text('Stock'),
         actions: [
-          TextButton.icon(
-            onPressed: () => context.push(Routes.productNew),
-            icon: const Icon(Icons.add, size: 20),
-            label: const Text('Produit'),
-          ),
           PopupMenuButton<String>(
             tooltip: "Plus d'options",
             onSelected: (route) => context.push(route),
@@ -131,6 +132,13 @@ class _StockOverviewPageState extends ConsumerState<StockOverviewPage> {
           ),
         ],
       ),
+      floatingActionButton: showAddButton
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push(Routes.productNew),
+              icon: const Icon(Icons.add),
+              label: const Text('Nouveau produit'),
+            )
+          : null,
       body: productsAsync.when(
         loading: () => const _LoadingList(),
         error: (_, _) => EmptyState(
@@ -230,7 +238,9 @@ class _StockList extends ConsumerWidget {
               child: AppSearchBar(
                 controller: searchController,
                 onChanged: onQueryChanged,
-                hintText: 'Rechercher un produit',
+                // Même indication que Vendre : la recherche porte aussi sur le
+                // code-barres.
+                hintText: 'Nom ou code-barres',
                 actions: [
                   TextButton.icon(
                     onPressed: onScan,
@@ -309,7 +319,8 @@ class _StockList extends ConsumerWidget {
               );
             },
           ),
-        const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+        // Dégage la dernière ligne du bouton flottant « Nouveau produit ».
+        const SliverToBoxAdapter(child: SizedBox(height: 88)),
       ],
     );
   }

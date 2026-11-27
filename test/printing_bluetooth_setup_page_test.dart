@@ -74,7 +74,7 @@ void main() {
     tester,
   ) async {
     await pumpPage(tester, connectSucceeds: true);
-    expect(find.text('IMPRIMANTES APPAIRÉES AU TÉLÉPHONE'), findsOneWidget);
+    expect(find.text('Imprimantes appairées au téléphone'), findsOneWidget);
     expect(find.text('Appairée · non connectée'), findsOneWidget);
 
     await tester.tap(find.text('Connecter'));

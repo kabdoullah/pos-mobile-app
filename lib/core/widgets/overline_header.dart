@@ -4,8 +4,8 @@ import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_spacing.dart';
 import '../../app/theme/app_typography.dart';
 
-/// Sur-titre de groupe v2 (« AUJOURD'HUI », « ARTICLES · 4 ») : 13/600 en
-/// majuscules, avec à droite une indication ([trailing]) ou un lien
+/// Titre de groupe (« Aujourd'hui », « Articles · 4 ») : 16/600 en casse
+/// normale, avec à droite une indication ([trailing]) ou un lien
 /// ([actionLabel]).
 class OverlineHeader extends StatelessWidget {
   /// Crée le sur-titre.
@@ -23,7 +23,7 @@ class OverlineHeader extends StatelessWidget {
     super.key,
   });
 
-  /// Texte du sur-titre (mis en majuscules).
+  /// Texte du titre, affiché tel quel.
   final String text;
 
   /// Indication discrète à droite (ex. « Pic : 10 h – 11 h »).
@@ -59,44 +59,48 @@ class OverlineHeader extends StatelessWidget {
               child: Semantics(
                 header: true,
                 child: Text(
-                  text.toUpperCase(),
+                  text,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTypography.overline.copyWith(
+                  style: AppTypography.groupTitle.copyWith(
                     color: colors.textSecondary,
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              flex: 2,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: actionLabel != null
-                    ? TextButton(
-                        onPressed: onAction,
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(0, 32),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.xs,
+            // Sans lien ni indication, le titre prend toute la largeur
+            // (sinon il passait à la ligne pour rien).
+            if (actionLabel != null || trailing != null) ...[
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: actionLabel != null
+                      ? TextButton(
+                          onPressed: onAction,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 32),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                            ),
+                            textStyle: AppTypography.label,
                           ),
-                          textStyle: AppTypography.label,
-                        ),
-                        child: Text(actionLabel),
-                      )
-                    : trailing != null
-                    ? Text(
-                        trailing,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.metaRegular.copyWith(
-                          color: colors.textSecondary,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                          child: Text(actionLabel),
+                        )
+                      : trailing != null
+                      ? Text(
+                          trailing,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTypography.metaRegular.copyWith(
+                            color: colors.textSecondary,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

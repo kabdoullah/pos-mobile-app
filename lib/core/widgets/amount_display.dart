@@ -5,8 +5,15 @@ import 'package:intl/intl.dart';
 import '../../app/theme/app_typography.dart';
 
 /// Formate un montant FCFA avec séparateurs de milliers (ex. « 12 500 »).
-String formatAmount(Decimal amount) =>
-    NumberFormat('#,##0', 'fr_FR').format(amount.toDouble());
+///
+/// fr_FR sépare les milliers par une espace fine (U+202F) : en Inter
+/// semi-gras elle ne se voit presque pas (« 1500 » sur le bouton Encaisser).
+/// L'espace insécable ordinaire (U+00A0) reste lisible et ne coupe pas le
+/// montant en fin de ligne.
+String formatAmount(Decimal amount) => NumberFormat(
+  '#,##0',
+  'fr_FR',
+).format(amount.toDouble()).replaceAll(' ', ' ');
 
 /// Formate un montant FCFA en texte, devise comprise (ex. « 12 500 FCFA »).
 String formatFcfa(Decimal amount) => '${formatAmount(amount)} FCFA';

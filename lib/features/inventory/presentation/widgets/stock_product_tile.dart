@@ -5,12 +5,14 @@ import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../catalog/domain/entities/product.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../../catalog/presentation/widgets/stock_status_badge.dart';
 
-/// Ligne produit de l'onglet Stock (liste à plat) : nom, prix de vente et
-/// d'achat, état ; quantité à droite et action rapide « Ajuster ».
+/// Ligne produit de l'onglet Stock (liste à plat) : nom, puis prix de vente
+/// et état sur une ligne ; quantité à droite et action rapide « Ajuster ».
 ///
-/// Le prix d'achat s'affiche ici (écran de gestion), jamais en caisse
+/// Trois informations par ligne, pas plus : le prix d'achat et la marge sont
+/// dans le détail du produit (toute la ligne y mène), jamais en caisse
 /// (ADR-0009).
 class StockProductTile extends StatelessWidget {
   /// Crée la ligne.
@@ -35,15 +37,10 @@ class StockProductTile extends StatelessWidget {
     final colors = AppColors.of(context);
     final stock = product.currentStock;
     final onAdjust = this.onAdjust;
-    final purchase = product.purchasePrice;
     final meta = AppTypography.metaRegular.copyWith(
       color: colors.textSecondary,
       fontFeatures: AppTypography.tabularFigures,
     );
-    final prices = purchase == null
-        ? 'Vente ${formatFcfa(product.sellingPrice)}'
-        : 'Vente ${formatAmount(product.sellingPrice)} · achat '
-              '${formatFcfa(purchase)}';
 
     return InkWell(
       onTap: onTap,
@@ -58,6 +55,8 @@ class StockProductTile extends StatelessWidget {
           ),
           child: Row(
             children: [
+              ProductThumbnail(product: product, size: 40),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,23 +67,29 @@ class StockProductTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: AppTypography.bodyStrong.copyWith(height: 1.3),
                     ),
-                    Text(prices, style: meta),
-                    StockStatusBadge(product: product),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(formatFcfa(product.sellingPrice), style: meta),
+                        StockStatusBadge(product: product),
+                      ],
+                    ),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    stock == null ? '—' : '$stock',
-                    style: AppTypography.figureSmall.copyWith(
-                      color: stock != null && stock < 0 ? colors.error : null,
-                    ),
+              // La quantité seule : dans l'onglet Stock, à côté de l'état,
+              // « en stock » n'apportait rien.
+              Semantics(
+                label: stock == null ? 'Stock non suivi' : '$stock en stock',
+                excludeSemantics: true,
+                child: Text(
+                  stock == null ? '—' : '$stock',
+                  style: AppTypography.figureSmall.copyWith(
+                    color: stock != null && stock < 0 ? colors.error : null,
                   ),
-                  if (stock != null) Text('en stock', style: meta),
-                ],
+                ),
               ),
               if (onAdjust != null)
                 Semantics(

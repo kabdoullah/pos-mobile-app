@@ -43,7 +43,8 @@ String paymentMethodLabel(PaymentMethod method) => switch (method) {
   PaymentMethod.mixed => 'Mixte',
 };
 
-/// Contrôle segmenté Espèces / Mobile money / Mixte.
+/// Contrôle segmenté Espèces / Mobile money / Les deux (espèces + mobile
+/// money) : « Mixte » ne parlait pas aux commerçants.
 class PaymentModeSelector extends StatelessWidget {
   /// Crée le sélecteur.
   const PaymentModeSelector({
@@ -64,7 +65,7 @@ class PaymentModeSelector extends StatelessWidget {
       segments: const [
         (value: PaymentMode.cash, label: 'Espèces'),
         (value: PaymentMode.mobileMoney, label: 'Mobile money'),
-        (value: PaymentMode.mixed, label: 'Mixte'),
+        (value: PaymentMode.mixed, label: 'Les deux'),
       ],
       selected: selected,
       onChanged: onSelected,

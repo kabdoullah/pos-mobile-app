@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/network/error_mapper.dart';
-import '../../../../core/providers/connectivity_provider.dart';
 import '../../../../core/widgets/index.dart';
 import '../../../auth/domain/entities/store.dart';
 import '../../../../core/utils/phone_formatter.dart';
@@ -54,6 +53,15 @@ class _ReceiptSettingsSheetState extends ConsumerState<ReceiptSettingsSheet> {
   }
 
   Future<void> _save() async {
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'L’enregistrement des réglages du reçu',
+        ) ||
+        !mounted) {
+      return;
+    }
+    if (!mounted) return;
     final footer = _footerController.text.trim();
     setState(() {
       _saving = true;
@@ -240,12 +248,8 @@ class _LogoRowState extends ConsumerState<_LogoRow> {
 
   Future<void> _edit({required bool hasLogo}) async {
     final messenger = ScaffoldMessenger.of(context);
-    if (!(ref.read(isOnlineProvider).value ?? false)) {
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Changement de logo disponible avec une connexion.'),
-        ),
-      );
+    if (!await ensureOnline(context, ref, action: 'Le changement de logo') ||
+        !mounted) {
       return;
     }
     final choice = await showImageSourceSheet(

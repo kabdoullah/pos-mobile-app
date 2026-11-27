@@ -16,6 +16,8 @@ import 'package:mobile/features/cash_register/presentation/widgets/cash_count_fo
 import 'package:mobile/features/cash_register/providers/cash_register_di_providers.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'subscription_fixtures.dart';
+
 class _MockCashRegister extends Mock implements CashRegisterRepository {}
 
 /// Mode de comptage en mémoire (le stockage sécurisé n'existe pas en test).
@@ -176,6 +178,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            allFeaturesOverride,
             cashRegisterRepositoryProvider.overrideWithValue(cash),
             isOnlineProvider.overrideWith((ref) => Stream.value(false)),
             cashCountModeStorageProvider.overrideWithValue(

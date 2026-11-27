@@ -18,6 +18,8 @@ import '../widgets/cash_movement_tile.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/cash_summary_card.dart';
 import 'open_cash_session_page.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Nombre de mouvements affichés sur l'écran de la caisse active.
 const _recentMovementCount = 10;
@@ -39,8 +41,17 @@ class CashRegisterPage extends ConsumerWidget {
         title: const Text('Ma caisse'),
         actions: [
           TextButton(
-            onPressed: () => context.push(Routes.cashHistory),
-            child: const Text('Sessions'),
+            onPressed: () async {
+              if (await requireFeature(
+                    context,
+                    ref,
+                    PlanFeature.cashMovements,
+                  ) &&
+                  context.mounted) {
+                await context.push(Routes.cashHistory);
+              }
+            },
+            child: const Text('Historique'),
           ),
           const SizedBox(width: AppSpacing.xs),
         ],
@@ -203,11 +214,11 @@ class _ActiveCash extends ConsumerWidget {
 }
 
 /// Barre fixe : Entrée, Sortie, puis « Clôturer la caisse ».
-class _ActionsBar extends StatelessWidget {
+class _ActionsBar extends ConsumerWidget {
   const _ActionsBar();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = AppColors.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -231,10 +242,19 @@ class _ActionsBar extends StatelessWidget {
                     child: SecondaryButton(
                       label: 'Entrée',
                       icon: Icons.south,
-                      onPressed: () => showCashMovementSheet(
-                        context,
-                        CashMovementType.cashIn,
-                      ),
+                      onPressed: () async {
+                        if (await requireFeature(
+                              context,
+                              ref,
+                              PlanFeature.cashMovements,
+                            ) &&
+                            context.mounted) {
+                          await showCashMovementSheet(
+                            context,
+                            CashMovementType.cashIn,
+                          );
+                        }
+                      },
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -242,10 +262,19 @@ class _ActionsBar extends StatelessWidget {
                     child: SecondaryButton(
                       label: 'Sortie',
                       icon: Icons.north,
-                      onPressed: () => showCashMovementSheet(
-                        context,
-                        CashMovementType.cashOut,
-                      ),
+                      onPressed: () async {
+                        if (await requireFeature(
+                              context,
+                              ref,
+                              PlanFeature.cashMovements,
+                            ) &&
+                            context.mounted) {
+                          await showCashMovementSheet(
+                            context,
+                            CashMovementType.cashOut,
+                          );
+                        }
+                      },
                     ),
                   ),
                 ],

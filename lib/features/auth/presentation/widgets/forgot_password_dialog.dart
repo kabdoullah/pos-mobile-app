@@ -71,6 +71,14 @@ class _ForgotPasswordDialogState extends ConsumerState<ForgotPasswordDialog> {
     if (_sending) return;
     setState(() => _submitted = true);
     if (_emailError != null) return;
+    if (!await ensureOnline(
+          context,
+          ref,
+          action: 'L’envoi du lien de réinitialisation',
+        ) ||
+        !mounted) {
+      return;
+    }
 
     FocusScope.of(context).unfocus();
     setState(() => _sending = true);

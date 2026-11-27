@@ -36,7 +36,7 @@ void main() {
       final state = CheckoutState(cashReceived: d('10000'));
       expect(
         state.cashErrorFor(d('10500')),
-        'Inférieur au total. Ajoutez des espèces ou choisissez Mixte.',
+        'Inférieur au total. Ajoutez des espèces ou choisissez « Les deux ».',
       );
       expect(state.canSubmitFor(d('10500')), isFalse);
       expect(state.changeFor(d('10500')), Decimal.zero);

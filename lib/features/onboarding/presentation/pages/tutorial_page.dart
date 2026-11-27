@@ -360,7 +360,7 @@ class _ProductIllustration extends StatelessWidget {
         const _MiniRow('Nom', 'Eau Awa 1.5L'),
         _MiniRow('Prix de vente', _fcfa(325)),
         const _MiniRow('Stock', '24'),
-        _MiniRow('Code-barres', 'Scanner', valueColor: colors.action),
+        _MiniRow('Code-barres', 'Scanner', valueColor: colors.actionText),
       ],
     );
   }

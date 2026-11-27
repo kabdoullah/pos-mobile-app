@@ -20,6 +20,9 @@ import '../providers/cash_register_providers.dart';
 import '../widgets/cash_count_form.dart';
 import '../widgets/cash_notice_banner.dart';
 import '../widgets/discrepancy_badge.dart';
+import '../../../subscription/domain/entities/subscription.dart';
+import '../../../subscription/presentation/providers/subscription_providers.dart';
+import '../../../subscription/presentation/widgets/upgrade_sheet.dart';
 
 /// Clôture de la caisse en deux étapes : comptage (billets et pièces, ou
 /// total seulement) sans le solde attendu, puis récapitulatif avec l'écart
@@ -254,8 +257,10 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
   /// Étape 1 : comptage, sans le solde attendu.
   Widget _buildCount(BuildContext context) {
     final colors = AppColors.of(context);
+    // Billetterie : formule Starter (ADR-0017) ; sinon « Total seulement ».
+    final canCount = ref.watch(entitlementsProvider).can(PlanFeature.cashCount);
     final byDenomination =
-        ref.watch(cashCountByDenominationProvider).value ?? true;
+        canCount && (ref.watch(cashCountByDenominationProvider).value ?? true);
     final amount = byDenomination ? _count.total : _typedAmount;
     final breakdown = countBreakdown(_count);
     return Column(
@@ -287,9 +292,20 @@ class _CloseFormState extends ConsumerState<_CloseForm> {
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: CashCountModeSelector(
                   byDenomination: byDenomination,
-                  onChanged: (value) => ref
-                      .read(cashCountByDenominationProvider.notifier)
-                      .set(value),
+                  onChanged: (value) async {
+                    if (value &&
+                        !await requireFeature(
+                          context,
+                          ref,
+                          PlanFeature.cashCount,
+                        )) {
+                      return;
+                    }
+
+                    await ref
+                        .read(cashCountByDenominationProvider.notifier)
+                        .set(value);
+                  },
                 ),
               ),
               if (byDenomination)

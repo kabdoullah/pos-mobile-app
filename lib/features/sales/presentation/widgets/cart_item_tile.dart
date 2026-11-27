@@ -4,6 +4,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_spacing.dart';
 import '../../../../app/theme/app_typography.dart';
 import '../../../../core/widgets/index.dart';
+import '../../../catalog/presentation/widgets/product_thumbnail.dart';
 import '../../domain/entities/cart_item.dart';
 
 /// Ligne d'article de l'écran Encaisser, modifiable en place.
@@ -90,6 +91,11 @@ class CartItemTile extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        ProductThumbnailById(
+                          productId: item.productId,
+                          size: 40,
+                        ),
+                        const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +210,7 @@ class _LineDiscount extends StatelessWidget {
                   ? 'Ajouter'
                   : '−${formatFcfa(item.discountAmount)}',
               style: AppTypography.label.copyWith(
-                color: colors.action,
+                color: colors.actionText,
                 fontFeatures: AppTypography.tabularFigures,
               ),
             ),
