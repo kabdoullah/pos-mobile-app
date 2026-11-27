@@ -26,8 +26,10 @@ final _date = DateFormat('d MMMM yyyy', 'fr_FR');
       SubscriptionStatus.expired => ('Expiré', StatusTone.neutral),
     };
 
-/// « Mon abonnement » : formule actuelle, statut, échéance, fonctionnalités
-/// incluses et formules disponibles (ADR-0017).
+/// « Mon abonnement » : formule actuelle et statut en tête (sans carte),
+/// avertissement éventuel, puis les formules dans l'ordre. La formule
+/// actuelle est cerclée de cacao ; la formule au-dessus porte le seul bouton
+/// plein de l'écran (ADR-0017).
 class SubscriptionPage extends ConsumerWidget {
   /// Crée la page.
   const SubscriptionPage({super.key});
@@ -37,6 +39,7 @@ class SubscriptionPage extends ConsumerWidget {
     final subscription =
         ref.watch(currentSubscriptionProvider).value ?? MySubscription.free;
     final catalog = ref.watch(subscriptionCatalogProvider);
+    final canPay = catalog.value?.payment.available ?? false;
 
     Future<void> reload() async {
       ref.invalidate(subscriptionCatalogProvider);
@@ -53,14 +56,24 @@ class SubscriptionPage extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            _CurrentPlanCard(subscription: subscription),
+            _CurrentPlanHeader(subscription: subscription),
+            ..._notice(subscription, catalog.value),
             const SizedBox(height: AppSpacing.lg),
             const OverlineHeader('Formules'),
             const SizedBox(height: AppSpacing.sm),
             switch (catalog) {
-              AsyncData(:final value) => _PlanList(
-                catalog: value,
-                subscription: subscription,
+              AsyncData(:final value) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final offer in value.plans) ...[
+                    _PlanCard(
+                      offer: offer,
+                      subscription: subscription,
+                      canPay: canPay,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ],
               ),
               AsyncError(:final error) => _CatalogError(
                 message: subscriptionErrorMessage(error),
@@ -76,10 +89,46 @@ class SubscriptionPage extends ConsumerWidget {
       ),
     );
   }
+
+  /// Un seul avertissement à la fois : demande en cours, refus, ou paiement
+  /// pas encore ouvert.
+  List<Widget> _notice(
+    MySubscription subscription,
+    SubscriptionCatalog? catalog,
+  ) {
+    final request = subscription.latestRequest;
+    final notice = switch (subscription.status) {
+      _ when request != null && subscription.hasPendingRequest => _Notice(
+        tone: StatusTone.warning,
+        title: 'Paiement en vérification',
+        message:
+            'Nous vérifions votre transfert Wave de '
+            '${formatFcfa(request.amount)}. La formule '
+            '${request.plan.label} sera activée dès la vérification.',
+      ),
+      SubscriptionStatus.rejected when request != null => _Notice(
+        tone: StatusTone.error,
+        title: 'Demande refusée',
+        message:
+            '${request.rejectionReason ?? 'Paiement non retrouvé'}. '
+            'Vous pouvez envoyer une nouvelle demande.',
+      ),
+      _ when catalog != null && !catalog.payment.available => const _Notice(
+        tone: StatusTone.warning,
+        title: 'Souscription bientôt disponible',
+        message: 'Le paiement par Wave n’est pas encore ouvert.',
+      ),
+      _ => null,
+    };
+    return [
+      if (notice != null) ...[const SizedBox(height: AppSpacing.md), notice],
+    ];
+  }
 }
 
-class _CurrentPlanCard extends StatelessWidget {
-  const _CurrentPlanCard({required this.subscription});
+/// Formule actuelle posée sur le fond, sans carte : nom, statut, échéance.
+class _CurrentPlanHeader extends StatelessWidget {
+  const _CurrentPlanHeader({required this.subscription});
 
   final MySubscription subscription;
 
@@ -89,64 +138,87 @@ class _CurrentPlanCard extends StatelessWidget {
     final (label, tone) = subscriptionStatusLabel(subscription.status);
     final expiresAt = subscription.expiresAt;
     final paidUntil = subscription.paidUntil;
-    final request = subscription.latestRequest;
     final meta = AppTypography.body.copyWith(color: colors.textSecondary);
 
-    return AppCard(
-      elevated: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Formule actuelle', style: meta),
-          const SizedBox(height: AppSpacing.xs),
-          Text(subscription.plan.label, style: AppTypography.screenTitle),
-          const SizedBox(height: AppSpacing.sm),
-          StatusIndicator(label: label, tone: tone),
-          if (expiresAt != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Actif jusqu’au ${_date.format(expiresAt.toLocal())}',
-              style: meta,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Formule actuelle', style: meta),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Text(
+                subscription.plan.label,
+                style: AppTypography.screenTitle,
+              ),
             ),
+            StatusIndicator(label: label, tone: tone),
           ],
-          if (paidUntil != null &&
-              expiresAt != null &&
-              paidUntil.isAfter(expiresAt)) ...[
+        ),
+        if (expiresAt != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            paidUntil != null && paidUntil.isAfter(expiresAt)
+                ? 'Payé jusqu’au ${_date.format(paidUntil.toLocal())}'
+                : 'Actif jusqu’au ${_date.format(expiresAt.toLocal())}',
+            style: meta,
+          ),
+        ] else if (subscription.plan == PlanId.discovery) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Historique des ${subscription.historyDays ?? 30} derniers jours.',
+            style: meta,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Bandeau d'avertissement : aplat « subtle » du statut, texte du statut.
+class _Notice extends StatelessWidget {
+  const _Notice({
+    required this.tone,
+    required this.title,
+    required this.message,
+  });
+
+  final StatusTone tone;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final (background, foreground) = tone == StatusTone.error
+        ? (colors.errorSubtle, colors.onErrorSubtle)
+        : (colors.warningSubtle, colors.textPrimary);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: AppTypography.bodyStrong.copyWith(color: foreground),
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Déjà renouvelé jusqu’au ${_date.format(paidUntil.toLocal())}',
-              style: meta,
+              message,
+              style: AppTypography.body.copyWith(
+                color: foreground,
+                fontFeatures: AppTypography.tabularFigures,
+              ),
             ),
           ],
-          if (request != null && subscription.hasPendingRequest) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Nous vérifions votre paiement Wave de '
-              '${formatFcfa(request.amount)}. La formule '
-              '${request.plan.label} sera activée dès la vérification.',
-              style: AppTypography.body,
-            ),
-          ],
-          if (request != null &&
-              subscription.status == SubscriptionStatus.rejected) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Motif : ${request.rejectionReason ?? '—'}. '
-              'Vous pouvez envoyer une nouvelle demande.',
-              style: AppTypography.body.copyWith(color: colors.error),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          if (subscription.features.isEmpty)
-            Text(
-              'Ventes, catalogue, stock, caisse et historique des '
-              '${subscription.historyDays ?? 30} derniers jours.',
-              style: meta,
-            )
-          else
-            for (final feature in subscription.features)
-              _FeatureLine(label: feature.label),
-        ],
+        ),
       ),
     );
   }
@@ -179,40 +251,12 @@ class _FeatureLine extends StatelessWidget {
   }
 }
 
-class _PlanList extends StatelessWidget {
-  const _PlanList({required this.catalog, required this.subscription});
-
-  final SubscriptionCatalog catalog;
-  final MySubscription subscription;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!catalog.payment.available)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: Text(
-              'La souscription par Wave ouvre bientôt.',
-              style: AppTypography.body.copyWith(
-                color: AppColors.of(context).warning,
-              ),
-            ),
-          ),
-        for (final offer in catalog.plans) ...[
-          _PlanCard(
-            offer: offer,
-            subscription: subscription,
-            canPay: catalog.payment.available,
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
-      ],
-    );
-  }
-}
-
+/// Une formule : nom, prix en chiffre, points forts, action.
+///
+/// La formule actuelle est cerclée de cacao. La formule juste au-dessus de
+/// l'actuelle porte le bouton plein (« Passer à … ») ; les autres formules
+/// payantes un bouton secondaire. Aucune action pendant une vérification ou
+/// tant que le paiement n'est pas ouvert (le bandeau l'explique).
 class _PlanCard extends StatelessWidget {
   const _PlanCard({
     required this.offer,
@@ -226,47 +270,78 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     final isCurrent = offer.plan == subscription.plan;
     final isFree = offer.plan == PlanId.discovery;
-    final pending = subscription.hasPendingRequest;
-    final actionLabel = isCurrent
-        ? 'Renouveler ${offer.name}'
-        : 'Choisir ${offer.name}';
+    final isNextUp = offer.plan.index == subscription.plan.index + 1;
+    final showAction = !isFree && canPay && !subscription.hasPendingRequest;
+    final months = offer.durationMonths;
 
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(offer.name, style: AppTypography.heading)),
-              if (isCurrent)
-                const StatusIndicator(
-                  label: 'Votre formule',
-                  tone: StatusTone.success,
+    void pay() => context.push(Routes.subscriptionPayment, extra: offer.plan);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSurface),
+        border: Border.all(
+          color: isCurrent ? colors.action : colors.border,
+          width: isCurrent ? 2 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(offer.name, style: AppTypography.heading)),
+                if (isCurrent)
+                  const StatusIndicator(
+                    label: 'Votre formule',
+                    tone: StatusTone.success,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (isFree)
+              const Text('Gratuit', style: AppTypography.figureSmall)
+            else
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: formatFcfa(offer.price),
+                      style: AppTypography.figureSmall,
+                    ),
+                    TextSpan(
+                      text: months == 1 ? ' / mois' : ' / $months mois',
+                      style: AppTypography.body.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                style: const TextStyle(
+                  fontFeatures: AppTypography.tabularFigures,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.sm),
+            for (final line in offer.highlights) _FeatureLine(label: line),
+            if (showAction) ...[
+              const SizedBox(height: AppSpacing.md),
+              if (isNextUp)
+                PrimaryButton(label: 'Passer à ${offer.name}', onPressed: pay)
+              else
+                SecondaryButton(
+                  label: isCurrent
+                      ? 'Renouveler ${offer.name}'
+                      : 'Choisir ${offer.name}',
+                  onPressed: pay,
                 ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            isFree ? 'Gratuit' : '${formatFcfa(offer.price)} / mois',
-            style: AppTypography.bodyStrong,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          for (final line in offer.highlights) _FeatureLine(label: line),
-          if (!isFree) ...[
-            const SizedBox(height: AppSpacing.md),
-            SecondaryButton(
-              label: pending ? 'Demande en cours de vérification' : actionLabel,
-              onPressed: pending || !canPay
-                  ? null
-                  : () => context.push(
-                      Routes.subscriptionPayment,
-                      extra: offer.plan,
-                    ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }
